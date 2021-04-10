@@ -1,12 +1,16 @@
 package cli
 
+import (
+	"fmt"
+)
+
 type EnvLayerType uint
 
 const (
 	EnvLayerDefault EnvLayerType = iota
 	EnvLayerPersisted
 	EnvLayerSession
-	EnvLayerCmdArg
+	EnvLayerMod
 )
 
 func EnvLayerName(tp EnvLayerType) string {
@@ -17,8 +21,8 @@ func EnvLayerName(tp EnvLayerType) string {
 		return "persisted"
 	case EnvLayerSession:
 		return "session"
-	case EnvLayerCmdArg:
-		return "arg"
+	case EnvLayerMod:
+		return "module"
 	default:
 		panic(fmt.Errorf("unknown layer type, value: %v", tp))
 	}
@@ -32,16 +36,25 @@ type EnvVal struct {
 type Env struct {
 	pairs map[string]*EnvVal
 	parent *Env
+	Type EnvLayerType
 }
 
 func NewEnv() *Env {
-	return &Env{ map[string]*EnvVal{}, nil }
+	return &Env{ map[string]*EnvVal{}, nil, EnvLayerDefault }
 }
 
-func (self *Env) NewLayer(tp EnLayerType) *Env {
+func (self *Env) NewLayer(tp EnvLayerType) *Env {
 	env := NewEnv()
 	env.parent = self
+	env.Type = tp
 	return env
+}
+
+func (self *Env) NewLayerIfTypeNotMatch(tp EnvLayerType) *Env {
+	if self.Type != tp {
+		return self.NewLayer(tp)
+	}
+	return self
 }
 
 func (self *Env) Get(name string) *EnvVal {
@@ -56,4 +69,7 @@ func (self *Env) Set(name string, val *EnvVal) *EnvVal {
 	old, _ := self.pairs[name]
 	self.pairs[name] = val
 	return old
+}
+
+func (self *Env) ParseAndSet(strs []string) {
 }

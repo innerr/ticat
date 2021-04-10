@@ -16,18 +16,22 @@ func RegisterBuiltins(cmds *CmdTree) {
 	mod.AddSub("load").AddSub("local").SetCmd(LoadLocalMods)
 }
 
-func GlobalHelp(ctx *Context, argv []string) {
+func GlobalHelp(hub *Hub, env *Env, argv []string) bool {
 	print("TODO: global help")
+	return true
 }
 
-func LoadLocalEnv(ctx *Context, argv []string) {
+func LoadLocalEnv(hub *Hub, env *Env, argv []string) bool {
 	print("TODO: load local env")
+	return true
 }
 
-func LoadLocalMods(ctx *Context, argv []string) {
+func LoadLocalMods(hub *Hub, env *Env, argv []string) bool {
 	print("TODO: load local mods")
+	return true
 }
 
-func GreetingDev(ctx *Context, argv []string) {
+func GreetingDev(hub *Hub, env *Env, argv []string) bool {
 	print("Hello World")
+	return true
 }
