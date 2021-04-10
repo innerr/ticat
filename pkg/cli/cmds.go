@@ -5,8 +5,13 @@ import (
 	"strings"
 )
 
+const (
+	cmdRootNodeName = "(root)"
+	errStrPrefix    = "[ERR] "
+)
+
 type Word struct {
-	Val string
+	Val   string
 	Abbrs []string
 }
 
@@ -15,18 +20,18 @@ func NewWord(val string, abbrs ...string) *Word {
 }
 
 type CmdTree struct {
-	name string
-	parent *CmdTree
-	sub map[string]*CmdTree
-	cmd func(*Hub, *Env, []string)bool
+	name           string
+	parent         *CmdTree
+	sub            map[string]*CmdTree
+	cmd            func(*Hub, *Env, []string) bool
 	subAbbrsRevIdx map[string]string
 }
 
 func NewCmdTree() *CmdTree {
-	return &CmdTree{ "", nil, map[string]*CmdTree{}, nil, map[string]string{} }
+	return &CmdTree{"", nil, map[string]*CmdTree{}, nil, map[string]string{}}
 }
 
-func (self *CmdTree) SetCmd(cmd func(*Hub, *Env, []string)bool) {
+func (self *CmdTree) SetCmd(cmd func(*Hub, *Env, []string) bool) {
 	self.cmd = cmd
 }
 
@@ -40,20 +45,20 @@ func (self *CmdTree) path() []string {
 func (self *CmdTree) displayPath() string {
 	path := self.path()
 	if len(path) == 0 {
-		return "(root)"
+		return cmdRootNodeName
 	} else {
-		return strings.Join(self.path(), " ")
+		return strings.Join(self.path(), ".")
 	}
 }
 
 func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	if _, ok := self.sub[name]; ok {
-		panic(fmt.Errorf("[ERR] %s: sub-cmd name conflicted: %s", self.displayPath(), name))
+		panic(fmt.Errorf("%s%s: sub-cmd name conflicted: %s", errStrPrefix, self.displayPath(), name))
 	}
 	for _, abbr := range abbrs {
 		if _, ok := self.subAbbrsRevIdx[abbr]; ok {
 			// TODO: full info
-			panic(fmt.Errorf("[ERR] %s: cmd abbr name conflicted: %s", self.displayPath(), abbr))
+			panic(fmt.Errorf("%s%s: cmd abbr name conflicted: %s", errStrPrefix, self.displayPath(), abbr))
 		}
 		self.subAbbrsRevIdx[abbr] = name
 	}
@@ -71,7 +76,7 @@ func (self *CmdTree) GetSub(name string) *CmdTree {
 }
 
 type Brackets struct {
-	Left string
+	Left  string
 	Right string
 }
 
@@ -87,7 +92,7 @@ func (self *CmdTree) ExecuteSequence(hub *Hub, env *Env, argvs [][]string) bool 
 			if !res {
 				return false
 			}
-			if i + 1 != len(argvs) {
+			if i+1 != len(argvs) {
 				hub.Screen.Print("")
 			}
 		}
@@ -96,7 +101,11 @@ func (self *CmdTree) ExecuteSequence(hub *Hub, env *Env, argvs [][]string) bool 
 }
 
 func (self *CmdTree) PrintError(hub *Hub, env *Env, matchedCmdPath []string, msg string) {
-	hub.Screen.Print("[ERR] " + strings.Join(append([]string{"ticat"}, matchedCmdPath...), " ") + msg)
+	displayPath := cmdRootNodeName
+	if len(matchedCmdPath) != 0 {
+		displayPath = strings.Join(matchedCmdPath, ".")
+	}
+	hub.Screen.Print(errStrPrefix + displayPath + msg)
 }
 
 func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, matchedCmdPath []string) bool {
@@ -108,7 +117,7 @@ func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, match
 	if sub != nil {
 		if strings.HasPrefix(argv[0], hub.envBrackets.Left) {
 			self.PrintError(hub, env, matchedCmdPath,
-				"confused '" + argv[0] + "', could be env-begining or sub-cmd")
+				"confused '"+argv[0]+"', could be env-begining or sub-cmd")
 			return false
 		}
 		return sub.ExecuteWithEnvStrs(hub, env, argv[1:], append(matchedCmdPath, argv[0]))
@@ -125,7 +134,7 @@ func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, match
 		envStrs, newArgv, ok := self.extractEnvStrs(argv, hub.envBrackets.Right)
 		if !ok {
 			self.PrintError(hub, env, matchedCmdPath,
-				"env definition not close properly '" + strings.Join(argv, " ") + "'")
+				"env definition not close properly '"+strings.Join(argv, " ")+"'")
 		}
 		layerType := EnvLayerSession
 		if len(matchedCmdPath) != 0 {
@@ -139,7 +148,7 @@ func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, match
 		sub := self.GetSub(subCmd)
 		if sub == nil {
 			self.PrintError(hub, env, matchedCmdPath,
-				"sub-cmd '" + subCmd + "' not found")
+				"sub-cmd '"+subCmd+"' not found")
 			return false
 		}
 		rest := argv[0][i+len(hub.envBrackets.Left):]
@@ -150,7 +159,7 @@ func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, match
 		envStrs, subArgv, ok := self.extractEnvStrs(subArgv, hub.envBrackets.Right)
 		if !ok {
 			self.PrintError(hub, env, matchedCmdPath,
-				"env definition not close properly '" + strings.Join(subArgv, " ") + "'")
+				"env definition not close properly '"+strings.Join(subArgv, " ")+"'")
 		}
 		subEnv := env.NewLayerIfTypeNotMatch(EnvLayerMod)
 		subEnv.ParseAndSet(envStrs)
@@ -163,7 +172,7 @@ func (self *CmdTree) execute(hub *Hub, env *Env, argv []string, matchedCmdPath [
 	return self.cmd(hub, env, argv)
 }
 
-func (self *CmdTree) extractEnvStrs(argv []string, endingMark string) (env []string, rest[]string, ok bool) {
+func (self *CmdTree) extractEnvStrs(argv []string, endingMark string) (env []string, rest []string, ok bool) {
 	rest = []string{}
 	ok = true
 	for i, arg := range argv {
@@ -182,7 +191,7 @@ func (self *CmdTree) extractEnvStrs(argv []string, endingMark string) (env []str
 				return
 			}
 		} else {
-			if len(endingMark) == len(arg) - k {
+			if len(endingMark) == len(arg)-k {
 				rest = append(rest, arg[0:k])
 				env = argv[i+1:]
 				return
@@ -198,15 +207,15 @@ func (self *CmdTree) extractEnvStrs(argv []string, endingMark string) (env []str
 }
 
 type Hub struct {
-	breaker *SequenceBreaker
-	global *Env
+	breaker     *SequenceBreaker
+	global      *Env
 	envBrackets *Brackets
-	Screen *Screen
-	Cmds * CmdTree
+	Screen      *Screen
+	Cmds        *CmdTree
 }
 
 func NewHub() *Hub {
-	hub := &Hub {
+	hub := &Hub{
 		&SequenceBreaker{":", []string{"http", "HTTP"}, []string{"/"}},
 		NewEnv(),
 		&Brackets{"{", "}"},

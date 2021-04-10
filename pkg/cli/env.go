@@ -34,13 +34,13 @@ type EnvVal struct {
 }
 
 type Env struct {
-	pairs map[string]*EnvVal
+	pairs  map[string]*EnvVal
 	parent *Env
-	Type EnvLayerType
+	Type   EnvLayerType
 }
 
 func NewEnv() *Env {
-	return &Env{ map[string]*EnvVal{}, nil, EnvLayerDefault }
+	return &Env{map[string]*EnvVal{}, nil, EnvLayerDefault}
 }
 
 func (self *Env) NewLayer(tp EnvLayerType) *Env {

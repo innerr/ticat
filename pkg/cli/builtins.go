@@ -1,7 +1,6 @@
 package cli
 
-import (
-)
+import ()
 
 func RegisterBuiltins(cmds *CmdTree) {
 	cmds.AddSub("help", "h", "HELP", "H", "?").SetCmd(GlobalHelp)
