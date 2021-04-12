@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestSequenceBreaker(t *testing.T) {
+func TestSequenceParser(t *testing.T) {
 	assert_eq := func(a []string, b []string) {
 		if len(a) != len(b) {
 			t.Fatalf("%#v vs %#v\n", a, b)
@@ -17,8 +17,8 @@ func TestSequenceBreaker(t *testing.T) {
 	}
 
 	test_normalize := func(a []string, b []string) {
-		breaker := SequenceBreaker{":", []string{"http", "HTTP"}, []string{"/"}}
-		assert_eq(breaker.Normalize(a), b)
+		parser := SequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
+		assert_eq(parser.Normalize(a), b)
 	}
 
 	test_normalize([]string{"aa"}, []string{"aa"})
@@ -81,8 +81,8 @@ func TestSequenceBreaker(t *testing.T) {
 	}
 
 	test_break := func(a []string, b [][]string) {
-		breaker := SequenceBreaker{":", []string{"http", "HTTP"}, []string{"/"}}
-		assert_eq_v(breaker.Break(a), b)
+		parser := SequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
+		assert_eq_v(parser.Parse(a), b)
 	}
 
 	test_break([]string{"aa"}, [][]string{[]string{"aa"}})

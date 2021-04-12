@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	cmdRootNodeName = "(root)"
+	cmdRootNodeName = "<root>"
 	errStrPrefix    = "[ERR] "
 )
 
@@ -19,11 +19,24 @@ func NewWord(val string, abbrs ...string) *Word {
 	return &Word{val, abbrs}
 }
 
+type Cmd struct {
+	Normal func(*Hub, *Env, []string) bool
+	Power func(*Hub, *Env, []string) ([]string, bool)
+}
+
+func NewCmd(cmd func(*Hub, *Env, []string) bool) *Cmd {
+	return &Cmd{cmd, nil}
+}
+
+func NewPowerCmd(cmd func(*Hub, *Env, []string) ([]string, bool)) *Cmd {
+	return &Cmd{nil, cmd}
+}
+
 type CmdTree struct {
 	name           string
 	parent         *CmdTree
 	sub            map[string]*CmdTree
-	cmd            func(*Hub, *Env, []string) bool
+	cmd            *Cmd
 	subAbbrsRevIdx map[string]string
 }
 
@@ -32,7 +45,15 @@ func NewCmdTree() *CmdTree {
 }
 
 func (self *CmdTree) SetCmd(cmd func(*Hub, *Env, []string) bool) {
-	self.cmd = cmd
+	self.cmd = NewCmd(cmd)
+}
+
+func (self *CmdTree) Name() string {
+	return self.name
+}
+
+func (self *CmdTree) SetPowerCmd(cmd func(*Hub, *Env, []string) ([]string, bool)) {
+	self.cmd = NewPowerCmd(cmd)
 }
 
 func (self *CmdTree) path() []string {
@@ -63,6 +84,7 @@ func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 		self.subAbbrsRevIdx[abbr] = name
 	}
 	sub := NewCmdTree()
+	sub.name = name
 	self.sub[name] = sub
 	return sub
 }
@@ -100,40 +122,40 @@ func (self *CmdTree) ExecuteSequence(hub *Hub, env *Env, argvs [][]string) bool 
 	return true
 }
 
-func (self *CmdTree) PrintError(hub *Hub, env *Env, matchedCmdPath []string, msg string) {
+func (self *CmdTree) PrintErr(hub *Hub, env *Env, matchedCmdPath []string, msg string) {
 	displayPath := cmdRootNodeName
 	if len(matchedCmdPath) != 0 {
 		displayPath = strings.Join(matchedCmdPath, ".")
 	}
-	hub.Screen.Print(errStrPrefix + displayPath + msg)
+	hub.Screen.Print(errStrPrefix + displayPath + ": " + msg)
 }
 
+// TODO: too slow
 func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, matchedCmdPath []string) bool {
 	if len(argv) == 0 {
 		return self.execute(hub, env, argv, matchedCmdPath)
 	}
-
 	sub := self.GetSub(argv[0])
 	if sub != nil {
-		if strings.HasPrefix(argv[0], hub.envBrackets.Left) {
-			self.PrintError(hub, env, matchedCmdPath,
+		if strings.HasPrefix(argv[0], hub.CmdParser.EnvBrackets.Left) {
+			self.PrintErr(hub, env, matchedCmdPath,
 				"confused '"+argv[0]+"', could be env-begining or sub-cmd")
 			return false
 		}
 		return sub.ExecuteWithEnvStrs(hub, env, argv[1:], append(matchedCmdPath, argv[0]))
 	}
 
-	i := strings.Index(argv[0], hub.envBrackets.Left)
+	i := strings.Index(argv[0], hub.CmdParser.EnvBrackets.Left)
 	if i < 0 {
 		return self.execute(hub, env, argv, matchedCmdPath)
 	}
 	if i == 0 {
-		if len(argv[0]) != len(hub.envBrackets.Left) {
-			argv = append([]string{argv[0][len(hub.envBrackets.Left):]}, argv[1:]...)
+		if len(argv[0]) != len(hub.CmdParser.EnvBrackets.Left) {
+			argv = append([]string{argv[0][len(hub.CmdParser.EnvBrackets.Left):]}, argv[1:]...)
 		}
-		envStrs, newArgv, ok := self.extractEnvStrs(argv, hub.envBrackets.Right)
+		envStrs, newArgv, ok := self.extractEnvStrs(argv, hub.CmdParser.EnvBrackets.Right)
 		if !ok {
-			self.PrintError(hub, env, matchedCmdPath,
+			self.PrintErr(hub, env, matchedCmdPath,
 				"env definition not close properly '"+strings.Join(argv, " ")+"'")
 		}
 		layerType := EnvLayerSession
@@ -147,18 +169,18 @@ func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, match
 		subCmd := argv[0][0:i]
 		sub := self.GetSub(subCmd)
 		if sub == nil {
-			self.PrintError(hub, env, matchedCmdPath,
+			self.PrintErr(hub, env, matchedCmdPath,
 				"sub-cmd '"+subCmd+"' not found")
 			return false
 		}
-		rest := argv[0][i+len(hub.envBrackets.Left):]
+		rest := argv[0][i+len(hub.CmdParser.EnvBrackets.Left):]
 		subArgv := argv[1:]
 		if len(rest) != 0 {
 			subArgv = append([]string{rest}, subArgv...)
 		}
-		envStrs, subArgv, ok := self.extractEnvStrs(subArgv, hub.envBrackets.Right)
+		envStrs, subArgv, ok := self.extractEnvStrs(subArgv, hub.CmdParser.EnvBrackets.Right)
 		if !ok {
-			self.PrintError(hub, env, matchedCmdPath,
+			self.PrintErr(hub, env, matchedCmdPath,
 				"env definition not close properly '"+strings.Join(subArgv, " ")+"'")
 		}
 		subEnv := env.NewLayerIfTypeNotMatch(EnvLayerMod)
@@ -168,8 +190,17 @@ func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, match
 }
 
 func (self *CmdTree) execute(hub *Hub, env *Env, argv []string, matchedCmdPath []string) bool {
-	hub.Screen.PrintSeperatingHeader(strings.Join(matchedCmdPath, " ") + "(" + strings.Join(argv, " ") + ")")
-	return self.cmd(hub, env, argv)
+	displayPath := cmdRootNodeName
+	if len(matchedCmdPath) != 0 {
+		displayPath = strings.Join(matchedCmdPath, ".")
+	}
+	hub.Screen.PrintSeperatingHeader(displayPath + "(" + strings.Join(argv, " ") + ")")
+	if self.cmd == nil {
+		self.PrintErr(hub, env, matchedCmdPath, "this cmd don't have an executable")
+		return false
+	}
+	// TODO: power cmd
+	return self.cmd.Normal(hub, env, argv)
 }
 
 func (self *CmdTree) extractEnvStrs(argv []string, endingMark string) (env []string, rest []string, ok bool) {
@@ -206,19 +237,25 @@ func (self *CmdTree) extractEnvStrs(argv []string, endingMark string) (env []str
 	return nil, nil, false
 }
 
+type CmdParser struct {
+	EnvBrackets *Brackets
+}
+
 type Hub struct {
-	breaker     *SequenceBreaker
-	global      *Env
-	envBrackets *Brackets
+	SeqParser *SequenceParser
+	CmdParser *CmdParser
+	GlobalEnv   *Env
 	Screen      *Screen
 	Cmds        *CmdTree
 }
 
 func NewHub() *Hub {
 	hub := &Hub{
-		&SequenceBreaker{":", []string{"http", "HTTP"}, []string{"/"}},
+		&SequenceParser{":", []string{"http", "HTTP"}, []string{"/"}},
+		&CmdParser{
+			&Brackets{"{", "}"},
+		},
 		NewEnv(),
-		&Brackets{"{", "}"},
 		&Screen{},
 		NewCmdTree(),
 	}
@@ -227,5 +264,6 @@ func NewHub() *Hub {
 }
 
 func (self *Hub) Execute(argvs []string) bool {
-	return self.Cmds.ExecuteSequence(self, self.global, self.breaker.Break(argvs))
+	inputs := self.SeqParser.Parse(argvs)
+	return self.Cmds.ExecuteSequence(self, self.GlobalEnv, inputs)
 }

@@ -2,7 +2,8 @@
 ```
 ticat
     - cli framework
-        - sequence breaker
+        - sequence parser
+        - command parser
         - command hub
             - register command
             - execute command

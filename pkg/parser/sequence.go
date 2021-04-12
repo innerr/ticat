@@ -1,16 +1,16 @@
-package cli
+package parser
 
 import (
 	"strings"
 )
 
-type SequenceParser struct {
+type sequenceParser struct {
 	Sep            string
 	UnbreakPrefixs []string
 	UnbreakSuffixs []string
 }
 
-func (self *SequenceParser) Normalize(argv []string) []string {
+func (self *sequenceParser) Normalize(argv []string) []string {
 	sep_n := len(self.Sep)
 	res := []string{}
 	for _, arg := range argv {
@@ -52,20 +52,26 @@ func (self *SequenceParser) Normalize(argv []string) []string {
 	return res
 }
 
-func (self *SequenceParser) Parse(argv []string) [][]string {
+func (self *sequenceParser) Parse(argv []string) (parsed [][]string, firstIsGlobal bool) {
 	argv = self.Normalize(argv)
-	res := [][]string{}
+
+	firstIsGlobal = true
+	if len(argv) != 0 && argv[0] == self.Sep {
+		firstIsGlobal = false
+	}
+
+	parsed = [][]string{}
 	curr := []string{}
 	for _, arg := range argv {
 		if arg != self.Sep {
-			curr = append(curr, arg)
+			curr = append(curr, strings.TrimSpace(arg))
 		} else if len(curr) != 0 {
-			res = append(res, curr)
+			parsed = append(parsed, curr)
 			curr = []string{}
 		}
 	}
 	if len(curr) != 0 {
-		res = append(res, curr)
+		parsed = append(parsed, curr)
 	}
-	return res
+	return
 }

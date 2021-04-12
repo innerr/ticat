@@ -1,7 +1,5 @@
 package cli
 
-import ()
-
 func RegisterBuiltins(cmds *CmdTree) {
 	cmds.AddSub("help", "h", "HELP", "H", "?").SetCmd(GlobalHelp)
 
@@ -21,16 +19,16 @@ func GlobalHelp(hub *Hub, env *Env, argv []string) bool {
 }
 
 func LoadLocalEnv(hub *Hub, env *Env, argv []string) bool {
-	print("TODO: load local env")
+	println("TODO: load local env")
 	return true
 }
 
 func LoadLocalMods(hub *Hub, env *Env, argv []string) bool {
-	print("TODO: load local mods")
+	println("TODO: load local mods")
 	return true
 }
 
 func GreetingDev(hub *Hub, env *Env, argv []string) bool {
-	print("Hello World")
+	println("Hello World")
 	return true
 }
