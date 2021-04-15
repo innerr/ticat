@@ -49,9 +49,17 @@ func (self *cmdParser) Parse(tree *cli.CmdTree, input []string) ParsedCmd {
 
 type ParsedCmd []ParsedCmdSeg
 
+func (self ParsedCmd) IsPowerCmd() bool {
+	return len(self) != 0 && self[len(self)-1].IsPowerCmd()
+}
+
 type ParsedCmdSeg struct {
 	Env ParsedEnv
 	Cmd MatchedCmd
+}
+
+func (self ParsedCmdSeg) IsPowerCmd() bool {
+	return self.Cmd.Cmd != nil && self.Cmd.Cmd.IsPowerCmd()
 }
 
 func (self *ParsedCmdSeg) IsEmpty() bool {

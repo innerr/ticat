@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"strings"
+	"github.com/pingcap/ticat/pkg/parser"
 )
 
 const (
@@ -20,16 +21,17 @@ func NewWord(val string, abbrs ...string) *Word {
 }
 
 type Cmd struct {
+	IsPowerCmd bool
 	Normal func(*Hub, *Env, []string) bool
 	Power func(*Hub, *Env, []string) ([]string, bool)
 }
 
 func NewCmd(cmd func(*Hub, *Env, []string) bool) *Cmd {
-	return &Cmd{cmd, nil}
+	return &Cmd{false, cmd, nil}
 }
 
 func NewPowerCmd(cmd func(*Hub, *Env, []string) ([]string, bool)) *Cmd {
-	return &Cmd{nil, cmd}
+	return &Cmd{true, nil, cmd}
 }
 
 type CmdTree struct {
@@ -54,6 +56,10 @@ func (self *CmdTree) Name() string {
 
 func (self *CmdTree) SetPowerCmd(cmd func(*Hub, *Env, []string) ([]string, bool)) {
 	self.cmd = NewPowerCmd(cmd)
+}
+
+func (self *CmdTree) IsPowerCmd() bool {
+	return self.cmd != nil && self.cmd.IsPowerCmd
 }
 
 func (self *CmdTree) path() []string {
@@ -102,6 +108,10 @@ type Brackets struct {
 	Right string
 }
 
+func (self *CmdTree) Execute(flow *parser.ParsedCmds) bool {
+	return false
+}
+
 func (self *CmdTree) ExecuteSequence(hub *Hub, env *Env, argvs [][]string) bool {
 	// TODO: user-cmd log
 	// TODO: executing log
@@ -130,65 +140,6 @@ func (self *CmdTree) PrintErr(hub *Hub, env *Env, matchedCmdPath []string, msg s
 	hub.Screen.Print(errStrPrefix + displayPath + ": " + msg)
 }
 
-// TODO: too slow
-func (self *CmdTree) ExecuteWithEnvStrs(hub *Hub, env *Env, argv []string, matchedCmdPath []string) bool {
-	if len(argv) == 0 {
-		return self.execute(hub, env, argv, matchedCmdPath)
-	}
-	sub := self.GetSub(argv[0])
-	if sub != nil {
-		if strings.HasPrefix(argv[0], hub.CmdParser.EnvBrackets.Left) {
-			self.PrintErr(hub, env, matchedCmdPath,
-				"confused '"+argv[0]+"', could be env-begining or sub-cmd")
-			return false
-		}
-		return sub.ExecuteWithEnvStrs(hub, env, argv[1:], append(matchedCmdPath, argv[0]))
-	}
-
-	i := strings.Index(argv[0], hub.CmdParser.EnvBrackets.Left)
-	if i < 0 {
-		return self.execute(hub, env, argv, matchedCmdPath)
-	}
-	if i == 0 {
-		if len(argv[0]) != len(hub.CmdParser.EnvBrackets.Left) {
-			argv = append([]string{argv[0][len(hub.CmdParser.EnvBrackets.Left):]}, argv[1:]...)
-		}
-		envStrs, newArgv, ok := self.extractEnvStrs(argv, hub.CmdParser.EnvBrackets.Right)
-		if !ok {
-			self.PrintErr(hub, env, matchedCmdPath,
-				"env definition not close properly '"+strings.Join(argv, " ")+"'")
-		}
-		layerType := EnvLayerSession
-		if len(matchedCmdPath) != 0 {
-			layerType = EnvLayerMod
-		}
-		newEnv := env.NewLayerIfTypeNotMatch(layerType)
-		newEnv.ParseAndSet(envStrs)
-		return self.ExecuteWithEnvStrs(hub, newEnv, newArgv, matchedCmdPath)
-	} else {
-		subCmd := argv[0][0:i]
-		sub := self.GetSub(subCmd)
-		if sub == nil {
-			self.PrintErr(hub, env, matchedCmdPath,
-				"sub-cmd '"+subCmd+"' not found")
-			return false
-		}
-		rest := argv[0][i+len(hub.CmdParser.EnvBrackets.Left):]
-		subArgv := argv[1:]
-		if len(rest) != 0 {
-			subArgv = append([]string{rest}, subArgv...)
-		}
-		envStrs, subArgv, ok := self.extractEnvStrs(subArgv, hub.CmdParser.EnvBrackets.Right)
-		if !ok {
-			self.PrintErr(hub, env, matchedCmdPath,
-				"env definition not close properly '"+strings.Join(subArgv, " ")+"'")
-		}
-		subEnv := env.NewLayerIfTypeNotMatch(EnvLayerMod)
-		subEnv.ParseAndSet(envStrs)
-		return sub.ExecuteWithEnvStrs(hub, subEnv, subArgv, append(matchedCmdPath, subCmd))
-	}
-}
-
 func (self *CmdTree) execute(hub *Hub, env *Env, argv []string, matchedCmdPath []string) bool {
 	displayPath := cmdRootNodeName
 	if len(matchedCmdPath) != 0 {
@@ -203,47 +154,7 @@ func (self *CmdTree) execute(hub *Hub, env *Env, argv []string, matchedCmdPath [
 	return self.cmd.Normal(hub, env, argv)
 }
 
-func (self *CmdTree) extractEnvStrs(argv []string, endingMark string) (env []string, rest []string, ok bool) {
-	rest = []string{}
-	ok = true
-	for i, arg := range argv {
-		k := strings.Index(arg, endingMark)
-		if k < 0 {
-			rest = append(rest, arg)
-			continue
-		}
-		if k == 0 {
-			if len(endingMark) == len(arg) {
-				env = argv[i+1:]
-				return
-			} else {
-				rest = append(rest, arg[len(endingMark):])
-				env = append([]string{arg[len(endingMark):]}, argv[i+1:]...)
-				return
-			}
-		} else {
-			if len(endingMark) == len(arg)-k {
-				rest = append(rest, arg[0:k])
-				env = argv[i+1:]
-				return
-			} else {
-				rest = append(rest, arg[0:k])
-				rest = append(rest, arg[k+len(endingMark):])
-				env = argv[i+1:]
-				return
-			}
-		}
-	}
-	return nil, nil, false
-}
-
-type CmdParser struct {
-	EnvBrackets *Brackets
-}
-
 type Hub struct {
-	SeqParser *SequenceParser
-	CmdParser *CmdParser
 	GlobalEnv   *Env
 	Screen      *Screen
 	Cmds        *CmdTree
@@ -251,13 +162,6 @@ type Hub struct {
 
 func NewHub() *Hub {
 	hub := &Hub{
-		&SequenceParser{":", []string{"http", "HTTP"}, []string{"/"}},
-		&CmdParser{
-			&Brackets{"{", "}"},
-		},
-		NewEnv(),
-		&Screen{},
-		NewCmdTree(),
 	}
 	RegisterBuiltins(hub.Cmds)
 	return hub
