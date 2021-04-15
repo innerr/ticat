@@ -38,14 +38,14 @@ func (self *Hub) Execute(preparation string, script ...string) bool {
 
 func (self *hub) executeCmds(flow *parser.ParsedCmds) bool {
 	// If a mod modified the env, the modifications stay in session level
-	env := self.env.NewLayer(EnvLayerTypeSession)
+	env := self.env.NewLayer(EnvLayerSession)
 	if flow.GlobalEnv != nil {
 		flow.GlobalEnv.WriteTo(env)
 	}
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		// The env modifications from script will be popped out after a cmd is executed
-		cmdEnv := env.NewLayer(EnvLayerTypeCmd)
+		cmdEnv := env.NewLayer(EnvLayerCmd)
 		for _, seg := range cmd {
 			if seg.Env != nil {
 				seg.Env.WriteTo(cmdEnv)
@@ -58,33 +58,3 @@ func (self *hub) executeCmds(flow *parser.ParsedCmds) bool {
 	}
 	return true
 }
-
-func (self *hub) executeCmd(flow *parser.ParsedCmd) bool {
-func (self *CmdTree) execute(hub *Hub, env *Env, argv []string, matchedCmdPath []string) bool {
-	displayPath := cmdRootNodeName
-	if len(matchedCmdPath) != 0 {
-		displayPath = strings.Join(matchedCmdPath, ".")
-	}
-	hub.Screen.PrintSeperatingHeader(displayPath + "(" + strings.Join(argv, " ") + ")")
-	if self.cmd == nil {
-		self.PrintErr(hub, env, matchedCmdPath, "this cmd don't have an executable")
-		return false
-	}
-	// TODO: power cmd
-	return self.cmd.Normal(hub, env, argv)
-}
-
-func (self *CmdTree) PrintErr(hub *Hub, env *Env, matchedCmdPath []string, msg string) {
-	displayPath := cmdRootNodeName
-	if len(matchedCmdPath) != 0 {
-		displayPath = strings.Join(matchedCmdPath, ".")
-	}
-	hub.Screen.Print(errStrPrefix + displayPath + ": " + msg)
-}
-
-
-const (
-	cmdRootNodeName = "<root>"
-	errStrPrefix    = "[ERR] "
-)
-

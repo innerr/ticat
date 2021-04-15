@@ -71,5 +71,13 @@ func (self *Env) Set(name string, val *EnvVal) *EnvVal {
 	return old
 }
 
-func (self *Env) ParseAndSet(strs []string) {
+type Word struct {
+	Val   string
+	Abbrs []string
 }
+
+func NewWord(val string, abbrs ...string) *Word {
+	return &Word{val, abbrs}
+}
+
+

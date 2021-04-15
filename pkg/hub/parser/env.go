@@ -88,6 +88,12 @@ func (self ParsedEnv) Equal(x ParsedEnv) bool {
 	return true
 }
 
+func (self ParsedEnv) WriteTo(env *cli.Env) {
+	for k, v := range self {
+		env.Set(k, cli.EnvVal{v, nil})
+	}
+}
+
 func (self *envParser) findLeft(input []string) (rest []string, found bool, again bool) {
 	rest = tryTrim(input)
 	found = false
