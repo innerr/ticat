@@ -6,9 +6,10 @@ import (
 )
 
 type cmdParser struct {
-	envParser *envParser
-	cmdSep string
-	cmdAlterSeps string
+	envParser       *envParser
+	cmdSep          string
+	cmdAlterSeps    string
+	cmdSpaces       string
 	cmdRootNodeName string
 }
 
@@ -30,16 +31,18 @@ func (self *cmdParser) Parse(tree *CmdTree, input []string) ParsedCmd {
 			}
 		} else if seg.Type == parsedSegTypeCmd {
 			matchedCmd := seg.Val.(MatchedCmd)
-			if !curr.IsEmpty() {
+			if !curr.isEmpty() {
 				parsed = append(parsed, curr)
 				curr = ParsedCmdSeg{nil, matchedCmd}
 			} else {
 				curr.Cmd = matchedCmd
 			}
 			path += matchedCmd.Cmd.Name() + self.cmdSep
+		} else {
+			// ignore parsedSegTypeSep
 		}
 	}
-	if !curr.IsEmpty() {
+	if !curr.isEmpty() {
 		parsed = append(parsed, curr)
 	}
 	return parsed
@@ -60,13 +63,13 @@ func (self ParsedCmdSeg) IsPowerCmd() bool {
 	return self.Cmd.Cmd != nil && self.Cmd.Cmd.IsPowerCmd()
 }
 
-func (self *ParsedCmdSeg) IsEmpty() bool {
+func (self *ParsedCmdSeg) isEmpty() bool {
 	return self.Env == nil && len(self.Cmd.Name) == 0 && self.Cmd.Cmd == nil
 }
 
 type MatchedCmd struct {
 	Name string
-	Cmd *CmdTree
+	Cmd  *CmdTree
 }
 
 func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
@@ -80,7 +83,7 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 		var succeeded bool
 		env, input, succeeded, err = self.envParser.TryParse(curr, input)
 		if err != nil {
-			self.err(matchedCmdPath, "unmatched env brackets '" + strings.Join(input, " ") + "'")
+			self.err(matchedCmdPath, "unmatched env brackets '"+strings.Join(input, " ")+"'")
 			break
 		}
 		if succeeded {
@@ -94,20 +97,39 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 			break
 		}
 
-		candidate := strings.TrimLeft(input[0], self.cmdAlterSeps)
-		subInput := input[1:]
-		i := strings.IndexAny(candidate, self.cmdAlterSeps)
-		if i >= 0 {
-			subInput = append([]string{strings.TrimLeft(candidate[i+1:], self.cmdAlterSeps)}, subInput...)
-			candidate = candidate[0:i]
+		i := strings.IndexAny(input[0], self.cmdAlterSeps)
+		if i == 0 {
+			if len(parsed) != 0 && parsed[len(parsed)-1].Type != parsedSegTypeSep {
+				parsed = append(parsed, parsedSeg{parsedSegTypeSep, nil})
+			}
+			if len(input[0]) == 1 {
+				input = input[1:]
+			} else {
+				input = append([]string{input[0][1:]}, input[1:]...)
+			}
+			continue
+		} else if i > 0 {
+			head := input[0][0:i]
+			rest := strings.TrimLeft(input[0][i+1:], self.cmdAlterSeps)
+			input = input[1:]
+			var lead []string
+			if len(head) != 0 {
+				lead = append(lead, head)
+			}
+			lead = append(lead, self.cmdSep)
+			if len(rest) != 0 {
+				lead = append(lead, rest)
+			}
+			input = append(lead, input...)
+			continue
 		}
 
-		sub := curr.GetSub(candidate)
+		sub := curr.GetSub(input[0])
 		if sub != nil {
 			curr = sub
-			parsed = append(parsed, parsedSeg{parsedSegTypeCmd, MatchedCmd{candidate, sub}})
-			input = subInput
-			matchedCmdPath = append(matchedCmdPath, candidate)
+			parsed = append(parsed, parsedSeg{parsedSegTypeCmd, MatchedCmd{input[0], sub}})
+			matchedCmdPath = append(matchedCmdPath, input[0])
+			input = input[1:]
 			continue
 		}
 
@@ -116,7 +138,7 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 			parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
 		}
 		if len(input) != 0 {
-			self.err(matchedCmdPath, "unknow input '" + strings.Join(input, " ") + "'")
+			self.err(matchedCmdPath, "unknow input '"+strings.Join(input, ",")+"'")
 		}
 		break
 	}
@@ -137,6 +159,7 @@ type parsedSegType uint
 const (
 	parsedSegTypeEnv parsedSegType = iota
 	parsedSegTypeCmd
+	parsedSegTypeSep
 )
 
 type parsedSeg struct {

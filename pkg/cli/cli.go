@@ -5,10 +5,10 @@ func Execute(preparation string, script ...string) bool {
 }
 
 type Cli struct {
-	GlobalEnv   *Env
-	Screen      *Screen
-	Cmds        *CmdTree
-	Parser      *Parser
+	GlobalEnv *Env
+	Screen    *Screen
+	Cmds      *CmdTree
+	Parser    *Parser
 }
 
 func NewCli() *Cli {
@@ -25,8 +25,32 @@ func NewCli() *Cli {
 func (self *Cli) Execute(preparation string, script ...string) bool {
 	prep := self.Parser.Parse(self.Cmds, preparation)
 	flow := self.Parser.Parse(self.Cmds, script...)
-	flow.InsertPreparation(prep)
+	self.insertPreparation(flow, prep)
 	return self.executeCmds(flow)
+}
+
+func (self *Cli) insertPreparation(cmds *ParsedCmds, prep *ParsedCmds) {
+	if prep.GlobalEnv != nil {
+		cmds.GlobalEnv.Merge(prep.GlobalEnv)
+	}
+
+	hasPowerCmd := false
+	for i, cmd := range cmds.Cmds {
+		if cmd.IsPowerCmd() {
+			hasPowerCmd = true
+			continue
+		}
+		if hasPowerCmd {
+			cmds.Cmds = append(append(cmds.Cmds[:i], prep.Cmds...), cmds.Cmds[i:]...)
+			return
+		}
+	}
+
+	if !hasPowerCmd {
+		cmds.Cmds = append(prep.Cmds, cmds.Cmds...)
+	} else {
+		cmds.Cmds = append(cmds.Cmds, prep.Cmds...)
+	}
 }
 
 func (self *Cli) executeCmds(flow *ParsedCmds) bool {

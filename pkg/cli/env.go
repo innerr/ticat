@@ -79,5 +79,3 @@ type Word struct {
 func NewWord(val string, abbrs ...string) *Word {
 	return &Word{val, abbrs}
 }
-
-

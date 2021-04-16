@@ -10,8 +10,8 @@ type PowerCmd func(*Cli, *Env, []ParsedCmd) ([]ParsedCmd, bool)
 
 type Cmd struct {
 	IsPowerCmd bool
-	Normal NormalCmd
-	Power PowerCmd
+	Normal     NormalCmd
+	Power      PowerCmd
 }
 
 func NewCmd(cmd NormalCmd) *Cmd {
@@ -104,5 +104,5 @@ func (self *CmdTree) GetSub(name string) *CmdTree {
 
 const (
 	cmdRootNodeName string = "<root>"
-	errStrPrefix string = "[ERR] "
+	errStrPrefix    string = "[ERR] "
 )

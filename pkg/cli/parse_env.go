@@ -57,13 +57,12 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 type ParsedEnv map[string]string
 
 func (self ParsedEnv) AddPrefix(prefix string) {
-	// TODO: slow
 	var keys []string
 	for k, _ := range self {
 		keys = append(keys, k)
 	}
 	for _, k := range keys {
-		self[prefix + k] = self[k]
+		self[prefix+k] = self[k]
 		delete(self, k)
 	}
 }

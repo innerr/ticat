@@ -5,9 +5,9 @@ import (
 )
 
 func TestSequenceParserNormalize(t *testing.T) {
-	assert_eq := func(a []string, b []string) {
+	assert_eq := func(input []string, a []string, b []string) {
 		fatal := func() {
-			t.Fatalf("%#v != %#v\n", a, b)
+			t.Fatalf("%#v: %#v != %#v\n", input, a, b)
 		}
 		if len(a) != len(b) {
 			fatal()
@@ -21,7 +21,7 @@ func TestSequenceParserNormalize(t *testing.T) {
 
 	parser := sequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
 	test := func(a []string, b []string) {
-		assert_eq(parser.Normalize(a), b)
+		assert_eq(a, parser.Normalize(a), b)
 	}
 
 	test([]string{"aa"}, []string{"aa"})
@@ -97,6 +97,7 @@ func TestSequenceParserBreak(t *testing.T) {
 	test([]string{"aa"}, [][]string{[]string{"aa"}})
 	test([]string{"aa", "bb"}, [][]string{[]string{"aa", "bb"}})
 	test([]string{"aa", "bb", "cc"}, [][]string{[]string{"aa", "bb", "cc"}})
+	test([]string{"  aa  ", "  bb  ", "  cc  "}, [][]string{[]string{"aa", "bb", "cc"}})
 
 	test([]string{":aa"}, [][]string{[]string{"aa"}})
 	test([]string{":aa", "bb", "cc"}, [][]string{[]string{"aa", "bb", "cc"}})
@@ -105,16 +106,19 @@ func TestSequenceParserBreak(t *testing.T) {
 	test([]string{"aa", "bb:", "cc"}, [][]string{[]string{"aa", "bb"}, []string{"cc"}})
 	test([]string{"aa", "bb", ":cc"}, [][]string{[]string{"aa", "bb"}, []string{"cc"}})
 	test([]string{"aa", "bb", "cc:"}, [][]string{[]string{"aa", "bb", "cc"}})
+	test([]string{"  aa  ", "  bb  ", "  cc  :  "}, [][]string{[]string{"aa", "bb", "cc"}})
 
 	test([]string{"a:x"}, [][]string{[]string{"a"}, []string{"x"}})
 	test([]string{"a:x", "bb", "cc"}, [][]string{[]string{"a"}, []string{"x", "bb", "cc"}})
 	test([]string{"aa", "b:x", "cc"}, [][]string{[]string{"aa", "b"}, []string{"x", "cc"}})
 	test([]string{"aa", "bb", "c:x"}, [][]string{[]string{"aa", "bb", "c"}, []string{"x"}})
+	test([]string{"  aa  ", "  bb  ", "  c  :  x  "}, [][]string{[]string{"aa", "bb", "c"}, []string{"x"}})
 
 	test([]string{"aa", ":", "bb"}, [][]string{[]string{"aa"}, []string{"bb"}})
 	test([]string{"aa", ":", ":", "bb"}, [][]string{[]string{"aa"}, []string{"bb"}})
 	test([]string{"aa", "::", "bb"}, [][]string{[]string{"aa"}, []string{"bb"}})
 	test([]string{"aa:", "::", ":bb"}, [][]string{[]string{"aa"}, []string{"bb"}})
+	test([]string{"  aa  :  ", "  :  :  ", "  :  bb  "}, [][]string{[]string{"aa"}, []string{"bb"}})
 
 	test([]string{"::aa"}, [][]string{[]string{"aa"}})
 	test([]string{"::aa", "bb", "cc"}, [][]string{[]string{"aa", "bb", "cc"}})
@@ -123,17 +127,21 @@ func TestSequenceParserBreak(t *testing.T) {
 	test([]string{"aa", "bb::", "cc"}, [][]string{[]string{"aa", "bb"}, []string{"cc"}})
 	test([]string{"aa", "bb", "::cc"}, [][]string{[]string{"aa", "bb"}, []string{"cc"}})
 	test([]string{"aa", "bb", "cc::"}, [][]string{[]string{"aa", "bb", "cc"}})
+	test([]string{"  aa  ", "  bb  ", "  cc  :  :  "}, [][]string{[]string{"aa", "bb", "cc"}})
 
 	test([]string{"aa:", ":bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
 	test([]string{"aa::", ":bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
 	test([]string{"aa:", "::bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
+	test([]string{"  aa  :  ", "  :  :  bb  ", "  cc  "}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
 
 	test([]string{"aa:", ":", ":bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
 	test([]string{"aa::", ":", ":bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
 	test([]string{"aa:", ":", "::bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
+	test([]string{"  aa  :  ", "  :  ", "  :  :  bb  ", "  cc  "}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
 
 	test([]string{"http:?"}, [][]string{[]string{"http:?"}})
 	test([]string{"HTTP:?"}, [][]string{[]string{"HTTP:?"}})
 	test([]string{"HTTP://"}, [][]string{[]string{"HTTP://"}})
 	test([]string{"Http:?"}, [][]string{[]string{"Http"}, []string{"?"}})
+	test([]string{"  Http:?  "}, [][]string{[]string{"Http"}, []string{"?"}})
 }

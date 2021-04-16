@@ -5,23 +5,17 @@ type Parser struct {
 	cmdParser *cmdParser
 }
 
-func NewParser() *Parser {
-	return &Parser{
-		&sequenceParser{
-			":",
-			[]string{"http", "HTTP"},
-			[]string{"/"},
-		},
-		&cmdParser{
-			&envParser{&brackets{"{", "}"}},
-			".",
-			"\t\n\r./ ",
-			"<root>",
-		},
-	}
-}
-
-// A simple implement of command line parsing, lack of char escaping
+// A very simple implement of command line parsing, lack of char escaping
+//
+//  ParsedCmds                - A list of cmd
+//      ParsedEnv             - Global env, map[string]string
+//      []ParsedCmd           - Full path of cmd
+//          []ParsedCmdSeg    - A path = a segment list
+//              MatchedCmd    - A segment
+//                  Name      - string
+//                  *CmdTree  - The executable function
+//              ParsedEnv     - The function's env, include argv
+//
 func (self *Parser) Parse(tree *CmdTree, input ...string) *ParsedCmds {
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
 	cmds := ParsedCmds{nil, nil}
@@ -35,31 +29,24 @@ func (self *Parser) Parse(tree *CmdTree, input ...string) *ParsedCmds {
 	return &cmds
 }
 
-type ParsedCmds struct {
-	GlobalEnv ParsedEnv
-	Cmds []ParsedCmd
+func NewParser() *Parser {
+	return &Parser{
+		&sequenceParser{
+			":",
+			[]string{"http", "HTTP"},
+			[]string{"/"},
+		},
+		&cmdParser{
+			&envParser{&brackets{"{", "}"}},
+			".",
+			"\t\n\r ./",
+			"\t\n\r ",
+			"<root>",
+		},
+	}
 }
 
-func (self *ParsedCmds) InsertPreparation(prep *ParsedCmds) {
-	if prep.GlobalEnv != nil {
-		self.GlobalEnv.Merge(prep.GlobalEnv)
-	}
-
-	hasPowerCmd := false
-	for i, cmd := range self.Cmds {
-		if cmd.IsPowerCmd() {
-			hasPowerCmd = true
-			continue
-		}
-		if hasPowerCmd {
-			self.Cmds = append(append(self.Cmds[:i], prep.Cmds...), self.Cmds[i:]...)
-			return
-		}
-	}
-
-	if !hasPowerCmd {
-		self.Cmds = append(prep.Cmds, self.Cmds...)
-	} else {
-		self.Cmds = append(self.Cmds, prep.Cmds...)
-	}
+type ParsedCmds struct {
+	GlobalEnv ParsedEnv
+	Cmds      []ParsedCmd
 }

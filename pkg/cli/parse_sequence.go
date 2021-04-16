@@ -64,7 +64,10 @@ func (self *sequenceParser) Parse(argv []string) (parsed [][]string, firstIsGlob
 	curr := []string{}
 	for _, arg := range argv {
 		if arg != self.Sep {
-			curr = append(curr, strings.TrimSpace(arg))
+			arg = strings.TrimSpace(arg)
+			if len(arg) != 0 {
+				curr = append(curr, arg)
+			}
 		} else if len(curr) != 0 {
 			parsed = append(parsed, curr)
 			curr = []string{}
