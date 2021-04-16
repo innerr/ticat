@@ -1,17 +1,15 @@
-package parser
+package cli
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/pingcap/ticat/pkg/cli"
 )
 
 type envParser struct {
 	brackets *brackets
 }
 
-func (self *envParser) TryParse(cmd *cli.CmdTree, input []string) (env ParsedEnv, rest []string, found bool, err error) {
+func (self *envParser) TryParse(cmd *CmdTree, input []string) (env ParsedEnv, rest []string, found bool, err error) {
 	var again bool
 	rest, found, again = self.findLeft(input)
 	if again {
@@ -36,7 +34,7 @@ func (self *envParser) TryParse(cmd *cli.CmdTree, input []string) (env ParsedEnv
 	return env, tryTrim(rest), true, nil
 }
 
-func (self *envParser) TryParseRaw(cmd *cli.CmdTree, input []string) (env ParsedEnv, rest []string) {
+func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv, rest []string) {
 	// TODO: more forms
 	// TODO: use cmd info
 	rest = input
@@ -88,9 +86,9 @@ func (self ParsedEnv) Equal(x ParsedEnv) bool {
 	return true
 }
 
-func (self ParsedEnv) WriteTo(env *cli.Env) {
+func (self ParsedEnv) WriteTo(env *Env) {
 	for k, v := range self {
-		env.Set(k, cli.EnvVal{v, nil})
+		env.Set(k, EnvVal{v, nil})
 	}
 }
 

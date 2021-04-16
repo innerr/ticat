@@ -1,10 +1,8 @@
-package parser
+package cli
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/pingcap/ticat/pkg/cli"
 )
 
 type cmdParser struct {
@@ -14,7 +12,7 @@ type cmdParser struct {
 	cmdRootNodeName string
 }
 
-func (self *cmdParser) Parse(tree *cli.CmdTree, input []string) ParsedCmd {
+func (self *cmdParser) Parse(tree *CmdTree, input []string) ParsedCmd {
 	parsed := ParsedCmd{}
 	segs := self.parse(tree, input)
 	curr := ParsedCmdSeg{nil, MatchedCmd{}}
@@ -68,10 +66,10 @@ func (self *ParsedCmdSeg) IsEmpty() bool {
 
 type MatchedCmd struct {
 	Name string
-	Cmd *cli.CmdTree
+	Cmd *CmdTree
 }
 
-func (self *cmdParser) parse(tree *cli.CmdTree, input []string) []parsedSeg {
+func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 	var parsed []parsedSeg
 	var matchedCmdPath []string
 	var curr = tree

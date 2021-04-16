@@ -1,14 +1,12 @@
-package parser
+package cli
 
 import (
 	"fmt"
 	"testing"
-
-	"github.com/pingcap/ticat/pkg/cli"
 )
 
 func TestEnvParserTryParseRaw(t *testing.T) {
-	root := cli.NewCmdTree()
+	root := NewCmdTree()
 	parser := &envParser{&brackets{"{", "}"}}
 
 	test := func(a []string, bEnv ParsedEnv, bRest []string) {
@@ -93,7 +91,7 @@ func TestEnvParserFindRight(t *testing.T) {
 }
 
 func TestEnvParserTryParse(t *testing.T) {
-	root := cli.NewCmdTree()
+	root := NewCmdTree()
 	parser := &envParser{&brackets{"{", "}"}}
 
 	test := func(a []string, bEnv ParsedEnv, bRest []string, bFound bool, bErr error) {

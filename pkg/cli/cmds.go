@@ -3,20 +3,22 @@ package cli
 import (
 	"fmt"
 	"strings"
-	"github.com/pingcap/ticat/pkg/parser"
 )
+
+type NormalCmd func(*Cli, *Env) bool
+type PowerCmd func(*Cli, *Env, []ParsedCmd) ([]ParsedCmd, bool)
 
 type Cmd struct {
 	IsPowerCmd bool
-	Normal func(*Hub, *Env, []string) bool
-	Power func(*Hub, *Env, []string) ([]string, bool)
+	Normal NormalCmd
+	Power PowerCmd
 }
 
-func NewCmd(cmd func(*Hub, *Env, []string) bool) *Cmd {
+func NewCmd(cmd NormalCmd) *Cmd {
 	return &Cmd{false, cmd, nil}
 }
 
-func NewPowerCmd(cmd func(*Hub, *Env, []string) ([]string, bool)) *Cmd {
+func NewPowerCmd(cmd PowerCmd) *Cmd {
 	return &Cmd{true, nil, cmd}
 }
 
@@ -32,7 +34,7 @@ func NewCmdTree() *CmdTree {
 	return &CmdTree{"", nil, map[string]*CmdTree{}, nil, map[string]string{}}
 }
 
-func (self *CmdTree) SetCmd(cmd func(*Hub, *Env, []string) bool) {
+func (self *CmdTree) SetCmd(cmd NormalCmd) {
 	self.cmd = NewCmd(cmd)
 }
 
@@ -40,12 +42,23 @@ func (self *CmdTree) Name() string {
 	return self.name
 }
 
-func (self *CmdTree) SetPowerCmd(cmd func(*Hub, *Env, []string) ([]string, bool)) {
+func (self *CmdTree) SetPowerCmd(cmd PowerCmd) {
 	self.cmd = NewPowerCmd(cmd)
 }
 
 func (self *CmdTree) IsPowerCmd() bool {
 	return self.cmd != nil && self.cmd.IsPowerCmd
+}
+
+func (self *CmdTree) Execute(cli *Cli, env *Env, cmds []ParsedCmd) ([]ParsedCmd, bool) {
+	if self.cmd == nil {
+		return cmds, true
+	}
+	if self.cmd.IsPowerCmd {
+		return self.cmd.Power(cli, env, cmds)
+	} else {
+		return cmds, self.cmd.Normal(cli, env)
+	}
 }
 
 func (self *CmdTree) path() []string {
@@ -88,3 +101,8 @@ func (self *CmdTree) GetSub(name string) *CmdTree {
 	sub, _ := self.sub[name]
 	return sub
 }
+
+const (
+	cmdRootNodeName string = "<root>"
+	errStrPrefix string = "[ERR] "
+)

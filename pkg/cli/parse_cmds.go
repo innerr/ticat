@@ -1,8 +1,4 @@
-package parser
-
-import (
-	"github.com/pingcap/ticat/pkg/cli"
-)
+package cli
 
 type Parser struct {
 	seqParser *sequenceParser
@@ -26,7 +22,7 @@ func NewParser() *Parser {
 }
 
 // A simple implement of command line parsing, lack of char escaping
-func (self *Parser) Parse(tree *cli.CmdTree, input ...string) *ParsedCmds {
+func (self *Parser) Parse(tree *CmdTree, input ...string) *ParsedCmds {
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
 	cmds := ParsedCmds{nil, nil}
 	for _, seq := range seqs {

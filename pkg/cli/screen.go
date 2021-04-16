@@ -7,6 +7,10 @@ import (
 type Screen struct {
 }
 
+func NewScreen() *Screen {
+	return &Screen{}
+}
+
 func (self *Screen) PrintSeperatingHeader(text string) {
 	fmt.Println("================")
 	fmt.Printf("=> %s\n", text)

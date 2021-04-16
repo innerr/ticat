@@ -1,9 +1,7 @@
-package parser
+package cli
 
 import (
 	"testing"
-
-	"github.com/pingcap/ticat/pkg/cli"
 )
 
 func TestCmdParserParseSeg(t *testing.T) {
@@ -34,7 +32,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 		}
 	}
 
-	root := cli.NewCmdTree()
+	root := NewCmdTree()
 	l2:= root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
@@ -101,7 +99,7 @@ func TestCmdParserParse(t *testing.T) {
 		}
 	}
 
-	root := cli.NewCmdTree()
+	root := NewCmdTree()
 	l2:= root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 

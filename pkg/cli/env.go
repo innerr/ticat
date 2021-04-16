@@ -34,13 +34,13 @@ type EnvVal struct {
 }
 
 type Env struct {
-	pairs  map[string]*EnvVal
+	pairs  map[string]EnvVal
 	parent *Env
 	Type   EnvLayerType
 }
 
 func NewEnv() *Env {
-	return &Env{map[string]*EnvVal{}, nil, EnvLayerDefault}
+	return &Env{map[string]EnvVal{}, nil, EnvLayerDefault}
 }
 
 func (self *Env) NewLayer(tp EnvLayerType) *Env {
@@ -57,7 +57,7 @@ func (self *Env) NewLayerIfTypeNotMatch(tp EnvLayerType) *Env {
 	return self
 }
 
-func (self *Env) Get(name string) *EnvVal {
+func (self *Env) Get(name string) EnvVal {
 	val, ok := self.pairs[name]
 	if !ok && self.parent != nil {
 		return self.parent.Get(name)
@@ -65,7 +65,7 @@ func (self *Env) Get(name string) *EnvVal {
 	return val
 }
 
-func (self *Env) Set(name string, val *EnvVal) *EnvVal {
+func (self *Env) Set(name string, val EnvVal) EnvVal {
 	old, _ := self.pairs[name]
 	self.pairs[name] = val
 	return old
