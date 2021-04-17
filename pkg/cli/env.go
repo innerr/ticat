@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 )
 
 type EnvLayerType uint
@@ -28,11 +29,6 @@ func EnvLayerName(tp EnvLayerType) string {
 	}
 }
 
-type EnvVal struct {
-	Raw string
-	Val interface{}
-}
-
 type Env struct {
 	pairs  map[string]EnvVal
 	parent *Env
@@ -57,7 +53,7 @@ func (self *Env) NewLayerIfTypeNotMatch(tp EnvLayerType) *Env {
 	return self
 }
 
-func (self *Env) Get(name string) EnvVal {
+func (self Env) Get(name string) EnvVal {
 	val, ok := self.pairs[name]
 	if !ok && self.parent != nil {
 		return self.parent.Get(name)
@@ -65,9 +61,9 @@ func (self *Env) Get(name string) EnvVal {
 	return val
 }
 
-func (self *Env) Set(name string, val EnvVal) EnvVal {
+func (self *Env) Set(name string, val string) EnvVal {
 	old, _ := self.pairs[name]
-	self.pairs[name] = val
+	self.pairs[name] = EnvVal{val, nil}
 	return old
 }
 
@@ -78,4 +74,21 @@ type Word struct {
 
 func NewWord(val string, abbrs ...string) *Word {
 	return &Word{val, abbrs}
+}
+
+type EnvVal struct {
+	Raw string
+	ValCache interface{}
+}
+
+func (self *EnvVal) SetInt(val int) {
+	self.Raw = fmt.Sprintf("%d", val)
+}
+
+func (self EnvVal) GetInt() int {
+	val, err := strconv.ParseInt(self.Raw, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return int(val)
 }

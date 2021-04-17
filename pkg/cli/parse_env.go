@@ -87,7 +87,7 @@ func (self ParsedEnv) Equal(x ParsedEnv) bool {
 
 func (self ParsedEnv) WriteTo(env *Env) {
 	for k, v := range self {
-		env.Set(k, EnvVal{v, nil})
+		env.Set(k, v)
 	}
 }
 

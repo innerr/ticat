@@ -46,6 +46,10 @@ func NewParser() *Parser {
 	}
 }
 
+func (self *Parser) CmdPathSep() string {
+	return self.cmdParser.cmdSep
+}
+
 type ParsedCmds struct {
 	GlobalEnv ParsedEnv
 	Cmds      []ParsedCmd

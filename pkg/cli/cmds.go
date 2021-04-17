@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-type NormalCmd func(*Cli, *Env) bool
-type PowerCmd func(*Cli, *Env, []ParsedCmd) ([]ParsedCmd, bool)
+type NormalCmd func(cli *Cli, env *Env) (succeeded bool)
+type PowerCmd func(cli *Cli, env *Env, cmds[]ParsedCmd, currCmdIdx int) (modified []ParsedCmd, succeeded bool)
 
 type Cmd struct {
 	IsPowerCmd bool
@@ -50,12 +50,12 @@ func (self *CmdTree) IsPowerCmd() bool {
 	return self.cmd != nil && self.cmd.IsPowerCmd
 }
 
-func (self *CmdTree) Execute(cli *Cli, env *Env, cmds []ParsedCmd) ([]ParsedCmd, bool) {
+func (self *CmdTree) Execute(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, bool) {
 	if self.cmd == nil {
 		return cmds, true
 	}
 	if self.cmd.IsPowerCmd {
-		return self.cmd.Power(cli, env, cmds)
+		return self.cmd.Power(cli, env, cmds, currCmdIdx)
 	} else {
 		return cmds, self.cmd.Normal(cli, env)
 	}

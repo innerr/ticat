@@ -54,28 +54,38 @@ func (self *Cli) insertPreparation(cmds *ParsedCmds, prep *ParsedCmds) {
 }
 
 func (self *Cli) executeCmds(flow *ParsedCmds) bool {
-	// If a mod modified the env, the modifications stay in session level
 	env := self.GlobalEnv.NewLayer(EnvLayerSession)
 	if flow.GlobalEnv != nil {
 		flow.GlobalEnv.WriteTo(env)
 	}
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
-		// The env modifications from script will be popped out after a cmd is executed
-		cmdEnv := env.NewLayer(EnvLayerMod)
-		for _, seg := range cmd {
-			if seg.Env != nil {
-				seg.Env.WriteTo(cmdEnv)
-			}
+		modified, succeeded := self.executeCmd(cmd, env, flow.Cmds, i)
+		if !succeeded {
+			return false
 		}
-		seg := cmd[len(cmd)-1]
-		if seg.Cmd.Cmd != nil {
-			modified, succeeded := seg.Cmd.Cmd.Execute(self, env, flow.Cmds)
-			if !succeeded {
-				return false
-			}
-			flow.Cmds = modified
-		}
+		flow.Cmds = modified
 	}
 	return true
+}
+
+func (self *Cli) executeCmd(cmd ParsedCmd, env *Env, cmds []ParsedCmd, currCmdIdx int) (modified []ParsedCmd, succeeded bool) {
+	sep := self.Parser.CmdPathSep()
+	// The env modifications from script will be popped out after a cmd is executed
+	// (TODO) But if a mod modified the env, the modifications stay in session level
+	cmdEnv := env.NewLayer(EnvLayerMod)
+	for _, seg := range cmd {
+		if seg.Env != nil {
+			seg.Env.WriteTo(cmdEnv)
+		}
+	}
+	printCmdStack(self.Screen, cmd, cmdEnv, cmds, currCmdIdx, sep)
+	last := cmd[len(cmd)-1]
+	if last.Cmd.Cmd != nil {
+		modified, succeeded = last.Cmd.Cmd.Execute(self, env, cmds, currCmdIdx)
+	} else {
+		modified, succeeded = cmds, false
+	}
+	printCmdResult(self.Screen, cmd, cmdEnv, succeeded, cmds, currCmdIdx, sep)
+	return
 }

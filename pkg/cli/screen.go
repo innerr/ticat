@@ -11,12 +11,6 @@ func NewScreen() *Screen {
 	return &Screen{}
 }
 
-func (self *Screen) PrintSeperatingHeader(text string) {
-	fmt.Println("================")
-	fmt.Printf("=> %s\n", text)
-	fmt.Println("================")
-}
-
-func (self *Screen) Print(text string) {
+func (self *Screen) Println(text string) {
 	fmt.Println(text)
 }
