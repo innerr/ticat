@@ -19,6 +19,7 @@ func NewCli() *Cli {
 		NewParser(),
 	}
 	RegisterBuiltins(cli.Cmds)
+	LoadBuiltinEnv(cli.GlobalEnv)
 	return cli
 }
 
@@ -79,6 +80,7 @@ func (self *Cli) executeCmd(cmd ParsedCmd, env *Env, cmds []ParsedCmd, currCmdId
 			seg.Env.WriteTo(cmdEnv)
 		}
 	}
+
 	printCmdStack(self.Screen, cmd, cmdEnv, cmds, currCmdIdx, sep)
 	last := cmd[len(cmd)-1]
 	if last.Cmd.Cmd != nil {

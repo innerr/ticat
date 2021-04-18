@@ -6,20 +6,21 @@ import (
 )
 
 type NormalCmd func(cli *Cli, env *Env) (succeeded bool)
-type PowerCmd func(cli *Cli, env *Env, cmds[]ParsedCmd, currCmdIdx int) (modified []ParsedCmd, succeeded bool)
+type PowerCmd func(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) (modified []ParsedCmd, succeeded bool)
 
 type Cmd struct {
 	IsPowerCmd bool
+	Quiet      bool
 	Normal     NormalCmd
 	Power      PowerCmd
 }
 
-func NewCmd(cmd NormalCmd) *Cmd {
-	return &Cmd{false, cmd, nil}
+func NewCmd(cmd NormalCmd, quiet bool) *Cmd {
+	return &Cmd{false, quiet, cmd, nil}
 }
 
-func NewPowerCmd(cmd PowerCmd) *Cmd {
-	return &Cmd{true, nil, cmd}
+func NewPowerCmd(cmd PowerCmd, quiet bool) *Cmd {
+	return &Cmd{true, quiet, nil, cmd}
 }
 
 type CmdTree struct {
@@ -35,15 +36,27 @@ func NewCmdTree() *CmdTree {
 }
 
 func (self *CmdTree) SetCmd(cmd NormalCmd) {
-	self.cmd = NewCmd(cmd)
+	self.cmd = NewCmd(cmd, false)
+}
+
+func (self *CmdTree) SetQuietCmd(cmd NormalCmd) {
+	self.cmd = NewCmd(cmd, true)
+}
+
+func (self *CmdTree) SetPowerCmd(cmd PowerCmd) {
+	self.cmd = NewPowerCmd(cmd, false)
+}
+
+func (self *CmdTree) SetQuietPowerCmd(cmd PowerCmd) {
+	self.cmd = NewPowerCmd(cmd, true)
 }
 
 func (self *CmdTree) Name() string {
 	return self.name
 }
 
-func (self *CmdTree) SetPowerCmd(cmd PowerCmd) {
-	self.cmd = NewPowerCmd(cmd)
+func (self *CmdTree) IsQuiet() bool {
+	return self.cmd != nil && self.cmd.Quiet
 }
 
 func (self *CmdTree) IsPowerCmd() bool {
