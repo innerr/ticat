@@ -2,11 +2,13 @@ package cli
 
 import (
 	"fmt"
-	"time"
 	"strings"
+	"time"
 )
 
-func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool, cmds []ParsedCmd, currCmdIdx int, sep string) {
+func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
+	elapsed time.Duration, cmds []ParsedCmd, currCmdIdx int, sep string) {
+
 	if !env.Get("runtime.display").GetBool() {
 		return
 	}
@@ -14,7 +16,7 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool, cmd
 		return
 	}
 	cmds, currCmdIdx = filterBuiltins(env, cmds, currCmdIdx)
-	if len(cmds) == 0 {
+	if len(cmds) <= 1 {
 		return
 	}
 
@@ -28,25 +30,21 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool, cmd
 		resStr = " ✘" //"EE"
 	}
 
-	timeStrOrigin := time.Now().Format("01-02 15:04:05")
-
-	var timeStr string
-	if currCmdIdx >= len(cmds) {
-		timeStr = timeStrOrigin + " "
-	}
+	timeStr := time.Now().Format("01-02 15:04:05")
 
 	printRealname := env.Get("runtime.display.mod.realname").GetBool()
 	line := " " + getCmdPath(cmd, sep, printRealname)
-	line = "│" + " " + resStr + padRight(line, " ", width - len(timeStr) - 2 - 3) + timeStr + "│"
+	durStr := formatDuration(elapsed)
+	line = "│" + " " + resStr + padRight(line, " ", width-len(durStr)-2-2-2) + durStr + " " + "│"
 
-	screen.Println("┌" + strings.Repeat("─", width - 2) + "┐")
+	screen.Println("┌" + strings.Repeat("─", width-2) + "┐")
 	screen.Println(line)
-	screen.Println("└" + strings.Repeat("─", width - 2) + "┘")
+	screen.Println("└" + strings.Repeat("─", width-2) + "┘")
 
-	if currCmdIdx >= len(cmds) - 1 || !succeeded {
-		screen.Println(strings.Repeat(" ", width - len(timeStrOrigin) - 2) + timeStrOrigin)
+	if currCmdIdx >= len(cmds)-1 || !succeeded {
+		screen.Println(strings.Repeat(" ", width-len(timeStr)-2) + timeStr)
 	} else {
-		screen.Println("")
+		screen.Println("\n")
 	}
 }
 
@@ -58,7 +56,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 		return
 	}
 	cmds, currCmdIdx = filterBuiltins(env, cmds, currCmdIdx)
-	if len(cmds) == 0 {
+	if len(cmds) <= 1 {
 		return
 	}
 
@@ -78,12 +76,12 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 	printRealname := env.Get("runtime.display.mod.realname").GetBool()
 
 	stackDepth := env.Get("runtime.stack-depth").Raw
-	if len(stackDepth) > 3 {
-		stackDepth = "..."
+	if len(stackDepth) > 2 {
+		stackDepth = ".."
 	} else {
-		stackDepth = stackDepth + strings.Repeat(" ", 3 + 1 - len(stackDepth))
+		stackDepth = stackDepth + strings.Repeat(" ", 2+1-len(stackDepth))
 	}
-	stackDepth = " stack-level: " + stackDepth + " "
+	stackDepth = " stack-level: " + stackDepth
 	titleLine := "│" + stackDepth + "│"
 
 	// Notice that len(str) will return wrong size since we are using non-ascii chars
@@ -94,25 +92,25 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 
 	timeStr := time.Now().Format("01-02 15:04:05")
 	// This "1" is for left border
-	if width < titleLineLen + len(timeStr) + 1 {
+	if width < titleLineLen+len(timeStr)+1 {
 		width = titleLineLen + len(timeStr) + 1
 	}
-	if width < 1 + titleLineLen + len(timeStr) + 1  {
+	if width < 1+titleLineLen+len(timeStr)+1 {
 		width = 1 + titleLineLen + len(timeStr) + 1
 	}
-	titleLine += strings.Repeat(" ", width - 1 - titleLineLen - len(timeStr) - 1) + timeStr
+	titleLine += strings.Repeat(" ", width-1-titleLineLen-len(timeStr)-1) + timeStr
 
-	topBorder := "├" + strings.Repeat("─", titleWidth - 2) + "┴"
-	topBorder = topBorder + strings.Repeat("─", width - 1 - titleWidth) + "┐"
+	topBorder := "├" + strings.Repeat("─", titleWidth-2) + "┴"
+	topBorder = topBorder + strings.Repeat("─", width-1-titleWidth) + "┐"
 
 	displayIdxStart := 0
 	displayIdxEnd := len(cmds)
 	if len(cmds) > cmdDisplayCnt {
-		displayIdxStart = currCmdIdx - cmdDisplayCnt / 2
+		displayIdxStart = currCmdIdx - cmdDisplayCnt/2
 		if displayIdxStart < 0 {
 			displayIdxStart = 0
 		}
-		if displayIdxStart + cmdDisplayCnt > len(cmds) {
+		if displayIdxStart+cmdDisplayCnt > len(cmds) {
 			displayIdxEnd = len(cmds)
 			displayIdxStart = displayIdxEnd - cmdDisplayCnt
 		} else {
@@ -120,17 +118,17 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 		}
 	}
 
-	screen.Println("┌" + strings.Repeat("─", titleWidth - 2) + "┐")
+	screen.Println("┌" + strings.Repeat("─", titleWidth-2) + "┐")
 	screen.Println(titleLine)
 	screen.Println(topBorder)
 
 	if printEnv {
 		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv)
 		for _, line := range envLines {
-			screen.Println("│" + padRight("    " + line, " ", width - 2) + "│")
+			screen.Println("│" + padRight("    "+line, " ", width-2) + "│")
 		}
 		if len(envLines) != 0 {
-			screen.Println("├" + strings.Repeat("─", width - 2) + "┤")
+			screen.Println("├" + strings.Repeat("─", width-2) + "┤")
 		}
 	}
 
@@ -139,7 +137,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 			continue
 		}
 		var line string
-		if (i == displayIdxStart && i != 0) || (i + 1 == displayIdxEnd && i + 1 != len(cmds)) {
+		if (i == displayIdxStart && i != 0) || (i+1 == displayIdxEnd && i+1 != len(cmds)) {
 			line += "    ..."
 		} else {
 			if i == currCmdIdx {
@@ -149,10 +147,10 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 			}
 			line += getCmdPath(cmd, sep, printRealname)
 		}
-		screen.Println("│" + padRight(line, " ", width - 2) + "│")
+		screen.Println("│" + padRight(line, " ", width-2) + "│")
 	}
 
-	screen.Println("└" + strings.Repeat("─", width - 2) + "┘")
+	screen.Println("└" + strings.Repeat("─", width-2) + "┘")
 }
 
 func checkPrintFilter(cmd ParsedCmd, env *Env, sep string) bool {
@@ -196,7 +194,7 @@ func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool, printRuntimeEnv boo
 	if !printEnvLayer {
 		compacted := env.Compact(printDefEnv, filterPrefix)
 		for k, v := range compacted {
-			res = append(res, k + " = " + v)
+			res = append(res, k+" = "+v)
 		}
 	} else {
 		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefix, &res, 0)
@@ -209,18 +207,18 @@ func dumpEnvLayer(env *Env, printEnvLayer bool, printDefEnv bool, filterPrefix s
 		return
 	}
 	var output []string
-	indent := strings.Repeat(" ", depth * 4)
+	indent := strings.Repeat(" ", depth*4)
 	for k, v := range env.Pairs {
 		if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) {
 			continue
 		}
-		output = append(output, indent + "- " + k + " = " + v.Raw)
+		output = append(output, indent+"- "+k+" = "+v.Raw)
 	}
 	if env.Parent != nil {
-		dumpEnvLayer(env.Parent, printEnvLayer, printDefEnv, filterPrefix, &output, depth + 1)
+		dumpEnvLayer(env.Parent, printEnvLayer, printDefEnv, filterPrefix, &output, depth+1)
 	}
 	if len(output) != 0 {
-		*res = append(*res, indent + "[" + EnvLayerName(env.Type) + "]")
+		*res = append(*res, indent+"["+EnvLayerName(env.Type)+"]")
 		*res = append(*res, output...)
 	}
 }
@@ -229,7 +227,7 @@ func padRight(str string, pad string, width int) string {
 	if len(str) >= width {
 		return str
 	}
-	return str + strings.Repeat(pad, width - len(str))
+	return str + strings.Repeat(pad, width-len(str))
 }
 
 func getCmdPath(cmd ParsedCmd, sep string, printRealname bool) string {
@@ -245,4 +243,8 @@ func getCmdPath(cmd ParsedCmd, sep string, printRealname bool) string {
 		}
 	}
 	return strings.Join(path, sep)
+}
+
+func formatDuration(dur time.Duration) string {
+	return strings.ReplaceAll(fmt.Sprintf("%s", dur), "µ", "u")
 }

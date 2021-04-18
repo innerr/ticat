@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
 func RegisterBuiltins(cmds *CmdTree) {
@@ -10,6 +11,7 @@ func RegisterBuiltins(cmds *CmdTree) {
 	cmds.AddSub("verbose", "verb", "v", "V").SetCmd(SetVerbMode)
 	cmds.AddSub("quiet", "q", "Q").SetQuietCmd(SetQuietMode)
 	cmds.AddSub("dummy", "D").SetCmd(Dummy)
+	cmds.AddSub("sleep", "slp").SetCmd(Sleep)
 
 	builtin := cmds.AddSub("builtin")
 
@@ -42,7 +44,8 @@ func SetQuietMode(cli *Cli, env *Env) bool {
 	return true
 }
 
-func SetVerbMode(cli *Cli, env *Env, ) bool {
+func SetVerbMode(cli *Cli, env *Env) bool {
+	env = env.GetLayer(EnvLayerSession)
 	env.Set("runtime.display", "true")
 	env.Set("runtime.display.max-cmd-cnt", "9999")
 	env.Set("runtime.display.env", "true")
@@ -71,6 +74,16 @@ func LoadLocalEnv(cli *Cli, env *Env) bool {
 
 func LoadLocalMods(cli *Cli, env *Env) bool {
 	//fmt.Println("TODO: load local mods")
+	return true
+}
+
+func Sleep(cli *Cli, env *Env) bool {
+	dur, err := time.ParseDuration(env.Get("sleep").Raw)
+	if err != nil {
+		fmt.Printf("[ERR] %v\n", err)
+		return false
+	}
+	time.Sleep(dur)
 	return true
 }
 

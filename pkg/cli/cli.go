@@ -1,5 +1,9 @@
 package cli
 
+import (
+	"time"
+)
+
 func Execute(preparation string, script ...string) bool {
 	return NewCli().Execute(preparation, script...)
 }
@@ -98,11 +102,12 @@ func (self *Cli) executeCmd(cmd ParsedCmd, env *Env, cmds []ParsedCmd, currCmdId
 
 	printCmdStack(self.Screen, cmd, cmdEnv, cmds, currCmdIdx, sep)
 	last := cmd[len(cmd)-1]
+	start := time.Now()
 	if last.Cmd.Cmd != nil {
-		modified, succeeded = last.Cmd.Cmd.Execute(self, env, cmds, currCmdIdx)
+		modified, succeeded = last.Cmd.Cmd.Execute(self, cmdEnv, cmds, currCmdIdx)
 	} else {
 		modified, succeeded = cmds, false
 	}
-	printCmdResult(self.Screen, cmd, cmdEnv, succeeded, cmds, currCmdIdx, sep)
+	printCmdResult(self.Screen, cmd, cmdEnv, succeeded, time.Now().Sub(start), cmds, currCmdIdx, sep)
 	return
 }

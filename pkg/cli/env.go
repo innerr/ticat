@@ -109,7 +109,7 @@ func NewWord(val string, abbrs ...string) *Word {
 }
 
 type EnvVal struct {
-	Raw string
+	Raw      string
 	ValCache interface{}
 }
 
