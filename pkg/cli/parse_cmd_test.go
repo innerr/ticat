@@ -95,6 +95,8 @@ func TestCmdParserParseSeg(t *testing.T) {
 	test([]string{"X / {a=V} 21"}, []parsedSeg{cmd("X"), sep, env("a"), cmd("21")})
 	test([]string{"{a=V}{b=V}X{c=V}21{d=V}{e=V}"},
 		[]parsedSeg{env("a"), env("b"), cmd("X"), env("c"), cmd("21"), env("d"), env("e")})
+
+	test([]string{"{}{}X{}"}, []parsedSeg{cmd("X")})
 }
 
 func TestCmdParserParse(t *testing.T) {

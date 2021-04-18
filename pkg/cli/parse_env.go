@@ -106,16 +106,16 @@ func (self *envParser) findLeft(input []string) (rest []string, found bool, agai
 	found = true
 
 	leftBrLen := len(self.brackets.Left)
+	rest = tryTrim(input[1:])
 	if i == 0 {
 		if len(input[0]) != leftBrLen {
-			rest = tryTrim(append([]string{strings.TrimSpace(input[0][leftBrLen:])}, input[1:]...))
-		} else {
-			rest = tryTrim(input[1:])
+			rest = append([]string{strings.TrimSpace(input[0][leftBrLen:])}, rest...)
 		}
 	} else {
 		lead := strings.TrimSpace(input[0][0:i])
+		// TODO: should be TrimLeft("{space-chars}")
 		tail := strings.TrimSpace(input[0][i+leftBrLen:])
-		rest = tryTrim(append([]string{lead, self.brackets.Left, tail}, input[1:]...))
+		rest = append([]string{lead, self.brackets.Left, tail}, rest...)
 		again = true
 	}
 	return
@@ -127,31 +127,25 @@ func (self *envParser) findRight(input []string) (env []string, rest []string, f
 	for i, it := range input {
 		k := strings.Index(it, self.brackets.Right)
 		if k < 0 {
-			env = append(env, it)
+			if len(it) > 0 {
+				env = append(env, it)
+			}
 			continue
 		}
 		found = true
-		if k == 0 {
-			if rightLen == len(it) {
-				rest = tryTrim(input[i+1:])
-				env = tryTrim(input[:i])
-				return
+		if k != 0 {
+			env = append(env, strings.TrimSpace(it[0:k]))
+		}
+		rest = tryTrim(input[i+1:])
+		if rightLen != len(it)-k {
+			tailOfIt := tryTrim([]string{strings.TrimSpace(it[k+rightLen:])})
+			if len(rest) == 0 {
+				rest = tailOfIt
 			} else {
-				rest = tryTrim(append(rest, strings.TrimSpace(it[rightLen:])))
-				env = tryTrim(append([]string{strings.TrimSpace(it[rightLen:])}, input[i+1:]...))
-				return
-			}
-		} else {
-			if rightLen == len(it)-k {
-				env = tryTrim(append(env, strings.TrimSpace(it[0:k])))
-				rest = tryTrim(input[i+1:])
-				return
-			} else {
-				env = tryTrim(append(env, strings.TrimSpace(it[0:k])))
-				rest = tryTrim(append([]string{strings.TrimSpace(it[k+rightLen:])}, input[i+1:]...))
-				return
+				rest = append(tailOfIt, rest...)
 			}
 		}
+		return
 	}
 	return nil, nil, false
 }

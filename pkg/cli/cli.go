@@ -27,7 +27,22 @@ func (self *Cli) Execute(preparation string, script ...string) bool {
 	prep := self.Parser.Parse(self.Cmds, preparation)
 	flow := self.Parser.Parse(self.Cmds, script...)
 	self.insertPreparation(flow, prep)
+	self.filterEmptyCmds(flow)
 	return self.executeCmds(flow)
+}
+
+// Remove the cmds only have cmd-level env definication but have no executable
+func (self *Cli) filterEmptyCmds(cmds *ParsedCmds) {
+	var filtered []ParsedCmd
+	for _, cmd := range cmds.Cmds {
+		for _, seg := range cmd {
+			if seg.Cmd.Cmd != nil {
+				filtered = append(filtered, cmd)
+				break
+			}
+		}
+	}
+	cmds.Cmds = filtered
 }
 
 func (self *Cli) insertPreparation(cmds *ParsedCmds, prep *ParsedCmds) {

@@ -6,15 +6,20 @@ type Parser struct {
 }
 
 // A very simple implement of command line parsing, lack of char escaping
+//   * The command line argv list have extra tokenizing info
+//         - An example: a quoted string with space inside
+//         - TODO: how to store this info(to a file?) and still keep it human-editable ?
+//   * The dynamite info(registered modules and env KVs) could use for disambiguation
+//         - Inconvenient to use a LEX/YACC lib to parse
 //
-//  ParsedCmds                - A list of cmd
-//      ParsedEnv             - Global env, map[string]string
-//      []ParsedCmd           - Full path of cmd
-//          []ParsedCmdSeg    - A path = a segment list
-//              MatchedCmd    - A segment
-//                  Name      - string
-//                  *CmdTree  - The executable function
-//              ParsedEnv     - The function's env, include argv
+//   ParsedCmds                - A list of cmd
+//       ParsedEnv             - Global env, map[string]string
+//       []ParsedCmd           - Full path of cmd
+//           []ParsedCmdSeg    - A path = a segment list
+//               MatchedCmd    - A segment
+//                   Name      - string
+//                   *CmdTree  - The executable function
+//               ParsedEnv     - The function's env, include argv
 //
 func (self *Parser) Parse(tree *CmdTree, input ...string) *ParsedCmds {
 	seqs, firstIsGlobal := self.seqParser.Parse(input)

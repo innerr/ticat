@@ -237,8 +237,9 @@ func getCmdPath(cmd ParsedCmd, sep string, printRealname bool) string {
 	for _, seg := range cmd {
 		if seg.Cmd.Cmd != nil {
 			name := seg.Cmd.Name
-			if printRealname {
-				name += "(=" + seg.Cmd.Cmd.Name() + ")"
+			realname := seg.Cmd.Cmd.Name()
+			if printRealname && name != realname {
+				name += "(=" + realname + ")"
 			}
 			path = append(path, name)
 		}
