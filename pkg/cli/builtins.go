@@ -9,7 +9,7 @@ func RegisterBuiltins(cmds *CmdTree) {
 	cmds.AddSub("help", "h", "HELP", "H", "?").SetQuietPowerCmd(GlobalHelp)
 	cmds.AddSub("verbose", "verb", "v", "V").SetCmd(SetVerbMode)
 	cmds.AddSub("quiet", "q", "Q").SetQuietCmd(SetQuietMode)
-	cmds.AddSub("dummy").SetCmd(Dummy)
+	cmds.AddSub("dummy", "D").SetCmd(Dummy)
 
 	builtin := cmds.AddSub("builtin")
 
@@ -27,7 +27,7 @@ func LoadBuiltinEnv(env *Env) {
 	env.Set("runtime.version", "dev")
 	env.Set("runtime.stack-depth", "0")
 	env.Set("runtime.display", "true")
-	env.Set("runtime.display.width", "100")
+	env.Set("runtime.display.width", "80")
 	env.Set("runtime.display.max-cmd-cnt", "7")
 	env.Set("runtime.display.env", "true")
 	env.Set("runtime.display.env.layer", "false")
@@ -48,7 +48,7 @@ func SetVerbMode(cli *Cli, env *Env, ) bool {
 	env.Set("runtime.display.env", "true")
 	env.Set("runtime.display.env.layer", "true")
 	env.Set("runtime.display.env.default", "true")
-	env.Set("runtime.display.env.runtime", "true")
+	env.Set("runtime.display.env.runtime.sys", "true")
 	env.Set("runtime.display.mod.builtin", "true")
 	env.Set("runtime.display.mod.realname", "true")
 	return true
@@ -60,7 +60,7 @@ func GlobalHelp(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) (modified 
 }
 
 func LoadRuntimeEnv(cli *Cli, env *Env) bool {
-	env.Set("runtime.ticap-path", os.Args[0])
+	env.Set("runtime.sys.ticap-path", os.Args[0])
 	return true
 }
 

@@ -13,6 +13,10 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool, cmd
 	if checkPrintFilter(cmd, env, sep) {
 		return
 	}
+	cmds, currCmdIdx = filterBuiltins(env, cmds, currCmdIdx)
+	if len(cmds) == 0 {
+		return
+	}
 
 	const widthKey = "runtime.display.width"
 	width := env.Get(widthKey).GetInt()
@@ -31,7 +35,8 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool, cmd
 		timeStr = timeStrOrigin + " "
 	}
 
-	line := " " + getCmdPath(cmd, sep, true)
+	printRealname := env.Get("runtime.display.mod.realname").GetBool()
+	line := " " + getCmdPath(cmd, sep, printRealname)
 	line = "│" + " " + resStr + padRight(line, " ", width - len(timeStr) - 2 - 3) + timeStr + "│"
 
 	screen.Println("┌" + strings.Repeat("─", width - 2) + "┐")
@@ -52,6 +57,10 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 	if checkPrintFilter(cmd, env, sep) {
 		return
 	}
+	cmds, currCmdIdx = filterBuiltins(env, cmds, currCmdIdx)
+	if len(cmds) == 0 {
+		return
+	}
 
 	width := env.Get("runtime.display.width").GetInt()
 
@@ -64,15 +73,17 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 	printEnv := env.Get("runtime.display.env").GetBool()
 	printEnvLayer := env.Get("runtime.display.env.layer").GetBool()
 	printDefEnv := env.Get("runtime.display.env.default").GetBool()
-	printRuntimeEnv := env.Get("runtime.display.env.default").GetBool()
+	printRuntimeEnv := env.Get("runtime.display.env.runtime.sys").GetBool()
+
+	printRealname := env.Get("runtime.display.mod.realname").GetBool()
 
 	stackDepth := env.Get("runtime.stack-depth").Raw
 	if len(stackDepth) > 3 {
-		stackDepth = "[...]"
+		stackDepth = "..."
 	} else {
-		stackDepth = "[" + stackDepth + "]" + strings.Repeat(" ", 3 + 1 - len(stackDepth))
+		stackDepth = stackDepth + strings.Repeat(" ", 3 + 1 - len(stackDepth))
 	}
-	stackDepth = " depth " + stackDepth + " "
+	stackDepth = " stack-level: " + stackDepth + " "
 	titleLine := "│" + stackDepth + "│"
 
 	// Notice that len(str) will return wrong size since we are using non-ascii chars
@@ -136,7 +147,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 			} else {
 				line += "    "
 			}
-			line += getCmdPath(cmd, sep, true)
+			line += getCmdPath(cmd, sep, printRealname)
 		}
 		screen.Println("│" + padRight(line, " ", width - 2) + "│")
 	}
@@ -147,7 +158,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 func checkPrintFilter(cmd ParsedCmd, env *Env, sep string) bool {
 	var cmdFirstSegName string
 	if len(cmd) != 0 {
-		if cmd[len(cmd)-1].Cmd.Cmd.IsQuiet() {
+		if cmd[len(cmd)-1].Cmd.Cmd != nil && cmd[len(cmd)-1].Cmd.Cmd.IsQuiet() {
 			return true
 		}
 		cmdFirstSegName = cmd[0].Cmd.Name
@@ -158,10 +169,29 @@ func checkPrintFilter(cmd ParsedCmd, env *Env, sep string) bool {
 	return false
 }
 
+func filterBuiltins(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int) {
+	if env.Get("runtime.display.mod.builtin").GetBool() {
+		return cmds, currCmdIdx
+	}
+
+	var newCmds []ParsedCmd
+	newIdx := currCmdIdx
+	for i, cmd := range cmds {
+		if len(cmd) != 0 && cmd[0].Cmd.Name == "builtin" {
+			if i < currCmdIdx {
+				newIdx -= 1
+			}
+		} else {
+			newCmds = append(newCmds, cmd)
+		}
+	}
+	return newCmds, newIdx
+}
+
 func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool, printRuntimeEnv bool) (res []string) {
 	var filterPrefix string
 	if !printRuntimeEnv {
-		filterPrefix = "runtime."
+		filterPrefix = "runtime.sys."
 	}
 	if !printEnvLayer {
 		compacted := env.Compact(printDefEnv, filterPrefix)
@@ -202,14 +232,12 @@ func padRight(str string, pad string, width int) string {
 	return str + strings.Repeat(pad, width - len(str))
 }
 
-func getCmdPath(cmd ParsedCmd, sep string, useMatchedName bool) string {
+func getCmdPath(cmd ParsedCmd, sep string, printRealname bool) string {
 	var path []string
 	for _, seg := range cmd {
 		if seg.Cmd.Cmd != nil {
 			name := seg.Cmd.Name
-			if !useMatchedName {
-				name = seg.Cmd.Cmd.Name()
-			} else if name != seg.Cmd.Cmd.Name() {
+			if printRealname {
 				name += "(=" + seg.Cmd.Cmd.Name() + ")"
 			}
 			path = append(path, name)
