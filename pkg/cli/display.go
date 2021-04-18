@@ -15,8 +15,11 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
 	if checkPrintFilter(cmd, env, sep) {
 		return
 	}
-	cmds, currCmdIdx = filterBuiltins(env, cmds, currCmdIdx)
-	if len(cmds) <= 1 {
+	cmds, currCmdIdx = filterBuiltinAndQuiet(env, cmds, currCmdIdx)
+	if len(cmds) == 1 && !env.Get("runtime.display.one-cmd").GetBool() {
+		return
+	}
+	if len(cmds) == 0 {
 		return
 	}
 
@@ -55,8 +58,11 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 	if checkPrintFilter(cmd, env, sep) {
 		return
 	}
-	cmds, currCmdIdx = filterBuiltins(env, cmds, currCmdIdx)
-	if len(cmds) <= 1 {
+	cmds, currCmdIdx = filterBuiltinAndQuiet(env, cmds, currCmdIdx)
+	if len(cmds) == 1 && !env.Get("runtime.display.one-cmd").GetBool() {
+		return
+	}
+	if len(cmds) == 0 {
 		return
 	}
 
@@ -167,7 +173,7 @@ func checkPrintFilter(cmd ParsedCmd, env *Env, sep string) bool {
 	return false
 }
 
-func filterBuiltins(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int) {
+func filterBuiltinAndQuiet(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int) {
 	if env.Get("runtime.display.mod.builtin").GetBool() {
 		return cmds, currCmdIdx
 	}
@@ -175,13 +181,17 @@ func filterBuiltins(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, in
 	var newCmds []ParsedCmd
 	newIdx := currCmdIdx
 	for i, cmd := range cmds {
-		if len(cmd) != 0 && cmd[0].Cmd.Name == "builtin" {
+		if len(cmd) == 0 {
+			continue
+		}
+		lastSeg := cmd[len(cmd)-1].Cmd
+		if cmd[0].Cmd.Name == "builtin" || lastSeg.Cmd != nil && lastSeg.Cmd.IsQuiet() {
 			if i < currCmdIdx {
 				newIdx -= 1
 			}
-		} else {
-			newCmds = append(newCmds, cmd)
+			continue
 		}
+		newCmds = append(newCmds, cmd)
 	}
 	return newCmds, newIdx
 }

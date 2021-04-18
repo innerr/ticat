@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/pingcap/ticat/pkg/cli"
+	"github.com/pingcap/ticat/pkg/cli/builtin"
 )
 
 func main() {
@@ -13,7 +14,9 @@ func main() {
 		builtin.mod.load.local:
 	`
 
-	succeeded := cli.Execute(preparation, os.Args[1:]...)
+	succeeded := cli.NewCli(
+		builtin.RegisterBuiltin,
+		builtin.LoadBuiltinEnv).Execute(preparation, os.Args[1:]...)
 	if !succeeded {
 		os.Exit(1)
 	}

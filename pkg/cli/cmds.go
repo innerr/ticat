@@ -35,19 +35,19 @@ func NewCmdTree() *CmdTree {
 	return &CmdTree{"", nil, map[string]*CmdTree{}, nil, map[string]string{}}
 }
 
-func (self *CmdTree) SetCmd(cmd NormalCmd) {
+func (self *CmdTree) RegCmd(cmd NormalCmd) {
 	self.cmd = NewCmd(cmd, false)
 }
 
-func (self *CmdTree) SetQuietCmd(cmd NormalCmd) {
+func (self *CmdTree) RegQuietCmd(cmd NormalCmd) {
 	self.cmd = NewCmd(cmd, true)
 }
 
-func (self *CmdTree) SetPowerCmd(cmd PowerCmd) {
+func (self *CmdTree) RegPowerCmd(cmd PowerCmd) {
 	self.cmd = NewPowerCmd(cmd, false)
 }
 
-func (self *CmdTree) SetQuietPowerCmd(cmd PowerCmd) {
+func (self *CmdTree) RegQuietPowerCmd(cmd PowerCmd) {
 	self.cmd = NewPowerCmd(cmd, true)
 }
 

@@ -4,10 +4,6 @@ import (
 	"time"
 )
 
-func Execute(preparation string, script ...string) bool {
-	return NewCli().Execute(preparation, script...)
-}
-
 type Cli struct {
 	GlobalEnv *Env
 	Screen    *Screen
@@ -15,15 +11,15 @@ type Cli struct {
 	Parser    *Parser
 }
 
-func NewCli() *Cli {
+func NewCli(builtinLoader func(*CmdTree), envLoader func(*Env)) *Cli {
 	cli := &Cli{
 		NewEnv(),
 		NewScreen(),
 		NewCmdTree(),
 		NewParser(),
 	}
-	RegisterBuiltins(cli.Cmds)
-	LoadBuiltinEnv(cli.GlobalEnv)
+	builtinLoader(cli.Cmds)
+	envLoader(cli.GlobalEnv)
 	return cli
 }
 

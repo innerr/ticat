@@ -72,10 +72,13 @@ func (self Env) Get(name string) EnvVal {
 	return val
 }
 
-func (self *Env) Set(name string, val string) EnvVal {
-	old, _ := self.Pairs[name]
+func (self *Env) Set(name string, val string) (old EnvVal) {
+	old = self.Get(name)
+	if old.Raw == val {
+		return
+	}
 	self.Pairs[name] = EnvVal{val, nil}
-	return old
+	return
 }
 
 func (self Env) Compact(includeDefault bool, filterPrefix string) map[string]string {
