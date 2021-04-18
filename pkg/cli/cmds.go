@@ -15,6 +15,11 @@ type Cmd struct {
 	Power      PowerCmd
 }
 
+func (self *Cmd) AddArg(name string, abbrs ...string) *Cmd {
+	// TODO:
+	return self
+}
+
 func NewCmd(cmd NormalCmd, quiet bool) *Cmd {
 	return &Cmd{false, quiet, cmd, nil}
 }
@@ -35,20 +40,24 @@ func NewCmdTree() *CmdTree {
 	return &CmdTree{"", nil, map[string]*CmdTree{}, nil, map[string]string{}}
 }
 
-func (self *CmdTree) RegCmd(cmd NormalCmd) {
+func (self *CmdTree) RegCmd(cmd NormalCmd) *Cmd {
 	self.cmd = NewCmd(cmd, false)
+	return self.cmd
 }
 
-func (self *CmdTree) RegQuietCmd(cmd NormalCmd) {
+func (self *CmdTree) RegQuietCmd(cmd NormalCmd) *Cmd {
 	self.cmd = NewCmd(cmd, true)
+	return self.cmd
 }
 
-func (self *CmdTree) RegPowerCmd(cmd PowerCmd) {
+func (self *CmdTree) RegPowerCmd(cmd PowerCmd) *Cmd {
 	self.cmd = NewPowerCmd(cmd, false)
+	return self.cmd
 }
 
-func (self *CmdTree) RegQuietPowerCmd(cmd PowerCmd) {
+func (self *CmdTree) RegQuietPowerCmd(cmd PowerCmd) *Cmd {
 	self.cmd = NewPowerCmd(cmd, true)
+	return self.cmd
 }
 
 func (self *CmdTree) Name() string {

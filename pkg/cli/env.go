@@ -130,5 +130,5 @@ func (self EnvVal) GetInt() int {
 
 func (self EnvVal) GetBool() bool {
 	return self.Raw == "true" || self.Raw == "True" || self.Raw == "TRUE" || self.Raw == "1" ||
-		self.Raw == "on" || self.Raw == "On" || self.Raw == "ON"
+		self.Raw == "on" || self.Raw == "On" || self.Raw == "ON" || self.Raw == "y" || self.Raw == "Y"
 }

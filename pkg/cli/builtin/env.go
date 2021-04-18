@@ -23,6 +23,7 @@ func LoadBuiltinEnv(env *cli.Env) {
 }
 
 func LoadRuntimeEnv(_ *cli.Cli, env *cli.Env) bool {
+	env = env.GetLayer(cli.EnvLayerSession)
 	env.Set("runtime.sys.ticap-path", os.Args[0])
 	return true
 }

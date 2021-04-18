@@ -160,13 +160,14 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 }
 
 func checkPrintFilter(cmd ParsedCmd, env *Env, sep string) bool {
-	var cmdFirstSegName string
-	if len(cmd) != 0 {
-		if cmd[len(cmd)-1].Cmd.Cmd != nil && cmd[len(cmd)-1].Cmd.Cmd.IsQuiet() {
-			return true
-		}
-		cmdFirstSegName = cmd[0].Cmd.Name
+	if len(cmd) == 0 {
+		return true
 	}
+	lastSeg := cmd[len(cmd)-1]
+	if lastSeg.Cmd.Cmd == nil || lastSeg.Cmd.Cmd.cmd == nil || lastSeg.Cmd.Cmd.IsQuiet() {
+		return true
+	}
+	cmdFirstSegName := cmd[0].Cmd.Name
 	if cmdFirstSegName == "builtin" && !env.Get("runtime.display.mod.builtin").GetBool() {
 		return true
 	}
@@ -185,7 +186,7 @@ func filterBuiltinAndQuiet(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]Parsed
 			continue
 		}
 		lastSeg := cmd[len(cmd)-1].Cmd
-		if cmd[0].Cmd.Name == "builtin" || lastSeg.Cmd != nil && lastSeg.Cmd.IsQuiet() {
+		if cmd[0].Cmd.Name == "builtin" || lastSeg.Cmd == nil || lastSeg.Cmd.cmd == nil || lastSeg.Cmd.IsQuiet() {
 			if i < currCmdIdx {
 				newIdx -= 1
 			}

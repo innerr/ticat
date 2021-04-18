@@ -23,13 +23,16 @@ type Parser struct {
 //
 func (self *Parser) Parse(tree *CmdTree, input ...string) *ParsedCmds {
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
-	cmds := ParsedCmds{nil, nil}
+	cmds := ParsedCmds{ParsedEnv{}, nil}
 	for _, seq := range seqs {
 		cmds.Cmds = append(cmds.Cmds, self.cmdParser.Parse(tree, seq))
 	}
 	if firstIsGlobal && len(cmds.Cmds) != 0 && len(cmds.Cmds[0]) != 0 {
-		cmds.GlobalEnv = cmds.Cmds[0][0].Env
-		cmds.Cmds[0][0].Env = nil
+		firstCmd := cmds.Cmds[0]
+		for _, seg := range firstCmd {
+			cmds.GlobalEnv.Merge(seg.Env)
+			seg.Env = nil
+		}
 	}
 	return &cmds
 }

@@ -55,8 +55,7 @@ func IncreaseVerb(_ *cli.Cli, env *cli.Env) bool {
 		return true
 	}
 
-	if !env.Get("runtime.display.mod.realname").GetBool() ||
-		!env.Get("runtime.display.max-cmd-cnt").GetBool() {
+	if !env.Get("runtime.display.mod.realname").GetBool() {
 		env.Set("runtime.display.mod.realname", "true")
 		env.Set("runtime.display.max-cmd-cnt", "9999")
 		return true
@@ -68,8 +67,7 @@ func IncreaseVerb(_ *cli.Cli, env *cli.Env) bool {
 func DecreaseVerb(_ *cli.Cli, env *cli.Env) bool {
 	env = env.GetLayer(cli.EnvLayerSession)
 
-	if env.Get("runtime.display.mod.realname").GetBool() ||
-		env.Get("runtime.display.max-cmd-cnt").GetBool() {
+	if env.Get("runtime.display.mod.realname").GetBool() {
 		env.Set("runtime.display.mod.realname", "false")
 		env.Set("runtime.display.max-cmd-cnt", "14")
 		return true
