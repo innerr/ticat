@@ -7,7 +7,7 @@ import (
 
 func TestEnvParserTryParseRaw(t *testing.T) {
 	root := NewCmdTree()
-	parser := &envParser{&brackets{"{", "}"}}
+	parser := &envParser{&brackets{"{", "}"}, "\t\n\r "}
 
 	test := func(a []string, bEnv ParsedEnv, bRest []string) {
 		aEnv, aRest := parser.TryParseRaw(root, a)
@@ -27,7 +27,7 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 }
 
 func TestEnvParserFindLeft(t *testing.T) {
-	parser := &envParser{&brackets{"{", "}"}}
+	parser := &envParser{&brackets{"{", "}"}, "\t\n\r "}
 
 	test := func(a []string, bRest []string, bFound bool, bAgain bool) {
 		aRest, aFound, aAgain := parser.findLeft(a)
@@ -59,7 +59,7 @@ func TestEnvParserFindLeft(t *testing.T) {
 }
 
 func TestEnvParserFindRight(t *testing.T) {
-	parser := &envParser{&brackets{"{", "}"}}
+	parser := &envParser{&brackets{"{", "}"}, "\t\n\r "}
 
 	test := func(a []string, bEnv []string, bRest []string, bFound bool) {
 		aEnv, aRest, aFound := parser.findRight(a)
@@ -103,7 +103,7 @@ func TestEnvParserFindRight(t *testing.T) {
 
 func TestEnvParserTryParse(t *testing.T) {
 	root := NewCmdTree()
-	parser := &envParser{&brackets{"{", "}"}}
+	parser := &envParser{&brackets{"{", "}"}, "\t\n\r "}
 
 	test := func(a []string, bEnv ParsedEnv, bRest []string, bFound bool, bErr error) {
 		aEnv, aRest, aFound, aErr := parser.TryParse(root, a)

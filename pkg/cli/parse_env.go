@@ -7,9 +7,12 @@ import (
 
 type envParser struct {
 	brackets *brackets
+	spaces string
 }
 
-func (self *envParser) TryParse(cmd *CmdTree, input []string) (env ParsedEnv, rest []string, found bool, err error) {
+func (self *envParser) TryParse(cmd *CmdTree,
+	input []string) (env ParsedEnv, rest []string, found bool, err error) {
+
 	var again bool
 	rest, found, again = self.findLeft(input)
 	if again {
@@ -22,13 +25,15 @@ func (self *envParser) TryParse(cmd *CmdTree, input []string) (env ParsedEnv, re
 	var envStrs []string
 	envStrs, rest, found = self.findRight(rest)
 	if !found {
-		return nil, tryTrim(input), true, fmt.Errorf("unmatched env brackets '" + strings.Join(input, " ") + "'")
+		return nil, tryTrim(input), true,
+			fmt.Errorf("unmatched env brackets '" + strings.Join(input, " ") + "'")
 	}
 
 	var envRest []string
 	env, envRest = self.TryParseRaw(cmd, envStrs)
 	if len(envRest) != 0 {
-		return nil, tryTrim(input), true, fmt.Errorf("env difinition can't be recognized '" + strings.Join(envRest, " ") + "'")
+		return nil, tryTrim(input), true,
+			fmt.Errorf("env difinition can't be recognized '" + strings.Join(envRest, " ") + "'")
 	}
 
 	return env, tryTrim(rest), true, nil
@@ -113,8 +118,7 @@ func (self *envParser) findLeft(input []string) (rest []string, found bool, agai
 		}
 	} else {
 		lead := strings.TrimSpace(input[0][0:i])
-		// TODO: should be TrimLeft("{space-chars}")
-		tail := strings.TrimSpace(input[0][i+leftBrLen:])
+		tail := strings.TrimLeft(input[0][i+leftBrLen:], self.spaces)
 		rest = append([]string{lead, self.brackets.Left, tail}, rest...)
 		again = true
 	}

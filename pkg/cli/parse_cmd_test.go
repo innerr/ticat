@@ -41,12 +41,10 @@ func TestCmdParserParseSeg(t *testing.T) {
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
+	const spaces = "\t\n\r "
 	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}},
-		".",
-		"\t\n\r ./",
-		"\t\n\r ",
-		"<root>",
+		&envParser{&brackets{"{", "}"}, spaces},
+		".", spaces + "./", spaces, CmdRootNodeName,
 	}
 
 	sep := parsedSeg{parsedSegTypeSep, nil}
@@ -127,12 +125,10 @@ func TestCmdParserParse(t *testing.T) {
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
+	const spaces = "\t\n\r "
 	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}},
-		".",
-		"\t\n\r ./",
-		"\t\n\r ",
-		"<root>",
+		&envParser{&brackets{"{", "}"}, spaces},
+		".", spaces + "./", spaces, CmdRootNodeName,
 	}
 
 	seg := func(cmdName string, envKeyNames ...string) ParsedCmdSeg {
