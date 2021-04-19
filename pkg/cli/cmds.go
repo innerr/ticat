@@ -5,29 +5,6 @@ import (
 	"strings"
 )
 
-type NormalCmd func(cli *Cli, env *Env) (succeeded bool)
-type PowerCmd func(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) (modified []ParsedCmd, succeeded bool)
-
-type Cmd struct {
-	IsPowerCmd bool
-	Quiet      bool
-	Normal     NormalCmd
-	Power      PowerCmd
-}
-
-func (self *Cmd) AddArg(name string, abbrs ...string) *Cmd {
-	// TODO:
-	return self
-}
-
-func NewCmd(cmd NormalCmd, quiet bool) *Cmd {
-	return &Cmd{false, quiet, cmd, nil}
-}
-
-func NewPowerCmd(cmd PowerCmd, quiet bool) *Cmd {
-	return &Cmd{true, quiet, nil, cmd}
-}
-
 type CmdTree struct {
 	name           string
 	parent         *CmdTree
@@ -38,6 +15,17 @@ type CmdTree struct {
 
 func NewCmdTree() *CmdTree {
 	return &CmdTree{"", nil, map[string]*CmdTree{}, nil, map[string]string{}}
+}
+
+func (self *CmdTree) Execute(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, bool) {
+	if self.cmd == nil {
+		return cmds, true
+	}
+	if self.cmd.IsPowerCmd {
+		return self.cmd.Power(cli, env, cmds, currCmdIdx)
+	} else {
+		return cmds, self.cmd.Normal(cli, env)
+	}
 }
 
 func (self *CmdTree) RegCmd(cmd NormalCmd) *Cmd {
@@ -60,10 +48,6 @@ func (self *CmdTree) RegQuietPowerCmd(cmd PowerCmd) *Cmd {
 	return self.cmd
 }
 
-func (self *CmdTree) Name() string {
-	return self.name
-}
-
 func (self *CmdTree) IsQuiet() bool {
 	return self.cmd != nil && self.cmd.Quiet
 }
@@ -72,31 +56,8 @@ func (self *CmdTree) IsPowerCmd() bool {
 	return self.cmd != nil && self.cmd.IsPowerCmd
 }
 
-func (self *CmdTree) Execute(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, bool) {
-	if self.cmd == nil {
-		return cmds, true
-	}
-	if self.cmd.IsPowerCmd {
-		return self.cmd.Power(cli, env, cmds, currCmdIdx)
-	} else {
-		return cmds, self.cmd.Normal(cli, env)
-	}
-}
-
-func (self *CmdTree) path() []string {
-	if self.parent == nil {
-		return []string{}
-	}
-	return append(self.parent.path(), self.name)
-}
-
-func (self *CmdTree) displayPath() string {
-	path := self.path()
-	if len(path) == 0 {
-		return cmdRootNodeName
-	} else {
-		return strings.Join(self.path(), ".")
-	}
+func (self *CmdTree) Name() string {
+	return self.name
 }
 
 func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
@@ -122,6 +83,51 @@ func (self *CmdTree) GetSub(name string) *CmdTree {
 	}
 	sub, _ := self.sub[name]
 	return sub
+}
+
+func (self *CmdTree) path() []string {
+	if self.parent == nil {
+		return []string{}
+	}
+	return append(self.parent.path(), self.name)
+}
+
+func (self *CmdTree) displayPath() string {
+	path := self.path()
+	if len(path) == 0 {
+		return cmdRootNodeName
+	} else {
+		return strings.Join(self.path(), ".")
+	}
+}
+
+type Cmd struct {
+	IsPowerCmd bool
+	Quiet      bool
+	Normal     NormalCmd
+	Power      PowerCmd
+	Args       Args
+}
+
+func NewCmd(cmd NormalCmd, quiet bool) *Cmd {
+	return &Cmd{false, quiet, cmd, nil, Args{}}
+}
+
+func NewPowerCmd(cmd PowerCmd, quiet bool) *Cmd {
+	return &Cmd{true, quiet, nil, cmd, Args{}}
+}
+
+func (self *Cmd) AddArg(name string, abbrs ...string) *Cmd {
+	// TODO:
+	return self
+}
+
+type NormalCmd func(cli *Cli, env *Env) (succeeded bool)
+type PowerCmd func(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) (modified []ParsedCmd, succeeded bool)
+
+type Args struct {
+	Pairs map[string]string
+	AbbrsRevIdx map[string]string
 }
 
 const (
