@@ -7,7 +7,7 @@ import (
 
 func TestEnvParserTryParseRaw(t *testing.T) {
 	root := NewCmdTree()
-	parser := &envParser{&brackets{"{", "}"}, "\t\n\r "}
+	parser := &envParser{&brackets{"{", "}"}, Spaces, "=", ","}
 
 	test := func(a []string, bEnv ParsedEnv, bRest []string) {
 		aEnv, aRest := parser.TryParseRaw(root, a)
@@ -18,16 +18,20 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 		}
 	}
 
+	v := func(v string) ParsedEnvVal {
+		return ParsedEnvVal{v, false}
+	}
+
 	test(nil, nil, nil)
 	test([]string{}, nil, nil)
-	test([]string{"a=A"}, ParsedEnv{"a": "A"}, nil)
-	test([]string{"a=A", "b=B"}, ParsedEnv{"a": "A", "b": "B"}, nil)
-	test([]string{"a=A", "bB"}, ParsedEnv{"a": "A"}, []string{"bB"})
-	test([]string{"a=A", "bB", "c=C"}, ParsedEnv{"a": "A"}, []string{"bB", "c=C"})
+	test([]string{"a=A"}, ParsedEnv{"a": v("A")}, nil)
+	test([]string{"a=A", "b=B"}, ParsedEnv{"a": v("A"), "b": v("B")}, nil)
+	test([]string{"a=A", "bB"}, ParsedEnv{"a": v("A")}, []string{"bB"})
+	test([]string{"a=A", "bB", "c=C"}, ParsedEnv{"a": v("A")}, []string{"bB", "c=C"})
 }
 
 func TestEnvParserFindLeft(t *testing.T) {
-	parser := &envParser{&brackets{"{", "}"}, "\t\n\r "}
+	parser := &envParser{&brackets{"{", "}"}, Spaces, "=", ","}
 
 	test := func(a []string, bRest []string, bFound bool, bAgain bool) {
 		aRest, aFound, aAgain := parser.findLeft(a)
@@ -59,7 +63,7 @@ func TestEnvParserFindLeft(t *testing.T) {
 }
 
 func TestEnvParserFindRight(t *testing.T) {
-	parser := &envParser{&brackets{"{", "}"}, "\t\n\r "}
+	parser := &envParser{&brackets{"{", "}"}, Spaces, "=", ","}
 
 	test := func(a []string, bEnv []string, bRest []string, bFound bool) {
 		aEnv, aRest, aFound := parser.findRight(a)
@@ -103,7 +107,7 @@ func TestEnvParserFindRight(t *testing.T) {
 
 func TestEnvParserTryParse(t *testing.T) {
 	root := NewCmdTree()
-	parser := &envParser{&brackets{"{", "}"}, "\t\n\r "}
+	parser := &envParser{&brackets{"{", "}"}, Spaces, "=", ","}
 
 	test := func(a []string, bEnv ParsedEnv, bRest []string, bFound bool, bErr error) {
 		aEnv, aRest, aFound, aErr := parser.TryParse(root, a)
@@ -117,32 +121,36 @@ func TestEnvParserTryParse(t *testing.T) {
 		}
 	}
 
+	v := func(v string) ParsedEnvVal {
+		return ParsedEnvVal{v, false}
+	}
+
 	test(nil, nil, nil, false, nil)
 	test([]string{}, nil, nil, false, nil)
 	test([]string{"{}"}, nil, nil, true, nil)
 	test([]string{"{", "}"}, nil, nil, true, nil)
 	test([]string{"{", "", "}"}, nil, nil, true, nil)
-	test([]string{"{a=A}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{a=A}", "bb"}, ParsedEnv{"a": "A"}, []string{"bb"}, true, nil)
-	test([]string{"{", "a=A", "}", "bb"}, ParsedEnv{"a": "A"}, []string{"bb"}, true, nil)
+	test([]string{"{a=A}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{a=A}", "bb"}, ParsedEnv{"a": v("A")}, []string{"bb"}, true, nil)
+	test([]string{"{", "a=A", "}", "bb"}, ParsedEnv{"a": v("A")}, []string{"bb"}, true, nil)
 	test([]string{"11", "{a=A}", "bb"}, nil, []string{"11", "{a=A}", "bb"}, false, nil)
 
-	test([]string{"{", "a=A", "}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{a=A", "}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{ a=A", "}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{ a =A", "}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{ a = A", "}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{", "a=A}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{", "a =A}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{", "a= A}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{", "a = A}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{", "a= A}"}, ParsedEnv{"a": "A"}, nil, true, nil)
-	test([]string{"{", "a = A }"}, ParsedEnv{"a": "A"}, nil, true, nil)
+	test([]string{"{", "a=A", "}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{a=A", "}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{ a=A", "}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{ a =A", "}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{ a = A", "}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{", "a=A}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{", "a =A}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{", "a= A}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{", "a = A}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{", "a= A}"}, ParsedEnv{"a": v("A")}, nil, true, nil)
+	test([]string{"{", "a = A }"}, ParsedEnv{"a": v("A")}, nil, true, nil)
 
-	test([]string{"{", "a=A", "b=B", "}"}, ParsedEnv{"a": "A", "b": "B"}, nil, true, nil)
-	test([]string{"{", "a=A", "b=B}"}, ParsedEnv{"a": "A", "b": "B"}, nil, true, nil)
-	test([]string{"{a=A", "b=B}"}, ParsedEnv{"a": "A", "b": "B"}, nil, true, nil)
-	test([]string{"{a=A", "b=B}", "cc", "dd"}, ParsedEnv{"a": "A", "b": "B"}, []string{"cc", "dd"}, true, nil)
+	test([]string{"{", "a=A", "b=B", "}"}, ParsedEnv{"a": v("A"), "b": v("B")}, nil, true, nil)
+	test([]string{"{", "a=A", "b=B}"}, ParsedEnv{"a": v("A"), "b": v("B")}, nil, true, nil)
+	test([]string{"{a=A", "b=B}"}, ParsedEnv{"a": v("A"), "b": v("B")}, nil, true, nil)
+	test([]string{"{a=A", "b=B}", "cc", "dd"}, ParsedEnv{"a": v("A"), "b": v("B")}, []string{"cc", "dd"}, true, nil)
 
 	test([]string{"{a=A", "bB}"}, nil, []string{"{a=A", "bB}"}, true, fmt.Errorf("dumb"))
 	test([]string{"{a=A", "bB", "c=C}"}, nil, []string{"{a=A", "bB", "c=C}"}, true, fmt.Errorf("dumb"))

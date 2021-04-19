@@ -7,6 +7,7 @@ import (
 
 type EnvVal struct {
 	Raw      string
+	IsArg    bool
 	ValCache interface{}
 }
 

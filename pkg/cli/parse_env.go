@@ -8,6 +8,8 @@ import (
 type envParser struct {
 	brackets *brackets
 	spaces string
+	kvSep string
+	kvsSeps string
 }
 
 func (self *envParser) TryParse(cmd *CmdTree,
@@ -40,8 +42,21 @@ func (self *envParser) TryParse(cmd *CmdTree,
 }
 
 func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv, rest []string) {
-	// TODO: more forms
-	// TODO: use cmd info
+/*
+	var args Args
+	if cmd != nil && cmd.cmd != nil {
+		args = cmd.cmd.args
+	} else {
+		args = Args{}
+	}
+
+	rest = input
+	env = ParsedEnv{}
+	for _, it := range input {
+		i := strings.IndexAny(it, self.kvSep)
+
+/*
+*/
 	rest = input
 	env = ParsedEnv{}
 	for _, it := range input {
@@ -49,7 +64,7 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 		if len(kv) != 2 {
 			return
 		}
-		env[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+		env[strings.TrimSpace(kv[0])] = ParsedEnvVal{strings.TrimSpace(kv[1]), false} // TODO
 		rest = rest[1:]
 	}
 	if len(env) == 0 {
@@ -59,9 +74,9 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 	return
 }
 
-type ParsedEnv map[string]string
+type ParsedEnv map[string]ParsedEnvVal
 
-type ParsedEnvItem struct {
+type ParsedEnvVal struct {
 	Val   string
 	IsArg bool
 }
@@ -97,7 +112,7 @@ func (self ParsedEnv) Equal(x ParsedEnv) bool {
 
 func (self ParsedEnv) WriteTo(env *Env) {
 	for k, v := range self {
-		env.Set(k, v)
+		env.SetExt(k, v.Val, v.IsArg)
 	}
 }
 

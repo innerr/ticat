@@ -38,7 +38,6 @@ func (self *Parser) Parse(tree *CmdTree, input ...string) *ParsedCmds {
 }
 
 func NewParser() *Parser {
-	const spaces = "\t\n\r "
 	return &Parser{
 		&sequenceParser{
 			":",
@@ -47,12 +46,14 @@ func NewParser() *Parser {
 		},
 		&cmdParser{
 			&envParser{
-				&brackets{"{", "}"},
-				spaces,
+				&brackets{EnvBracketLeft, EnvBracketRight},
+				Spaces,
+				EnvKeyValSep,
+				EnvValAlterSeps + Spaces,
 			},
-			".",
-			spaces + "./",
-			spaces,
+			CmdPathSep,
+			Spaces + CmdPathAlterSeps,
+			Spaces,
 			CmdRootNodeName,
 		},
 	}

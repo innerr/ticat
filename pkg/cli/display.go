@@ -200,7 +200,7 @@ func filterBuiltinAndQuiet(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]Parsed
 func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool, printRuntimeEnv bool) (res []string) {
 	var filterPrefix string
 	if !printRuntimeEnv {
-		filterPrefix = "runtime.sys."
+		filterPrefix = EnvRuntimeSysPrefix
 	}
 	if !printEnvLayer {
 		compacted := env.Compact(printDefEnv, filterPrefix)

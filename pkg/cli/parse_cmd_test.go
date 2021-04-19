@@ -41,10 +41,9 @@ func TestCmdParserParseSeg(t *testing.T) {
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
-	const spaces = "\t\n\r "
 	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}, spaces},
-		".", spaces + "./", spaces, CmdRootNodeName,
+		&envParser{&brackets{"{", "}"}, Spaces, "=", ","},
+		".", Spaces + "./", Spaces, CmdRootNodeName,
 	}
 
 	sep := parsedSeg{parsedSegTypeSep, nil}
@@ -55,7 +54,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	env := func(names ...string) parsedSeg {
 		env := ParsedEnv{}
 		for _, name := range names {
-			env[name] = "V"
+			env[name] = ParsedEnvVal{"V", false}
 		}
 		return parsedSeg{parsedSegTypeEnv, env}
 	}
@@ -125,10 +124,9 @@ func TestCmdParserParse(t *testing.T) {
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
-	const spaces = "\t\n\r "
 	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}, spaces},
-		".", spaces + "./", spaces, CmdRootNodeName,
+		&envParser{&brackets{"{", "}"}, Spaces, "=", ","},
+		".", Spaces + "./", Spaces, CmdRootNodeName,
 	}
 
 	seg := func(cmdName string, envKeyNames ...string) ParsedCmdSeg {
@@ -136,7 +134,7 @@ func TestCmdParserParse(t *testing.T) {
 		if len(envKeyNames) != 0 {
 			env = ParsedEnv{}
 			for _, name := range envKeyNames {
-				env[name] = "V"
+				env[name] = ParsedEnvVal{"V", false}
 			}
 		}
 		return ParsedCmdSeg{env, MatchedCmd{cmdName, nil}}

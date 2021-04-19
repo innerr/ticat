@@ -17,9 +17,9 @@ func NewCmdTree() *CmdTree {
 	return &CmdTree{"", nil, map[string]*CmdTree{}, nil, map[string]string{}}
 }
 
-func (self *CmdTree) Execute(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, bool) {
+func (self *CmdTree) Execute(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int, bool) {
 	if self.cmd == nil {
-		return cmds, true
+		return cmds, currCmdIdx, true
 	} else {
 		return self.cmd.Execute(cli, env, cmds, currCmdIdx)
 	}

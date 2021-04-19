@@ -7,8 +7,8 @@ import (
 )
 
 func GlobalHelp(_ *cli.Cli, env *cli.Env, cmds []cli.ParsedCmd,
-	currCmdIdx int) (modified []cli.ParsedCmd, succeeded bool) {
+	currCmdIdx int) ([]cli.ParsedCmd, int, bool) {
 
 	fmt.Println("TODO: global help")
-	return nil, true
+	return nil, 0, true
 }
