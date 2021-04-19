@@ -5,7 +5,7 @@ import (
 )
 
 func TestSequenceParserNormalize(t *testing.T) {
-	assert_eq := func(input []string, a []string, b []string) {
+	assertEq := func(input []string, a []string, b []string) {
 		fatal := func() {
 			t.Fatalf("%#v: %#v != %#v\n", input, a, b)
 		}
@@ -21,7 +21,7 @@ func TestSequenceParserNormalize(t *testing.T) {
 
 	parser := sequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
 	test := func(a []string, b []string) {
-		assert_eq(a, parser.Normalize(a), b)
+		assertEq(a, parser.Normalize(a), b)
 	}
 
 	test([]string{"aa"}, []string{"aa"})
@@ -69,7 +69,7 @@ func TestSequenceParserNormalize(t *testing.T) {
 }
 
 func TestSequenceParserBreak(t *testing.T) {
-	assert_eq := func(a [][]string, b [][]string) {
+	assertEq := func(a [][]string, b [][]string) {
 		fatal := func() {
 			t.Fatalf("%#v != %#v\n", a, b)
 		}
@@ -91,7 +91,7 @@ func TestSequenceParserBreak(t *testing.T) {
 	parser := sequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
 	test := func(a []string, b [][]string) {
 		parsed, _ := parser.Parse(a)
-		assert_eq(parsed, b)
+		assertEq(parsed, b)
 	}
 
 	test([]string{"aa"}, [][]string{[]string{"aa"}})

@@ -11,21 +11,21 @@ type sequenceParser struct {
 }
 
 func (self *sequenceParser) Normalize(argv []string) []string {
-	sep_n := len(self.Sep)
+	sepN := len(self.Sep)
 	res := []string{}
 	for _, arg := range argv {
-		handled_idx := 0
-		search_idx := 0
-		for ; handled_idx < len(arg); search_idx += sep_n {
-			i := strings.Index(arg[search_idx:], self.Sep)
+		handledIdx := 0
+		searchIdx := 0
+		for ; handledIdx < len(arg); searchIdx += sepN {
+			i := strings.Index(arg[searchIdx:], self.Sep)
 			if i < 0 {
-				res = append(res, arg[handled_idx:])
+				res = append(res, arg[handledIdx:])
 				break
 			}
-			search_idx += i
+			searchIdx += i
 			unbreakable := false
 			for _, prefix := range self.UnbreakPrefixs {
-				if search_idx >= len(prefix) && prefix == arg[search_idx-len(prefix):search_idx] {
+				if searchIdx >= len(prefix) && prefix == arg[searchIdx-len(prefix):searchIdx] {
 					unbreakable = true
 					break
 				}
@@ -34,7 +34,7 @@ func (self *sequenceParser) Normalize(argv []string) []string {
 				continue
 			}
 			for _, suffix := range self.UnbreakSuffixs {
-				if search_idx+sep_n+len(suffix) <= len(arg) && suffix == arg[search_idx+sep_n:search_idx+sep_n+len(suffix)] {
+				if searchIdx+sepN+len(suffix) <= len(arg) && suffix == arg[searchIdx+sepN:searchIdx+sepN+len(suffix)] {
 					unbreakable = true
 					break
 				}
@@ -42,11 +42,11 @@ func (self *sequenceParser) Normalize(argv []string) []string {
 			if unbreakable {
 				continue
 			}
-			if handled_idx != search_idx {
-				res = append(res, arg[handled_idx:search_idx])
+			if handledIdx != searchIdx {
+				res = append(res, arg[handledIdx:searchIdx])
 			}
 			res = append(res, self.Sep)
-			handled_idx = search_idx + sep_n
+			handledIdx = searchIdx + sepN
 		}
 	}
 	return res

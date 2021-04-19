@@ -1,12 +1,11 @@
 package cli
 
 import (
-	"fmt"
 	"testing"
 )
 
 func TestCmdParserParseSeg(t *testing.T) {
-	assert_eq := func(a []parsedSeg, b []parsedSeg) {
+	assertEq := func(a []parsedSeg, b []parsedSeg) {
 		fatal := func() {
 			t.Fatalf("%#v != %#v\n", a, b)
 		}
@@ -61,7 +60,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 
 	test := func(a []string, b []parsedSeg) {
 		parsed := parser.parse(root, a)
-		assert_eq(parsed, b)
+		assertEq(parsed, b)
 	}
 
 	test(nil, []parsedSeg{})
@@ -97,14 +96,12 @@ func TestCmdParserParseSeg(t *testing.T) {
 }
 
 func TestCmdParserParse(t *testing.T) {
-	assert_eq := func(a ParsedCmd, b ParsedCmd) {
+	assertEq := func(a ParsedCmd, b ParsedCmd) {
 		for i, av := range a {
-			fmt.Printf("a #%d: '%#v'\n", i, av)
 			if i >= len(b) {
 				t.Fatalf("size not eq: %#v != %#v\n", len(a), len(b))
 			}
 			bv := b[i]
-			fmt.Printf("b #%d: '%#v'\n", i, bv)
 			if len(bv.Cmd.Name) != 0 && av.Cmd.Cmd == nil {
 				t.Fatalf("#%d cmd not eq: '%#v' != '%#v'\n", i, av.Cmd, bv.Cmd)
 			}
@@ -142,7 +139,7 @@ func TestCmdParserParse(t *testing.T) {
 
 	test := func(a []string, b ParsedCmd) {
 		parsed := parser.Parse(root, a)
-		assert_eq(parsed, b)
+		assertEq(parsed, b)
 	}
 
 	test(nil, ParsedCmd{})

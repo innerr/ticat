@@ -28,6 +28,11 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	test([]string{"a=A", "b=B"}, ParsedEnv{"a": v("A"), "b": v("B")}, nil)
 	test([]string{"a=A", "bB"}, ParsedEnv{"a": v("A")}, []string{"bB"})
 	test([]string{"a=A", "bB", "c=C"}, ParsedEnv{"a": v("A")}, []string{"bB", "c=C"})
+
+	test([]string{" a = A "}, ParsedEnv{"a": v("A")}, nil)
+	test([]string{" a = A ", " b = B "}, ParsedEnv{"a": v("A"), "b": v("B")}, nil)
+	test([]string{" a = A ", " bB "}, ParsedEnv{"a": v("A")}, []string{" bB "})
+	test([]string{" a = A ", " bB ", " c = C "}, ParsedEnv{"a": v("A")}, []string{" bB ", " c = C "})
 }
 
 func TestEnvParserFindLeft(t *testing.T) {

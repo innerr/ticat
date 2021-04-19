@@ -27,51 +27,79 @@ func (self *envParser) TryParse(cmd *CmdTree,
 	var envStrs []string
 	envStrs, rest, found = self.findRight(rest)
 	if !found {
-		return nil, tryTrim(input), true,
+		return nil, tryTrimStrings(input), true,
 			fmt.Errorf("unmatched env brackets '" + strings.Join(input, " ") + "'")
 	}
 
 	var envRest []string
 	env, envRest = self.TryParseRaw(cmd, envStrs)
 	if len(envRest) != 0 {
-		return nil, tryTrim(input), true,
+		return nil, tryTrimStrings(input), true,
 			fmt.Errorf("env difinition can't be recognized '" + strings.Join(envRest, " ") + "'")
 	}
 
-	return env, tryTrim(rest), true, nil
+	return env, tryTrimStrings(rest), true, nil
 }
 
 func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv, rest []string) {
-/*
-	var args Args
-	if cmd != nil && cmd.cmd != nil {
-		args = cmd.cmd.args
-	} else {
-		args = Args{}
+	normalized, foundKvSep := normalizeEnvRawStr(input, self.kvSep, Spaces)
+	env = ParsedEnv{}
+	rest = normalized.data
+
+	genResult := func(normalizedIdx int) []string {
+		originIdx := normalized.originIdx[normalizedIdx]
+		originStrIdx := normalized.originStrIdx[normalizedIdx]
+		return tryTrimStrings(input[originIdx:][originStrIdx:])
 	}
 
-	rest = input
-	env = ParsedEnv{}
-	for _, it := range input {
-		i := strings.IndexAny(it, self.kvSep)
-
-/*
-*/
-	rest = input
-	env = ParsedEnv{}
-	for _, it := range input {
-		kv := strings.Split(it, "=")
-		if len(kv) != 2 {
-			return
+	// It's non-args env definition
+	if cmd == nil || cmd.cmd == nil {
+		if !foundKvSep {
+			return tryTrimParsedEnv(env), tryTrimStrings(rest)
 		}
-		env[strings.TrimSpace(kv[0])] = ParsedEnvVal{strings.TrimSpace(kv[1]), false} // TODO
-		rest = rest[1:]
+		i := 0
+		for ; i + 2 < len(rest); i+=3 {
+			if rest[i+1] != self.kvSep {
+				return tryTrimParsedEnv(env), genResult(i)
+			}
+			key := rest[i]
+			value := rest[i+2]
+			env[key] = ParsedEnvVal{value, false}
+		}
+		if i != len(rest) {
+			return tryTrimParsedEnv(env), genResult(i)
+		}
+		return tryTrimParsedEnv(env), nil
 	}
-	if len(env) == 0 {
-		env = nil
+
+	// It's args env definition
+
+	args := cmd.cmd.args
+	list := args.List()
+	curr := 0
+
+	if !foundKvSep {
+		for len(rest) >= 2 {
+			if curr >= len(list) || rest[0] != list[curr] {
+				return tryTrimParsedEnv(env), tryTrimStrings(rest)
+			}
+			key := rest[0]
+			value := rest[1]
+			env[key] = ParsedEnvVal{value, true}
+			rest = rest[2:]
+		}
+	} else {
+		for len(rest) >= 3 {
+			if curr >= len(list) || rest[0] != list[curr] || rest[1] != self.kvSep {
+				return tryTrimParsedEnv(env), tryTrimStrings(rest)
+			}
+			key := rest[0]
+			value := rest[2]
+			env[key] = ParsedEnvVal{value, false}
+			rest = rest[3:]
+		}
 	}
-	rest = tryTrim(rest)
-	return
+	return tryTrimParsedEnv(env), tryTrimStrings(rest)
 }
 
 type ParsedEnv map[string]ParsedEnvVal
@@ -117,7 +145,7 @@ func (self ParsedEnv) WriteTo(env *Env) {
 }
 
 func (self *envParser) findLeft(input []string) (rest []string, found bool, again bool) {
-	rest = tryTrim(input)
+	rest = tryTrimStrings(input)
 	found = false
 	again = false
 
@@ -131,13 +159,13 @@ func (self *envParser) findLeft(input []string) (rest []string, found bool, agai
 	found = true
 
 	leftBrLen := len(self.brackets.Left)
-	rest = tryTrim(input[1:])
+	rest = tryTrimStrings(input[1:])
 	if i == 0 {
 		if len(input[0]) != leftBrLen {
-			rest = append([]string{strings.TrimSpace(input[0][leftBrLen:])}, rest...)
+			rest = append([]string{strings.Trim(input[0][leftBrLen:], self.spaces)}, rest...)
 		}
 	} else {
-		lead := strings.TrimSpace(input[0][0:i])
+		lead := strings.Trim(input[0][0:i], self.spaces)
 		tail := strings.TrimLeft(input[0][i+leftBrLen:], self.spaces)
 		rest = append([]string{lead, self.brackets.Left, tail}, rest...)
 		again = true
@@ -158,11 +186,11 @@ func (self *envParser) findRight(input []string) (env []string, rest []string, f
 		}
 		found = true
 		if k != 0 {
-			env = append(env, strings.TrimSpace(it[0:k]))
+			env = append(env, strings.Trim(it[0:k], self.spaces))
 		}
-		rest = tryTrim(input[i+1:])
+		rest = tryTrimStrings(input[i+1:])
 		if rightLen != len(it)-k {
-			tailOfIt := tryTrim([]string{strings.TrimSpace(it[k+rightLen:])})
+			tailOfIt := tryTrimStrings([]string{strings.Trim(it[k+rightLen:], self.spaces)})
 			if len(rest) == 0 {
 				rest = tailOfIt
 			} else {
@@ -174,14 +202,62 @@ func (self *envParser) findRight(input []string) (env []string, rest []string, f
 	return nil, nil, false
 }
 
+type normalizedMapping struct {
+	data []string
+	originIdx []int
+	originStrIdx []int
+}
+
+func normalizeEnvRawStr(input []string, sep string, spaces string) (output normalizedMapping, foundSep bool) {
+	for i, it := range input {
+		k := strings.Index(it, sep)
+		if k < 0 {
+			if len(it) != 0 {
+				output.data = append(output.data, it)
+				output.originIdx = append(output.originIdx, i)
+				output.originStrIdx = append(output.originStrIdx, 0)
+			}
+			continue
+		}
+
+		foundSep = true
+
+		head := strings.Trim(it[:k], spaces)
+		if len(head) != 0 {
+			output.data = append(output.data, head)
+			output.originIdx = append(output.originIdx, i)
+			output.originStrIdx = append(output.originStrIdx, 0)
+		}
+
+		output.data = append(output.data, sep)
+		output.originIdx = append(output.originIdx, i)
+		output.originStrIdx = append(output.originStrIdx, k)
+
+		tail := strings.Trim(it[k+len(sep):], spaces)
+		if len(tail) != 0 {
+			output.data = append(output.data, tail)
+			output.originIdx = append(output.originIdx, i)
+			output.originStrIdx = append(output.originStrIdx, k+len(sep))
+		}
+	}
+	return
+}
+
 type brackets struct {
 	Left  string
 	Right string
 }
 
-func tryTrim(input []string) []string {
+func tryTrimStrings(input []string) []string {
 	if len(input) == 0 || len(input) == 1 && len(input[0]) == 0 {
 		return nil
 	}
 	return input
+}
+
+func tryTrimParsedEnv(env ParsedEnv) ParsedEnv {
+	if len(env) == 0 {
+		return nil
+	}
+	return env
 }

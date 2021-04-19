@@ -34,3 +34,7 @@ func (self *Args) AddArg(owner *CmdTree, name string, abbrs ...string) {
 	self.pairs[name] = true
 	self.list = append(self.list, name)
 }
+
+func (self *Args) List() []string {
+	return self.list
+}
