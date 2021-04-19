@@ -61,6 +61,11 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 
 type ParsedEnv map[string]string
 
+type ParsedEnvItem struct {
+	Val   string
+	IsArg bool
+}
+
 func (self ParsedEnv) AddPrefix(prefix string) {
 	var keys []string
 	for k, _ := range self {

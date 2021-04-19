@@ -29,6 +29,6 @@ func LoadRuntimeEnv(_ *cli.Cli, env *cli.Env) bool {
 }
 
 func LoadLocalEnv(_ *cli.Cli, env *cli.Env) bool {
-	// TODO
+	env = env.GetLayer(cli.EnvLayerPersisted)
 	return true
 }

@@ -63,7 +63,7 @@ func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	}
 	for _, abbr := range abbrs {
 		if old, ok := self.subAbbrsRevIdx[abbr]; ok {
-			panic(fmt.Errorf("%s%s: cmd abbr name '%s' conflicted, old for '%s', new for '%s'",
+			panic(fmt.Errorf("%s%s: command abbr name '%s' conflicted, old for '%s', new for '%s'",
 				ErrStrPrefix, self.DisplayPath(), abbr, old, name))
 		}
 		self.subAbbrsRevIdx[abbr] = name

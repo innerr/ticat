@@ -12,8 +12,13 @@ type Cli struct {
 }
 
 func NewCli(builtinLoader func(*CmdTree), envLoader func(*Env)) *Cli {
+	env := NewEnv().NewLayers(
+		EnvLayerDefault,
+		EnvLayerPersisted,
+		EnvLayerSession,
+	)
 	cli := &Cli{
-		NewEnv(),
+		env,
 		NewScreen(),
 		NewCmdTree(),
 		NewParser(),
@@ -70,7 +75,7 @@ func (self *Cli) insertPreparation(cmds *ParsedCmds, prep *ParsedCmds) {
 }
 
 func (self *Cli) executeCmds(flow *ParsedCmds) bool {
-	env := self.GlobalEnv.NewLayer(EnvLayerSession)
+	env := self.GlobalEnv.GetLayer(EnvLayerSession)
 	if flow.GlobalEnv != nil {
 		flow.GlobalEnv.WriteTo(env)
 	}
@@ -87,9 +92,9 @@ func (self *Cli) executeCmds(flow *ParsedCmds) bool {
 
 func (self *Cli) executeCmd(cmd ParsedCmd, env *Env, cmds []ParsedCmd, currCmdIdx int) (modified []ParsedCmd, succeeded bool) {
 	sep := self.Parser.CmdPathSep()
-	// The env modifications from script will be popped out after a cmd is executed
+	// The env modifications from script will be popped out after a command is executed
 	// (TODO) But if a mod modified the env, the modifications stay in session level
-	cmdEnv := env.NewLayer(EnvLayerMod)
+	cmdEnv := env.NewLayer(EnvLayerCmd)
 	for _, seg := range cmd {
 		if seg.Env != nil {
 			seg.Env.WriteTo(cmdEnv)

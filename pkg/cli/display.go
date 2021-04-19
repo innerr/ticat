@@ -131,7 +131,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 	if printEnv {
 		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv)
 		for _, line := range envLines {
-			screen.Println("│" + padRight("    "+line, " ", width-2) + "│")
+			screen.Println("│" + padRight("   "+line, " ", width-2) + "│")
 		}
 		if len(envLines) != 0 {
 			screen.Println("├" + strings.Repeat("─", width-2) + "┤")
@@ -214,22 +214,22 @@ func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool, printRuntimeEnv boo
 }
 
 func dumpEnvLayer(env *Env, printEnvLayer bool, printDefEnv bool, filterPrefix string, res *[]string, depth int) {
-	if env.Type == EnvLayerDefault && !printDefEnv {
+	if env.tp == EnvLayerDefault && !printDefEnv {
 		return
 	}
 	var output []string
 	indent := strings.Repeat(" ", depth*4)
-	for k, v := range env.Pairs {
+	for k, v := range env.pairs {
 		if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) {
 			continue
 		}
 		output = append(output, indent+"- "+k+" = "+v.Raw)
 	}
-	if env.Parent != nil {
-		dumpEnvLayer(env.Parent, printEnvLayer, printDefEnv, filterPrefix, &output, depth+1)
+	if env.parent != nil {
+		dumpEnvLayer(env.parent, printEnvLayer, printDefEnv, filterPrefix, &output, depth+1)
 	}
 	if len(output) != 0 {
-		*res = append(*res, indent+"["+EnvLayerName(env.Type)+"]")
+		*res = append(*res, indent+"["+EnvLayerName(env.tp)+"]")
 		*res = append(*res, output...)
 	}
 }

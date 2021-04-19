@@ -40,7 +40,7 @@ func (self *Cmd) Execute(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) (
 	case CmdTypeNormal:
 		return cmds, self.normal(cli, env)
 	default:
-		panic(fmt.Errorf("unknown cmd executable type: %d", self.ty))
+		panic(fmt.Errorf("unknown command executable type: %d", self.ty))
 	}
 }
 
