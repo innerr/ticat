@@ -51,7 +51,7 @@ func (self *cmdParser) Parse(tree *CmdTree, input []string) ParsedCmd {
 type ParsedCmd []ParsedCmdSeg
 
 func (self ParsedCmd) Args() *Args {
-	if (len(self) == 0) {
+	if len(self) == 0 {
 		return nil
 	}
 	last := self[len(self)-1].Cmd.Cmd
@@ -83,7 +83,6 @@ func (self ParsedCmd) GenEnv(env *Env) *Env {
 	}
 	return env
 }
-
 
 type ParsedCmdSeg struct {
 	Env ParsedEnv

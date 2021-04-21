@@ -43,11 +43,11 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env, succe
 	screen.Println("┌" + strings.Repeat("─", width-2) + "┐")
 	screen.Println(line)
 	/*
-	for k, v := range argv {
-		line = "│" + padRight(strings.Repeat(" ", len(resStr) + 4) + k + " = " + v.Raw,
-			" ", width-3) + " " + "│"
-		screen.Println(line)
-	}
+		for k, v := range argv {
+			line = "│" + padRight(strings.Repeat(" ", len(resStr) + 4) + k + " = " + v.Raw,
+				" ", width-3) + " " + "│"
+			screen.Println(line)
+		}
 	*/
 	screen.Println("└" + strings.Repeat("─", width-2) + "┘")
 
@@ -138,7 +138,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env,
 	screen.Println(topBorder)
 
 	if printEnv {
-		filterPrefixs := []string{ strings.Join(cmd.Path(), sep) + sep }
+		filterPrefixs := []string{strings.Join(cmd.Path(), sep) + sep}
 		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, filterPrefixs)
 		for _, line := range envLines {
 			screen.Println("│" + padRight("    "+line, " ", width-2) + "│")
@@ -167,7 +167,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env,
 
 		argv := cmd.GenEnv(env).GetArgv(cmd.Path(), sep, cmd.Args())
 		for k, v := range argv {
-			line = "│" + padRight(strings.Repeat(" ", 8) + k + " = " + v.Raw,
+			line = "│" + padRight(strings.Repeat(" ", 8)+k+" = "+v.Raw,
 				" ", width-3) + " " + "│"
 			screen.Println(line)
 		}
