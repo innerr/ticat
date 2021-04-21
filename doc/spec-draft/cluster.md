@@ -1,6 +1,6 @@
 # Component: cluster
 ```
-$> ticat new {cluster-name} [{host-list}](seperated by ',')
+$> ticat new {cluster-name} [{host-list}](seperated by ',') [port=+300]
 $> ticat stop [{cluster-name}]
 $> ticat fstop [{cluster-name}] (fstop: fast stop, use kill to stop process)
 $> ticat up [{cluster-name}]
