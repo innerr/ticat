@@ -19,16 +19,16 @@ func LoadBuiltinEnv(env *cli.Env) {
 	env.Set("runtime.display.env.default", "false")
 	env.Set("runtime.display.env.runtime", "false")
 	env.Set("runtime.display.mod.builtin", "false")
-	env.Set("runtime.display.mod.realname", "false")
+	env.Set("runtime.display.mod.realname", "true")
 }
 
-func LoadRuntimeEnv(_ *cli.Cli, env *cli.Env) bool {
+func LoadRuntimeEnv(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	env = env.GetLayer(cli.EnvLayerSession)
 	env.Set("runtime.sys.ticap-path", os.Args[0])
 	return true
 }
 
-func LoadLocalEnv(_ *cli.Cli, env *cli.Env) bool {
+func LoadLocalEnv(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	env = env.GetLayer(cli.EnvLayerPersisted)
 	return true
 }

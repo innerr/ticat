@@ -82,23 +82,50 @@ func (self *Env) Parent() *Env {
 	return self.parent
 }
 
-func (self Env) Compact(includeDefault bool, filterPrefix string) map[string]string {
+func (self *Env) GetArgv(path []string, sep string, args *Args) ArgVals {
+	if args == nil {
+		return nil
+	}
+	argv := ArgVals{}
+	list := args.List()
+	for _, it := range list {
+		key := strings.Join(append(path, it), sep)
+		val := self.Get(key)
+		if len(val.Raw) != 0 {
+			argv[it] = ArgVal{val.Raw}
+		} else {
+			argv[it] = ArgVal{args.DefVal(it)}
+		}
+	}
+	if len(argv) == 0 {
+		return nil
+	}
+	return argv
+}
+
+func (self Env) Compact(includeDefault bool, filterPrefixs []string) map[string]string {
 	res := map[string]string{}
-	self.compact(includeDefault, filterPrefix, res)
+	self.compact(includeDefault, filterPrefixs, res)
 	return res
 }
 
-func (self *Env) compact(includeDefault bool, filterPrefix string, res map[string]string) {
+func (self *Env) compact(includeDefault bool, filterPrefixs []string, res map[string]string) {
 	if self.tp == EnvLayerDefault && !includeDefault {
 		return
 	}
 	if self.parent != nil {
-		self.parent.compact(includeDefault, filterPrefix, res)
+		self.parent.compact(includeDefault, filterPrefixs, res)
 	}
 	for k, v := range self.pairs {
-		if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) {
-			continue
+		filtered := false
+		for _, filterPrefix := range filterPrefixs {
+			if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) {
+				filtered = true
+				break
+			}
 		}
-		res[k] = v.Raw
+		if !filtered {
+			res[k] = v.Raw
+		}
 	}
 }

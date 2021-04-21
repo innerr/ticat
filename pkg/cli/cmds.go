@@ -17,11 +17,11 @@ func NewCmdTree() *CmdTree {
 	return &CmdTree{"", nil, map[string]*CmdTree{}, nil, map[string]string{}}
 }
 
-func (self *CmdTree) Execute(cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int, bool) {
+func (self *CmdTree) Execute(argv ArgVals, cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int, bool) {
 	if self.cmd == nil {
 		return cmds, currCmdIdx, true
 	} else {
-		return self.cmd.Execute(cli, env, cmds, currCmdIdx)
+		return self.cmd.Execute(argv, cli, env, cmds, currCmdIdx)
 	}
 }
 

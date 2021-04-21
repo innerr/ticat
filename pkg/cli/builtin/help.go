@@ -6,7 +6,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli"
 )
 
-func GlobalHelp(_ *cli.Cli, env *cli.Env, cmds []cli.ParsedCmd,
+func GlobalHelp(_ cli.ArgVals, _ *cli.Cli, env *cli.Env, cmds []cli.ParsedCmd,
 	currCmdIdx int) ([]cli.ParsedCmd, int, bool) {
 
 	fmt.Println("TODO: global help")

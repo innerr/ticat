@@ -50,9 +50,40 @@ func (self *cmdParser) Parse(tree *CmdTree, input []string) ParsedCmd {
 
 type ParsedCmd []ParsedCmdSeg
 
+func (self ParsedCmd) Args() *Args {
+	if (len(self) == 0) {
+		return nil
+	}
+	last := self[len(self)-1].Cmd.Cmd
+	if last == nil {
+		return nil
+	}
+	return &last.cmd.args
+}
+
 func (self ParsedCmd) IsPowerCmd() bool {
 	return len(self) != 0 && self[len(self)-1].IsPowerCmd()
 }
+
+func (self ParsedCmd) Path() (path []string) {
+	for _, it := range self {
+		if it.Cmd.Cmd != nil {
+			path = append(path, it.Cmd.Cmd.Name())
+		}
+	}
+	return
+}
+
+func (self ParsedCmd) GenEnv(env *Env) *Env {
+	env = env.NewLayer(EnvLayerCmd)
+	for _, seg := range self {
+		if seg.Env != nil {
+			seg.Env.WriteTo(env)
+		}
+	}
+	return env
+}
+
 
 type ParsedCmdSeg struct {
 	Env ParsedEnv

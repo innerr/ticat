@@ -8,6 +8,7 @@ type Args struct {
 	// Use a map as a set
 	pairs       map[string]bool
 	list        []string
+	defVals     map[string]string
 	abbrsRevIdx map[string]string
 }
 
@@ -16,10 +17,11 @@ func newArgs() Args {
 		map[string]bool{},
 		[]string{},
 		map[string]string{},
+		map[string]string{},
 	}
 }
 
-func (self *Args) AddArg(owner *CmdTree, name string, abbrs ...string) {
+func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...string) {
 	if _, ok := self.pairs[name]; ok {
 		panic(fmt.Errorf("%s%s: arg name conflicted: %s", ErrStrPrefix, owner.DisplayPath(), name))
 	}
@@ -32,11 +34,16 @@ func (self *Args) AddArg(owner *CmdTree, name string, abbrs ...string) {
 	}
 	self.abbrsRevIdx[name] = name
 	self.pairs[name] = true
+	self.defVals[name] = defVal
 	self.list = append(self.list, name)
 }
 
 func (self *Args) List() []string {
 	return self.list
+}
+
+func (self *Args) DefVal(name string) string {
+	return self.defVals[name]
 }
 
 func (self *Args) Realname(nameOrAbbr string) string {

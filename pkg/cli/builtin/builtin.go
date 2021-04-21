@@ -7,12 +7,12 @@ import (
 func RegisterBuiltin(cmds *cli.CmdTree) {
 	cmds.AddSub("help", "h", "H", "?").RegQuietPowerCmd(GlobalHelp)
 	cmds.AddSub("verbose", "verb", "v", "V").RegQuietCmd(SetVerbMode)
-	cmds.AddSub("verb+", "v+", "V+").RegQuietCmd(IncreaseVerb)
-	cmds.AddSub("verb-", "v-", "V-").RegQuietCmd(DecreaseVerb)
+	cmds.AddSub("verb+", "v+", "V+").RegQuietCmd(IncreaseVerb).AddArg("volume", "1", "vol", "v", "V")
+	cmds.AddSub("verb-", "v-", "V-").RegQuietCmd(DecreaseVerb).AddArg("volume", "1", "vol", "v", "V")
 	cmds.AddSub("quiet", "q", "Q").RegQuietCmd(SetQuietMode)
 
 	cmds.AddSub("dummy", "d", "D").RegCmd(Dummy)
-	cmds.AddSub("sleep", "slp", "s", "S").RegCmd(Sleep).AddArg("duration", "dur", "d", "D")
+	cmds.AddSub("sleep", "slp", "s", "S").RegCmd(Sleep).AddArg("duration", "1s", "dur", "d", "D")
 
 	// Nodes without executables, could provide a convenient way to define env values
 	runtime := cmds.AddSub("runtime", "rt")

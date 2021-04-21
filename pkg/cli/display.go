@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
+func printCmdResult(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env, succeeded bool,
 	elapsed time.Duration, cmds []ParsedCmd, currCmdIdx int, sep string) {
 
 	if !env.Get("runtime.display").GetBool() {
@@ -42,6 +42,13 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
 
 	screen.Println("┌" + strings.Repeat("─", width-2) + "┐")
 	screen.Println(line)
+	/*
+	for k, v := range argv {
+		line = "│" + padRight(strings.Repeat(" ", len(resStr) + 4) + k + " = " + v.Raw,
+			" ", width-3) + " " + "│"
+		screen.Println(line)
+	}
+	*/
 	screen.Println("└" + strings.Repeat("─", width-2) + "┘")
 
 	if currCmdIdx >= len(cmds)-1 || !succeeded {
@@ -51,7 +58,9 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
 	}
 }
 
-func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, currCmdIdx int, sep string) {
+func printCmdStack(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env,
+	cmds []ParsedCmd, currCmdIdx int, sep string) {
+
 	if !env.Get("runtime.display").GetBool() {
 		return
 	}
@@ -129,9 +138,10 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 	screen.Println(topBorder)
 
 	if printEnv {
-		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv)
+		filterPrefixs := []string{ strings.Join(cmd.Path(), sep) + sep }
+		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, filterPrefixs)
 		for _, line := range envLines {
-			screen.Println("│" + padRight("   "+line, " ", width-2) + "│")
+			screen.Println("│" + padRight("    "+line, " ", width-2) + "│")
 		}
 		if len(envLines) != 0 {
 			screen.Println("├" + strings.Repeat("─", width-2) + "┤")
@@ -154,6 +164,13 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env, cmds []ParsedCmd, cu
 			line += getCmdPath(cmd, sep, printRealname)
 		}
 		screen.Println("│" + padRight(line, " ", width-2) + "│")
+
+		argv := cmd.GenEnv(env).GetArgv(cmd.Path(), sep, cmd.Args())
+		for k, v := range argv {
+			line = "│" + padRight(strings.Repeat(" ", 8) + k + " = " + v.Raw,
+				" ", width-3) + " " + "│"
+			screen.Println(line)
+		}
 	}
 
 	screen.Println("└" + strings.Repeat("─", width-2) + "┘")
@@ -197,36 +214,54 @@ func filterBuiltinAndQuiet(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]Parsed
 	return newCmds, newIdx
 }
 
-func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool, printRuntimeEnv bool) (res []string) {
-	var filterPrefix string
+func debugDumpEnv(env *Env) {
+	fmt.Println()
+	fmt.Println("-- DBUG BEGIN --")
+	lines := dumpEnv(env, true, true, true, nil)
+	for _, line := range lines {
+		fmt.Println(line)
+	}
+	fmt.Println("-- DBUG END --")
+	fmt.Println()
+}
+
+func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool,
+	printRuntimeEnv bool, filterPrefixs []string) (res []string) {
+
 	if !printRuntimeEnv {
-		filterPrefix = EnvRuntimeSysPrefix
+		filterPrefixs = append(filterPrefixs, EnvRuntimeSysPrefix)
 	}
 	if !printEnvLayer {
-		compacted := env.Compact(printDefEnv, filterPrefix)
+		compacted := env.Compact(printDefEnv, filterPrefixs)
 		for k, v := range compacted {
 			res = append(res, k+" = "+v)
 		}
 	} else {
-		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefix, &res, 0)
+		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefixs, &res, 0)
 	}
 	return
 }
 
-func dumpEnvLayer(env *Env, printEnvLayer bool, printDefEnv bool, filterPrefix string, res *[]string, depth int) {
+func dumpEnvLayer(env *Env, printEnvLayer bool, printDefEnv bool, filterPrefixs []string, res *[]string, depth int) {
 	if env.tp == EnvLayerDefault && !printDefEnv {
 		return
 	}
 	var output []string
 	indent := strings.Repeat(" ", depth*4)
 	for k, v := range env.pairs {
-		if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) {
-			continue
+		filtered := false
+		for _, filterPrefix := range filterPrefixs {
+			if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) {
+				filtered = true
+				break
+			}
 		}
-		output = append(output, indent+"- "+k+" = "+v.Raw)
+		if !filtered {
+			output = append(output, indent+"- "+k+" = "+v.Raw)
+		}
 	}
 	if env.parent != nil {
-		dumpEnvLayer(env.parent, printEnvLayer, printDefEnv, filterPrefix, &output, depth+1)
+		dumpEnvLayer(env.parent, printEnvLayer, printDefEnv, filterPrefixs, &output, depth+1)
 	}
 	if len(output) != 0 {
 		*res = append(*res, indent+"["+EnvLayerName(env.tp)+"]")

@@ -151,6 +151,14 @@ func (self ParsedEnv) WriteTo(env *Env) {
 	}
 }
 
+func (self ParsedEnv) WriteNotArgTo(env *Env) {
+	for k, v := range self {
+		if !v.IsArg {
+			env.SetExt(k, v.Val, v.IsArg)
+		}
+	}
+}
+
 func (self *envParser) findLeft(input []string) (rest []string, found bool, again bool) {
 	rest = tryTrimStrings(input)
 	found = false

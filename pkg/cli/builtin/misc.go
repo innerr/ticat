@@ -8,8 +8,9 @@ import (
 	"github.com/pingcap/ticat/pkg/cli"
 )
 
-func Sleep(_ *cli.Cli, env *cli.Env) bool {
-	durStr := env.Get("sleep.duration").Raw
+func Sleep(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
+	durStr := argv.GetRaw("duration")
+
 	// Default unit is 's'
 	_, err := strconv.ParseFloat(durStr, 64)
 	if err == nil {
@@ -25,7 +26,7 @@ func Sleep(_ *cli.Cli, env *cli.Env) bool {
 	return true
 }
 
-func Dummy(_ *cli.Cli, env *cli.Env) bool {
+func Dummy(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	fmt.Println("Dummy cmd here")
 	return true
 }
