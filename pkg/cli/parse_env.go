@@ -7,9 +7,8 @@ import (
 
 type envParser struct {
 	brackets *brackets
-	spaces string
-	kvSep string
-	kvsSeps string
+	spaces   string
+	kvSep    string
 }
 
 func (self *envParser) TryParse(cmd *CmdTree,
@@ -47,6 +46,9 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 	rest = normalized.data
 
 	genResult := func(normalizedIdx int) []string {
+		if normalizedIdx == len(normalized.data) {
+			return nil
+		}
 		originIdx := normalized.originIdx[normalizedIdx]
 		originStrIdx := normalized.originStrIdx[normalizedIdx]
 		return tryTrimStrings(input[originIdx:][originStrIdx:])
@@ -58,7 +60,7 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 			return tryTrimParsedEnv(env), tryTrimStrings(rest)
 		}
 		i := 0
-		for ; i + 2 < len(rest); i+=3 {
+		for ; i+2 < len(rest); i += 3 {
 			if rest[i+1] != self.kvSep {
 				return tryTrimParsedEnv(env), genResult(i)
 			}
@@ -66,40 +68,36 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 			value := rest[i+2]
 			env[key] = ParsedEnvVal{value, false}
 		}
-		if i != len(rest) {
-			return tryTrimParsedEnv(env), genResult(i)
-		}
-		return tryTrimParsedEnv(env), nil
+		return tryTrimParsedEnv(env), genResult(i)
 	}
 
 	// It's args env definition
 
 	args := cmd.cmd.args
-	list := args.List()
-	curr := 0
-
+	i := 0
 	if !foundKvSep {
-		for len(rest) >= 2 {
+		list := args.List()
+		curr := 0
+		for ; i+1 < len(rest); i += 2 {
 			if curr >= len(list) || rest[0] != list[curr] {
-				return tryTrimParsedEnv(env), tryTrimStrings(rest)
+				return tryTrimParsedEnv(env), genResult(i)
 			}
-			key := rest[0]
-			value := rest[1]
+			key := rest[i]
+			value := rest[i+1]
 			env[key] = ParsedEnvVal{value, true}
-			rest = rest[2:]
+			curr += 1
 		}
 	} else {
-		for len(rest) >= 3 {
-			if curr >= len(list) || rest[0] != list[curr] || rest[1] != self.kvSep {
-				return tryTrimParsedEnv(env), tryTrimStrings(rest)
+		for ; i+2 < len(rest); i += 3 {
+			key := args.Realname(rest[i])
+			if len(key) == 0 || rest[i+1] != self.kvSep {
+				return tryTrimParsedEnv(env), genResult(i)
 			}
-			key := rest[0]
-			value := rest[2]
-			env[key] = ParsedEnvVal{value, false}
-			rest = rest[3:]
+			value := rest[i+2]
+			env[key] = ParsedEnvVal{value, true}
 		}
 	}
-	return tryTrimParsedEnv(env), tryTrimStrings(rest)
+	return tryTrimParsedEnv(env), genResult(i)
 }
 
 type ParsedEnv map[string]ParsedEnvVal
@@ -203,8 +201,8 @@ func (self *envParser) findRight(input []string) (env []string, rest []string, f
 }
 
 type normalizedMapping struct {
-	data []string
-	originIdx []int
+	data         []string
+	originIdx    []int
 	originStrIdx []int
 }
 
@@ -213,7 +211,7 @@ func normalizeEnvRawStr(input []string, sep string, spaces string) (output norma
 		k := strings.Index(it, sep)
 		if k < 0 {
 			if len(it) != 0 {
-				output.data = append(output.data, it)
+				output.data = append(output.data, strings.Trim(it, spaces))
 				output.originIdx = append(output.originIdx, i)
 				output.originStrIdx = append(output.originStrIdx, 0)
 			}

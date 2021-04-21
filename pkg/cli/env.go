@@ -8,10 +8,10 @@ import (
 type EnvLayerType string
 
 const (
-	EnvLayerDefault EnvLayerType = "default"
-	EnvLayerPersisted = "persisted"
-	EnvLayerSession = "session"
-	EnvLayerCmd = "command"
+	EnvLayerDefault   EnvLayerType = "default"
+	EnvLayerPersisted              = "persisted"
+	EnvLayerSession                = "session"
+	EnvLayerCmd                    = "command"
 )
 
 func EnvLayerName(tp EnvLayerType) string {
@@ -21,7 +21,7 @@ func EnvLayerName(tp EnvLayerType) string {
 type Env struct {
 	pairs  map[string]EnvVal
 	parent *Env
-	tp   EnvLayerType
+	tp     EnvLayerType
 }
 
 func NewEnv() *Env {

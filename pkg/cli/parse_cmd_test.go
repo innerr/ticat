@@ -41,7 +41,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	l2.AddSub("21", "twenty-one")
 
 	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}, Spaces, "=", ","},
+		&envParser{&brackets{"{", "}"}, Spaces, "="},
 		".", Spaces + "./", Spaces, CmdRootNodeName,
 	}
 
@@ -122,7 +122,7 @@ func TestCmdParserParse(t *testing.T) {
 	l2.AddSub("21", "twenty-one")
 
 	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}, Spaces, "=", ","},
+		&envParser{&brackets{"{", "}"}, Spaces, "="},
 		".", Spaces + "./", Spaces, CmdRootNodeName,
 	}
 

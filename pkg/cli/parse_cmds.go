@@ -49,7 +49,6 @@ func NewParser() *Parser {
 				&brackets{EnvBracketLeft, EnvBracketRight},
 				Spaces,
 				EnvKeyValSep,
-				EnvValAlterSeps + Spaces,
 			},
 			CmdPathSep,
 			Spaces + CmdPathAlterSeps,

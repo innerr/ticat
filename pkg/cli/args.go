@@ -6,8 +6,8 @@ import (
 
 type Args struct {
 	// Use a map as a set
-	pairs map[string]bool
-	list []string
+	pairs       map[string]bool
+	list        []string
 	abbrsRevIdx map[string]string
 }
 
@@ -37,4 +37,9 @@ func (self *Args) AddArg(owner *CmdTree, name string, abbrs ...string) {
 
 func (self *Args) List() []string {
 	return self.list
+}
+
+func (self *Args) Realname(nameOrAbbr string) string {
+	name, _ := self.abbrsRevIdx[nameOrAbbr]
+	return name
 }

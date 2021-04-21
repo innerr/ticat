@@ -7,7 +7,7 @@ import (
 
 func TestEnvParserTryParseRaw(t *testing.T) {
 	root := NewCmdTree()
-	parser := &envParser{&brackets{"{", "}"}, Spaces, "=", ","}
+	parser := &envParser{&brackets{"{", "}"}, Spaces, "="}
 
 	test := func(a []string, bEnv ParsedEnv, bRest []string) {
 		aEnv, aRest := parser.TryParseRaw(root, a)
@@ -21,6 +21,9 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	v := func(v string) ParsedEnvVal {
 		return ParsedEnvVal{v, false}
 	}
+	a := func(v string) ParsedEnvVal {
+		return ParsedEnvVal{v, true}
+	}
 
 	test(nil, nil, nil)
 	test([]string{}, nil, nil)
@@ -28,15 +31,67 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	test([]string{"a=A", "b=B"}, ParsedEnv{"a": v("A"), "b": v("B")}, nil)
 	test([]string{"a=A", "bB"}, ParsedEnv{"a": v("A")}, []string{"bB"})
 	test([]string{"a=A", "bB", "c=C"}, ParsedEnv{"a": v("A")}, []string{"bB", "c=C"})
-
 	test([]string{" a = A "}, ParsedEnv{"a": v("A")}, nil)
 	test([]string{" a = A ", " b = B "}, ParsedEnv{"a": v("A"), "b": v("B")}, nil)
 	test([]string{" a = A ", " bB "}, ParsedEnv{"a": v("A")}, []string{" bB "})
 	test([]string{" a = A ", " bB ", " c = C "}, ParsedEnv{"a": v("A")}, []string{" bB ", " c = C "})
+	test([]string{"a","=", "A"}, ParsedEnv{"a": v("A")}, nil)
+	test([]string{"a=", "A"}, ParsedEnv{"a": v("A")}, nil)
+	test([]string{"a","=A"}, ParsedEnv{"a": v("A")}, nil)
+	test([]string{" a "," = ", " A "}, ParsedEnv{"a": v("A")}, nil)
+	test([]string{" a = ", " A "}, ParsedEnv{"a": v("A")}, nil)
+	test([]string{" a "," = A "}, ParsedEnv{"a": v("A")}, nil)
+
+	dummy := func(*Cli, *Env) bool {
+		return true
+	}
+	cmd := root.RegCmd(dummy)
+
+	test(nil, nil, nil)
+	test([]string{}, nil, nil)
+	test([]string{"a=A"}, nil, []string{"a=A"})
+
+	cmd.AddArg("aa")
+
+	test(nil, nil, nil)
+	test([]string{}, nil, nil)
+	test([]string{"a=A"}, nil, []string{"a=A"})
+	test([]string{"aa=A"}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{"aa=A", "aa=A"}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{"aa=A", "aa=B"}, ParsedEnv{"aa": a("B")}, nil)
+	test([]string{"bb=A", "aa=B"}, nil, []string{"bb=A", "aa=B"})
+	test([]string{"aa A"}, nil, []string{"aa A"})
+	test([]string{"aa", "A"}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{"", "aa=A", ""}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{" aa = A ", " aa = A "}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{" aa = A", " aa = B "}, ParsedEnv{"aa": a("B")}, nil)
+	test([]string{"aa","=", "A"}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{"aa=", "A"}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{"aa","=A"}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{" aa "," = ", " A "}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{" aa = ", " A "}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{" aa "," = A "}, ParsedEnv{"aa": a("A")}, nil)
+
+	cmd.AddArg("bb", "BB")
+
+	test(nil, nil, nil)
+	test([]string{}, nil, nil)
+	test([]string{"a=A"}, nil, []string{"a=A"})
+	test([]string{"aa=A"}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{"aa=A", "aa=A"}, ParsedEnv{"aa": a("A")}, nil)
+	test([]string{"aa=A", "aa=B"}, ParsedEnv{"aa": a("B")}, nil)
+	test([]string{"aa=A", "bb=B"}, ParsedEnv{"aa": a("A"), "bb": a("B")}, nil)
+	test([]string{"bb=A", "aa=B"}, ParsedEnv{"bb": a("A"), "aa": a("B")}, nil)
+	test([]string{"BB=A", "aa=B"}, ParsedEnv{"bb": a("A"), "aa": a("B")}, nil)
+	test([]string{"aa=A", "BB=B"}, ParsedEnv{"aa": a("A"), "bb": a("B")}, nil)
+	test([]string{"aa=A", "x", "BB=B"}, ParsedEnv{"aa": a("A")}, []string{"x", "BB=B"})
+	test([]string{"aa=A, BB=B"}, ParsedEnv{"aa": a("A, BB=B")}, nil)
+	test([]string{"aa=A, x, BB=B"}, ParsedEnv{"aa": a("A, x, BB=B")}, nil)
+	test([]string{"aa=A, x, BB=B", "bb=C"}, ParsedEnv{"aa": a("A, x, BB=B"), "bb": a("C")}, nil)
 }
 
 func TestEnvParserFindLeft(t *testing.T) {
-	parser := &envParser{&brackets{"{", "}"}, Spaces, "=", ","}
+	parser := &envParser{&brackets{"{", "}"}, Spaces, "="}
 
 	test := func(a []string, bRest []string, bFound bool, bAgain bool) {
 		aRest, aFound, aAgain := parser.findLeft(a)
@@ -68,7 +123,7 @@ func TestEnvParserFindLeft(t *testing.T) {
 }
 
 func TestEnvParserFindRight(t *testing.T) {
-	parser := &envParser{&brackets{"{", "}"}, Spaces, "=", ","}
+	parser := &envParser{&brackets{"{", "}"}, Spaces, "="}
 
 	test := func(a []string, bEnv []string, bRest []string, bFound bool) {
 		aEnv, aRest, aFound := parser.findRight(a)
@@ -112,7 +167,7 @@ func TestEnvParserFindRight(t *testing.T) {
 
 func TestEnvParserTryParse(t *testing.T) {
 	root := NewCmdTree()
-	parser := &envParser{&brackets{"{", "}"}, Spaces, "=", ","}
+	parser := &envParser{&brackets{"{", "}"}, Spaces, "="}
 
 	test := func(a []string, bEnv ParsedEnv, bRest []string, bFound bool, bErr error) {
 		aEnv, aRest, aFound, aErr := parser.TryParse(root, a)
