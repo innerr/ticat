@@ -12,7 +12,7 @@ func RegisterBuiltin(cmds *cli.CmdTree) {
 	cmds.AddSub("quiet", "q", "Q").RegQuietCmd(SetQuietMode)
 
 	cmds.AddSub("dummy", "d", "D").RegCmd(Dummy)
-	cmds.AddSub("sleep", "slp", "s", "S").RegCmd(Sleep).AddArg("duration", "dur")
+	cmds.AddSub("sleep", "slp", "s", "S").RegCmd(Sleep).AddArg("duration", "dur", "d", "D")
 
 	// Nodes without executables, could provide a convenient way to define env values
 	runtime := cmds.AddSub("runtime", "rt")

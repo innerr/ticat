@@ -78,14 +78,23 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 	if !foundKvSep {
 		list := args.List()
 		curr := 0
-		for ; i+1 < len(rest); i += 2 {
-			if curr >= len(list) || rest[0] != list[curr] {
-				return tryTrimParsedEnv(env), genResult(i)
+		if len(rest) > len(list) || (len(rest) > 0 && len(args.Realname(rest[0])) != 0 ) {
+			for ; i+1 < len(rest); i += 2 {
+				key := args.Realname(rest[i])
+				if len(key) == 0 {
+					return tryTrimParsedEnv(env), genResult(i)
+				}
+				value := rest[i+1]
+				env[key] = ParsedEnvVal{value, true}
+				curr += 1
 			}
-			key := rest[i]
-			value := rest[i+1]
-			env[key] = ParsedEnvVal{value, true}
-			curr += 1
+		} else {
+			for ; i < len(rest); i += 1 {
+				key := list[i]
+				value := rest[i]
+				env[key] = ParsedEnvVal{value, true}
+				curr += 1
+			}
 		}
 	} else {
 		for ; i+2 < len(rest); i += 3 {
