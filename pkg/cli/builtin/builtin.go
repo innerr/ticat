@@ -24,6 +24,10 @@ func RegisterBuiltin(cmds *cli.CmdTree) {
 	mod := builtin.AddSub("mod", "mods")
 	mod.AddSub("load").AddSub("local", "l", "L").RegCmd(LoadLocalMods)
 
+	dbg := cmds.AddSub("dump")
+	dbg.AddSub("cmd", "cmds").RegQuietPowerCmd(DbgDumpCmds)
+	dbg.AddSub("env").RegCmd(DbgDumpEnv)
+
 	// Nodes without executables, could provide a convenient way to define env values
 	runtime := cmds.AddSub("runtime", "rt")
 	display := runtime.AddSub("display", "d", "D")

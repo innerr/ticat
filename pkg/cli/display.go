@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func printCmdResult(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env, succeeded bool,
+func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
 	elapsed time.Duration, cmds []ParsedCmd, currCmdIdx int, sep string) {
 
 	if !env.Get("runtime.display").GetBool() {
@@ -58,7 +58,7 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env, succe
 	}
 }
 
-func printCmdStack(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env,
+func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env,
 	cmds []ParsedCmd, currCmdIdx int, sep string) {
 
 	if !env.Get("runtime.display").GetBool() {
@@ -165,7 +165,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env,
 		}
 		screen.Println("│" + padRight(line, " ", width-2) + "│")
 
-		argv := cmd.GenEnv(env).GetArgv(cmd.Path(), sep, cmd.Args())
+		argv := cmd.GenEnv(env.GetLayer(EnvLayerSession)).GetArgv(cmd.Path(), sep, cmd.Args())
 		for k, v := range argv {
 			line = "│" + padRight(strings.Repeat(" ", 8)+k+" = "+v.Raw,
 				" ", width-3) + " " + "│"
@@ -212,17 +212,6 @@ func filterBuiltinAndQuiet(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]Parsed
 		newCmds = append(newCmds, cmd)
 	}
 	return newCmds, newIdx
-}
-
-func debugDumpEnv(env *Env) {
-	fmt.Println()
-	fmt.Println("-- DBUG BEGIN --")
-	lines := dumpEnv(env, true, true, true, nil)
-	for _, line := range lines {
-		fmt.Println(line)
-	}
-	fmt.Println("-- DBUG END --")
-	fmt.Println()
 }
 
 func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool,

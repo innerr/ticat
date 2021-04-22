@@ -55,7 +55,7 @@ func (self ParsedCmd) Args() *Args {
 		return nil
 	}
 	last := self[len(self)-1].Cmd.Cmd
-	if last == nil {
+	if last == nil || last.cmd == nil {
 		return nil
 	}
 	return &last.cmd.args

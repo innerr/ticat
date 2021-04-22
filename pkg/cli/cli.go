@@ -62,7 +62,8 @@ func (self *Cli) insertPreparation(cmds *ParsedCmds, prep *ParsedCmds) {
 			continue
 		}
 		if hasPowerCmd {
-			cmds.Cmds = append(append(cmds.Cmds[:i], prep.Cmds...), cmds.Cmds[i:]...)
+			// Must append the tail first, then add the head! or else the data is wrong
+			cmds.Cmds = append(cmds.Cmds[:i], append(prep.Cmds, cmds.Cmds[i:]...)...)
 			return
 		}
 	}
@@ -101,7 +102,7 @@ func (self *Cli) executeCmd(cmd ParsedCmd, env *Env, cmds []ParsedCmd,
 	cmdEnv := cmd.GenEnv(env)
 	argv := cmdEnv.GetArgv(cmd.Path(), sep, cmd.Args())
 
-	printCmdStack(self.Screen, cmd, argv, cmdEnv, cmds, currCmdIdx, sep)
+	printCmdStack(self.Screen, cmd, cmdEnv, cmds, currCmdIdx, sep)
 	last := cmd[len(cmd)-1].Cmd.Cmd
 	start := time.Now()
 	if last != nil {
@@ -109,6 +110,6 @@ func (self *Cli) executeCmd(cmd ParsedCmd, env *Env, cmds []ParsedCmd,
 	} else {
 		newCmds, newCurrCmdIdx, succeeded = cmds, currCmdIdx, false
 	}
-	printCmdResult(self.Screen, cmd, argv, cmdEnv, succeeded, time.Now().Sub(start), cmds, currCmdIdx, sep)
+	printCmdResult(self.Screen, cmd, cmdEnv, succeeded, time.Now().Sub(start), cmds, currCmdIdx, sep)
 	return
 }

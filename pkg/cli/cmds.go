@@ -56,6 +56,7 @@ func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	}
 	sub := NewCmdTree()
 	sub.name = name
+	sub.parent = self
 	self.sub[name] = sub
 	self.addSubAbbr(name, abbrs...)
 	return sub
@@ -125,6 +126,9 @@ func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {
 	}
 	sub, ok := self.sub[name]
 	if !ok {
+		if !addIfNotExists {
+			return nil
+		}
 		sub = self.AddSub(name)
 	}
 	return sub.getSub(addIfNotExists, path[1:]...)
