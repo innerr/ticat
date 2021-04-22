@@ -56,3 +56,29 @@ func (self *Args) Realname(nameOrAbbr string) string {
 	name, _ := self.abbrsRevIdx[nameOrAbbr]
 	return name
 }
+
+func (self *Args) Dump(argv ArgVals) (output []string) {
+	for _, k := range self.List() {
+		defV := self.DefVal(k)
+		if len(defV) == 0 {
+			defV = "'" + defV + "'"
+		}
+		line := k + " = "
+		if argv != nil {
+			v := argv[k].Raw
+			if len(v) == 0 {
+				v = "'" + v + "'"
+			}
+			line += v
+			if defV != v {
+				line += " (def:" + defV + ")"
+			} else {
+				line += " (=def)"
+			}
+		} else {
+			line += defV + "'"
+		}
+		output = append(output, line)
+	}
+	return
+}

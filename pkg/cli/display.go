@@ -166,10 +166,8 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env,
 		screen.Println("│" + padRight(line, " ", width-2) + "│")
 
 		argv := cmd.GenEnv(env.GetLayer(EnvLayerSession)).GetArgv(cmd.Path(), sep, cmd.Args())
-		for k, v := range argv {
-			line = "│" + padRight(strings.Repeat(" ", 8)+k+" = "+v.Raw,
-				" ", width-3) + " " + "│"
-			screen.Println(line)
+		for _, line := range cmd.Args().Dump(argv) {
+			screen.Println("│" + padRight(strings.Repeat(" ", 8) + line, " ", width-2) + "│")
 		}
 	}
 

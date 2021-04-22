@@ -20,14 +20,8 @@ func DumpCmdsEx(screen *Screen, env *Env, cmds []ParsedCmd, sep string) {
 			continue
 		}
 		argv := cmd.GenEnv(env).GetArgv(cmd.Path(), sep, args)
-		for j, k := range args.List() {
-			defV := args.DefVal(k)
-			v := argv[k].Raw
-			line = strings.Repeat(" ", indentSize*2) + "[arg:" + strconv.Itoa(j) + "] " + k + " = " + v
-			if defV != v {
-				line += " (def:" + defV + ")"
-			}
-			screen.Println(line)
+		for j, line := range args.Dump(argv) {
+			screen.Println(strings.Repeat(" ", indentSize*2) + "[arg:" + strconv.Itoa(j) + "] " + line)
 		}
 	}
 }
