@@ -48,7 +48,7 @@ func (self *Env) GetLayer(tp EnvLayerType) *Env {
 		return self
 	}
 	if self.parent == nil {
-		panic(fmt.Errorf("env layer '%s' not found", tp))
+		panic(fmt.Errorf("[Env.GetLayer] env layer '%s' not found", tp))
 	}
 	return self.parent.GetLayer(tp)
 }

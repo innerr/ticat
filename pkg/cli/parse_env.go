@@ -27,14 +27,15 @@ func (self *envParser) TryParse(cmd *CmdTree,
 	envStrs, rest, found = self.findRight(rest)
 	if !found {
 		return nil, tryTrimStrings(input), true,
-			fmt.Errorf("unmatched env brackets '" + strings.Join(input, " ") + "'")
+			fmt.Errorf("[envParser.TryParse] unmatched env brackets '" + strings.Join(input, " ") + "'")
 	}
 
 	var envRest []string
 	env, envRest = self.TryParseRaw(cmd, envStrs)
 	if len(envRest) != 0 {
 		return nil, tryTrimStrings(input), true,
-			fmt.Errorf("env difinition can't be recognized '" + strings.Join(envRest, " ") + "'")
+			fmt.Errorf("[envParser.TryParse] env difinition can't be recognized '" +
+				strings.Join(envRest, " ") + "'")
 	}
 
 	return env, tryTrimStrings(rest), true, nil

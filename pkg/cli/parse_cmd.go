@@ -113,7 +113,7 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 		var succeeded bool
 		env, input, succeeded, err = self.envParser.TryParse(curr, input)
 		if err != nil {
-			self.err(matchedCmdPath, "unmatched env brackets '"+strings.Join(input, " ")+"'")
+			self.err("parse", matchedCmdPath, "unmatched env brackets '"+strings.Join(input, " ")+"'")
 			break
 		}
 		if succeeded {
@@ -168,7 +168,7 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 			parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
 		}
 		if len(input) != 0 {
-			self.err(matchedCmdPath, "unknow input '"+strings.Join(input, ",")+"'")
+			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ",")+"'")
 		}
 		break
 	}
@@ -176,12 +176,12 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 	return parsed
 }
 
-func (self *cmdParser) err(matchedCmdPath []string, msg string) {
+func (self *cmdParser) err(function string, matchedCmdPath []string, msg string) {
 	displayPath := self.cmdRootNodeName
 	if len(matchedCmdPath) != 0 {
 		strings.Join(matchedCmdPath, self.cmdSep)
 	}
-	panic(fmt.Errorf("%s: %s", displayPath, msg))
+	panic(fmt.Errorf("[cmdParser.%s] %s: %s", function, displayPath, msg))
 }
 
 type parsedSegType uint

@@ -80,7 +80,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, argv ArgVals, env *Env,
 	const cmdCntKey = "runtime.display.max-cmd-cnt"
 	cmdDisplayCnt := env.Get(cmdCntKey).GetInt()
 	if cmdDisplayCnt < 4 {
-		panic(fmt.Errorf("%s should not less than 4", cmdCntKey))
+		panic(fmt.Errorf("[printCmdStack] %s should not less than 4", cmdCntKey))
 	}
 
 	printEnv := env.Get("runtime.display.env").GetBool()

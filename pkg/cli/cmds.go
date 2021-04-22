@@ -30,6 +30,11 @@ func (self *CmdTree) RegCmd(cmd NormalCmd) *Cmd {
 	return self.cmd
 }
 
+func (self *CmdTree) RegBashCmd(cmd string) *Cmd {
+	self.cmd = NewBashCmd(self, cmd)
+	return self.cmd
+}
+
 func (self *CmdTree) RegQuietCmd(cmd NormalCmd) *Cmd {
 	self.cmd = NewCmd(self, cmd, true)
 	return self.cmd
@@ -45,6 +50,32 @@ func (self *CmdTree) RegQuietPowerCmd(cmd PowerCmd) *Cmd {
 	return self.cmd
 }
 
+func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
+	if _, ok := self.sub[name]; ok {
+		panic(fmt.Errorf("[CmdTree.AddSub] %s%s: sub-cmd name conflicted: %s", ErrStrPrefix, self.DisplayPath(), name))
+	}
+	sub := NewCmdTree()
+	sub.name = name
+	self.sub[name] = sub
+	self.addSubAbbr(name, abbrs...)
+	return sub
+}
+
+func (self *CmdTree) AddAbbr(abbrs ...string) {
+	if self.parent == nil {
+		panic(fmt.Errorf("[CmdTree.AddAbbr] can't add abbrs %v to root", abbrs))
+	}
+	self.parent.addSubAbbr(self.name, abbrs...)
+}
+
+func (self *CmdTree) GetOrAddSub(path ...string) *CmdTree {
+	return self.getSub(true, path...)
+}
+
+func (self *CmdTree) GetSub(path ...string) *CmdTree {
+	return self.getSub(false, path...)
+}
+
 func (self *CmdTree) IsQuiet() bool {
 	return self.cmd != nil && self.cmd.quiet
 }
@@ -55,32 +86,6 @@ func (self *CmdTree) IsPowerCmd() bool {
 
 func (self *CmdTree) Name() string {
 	return self.name
-}
-
-func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
-	if _, ok := self.sub[name]; ok {
-		panic(fmt.Errorf("%s%s: sub-cmd name conflicted: %s", ErrStrPrefix, self.DisplayPath(), name))
-	}
-	for _, abbr := range abbrs {
-		if old, ok := self.subAbbrsRevIdx[abbr]; ok {
-			panic(fmt.Errorf("%s%s: command abbr name '%s' conflicted, old for '%s', new for '%s'",
-				ErrStrPrefix, self.DisplayPath(), abbr, old, name))
-		}
-		self.subAbbrsRevIdx[abbr] = name
-	}
-	self.subAbbrsRevIdx[name] = name
-	sub := NewCmdTree()
-	sub.name = name
-	self.sub[name] = sub
-	return sub
-}
-
-func (self *CmdTree) GetSub(name string) *CmdTree {
-	if realName, ok := self.subAbbrsRevIdx[name]; ok {
-		name = realName
-	}
-	sub, _ := self.sub[name]
-	return sub
 }
 
 func (self *CmdTree) Path() []string {
@@ -97,4 +102,30 @@ func (self *CmdTree) DisplayPath() string {
 	} else {
 		return strings.Join(path, ".")
 	}
+}
+
+func (self *CmdTree) addSubAbbr(name string, abbrs ...string) {
+	for _, abbr := range abbrs {
+		if old, ok := self.subAbbrsRevIdx[abbr]; ok {
+			panic(fmt.Errorf("[CmdTree.addSubAbbr] %s%s: command abbr name '%s' conflicted, old for '%s', new for '%s'",
+				ErrStrPrefix, self.DisplayPath(), abbr, old, name))
+		}
+		self.subAbbrsRevIdx[abbr] = name
+	}
+	self.subAbbrsRevIdx[name] = name
+}
+
+func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {
+	if len(path) == 0 {
+		return self
+	}
+	name := path[0]
+	if realName, ok := self.subAbbrsRevIdx[name]; ok {
+		name = realName
+	}
+	sub, ok := self.sub[name]
+	if !ok {
+		sub = self.AddSub(name)
+	}
+	return sub.getSub(addIfNotExists, path[1:]...)
 }

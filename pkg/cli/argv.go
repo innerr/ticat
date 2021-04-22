@@ -22,11 +22,11 @@ func (self ArgVals) GetRaw(name string) (raw string) {
 func (self ArgVals) GetInt(name string) int {
 	val, ok := self[name]
 	if !ok {
-		panic(fmt.Errorf("arg '%s' not found", name))
+		panic(fmt.Errorf("[ArgVals.GetInt] arg '%s' not found", name))
 	}
 	intVal, err := strconv.ParseInt(val.Raw, 10, 64)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("[ArgVals.GetInt] %v", err))
 	}
 	return int(intVal)
 }

@@ -18,7 +18,7 @@ func (self *EnvVal) SetInt(val int) {
 func (self EnvVal) GetInt() int {
 	val, err := strconv.ParseInt(self.Raw, 10, 64)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("[EnvVal.GetInt] strconv failed: %v", err))
 	}
 	return int(val)
 }

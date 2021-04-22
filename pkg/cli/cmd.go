@@ -10,7 +10,6 @@ const (
 	CmdTypeNormal CmdType = iota
 	CmdTypePower
 	CmdTypeBash
-	// TODO: Py2, Py3
 )
 
 type NormalCmd func(argv ArgVals, cli *Cli, env *Env) (succeeded bool)
@@ -24,14 +23,19 @@ type Cmd struct {
 	args   Args
 	normal NormalCmd
 	power  PowerCmd
+	bash   string
 }
 
 func NewCmd(owner *CmdTree, cmd NormalCmd, quiet bool) *Cmd {
-	return &Cmd{owner, CmdTypeNormal, quiet, newArgs(), cmd, nil}
+	return &Cmd{owner, CmdTypeNormal, quiet, newArgs(), cmd, nil, ""}
 }
 
 func NewPowerCmd(owner *CmdTree, cmd PowerCmd, quiet bool) *Cmd {
-	return &Cmd{owner, CmdTypePower, quiet, newArgs(), nil, cmd}
+	return &Cmd{owner, CmdTypePower, quiet, newArgs(), nil, cmd, ""}
+}
+
+func NewBashCmd(owner *CmdTree, cmd string) *Cmd {
+	return &Cmd{owner, CmdTypeBash, false, newArgs(), nil, nil, cmd}
 }
 
 func (self *Cmd) Execute(argv ArgVals, cli *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int, bool) {
@@ -40,8 +44,11 @@ func (self *Cmd) Execute(argv ArgVals, cli *Cli, env *Env, cmds []ParsedCmd, cur
 		return self.power(argv, cli, env, cmds, currCmdIdx)
 	case CmdTypeNormal:
 		return cmds, currCmdIdx, self.normal(argv, cli, env)
+	case CmdTypeBash:
+		fmt.Println("TODO: execute bash command:", self.bash)
+		return cmds, currCmdIdx, true
 	default:
-		panic(fmt.Errorf("unknown command executable type: %d", self.ty))
+		panic(fmt.Errorf("[Cmd.Execute] unknown command executable type: %d", self.ty))
 	}
 }
 
