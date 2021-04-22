@@ -1,5 +1,6 @@
-abbrs = "bash|sh|B"
+abbrs = "bash|sh"
 
 [args]
-arg1|a1 = ""
-arg2|a2 = ""
+arg_a|a = "A"
+arg_b|b = "B"
+arg_c|c = "C"

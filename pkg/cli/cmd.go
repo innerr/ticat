@@ -1,7 +1,11 @@
 package cli
 
 import (
+	"io"
+	"os"
+	"os/exec"
 	"fmt"
+	"bufio"
 )
 
 type CmdType string
@@ -45,8 +49,7 @@ func (self *Cmd) Execute(argv ArgVals, cli *Cli, env *Env, cmds []ParsedCmd, cur
 	case CmdTypeNormal:
 		return cmds, currCmdIdx, self.normal(argv, cli, env)
 	case CmdTypeBash:
-		fmt.Println("TODO: execute bash command:", self.bash)
-		return cmds, currCmdIdx, true
+		return cmds, currCmdIdx, self.executeBash(argv, cli, env)
 	default:
 		panic(fmt.Errorf("[Cmd.Execute] unknown cmd executable type: %v", self.ty))
 	}
@@ -59,4 +62,73 @@ func (self *Cmd) IsPowerCmd() bool {
 func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
 	self.args.AddArg(self.owner, name, defVal, abbrs...)
 	return self
+}
+
+func (self *Cmd) executeBash(argv ArgVals, cli *Cli, env *Env) bool {
+	var args []string
+	args = append(args, self.bash)
+	for _, k := range self.args.List() {
+		args = append(args, argv[k].Raw)
+	}
+	cmd := exec.Command("bash", args...)
+
+	errPrefix := "[ERR] execute bash fail: %v"
+
+	osStdout := os.Stdout
+	cmd.Stdout = os.Stdout
+	defer func() {
+		os.Stdout = osStdout
+	}()
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		cli.Screen.Println(fmt.Sprintf(errPrefix, err))
+		return false
+	}
+	defer stdin.Close()
+
+	// Input to bash
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, "hello there!\n")
+	}()
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		cli.Screen.Println(fmt.Sprintf(errPrefix, err))
+		return false
+	}
+	defer stderr.Close()
+
+	err = cmd.Start()
+	if err != nil {
+		cli.Screen.Println(fmt.Sprintf(errPrefix, err))
+		cli.Screen.Println("  - path: "+ self.bash)
+		for i, arg := range args[1:] {
+			cli.Screen.Println(fmt.Sprintf("  - arg:%d %s", i, arg))
+		}
+		return false
+	}
+
+	// Output from bash
+	scanner := bufio.NewScanner(stderr)
+	scanner.Split(bufio.ScanLines)
+	var errLines []string
+	for scanner.Scan() {
+		errLines = append(errLines, scanner.Text())
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		cli.Screen.Println(fmt.Sprintf(errPrefix, err))
+	}
+
+	if len(errLines) != 0 {
+		cli.Screen.Println("\n[stderr]")
+		for _, line := range errLines {
+			cli.Screen.Println("    " + line)
+		}
+	}
+
+	return err == nil
 }

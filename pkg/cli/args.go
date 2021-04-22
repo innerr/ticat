@@ -57,7 +57,7 @@ func (self *Args) Realname(nameOrAbbr string) string {
 	return name
 }
 
-func (self *Args) Dump(argv ArgVals) (output []string) {
+func (self *Args) Dump(argv ArgVals, printDef bool) (output []string) {
 	for _, k := range self.List() {
 		defV := self.DefVal(k)
 		if len(defV) == 0 {
@@ -70,10 +70,12 @@ func (self *Args) Dump(argv ArgVals) (output []string) {
 				v = "'" + v + "'"
 			}
 			line += v
-			if defV != v {
-				line += " (def:" + defV + ")"
-			} else {
-				line += " (=def)"
+			if printDef {
+				if defV != v {
+					line += " (def:" + defV + ")"
+				} else {
+					line += " (=def)"
+				}
 			}
 		} else {
 			line += defV + "'"
