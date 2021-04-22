@@ -105,10 +105,21 @@ func (self *CmdTree) DisplayPath() string {
 	}
 }
 
+func (self *CmdTree) DisplayName() string {
+	if len(self.name) == 0 {
+		return CmdRootNodeName
+	}
+	return self.name
+}
+
 func (self *CmdTree) addSubAbbr(name string, abbrs ...string) {
 	for _, abbr := range abbrs {
+		if len(abbr) == 0 {
+			continue
+		}
 		if old, ok := self.subAbbrsRevIdx[abbr]; ok {
-			panic(fmt.Errorf("[CmdTree.addSubAbbr] %s%s: command abbr name '%s' conflicted, old for '%s', new for '%s'",
+			panic(fmt.Errorf(
+				"[CmdTree.addSubAbbr] %s%s: command abbr name '%s' conflicted, old for '%s', new for '%s'",
 				ErrStrPrefix, self.DisplayPath(), abbr, old, name))
 		}
 		self.subAbbrsRevIdx[abbr] = name

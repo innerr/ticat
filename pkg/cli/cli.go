@@ -30,10 +30,9 @@ func NewCli(builtinLoader func(*CmdTree), envLoader func(*Env)) *Cli {
 
 func (self *Cli) Execute(preparation string, script ...string) bool {
 	prep := self.Parser.Parse(self.Cmds, preparation)
-	flow := self.Parser.Parse(self.Cmds, script...)
-	self.insertPreparation(flow, prep)
-	self.filterEmptyCmds(flow)
-	return self.executeCmds(flow)
+	self.executeCmds(prep)
+	cmds := self.Parser.Parse(self.Cmds, script...)
+	return self.executeCmds(cmds)
 }
 
 // Remove the cmds only have cmd-level env definication but have no executable
@@ -50,6 +49,7 @@ func (self *Cli) filterEmptyCmds(cmds *ParsedCmds) {
 	cmds.Cmds = filtered
 }
 
+// Abandoned
 func (self *Cli) insertPreparation(cmds *ParsedCmds, prep *ParsedCmds) {
 	if prep.GlobalEnv != nil {
 		cmds.GlobalEnv.Merge(prep.GlobalEnv)
@@ -75,20 +75,21 @@ func (self *Cli) insertPreparation(cmds *ParsedCmds, prep *ParsedCmds) {
 	}
 }
 
-func (self *Cli) executeCmds(flow *ParsedCmds) bool {
+func (self *Cli) executeCmds(cmds *ParsedCmds) bool {
+	self.filterEmptyCmds(cmds)
 	env := self.GlobalEnv.GetLayer(EnvLayerSession)
-	if flow.GlobalEnv != nil {
-		flow.GlobalEnv.WriteNotArgTo(env)
+	if cmds.GlobalEnv != nil {
+		cmds.GlobalEnv.WriteNotArgTo(env)
 	}
-	for i := 0; i < len(flow.Cmds); i++ {
+	for i := 0; i < len(cmds.Cmds); i++ {
 		var newCmds []ParsedCmd
 		var succeeded bool
-		cmd := flow.Cmds[i]
-		newCmds, i, succeeded = self.executeCmd(cmd, env, flow.Cmds, i)
+		cmd := cmds.Cmds[i]
+		newCmds, i, succeeded = self.executeCmd(cmd, env, cmds.Cmds, i)
 		if !succeeded {
 			return false
 		}
-		flow.Cmds = newCmds
+		cmds.Cmds = newCmds
 	}
 	return true
 }

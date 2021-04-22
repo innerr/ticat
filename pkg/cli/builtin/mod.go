@@ -32,7 +32,7 @@ func LoadLocalMods(_ cli.ArgVals, cc *cli.Cli, env *cli.Env) bool {
 		}
 		ext = filepath.Ext(target)
 		if ext == ".bash" {
-			regBashMod(cc, path, target, target[len(root)+1:len(target)])
+			regBashMod(cc, path, target, target[len(root)+1:len(target)-len(ext)])
 		}
 		return nil
 	})
@@ -51,6 +51,7 @@ func regDirMod(cc *cli.Cli, metaPath string, dirPath string, cmdPath string) {
 	}
 	abbrs, ok := ini.SectionGet("", "abbrs")
 	if ok {
+		abbrs = strings.Trim(abbrs, "'\"")
 		mod.AddAbbr(strings.Split(abbrs, cli.AbbrSep)...)
 	}
 }
@@ -66,11 +67,14 @@ func regBashMod(cc *cli.Cli, metaPath string, filePath string, cmdPath string) {
 	}
 	abbrs, ok := ini.SectionGet("", "abbrs")
 	if ok {
+		abbrs = strings.Trim(abbrs, "'\"")
 		mod.AddAbbr(strings.Split(abbrs, cli.AbbrSep)...)
 	}
 	args, ok := ini.GetKvmap("args")
 	if ok {
 		for names, defVal := range args {
+			names = strings.Trim(names, "'\"")
+			defVal = strings.Trim(defVal, "'\"")
 			nameAndAbbrs := strings.Split(names, cli.AbbrSep)
 			name := nameAndAbbrs[0]
 			argAbbrs := nameAndAbbrs[1:]

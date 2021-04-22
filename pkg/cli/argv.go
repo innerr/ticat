@@ -30,3 +30,11 @@ func (self ArgVals) GetInt(name string) int {
 	}
 	return int(intVal)
 }
+
+func (self ArgVals) GetBool(name string) bool {
+	val, ok := self[name]
+	if !ok {
+		panic(fmt.Errorf("[ArgVals.GetBool] arg '%s' not found", name))
+	}
+	return StrToBool(val.Raw)
+}

@@ -1,5 +1,5 @@
 abbrs = "bash|B"
 
 [args]
-arg1|a1| = ""
+arg1|a1 = ""
 arg2|a2 = ""

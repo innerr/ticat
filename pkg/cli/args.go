@@ -7,8 +7,11 @@ import (
 type Args struct {
 	// Use a map as a set
 	pairs       map[string]bool
+
 	list        []string
+	// Not support no-default-value yet, so pairs could be insteaded by defVals now
 	defVals     map[string]string
+
 	abbrsRevIdx map[string]string
 }
 
@@ -26,6 +29,9 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 		panic(fmt.Errorf("[Args.AddArg] %s%s: arg name conflicted: %s", ErrStrPrefix, owner.DisplayPath(), name))
 	}
 	for _, abbr := range abbrs {
+		if len(abbr) == 0 {
+			continue
+		}
 		if old, ok := self.abbrsRevIdx[abbr]; ok {
 			panic(fmt.Errorf("[Args.AddArg] %s%s: arg abbr name '%s' conflicted, old for '%s', new for '%s'",
 				ErrStrPrefix, owner.DisplayPath(), abbr, old, name))
