@@ -5,9 +5,9 @@ import (
 )
 
 func TestCmdParserParseSeg(t *testing.T) {
-	assertEq := func(a []parsedSeg, b []parsedSeg) {
+	assertEq := func(input []string, a []parsedSeg, b []parsedSeg) {
 		fatal := func() {
-			t.Fatalf("%#v != %#v\n", a, b)
+			t.Fatalf("%#v: %#v != %#v\n", input, a, b)
 		}
 		if len(a) != len(b) {
 			fatal()
@@ -60,7 +60,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 
 	test := func(a []string, b []parsedSeg) {
 		parsed := parser.parse(root, a)
-		assertEq(parsed, b)
+		assertEq(a, parsed, b)
 	}
 
 	test(nil, []parsedSeg{})

@@ -107,10 +107,15 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 	var matchedCmdPath []string
 	var curr = tree
 
+	var lastNotExpectArg bool
+	var notExpectArg bool
+
 	for len(input) != 0 {
 		var env ParsedEnv
 		var err error
 		var succeeded bool
+
+		// Try to parse input to env
 		env, input, succeeded, err = self.envParser.TryParse(curr, input)
 		if err != nil {
 			self.err("parse", matchedCmdPath, "unmatched env brackets '"+strings.Join(input, " ")+"'")
@@ -127,6 +132,7 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 			break
 		}
 
+		// Try to split input by cmd-sep
 		i := strings.IndexAny(input[0], self.cmdAlterSeps)
 		if i == 0 {
 			if len(parsed) != 0 && parsed[len(parsed)-1].Type != parsedSegTypeSep {
@@ -137,7 +143,6 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 			} else {
 				input = append([]string{input[0][1:]}, input[1:]...)
 			}
-			continue
 		} else if i > 0 {
 			head := input[0][0:i]
 			rest := strings.TrimLeft(input[0][i+1:], self.cmdAlterSeps)
@@ -151,9 +156,14 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 				lead = append(lead, rest)
 			}
 			input = append(lead, input...)
+		}
+		lastNotExpectArg = notExpectArg
+		notExpectArg = (i >= 0)
+		if i >= 0 {
 			continue
 		}
 
+		// Try to parse input as cmd-seg to sub
 		sub := curr.GetSub(input[0])
 		if sub != nil {
 			curr = sub
@@ -163,12 +173,17 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 			continue
 		}
 
+		// Try to parse cmd args
+		if lastNotExpectArg {
+			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ",")+
+				"', should be a cmd or env definition")
+		}
 		env, input = self.envParser.TryParseRaw(curr, input)
 		if env != nil {
 			parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
 		}
 		if len(input) != 0 {
-			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ",")+"'")
+			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ",")+"', should be args")
 		}
 		break
 	}
@@ -179,7 +194,7 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 func (self *cmdParser) err(function string, matchedCmdPath []string, msg string) {
 	displayPath := self.cmdRootNodeName
 	if len(matchedCmdPath) != 0 {
-		strings.Join(matchedCmdPath, self.cmdSep)
+		displayPath = strings.Join(matchedCmdPath, self.cmdSep)
 	}
 	panic(fmt.Errorf("[cmdParser.%s] %s: %s", function, displayPath, msg))
 }

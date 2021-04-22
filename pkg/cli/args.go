@@ -6,11 +6,11 @@ import (
 
 type Args struct {
 	// Use a map as a set
-	pairs       map[string]bool
+	pairs map[string]bool
 
-	list        []string
+	list []string
 	// Not support no-default-value yet, so pairs could be insteaded by defVals now
-	defVals     map[string]string
+	defVals map[string]string
 
 	abbrsRevIdx map[string]string
 }

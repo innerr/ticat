@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"strings"
 	"strconv"
+	"strings"
 )
 
 func DumpCmdsEx(screen *Screen, env *Env, cmds []ParsedCmd, sep string) {
@@ -12,7 +12,7 @@ func DumpCmdsEx(screen *Screen, env *Env, cmds []ParsedCmd, sep string) {
 	indentSize := 4
 	screen.Println("[cmds:" + strconv.Itoa(len(cmds)) + "]")
 	for i, cmd := range cmds {
-		line := strings.Repeat(" ", indentSize * 1) + "[cmd:" + strconv.Itoa(i) + "] "
+		line := strings.Repeat(" ", indentSize*1) + "[cmd:" + strconv.Itoa(i) + "] "
 		line += getCmdPath(cmd, sep, true)
 		screen.Println(line)
 		args := cmd.Args()
@@ -23,7 +23,7 @@ func DumpCmdsEx(screen *Screen, env *Env, cmds []ParsedCmd, sep string) {
 		for j, k := range args.List() {
 			defV := args.DefVal(k)
 			v := argv[k].Raw
-			line = strings.Repeat(" ", indentSize * 2) + "[arg:" + strconv.Itoa(j) + "] " + k + " = " + v
+			line = strings.Repeat(" ", indentSize*2) + "[arg:" + strconv.Itoa(j) + "] " + k + " = " + v
 			if defV != v {
 				line += " (def:" + defV + ")"
 			}
@@ -52,7 +52,7 @@ func dumpMod(screen *Screen, mod *CmdTree, printAlias bool, indent int) {
 		return
 	}
 	indentPrint := func(msg string) {
-		screen.Println(strings.Repeat(" ", indent * 4) + msg)
+		screen.Println(strings.Repeat(" ", indent*4) + msg)
 	}
 	indentPrint("[" + mod.DisplayName() + "]")
 	if mod.parent != nil {
@@ -88,6 +88,6 @@ func dumpMod(screen *Screen, mod *CmdTree, printAlias bool, indent int) {
 		}
 	}
 	for _, it := range mod.sub {
-		dumpMod(screen, it, printAlias, indent + 1)
+		dumpMod(screen, it, printAlias, indent+1)
 	}
 }

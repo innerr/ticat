@@ -8,8 +8,8 @@ type CmdType string
 
 const (
 	CmdTypeNormal CmdType = "normal"
-	CmdTypePower CmdType = "power"
-	CmdTypeBash CmdType = "bash"
+	CmdTypePower  CmdType = "power"
+	CmdTypeBash   CmdType = "bash"
 )
 
 type NormalCmd func(argv ArgVals, cli *Cli, env *Env) (succeeded bool)
@@ -48,7 +48,7 @@ func (self *Cmd) Execute(argv ArgVals, cli *Cli, env *Env, cmds []ParsedCmd, cur
 		fmt.Println("TODO: execute bash command:", self.bash)
 		return cmds, currCmdIdx, true
 	default:
-		panic(fmt.Errorf("[Cmd.Execute] unknown command executable type: %v", self.ty))
+		panic(fmt.Errorf("[Cmd.Execute] unknown cmd executable type: %v", self.ty))
 	}
 }
 

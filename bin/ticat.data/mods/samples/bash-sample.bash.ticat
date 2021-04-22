@@ -1,4 +1,4 @@
-abbrs = "bash|B"
+abbrs = "bash|sh|B"
 
 [args]
 arg1|a1 = ""
