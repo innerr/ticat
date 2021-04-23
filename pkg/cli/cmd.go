@@ -1,11 +1,9 @@
 package cli
 
 import (
-	"io"
 	"os"
 	"os/exec"
 	"fmt"
-	"bufio"
 )
 
 type CmdType string
@@ -90,7 +88,7 @@ func (self *Cmd) executeBash(argv ArgVals, cli *Cli, env *Env) bool {
 	// Input to bash
 	go func() {
 		defer stdin.Close()
-		io.WriteString(stdin, "hello there!\n")
+		EnvOutput(env, stdin)
 	}()
 
 	stderr, err := cmd.StderrPipe()
@@ -111,21 +109,16 @@ func (self *Cmd) executeBash(argv ArgVals, cli *Cli, env *Env) bool {
 	}
 
 	// Output from bash
-	scanner := bufio.NewScanner(stderr)
-	scanner.Split(bufio.ScanLines)
-	var errLines []string
-	for scanner.Scan() {
-		errLines = append(errLines, scanner.Text())
-	}
+	stderrLines, err := EnvInput(env.GetLayer(EnvLayerSession), stderr)
 
 	err = cmd.Wait()
 	if err != nil {
 		cli.Screen.Println(fmt.Sprintf(errPrefix, err))
 	}
 
-	if len(errLines) != 0 {
+	if len(stderrLines) != 0 {
 		cli.Screen.Println("\n[stderr]")
-		for _, line := range errLines {
+		for _, line := range stderrLines {
 			cli.Screen.Println("    " + line)
 		}
 	}

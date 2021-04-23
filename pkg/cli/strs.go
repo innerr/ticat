@@ -13,4 +13,8 @@ const (
 	EnvRuntimeSysPrefix string = "runtime.sys."
 	CmdRootNodeName     string = "<root>"
 	ErrStrPrefix        string = "[ERR] "
+
+	ProtoMark           string = "proto." + SelfName
+	ProtoEnvMark        string = ProtoMark + ".env"
+	ProtoSep            string = "\t"
 )

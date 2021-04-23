@@ -1,6 +1,6 @@
 set -euo pipefail
 
-echo "bash-sample in"
+echo ">>> bash-sample in"
 
 echo
 echo "==> args:"
@@ -26,13 +26,15 @@ else
 fi
 
 echo
-echo "==> read something from tty"
+echo "==> input anything and press enter:"
 read msg </dev/tty
-echo "got: ${msg}"
+echo "got input from tty: '${msg}'"
 echo "---"
 
-echo "write something to stderr 1" >&2
-echo "write something to stderr 2" >&2
+echo
+echo "==> modified session env"
+echo "proto.ticat.env	samples.bash.input	${msg}" >&2
+echo "proto.ticat.env	runtime.display.width	60" >&2
 
 echo
-echo "bash-sample out"
+echo "<<< bash-sample out"

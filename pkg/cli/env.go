@@ -61,6 +61,14 @@ func (self Env) Get(name string) EnvVal {
 	return val
 }
 
+func (self Env) GetExt(name string) (EnvVal, bool) {
+	val, ok := self.pairs[name]
+	if !ok && self.parent != nil {
+		return self.parent.GetExt(name)
+	}
+	return val, ok
+}
+
 func (self *Env) Set(name string, val string) (old EnvVal) {
 	return self.SetExt(name, val, false)
 }
@@ -70,8 +78,9 @@ func (self *Env) SetAsArg(name string, val string) (old EnvVal) {
 }
 
 func (self *Env) SetExt(name string, val string, isArg bool) (old EnvVal) {
-	old = self.Get(name)
-	if old.Raw == val {
+	var exists bool
+	old, exists = self.GetExt(name)
+	if exists && old.Raw == val {
 		return
 	}
 	self.pairs[name] = EnvVal{val, isArg, nil}
