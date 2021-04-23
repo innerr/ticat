@@ -32,9 +32,17 @@ echo "got input from tty: '${msg}'"
 echo "---"
 
 echo
-echo "==> modified session env"
-echo "proto.ticat.env	samples.bash.input	${msg}" >&2
-echo "proto.ticat.env	runtime.display.width	60" >&2
+mod1="proto.ticat.env	samples.bash.input	${msg}"
+mod2="proto.ticat.env	runtime.display.width	60"
+mod3="wrong format context"
+echo "==> modified session env by print values into stderr:"
+echo "${mod1}"
+echo "${mod2}"
+echo "${mod3}"
+echo "${mod1}" >&2
+echo "${mod2}" >&2
+echo "${mod3}" >&2
+echo "---"
 
 echo
 echo "<<< bash-sample out"

@@ -1,9 +1,9 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
-	"fmt"
 )
 
 type CmdType string
@@ -101,7 +101,7 @@ func (self *Cmd) executeBash(argv ArgVals, cli *Cli, env *Env) bool {
 	err = cmd.Start()
 	if err != nil {
 		cli.Screen.Println(fmt.Sprintf(errPrefix, err))
-		cli.Screen.Println("  - path: "+ self.bash)
+		cli.Screen.Println("  - path: " + self.bash)
 		for i, arg := range args[1:] {
 			cli.Screen.Println(fmt.Sprintf("  - arg:%d %s", i, arg))
 		}

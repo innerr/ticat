@@ -23,6 +23,10 @@ func (self EnvVal) GetInt() int {
 	return int(val)
 }
 
+func (self EnvVal) PlusInt(val int) {
+	self.SetInt(self.GetInt() + val)
+}
+
 func (self EnvVal) GetBool() bool {
 	return StrToBool(self.Raw)
 }

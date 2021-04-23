@@ -1,10 +1,11 @@
 package cli
 
 import (
-	"strings"
 	"bufio"
-	"io"
 	"fmt"
+	"io"
+	"os"
+	"strings"
 )
 
 func EnvOutput(env *Env, writer io.Writer) error {
@@ -40,5 +41,24 @@ func EnvInput(env *Env, reader io.Reader) (rest []string, err error) {
 		env.Set(key, val)
 	}
 
-	return nil, nil
+	return rest, nil
+}
+
+func GenEnvFromStdin() *Env {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		panic(fmt.Errorf("[GenEnvFromStdin] get stdin stat failed %v", err))
+	}
+	if (stat.Mode() & os.ModeCharDevice) != 0 {
+		return nil
+	}
+	env := NewEnv()
+	rest, err := EnvInput(env, os.Stdin)
+	if err != nil {
+		panic(fmt.Errorf("[GenEnvFromStdin] parse stdin failed %v", err))
+	}
+	if len(rest) != 0 {
+		panic(fmt.Errorf("[GenEnvFromStdin] lines cant' be parsed '%v'", rest))
+	}
+	return env
 }

@@ -8,15 +8,10 @@ import (
 )
 
 func main() {
-	preparation := `
-		builtin.env.load.local:
-		builtin.env.load.runtime:
-		builtin.mod.load.local:
-	`
-
+	env := cli.GenEnvFromStdin()
 	succeeded := cli.NewCli(
 		builtin.RegisterBuiltin,
-		builtin.LoadBuiltinEnv).Execute(preparation, os.Args[1:]...)
+		builtin.LoadBuiltinEnv).Execute(env, os.Args[1:]...)
 	if !succeeded {
 		os.Exit(1)
 	}

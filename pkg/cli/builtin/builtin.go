@@ -11,18 +11,19 @@ func RegisterBuiltin(cmds *cli.CmdTree) {
 	cmds.AddSub("verb-", "v-", "V-").RegQuietCmd(DecreaseVerb).AddArg("volume", "1", "vol", "v", "V")
 	cmds.AddSub("quiet", "q", "Q").RegQuietCmd(SetQuietMode)
 
+	cmds.AddSub("desc").RegQuietPowerCmd(DbgDumpCmds)
 	cmds.AddSub("dummy", "d", "D").RegCmd(Dummy)
 	cmds.AddSub("sleep", "slp", "s", "S").RegCmd(Sleep).AddArg("duration", "1s", "dur", "d", "D")
 
 	builtin := cmds.AddSub("builtin", "b", "B")
 
-	env := builtin.AddSub("env")
-	envLoad := env.AddSub("load")
-	envLoad.AddSub("local", "l", "L").RegCmd(LoadLocalEnv)
-	envLoad.AddSub("runtime", "rt", "r", "R").RegCmd(LoadRuntimeEnv)
+	env := builtin.AddSub("env", "E")
+	envLoad := env.AddSub("load", "L")
+	envLoad.AddSub("local", "l", "L").RegQuietCmd(LoadLocalEnv)
+	envLoad.AddSub("runtime", "rt", "r", "R").RegQuietCmd(LoadRuntimeEnv)
 
-	mod := builtin.AddSub("mod", "mods")
-	mod.AddSub("load").AddSub("local", "l", "L").RegCmd(LoadLocalMods)
+	mod := builtin.AddSub("mod", "mods", "M")
+	mod.AddSub("load", "L").AddSub("local", "l", "L").RegQuietCmd(LoadLocalMods)
 
 	dbg := cmds.AddSub("dump")
 	dbg.AddSub("cmd", "cmds").RegQuietPowerCmd(DbgDumpCmds)

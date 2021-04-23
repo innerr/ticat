@@ -10,8 +10,8 @@ import (
 
 func LoadBuiltinEnv(env *cli.Env) {
 	env = env.GetLayer(cli.EnvLayerDefault)
-	env.Set("runtime.version", "dev")
-	env.Set("runtime.stack-depth", "0")
+	env.Set("runtime.sys.stack-depth", "0")
+	env.Set("runtime.sys.version", "dev")
 	env.Set("runtime.display", "true")
 	env.Set("runtime.display.width", "80")
 	env.Set("runtime.display.one-cmd", "false")

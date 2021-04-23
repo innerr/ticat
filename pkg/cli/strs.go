@@ -14,7 +14,7 @@ const (
 	CmdRootNodeName     string = "<root>"
 	ErrStrPrefix        string = "[ERR] "
 
-	ProtoMark           string = "proto." + SelfName
-	ProtoEnvMark        string = ProtoMark + ".env"
-	ProtoSep            string = "\t"
+	ProtoMark    string = "proto." + SelfName
+	ProtoEnvMark string = ProtoMark + ".env"
+	ProtoSep     string = "\t"
 )

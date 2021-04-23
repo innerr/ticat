@@ -28,9 +28,36 @@ func NewCli(builtinLoader func(*CmdTree), envLoader func(*Env)) *Cli {
 	return cli
 }
 
-func (self *Cli) Execute(preparation string, script ...string) bool {
-	prep := self.Parser.Parse(self.Cmds, preparation)
-	self.executeCmds(prep)
+func (self *Cli) Execute(env *Env, script ...string) bool {
+	// In termial:
+	// $> ticat desc: B.E.L.L:B.E.L.R:B.M.L.L
+	bootstrap := "B.E.L.L:B.E.L.R:B.M.L.L"
+	if !self.execute(bootstrap) {
+		return false
+	}
+
+	// This could be very useful for customized mods-loader or env-loader
+	// (those loaders will be loaded from 'bootstrap string' above)
+	if env != nil {
+		self.GlobalEnv.GetLayer(EnvLayerSession).Merge(env)
+	}
+	extra := self.GlobalEnv.Get("bootstrap").Raw
+	if len(extra) != 0 && !self.execute(extra) {
+		return false
+	}
+
+	self.GlobalEnv.Get("runtime.sys.stack-depth").PlusInt(1)
+	if !self.execute(script...) {
+		return false
+	}
+	self.GlobalEnv.Get("runtime.sys.stack-depth").PlusInt(-1)
+	return true
+}
+
+func (self *Cli) execute(script ...string) bool {
+	if len(script) == 0 {
+		return true
+	}
 	cmds := self.Parser.Parse(self.Cmds, script...)
 	return self.executeCmds(cmds)
 }
@@ -47,32 +74,6 @@ func (self *Cli) filterEmptyCmds(cmds *ParsedCmds) {
 		}
 	}
 	cmds.Cmds = filtered
-}
-
-// Abandoned
-func (self *Cli) insertPreparation(cmds *ParsedCmds, prep *ParsedCmds) {
-	if prep.GlobalEnv != nil {
-		cmds.GlobalEnv.Merge(prep.GlobalEnv)
-	}
-
-	hasPowerCmd := false
-	for i, cmd := range cmds.Cmds {
-		if cmd.IsPowerCmd() {
-			hasPowerCmd = true
-			continue
-		}
-		if hasPowerCmd {
-			// Must append the tail first, then add the head! or else the data is wrong
-			cmds.Cmds = append(cmds.Cmds[:i], append(prep.Cmds, cmds.Cmds[i:]...)...)
-			return
-		}
-	}
-
-	if !hasPowerCmd {
-		cmds.Cmds = append(prep.Cmds, cmds.Cmds...)
-	} else {
-		cmds.Cmds = append(cmds.Cmds, prep.Cmds...)
-	}
 }
 
 func (self *Cli) executeCmds(cmds *ParsedCmds) bool {

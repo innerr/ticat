@@ -90,7 +90,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env,
 
 	printRealname := env.Get("runtime.display.mod.realname").GetBool()
 
-	stackDepth := env.Get("runtime.stack-depth").Raw
+	stackDepth := env.Get("runtime.sys.stack-depth").Raw
 	if len(stackDepth) > 2 {
 		stackDepth = ".."
 	} else {
@@ -167,7 +167,7 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env,
 
 		argv := cmd.GenEnv(env.GetLayer(EnvLayerSession)).GetArgv(cmd.Path(), sep, cmd.Args())
 		for _, line := range cmd.Args().Dump(argv, false) {
-			screen.Println("│" + padRight(strings.Repeat(" ", 8) + line, " ", width-2) + "│")
+			screen.Println("│" + padRight(strings.Repeat(" ", 8)+line, " ", width-2) + "│")
 		}
 	}
 

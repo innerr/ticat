@@ -53,6 +53,13 @@ func (self *Env) GetLayer(tp EnvLayerType) *Env {
 	return self.parent.GetLayer(tp)
 }
 
+func (self Env) Delete(name string) {
+	delete(self.pairs, name)
+	if self.parent != nil {
+		self.parent.Delete(name)
+	}
+}
+
 func (self Env) Get(name string) EnvVal {
 	val, ok := self.pairs[name]
 	if !ok && self.parent != nil {
@@ -67,6 +74,12 @@ func (self Env) GetExt(name string) (EnvVal, bool) {
 		return self.parent.GetExt(name)
 	}
 	return val, ok
+}
+
+func (self *Env) Merge(x *Env) {
+	for k, v := range x.pairs {
+		self.pairs[k] = EnvVal{v.Raw, false, nil}
+	}
 }
 
 func (self *Env) Set(name string, val string) (old EnvVal) {
