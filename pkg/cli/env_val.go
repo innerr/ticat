@@ -5,28 +5,28 @@ import (
 	"strconv"
 )
 
-type EnvVal struct {
-	Raw      string
-	IsArg    bool
-	ValCache interface{}
+func (self Env) SetInt(name string, val int) {
+	self.Set(name, fmt.Sprintf("%d", val))
 }
 
-func (self *EnvVal) SetInt(val int) {
-	self.Raw = fmt.Sprintf("%d", val)
-}
-
-func (self EnvVal) GetInt() int {
-	val, err := strconv.ParseInt(self.Raw, 10, 64)
+func (self Env) GetInt(name string) int {
+	val, err := strconv.ParseInt(self.Get(name).Raw, 10, 64)
 	if err != nil {
 		panic(fmt.Errorf("[EnvVal.GetInt] strconv failed: %v", err))
 	}
 	return int(val)
 }
 
-func (self EnvVal) PlusInt(val int) {
-	self.SetInt(self.GetInt() + val)
+func (self Env) PlusInt(name string, val int) {
+	self.SetInt(name, self.GetInt(name) + val)
 }
 
-func (self EnvVal) GetBool() bool {
-	return StrToBool(self.Raw)
+func (self Env) GetBool(name string) bool {
+	return StrToBool(self.Get(name).Raw)
+}
+
+func (self Env) SetBool(name string, val bool) bool {
+	old := StrToBool(self.Get(name).Raw)
+	self.Set(name, fmt.Sprintf("%v", val))
+	return old
 }

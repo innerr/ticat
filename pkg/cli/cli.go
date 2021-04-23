@@ -28,10 +28,7 @@ func NewCli(builtinLoader func(*CmdTree), envLoader func(*Env)) *Cli {
 	return cli
 }
 
-func (self *Cli) Execute(env *Env, script ...string) bool {
-	// In termial:
-	// $> ticat desc: B.E.L.L:B.E.L.R:B.M.L.L
-	bootstrap := "B.E.L.L:B.E.L.R:B.M.L.L"
+func (self *Cli) Execute(bootstrap string, env *Env, script ...string) bool {
 	if !self.execute(bootstrap) {
 		return false
 	}
@@ -46,11 +43,11 @@ func (self *Cli) Execute(env *Env, script ...string) bool {
 		return false
 	}
 
-	self.GlobalEnv.Get("runtime.sys.stack-depth").PlusInt(1)
+	self.GlobalEnv.PlusInt("runtime.sys.stack-depth", 1)
 	if !self.execute(script...) {
 		return false
 	}
-	self.GlobalEnv.Get("runtime.sys.stack-depth").PlusInt(-1)
+	self.GlobalEnv.PlusInt("runtime.sys.stack-depth", -1)
 	return true
 }
 

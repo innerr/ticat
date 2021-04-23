@@ -18,6 +18,12 @@ func EnvLayerName(tp EnvLayerType) string {
 	return string(tp)
 }
 
+type EnvVal struct {
+	Raw      string
+	IsArg    bool
+	ValCache interface{}
+}
+
 type Env struct {
 	pairs  map[string]EnvVal
 	parent *Env

@@ -25,6 +25,12 @@ else
 	echo "==> no content from stdin"
 fi
 
+echo "==> use ticat to call other mods"
+# Don't forget to quote "${input}"
+ticat=`echo "${input}" | grep 'runtime.sys.paths.ticat' | tail -n 1 | awk '{print $3}'`
+# Use stdin to pass the env to ticat
+echo "${input}" | "${ticat}" v : sleep 1s
+
 echo
 echo "==> input anything and press enter:"
 read msg </dev/tty
@@ -34,7 +40,7 @@ echo "---"
 echo
 mod1="proto.ticat.env	samples.bash.input	${msg}"
 mod2="proto.ticat.env	runtime.display.width	60"
-mod3="wrong format context"
+mod3="(expected) wrong format context"
 echo "==> modified session env by print values into stderr:"
 echo "${mod1}"
 echo "${mod2}"
