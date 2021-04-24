@@ -12,7 +12,7 @@ import (
 )
 
 func LoadLocalMods(_ cli.ArgVals, cc *cli.Cli, env *cli.Env) bool {
-	root := env.Get("runtime.sys.paths.mods").Raw
+	root := env.Get("sys.paths.mods").Raw
 	if root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}

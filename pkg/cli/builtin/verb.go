@@ -6,20 +6,20 @@ import (
 
 func SetQuietMode(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	env = env.GetLayer(cli.EnvLayerSession)
-	env.Set("runtime.display", "false")
+	env.Set("display", "false")
 	return true
 }
 
 func SetVerbMode(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	env = env.GetLayer(cli.EnvLayerSession)
-	env.Set("runtime.display", "true")
-	env.Set("runtime.display.env", "true")
-	env.Set("runtime.display.env.layer", "true")
-	env.Set("runtime.display.env.default", "true")
-	env.Set("runtime.display.env.runtime.sys", "true")
-	env.Set("runtime.display.mod.builtin", "true")
-	env.Set("runtime.display.mod.realname", "true")
-	env.Set("runtime.display.max-cmd-cnt", "9999")
+	env.Set("display", "true")
+	env.Set("display.env", "true")
+	env.Set("display.env.layer", "true")
+	env.Set("display.env.default", "true")
+	env.Set("display.env.sys", "true")
+	env.Set("display.mod.quiet", "true")
+	env.Set("display.mod.realname", "true")
+	env.Set("display.max-cmd-cnt", "9999")
 	return true
 }
 
@@ -29,49 +29,52 @@ func IncreaseVerb(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	volume := argv.GetInt("volume")
 	if volume <= 0 {
 		return true
-	} else {
-		env.PlusInt("runtime.display.max-cmd-cnt", volume)
 	}
 
-	if !env.SetBool("runtime.display", true) {
+	if !env.SetBool("display", true) {
 		volume -= 1
 	}
-	env.SetBool("runtime.display.mod.realname", true)
-	env.SetBool("runtime.display.one-cmd", true)
+	env.SetInt("display.max-cmd-cnt", 8)
+	env.SetBool("display.mod.realname", true)
+	env.SetBool("display.one-cmd", true)
 	if volume <= 0 {
 		return true
 	}
 
-	if !env.SetBool("runtime.display.env", true) {
+	if !env.SetBool("display.env", true) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 9)
 	if volume <= 0 {
 		return true
 	}
 
-	if !env.SetBool("runtime.display.env.layer", true) {
+	if !env.SetBool("display.env.layer", true) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 10)
 	if volume <= 0 {
 		return true
 	}
 
-	if !env.SetBool("runtime.display.env.default", true) {
+	if !env.SetBool("display.env.default", true) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 11)
 	if volume <= 0 {
 		return true
 	}
 
-	if !env.SetBool("runtime.display.env.runtime.sys", true) ||
-		!env.SetBool("runtime.display.mod.builtin", true) {
+	if !env.SetBool("display.env.sys", true) ||
+		!env.SetBool("display.mod.quiet", true) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 12)
 	if volume <= 0 {
 		return true
 	}
 
-	env.SetInt("runtime.display.max-cmd-cnt", 9999)
+	env.SetInt("display.max-cmd-cnt", 9999)
 	return true
 }
 
@@ -83,47 +86,48 @@ func DecreaseVerb(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 		return true
 	}
 
-	maxCmdCnt := env.GetInt("runtime.display.max-cmd-cnt")
-	if maxCmdCnt > 12 {
-		env.SetInt("runtime.display.max-cmd-cnt", 12)
-	}
-	env.PlusInt("runtime.display.max-cmd-cnt", -volume)
+	env.SetInt("display.max-cmd-cnt", 12)
 
-	if env.SetBool("runtime.display.env.runtime.sys", false) ||
-		env.SetBool("runtime.display.mod.builtin", false) {
+	if env.SetBool("display.env.sys", false) ||
+		env.SetBool("display.mod.quiet", false) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 11)
 	if volume <= 0 {
 		return true
 	}
 
-	if env.SetBool("runtime.display.env.default", false) {
+	if env.SetBool("display.env.default", false) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 10)
 	if volume <= 0 {
 		return true
 	}
 
-	if env.SetBool("runtime.display.env.layer", false) {
+	if env.SetBool("display.env.layer", false) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 9)
 	if volume <= 0 {
 		return true
 	}
 
-	if env.SetBool("runtime.display.env", false) {
+	if env.SetBool("display.env", false) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 8)
 	if volume <= 0 {
 		return true
 	}
 
-	if env.SetBool("runtime.display", false) {
+	if env.SetBool("display", false) {
 		volume -= 1
 	}
+	env.SetInt("display.max-cmd-cnt", 7)
 
-	env.SetBool("runtime.display.one-cmd", false)
-	env.SetBool("runtime.display.mod.realname", false)
+	env.SetBool("display.one-cmd", false)
+	env.SetBool("display.mod.realname", false)
 
 	return true
 }

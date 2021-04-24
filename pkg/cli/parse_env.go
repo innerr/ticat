@@ -148,13 +148,23 @@ func (self ParsedEnv) Equal(x ParsedEnv) bool {
 
 func (self ParsedEnv) WriteTo(env *Env) {
 	for k, v := range self {
-		env.SetExt(k, v.Val, v.IsArg)
+		if v.Val == EnvValDelMark {
+			env.DeleteExt(k, EnvLayerDefault)
+		} else if v.Val == EnvValDelAllMark {
+			env.Delete(k)
+		} else {
+			env.SetExt(k, v.Val, v.IsArg)
+		}
 	}
 }
 
 func (self ParsedEnv) WriteNotArgTo(env *Env) {
 	for k, v := range self {
-		if !v.IsArg {
+		if v.Val == EnvValDelMark {
+			env.DeleteExt(k, EnvLayerDefault)
+		} else if v.Val == EnvValDelAllMark {
+			env.Delete(k)
+		} else if !v.IsArg {
 			env.SetExt(k, v.Val, v.IsArg)
 		}
 	}

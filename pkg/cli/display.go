@@ -6,25 +6,24 @@ import (
 	"time"
 )
 
-func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
+func printCmdResult(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
 	elapsed time.Duration, cmds []ParsedCmd, currCmdIdx int, sep string) {
 
-	if !env.GetBool("runtime.display") {
+	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display") {
 		return
 	}
 	if checkPrintFilter(cmd, env, sep) {
 		return
 	}
-	cmds, currCmdIdx = filterBuiltinAndQuiet(env, cmds, currCmdIdx)
-	if len(cmds) == 1 && !env.GetBool("runtime.display.one-cmd") {
+	cmds, currCmdIdx = filterQuietCmds(env, cmds, currCmdIdx)
+	if len(cmds) == 1 && !env.GetBool("display.one-cmd") {
 		return
 	}
 	if len(cmds) == 0 {
 		return
 	}
 
-	const widthKey = "runtime.display.width"
-	width := env.GetInt(widthKey)
+	width := env.GetInt("display.width")
 
 	var resStr string
 	if succeeded {
@@ -35,10 +34,13 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
 
 	timeStr := time.Now().Format("01-02 15:04:05")
 
-	printRealname := env.GetBool("runtime.display.mod.realname")
+	printRealname := env.GetBool("display.mod.realname")
 	line := " " + getCmdPath(cmd, sep, printRealname)
 	durStr := formatDuration(elapsed)
-	line = "│" + " " + resStr + padRight(line, " ", width-len(durStr)-2-2-2) + durStr + " " + "│"
+	if width - len(durStr) - 6 < 20 {
+		width = len(durStr) + 6 + 20
+	}
+	line = "│" + " " + resStr + padRight(line, " ", width - len(durStr) - 6) + durStr + " " + "│"
 
 	screen.Println("┌" + strings.Repeat("─", width-2) + "┐")
 	screen.Println(line)
@@ -58,39 +60,39 @@ func printCmdResult(screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
 	}
 }
 
-func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env,
+func printCmdStack(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env,
 	cmds []ParsedCmd, currCmdIdx int, sep string) {
 
-	if !env.GetBool("runtime.display") {
+	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display") {
 		return
 	}
 	if checkPrintFilter(cmd, env, sep) {
 		return
 	}
-	cmds, currCmdIdx = filterBuiltinAndQuiet(env, cmds, currCmdIdx)
-	if len(cmds) == 1 && !env.GetBool("runtime.display.one-cmd") {
+	cmds, currCmdIdx = filterQuietCmds(env, cmds, currCmdIdx)
+	if len(cmds) == 1 && !env.GetBool("display.one-cmd") {
 		return
 	}
 	if len(cmds) == 0 {
 		return
 	}
 
-	width := env.GetInt("runtime.display.width")
+	width := env.GetInt("display.width")
 
-	const cmdCntKey = "runtime.display.max-cmd-cnt"
+	const cmdCntKey = "display.max-cmd-cnt"
 	cmdDisplayCnt := env.GetInt(cmdCntKey)
 	if cmdDisplayCnt < 4 {
 		panic(fmt.Errorf("[printCmdStack] %s should not less than 4", cmdCntKey))
 	}
 
-	printEnv := env.GetBool("runtime.display.env")
-	printEnvLayer := env.GetBool("runtime.display.env.layer")
-	printDefEnv := env.GetBool("runtime.display.env.default")
-	printRuntimeEnv := env.GetBool("runtime.display.env.runtime.sys")
+	printEnv := env.GetBool("display.env")
+	printEnvLayer := env.GetBool("display.env.layer")
+	printDefEnv := env.GetBool("display.env.default")
+	printRuntimeEnv := env.GetBool("display.env.sys")
 
-	printRealname := env.GetBool("runtime.display.mod.realname")
+	printRealname := env.GetBool("display.mod.realname")
 
-	stackDepth := env.Get("runtime.sys.stack-depth").Raw
+	stackDepth := env.Get("sys.stack-depth").Raw
 	if len(stackDepth) > 2 {
 		stackDepth = "[..]"
 	} else {
@@ -165,8 +167,12 @@ func printCmdStack(screen *Screen, cmd ParsedCmd, env *Env,
 		}
 		screen.Println("│" + padRight(line, " ", width-2) + "│")
 
+		args := cmd.Args()
+		if args == nil {
+			continue
+		}
 		argv := cmd.GenEnv(env.GetLayer(EnvLayerSession)).GetArgv(cmd.Path(), sep, cmd.Args())
-		for _, line := range cmd.Args().Dump(argv, false) {
+		for _, line := range args.Dump(argv, false) {
 			screen.Println("│" + padRight(strings.Repeat(" ", 8)+line, " ", width-2) + "│")
 		}
 	}
@@ -179,18 +185,15 @@ func checkPrintFilter(cmd ParsedCmd, env *Env, sep string) bool {
 		return true
 	}
 	lastSeg := cmd[len(cmd)-1]
-	if lastSeg.Cmd.Cmd == nil || lastSeg.Cmd.Cmd.cmd == nil || lastSeg.Cmd.Cmd.IsQuiet() {
-		return true
-	}
-	cmdFirstSegName := cmd[0].Cmd.Name
-	if cmdFirstSegName == "builtin" && !env.GetBool("runtime.display.mod.builtin") {
+	if lastSeg.Cmd.Cmd == nil || lastSeg.Cmd.Cmd.cmd == nil ||
+		(lastSeg.Cmd.Cmd.IsQuiet() && !env.GetBool("display.mod.quiet")) {
 		return true
 	}
 	return false
 }
 
-func filterBuiltinAndQuiet(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int) {
-	if env.GetBool("runtime.display.mod.builtin") {
+func filterQuietCmds(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int) {
+	if env.GetBool("display.mod.quiet") {
 		return cmds, currCmdIdx
 	}
 
@@ -201,7 +204,7 @@ func filterBuiltinAndQuiet(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]Parsed
 			continue
 		}
 		lastSeg := cmd[len(cmd)-1].Cmd
-		if cmd[0].Cmd.Name == "builtin" || lastSeg.Cmd == nil || lastSeg.Cmd.cmd == nil || lastSeg.Cmd.IsQuiet() {
+		if lastSeg.Cmd == nil || lastSeg.Cmd.cmd == nil || lastSeg.Cmd.IsQuiet() {
 			if i < currCmdIdx {
 				newIdx -= 1
 			}
@@ -212,70 +215,11 @@ func filterBuiltinAndQuiet(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]Parsed
 	return newCmds, newIdx
 }
 
-func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool,
-	printRuntimeEnv bool, filterPrefixs []string) (res []string) {
-
-	if !printRuntimeEnv {
-		filterPrefixs = append(filterPrefixs, EnvRuntimeSysPrefix)
-	}
-	if !printEnvLayer {
-		compacted := env.Compact(printDefEnv, filterPrefixs)
-		for k, v := range compacted {
-			res = append(res, k+" = "+v)
-		}
-	} else {
-		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefixs, &res, 0)
-	}
-	return
-}
-
-func dumpEnvLayer(env *Env, printEnvLayer bool, printDefEnv bool, filterPrefixs []string, res *[]string, depth int) {
-	if env.tp == EnvLayerDefault && !printDefEnv {
-		return
-	}
-	var output []string
-	indent := strings.Repeat(" ", depth*4)
-	for k, v := range env.pairs {
-		filtered := false
-		for _, filterPrefix := range filterPrefixs {
-			if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) {
-				filtered = true
-				break
-			}
-		}
-		if !filtered {
-			output = append(output, indent+"- "+k+" = "+v.Raw)
-		}
-	}
-	if env.parent != nil {
-		dumpEnvLayer(env.parent, printEnvLayer, printDefEnv, filterPrefixs, &output, depth+1)
-	}
-	if len(output) != 0 {
-		*res = append(*res, indent+"["+EnvLayerName(env.tp)+"]")
-		*res = append(*res, output...)
-	}
-}
-
 func padRight(str string, pad string, width int) string {
 	if len(str) >= width {
 		return str
 	}
 	return str + strings.Repeat(pad, width-len(str))
-}
-
-func getCmdPath(cmd ParsedCmd, sep string, printRealname bool) string {
-	var path []string
-	for _, seg := range cmd {
-		if seg.Cmd.Cmd != nil {
-			name := seg.Cmd.Name
-			realname := seg.Cmd.Cmd.Name()
-			if printRealname && name != realname {
-				name += "(=" + realname + ")"
-			}
-			path = append(path, name)
-		}
-	}
-	return strings.Join(path, sep)
 }
 
 func formatDuration(dur time.Duration) string {

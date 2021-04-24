@@ -39,7 +39,7 @@ echo "---"
 
 echo
 mod1="proto.ticat.env	samples.bash.input	${msg}"
-mod2="proto.ticat.env	runtime.display.width	60"
+mod2="proto.ticat.env	runtime.display.width	120"
 mod3="(expected) wrong format context"
 echo "==> modified session env by print values into stderr:"
 echo "${mod1}"

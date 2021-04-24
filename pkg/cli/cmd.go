@@ -70,7 +70,7 @@ func (self *Cmd) executeBash(argv ArgVals, cli *Cli, env *Env) bool {
 	}
 	cmd := exec.Command("bash", args...)
 
-	errPrefix := "[ERR] execute bash fail: %v"
+	errPrefix := "[ERR] execute bash failed: %v"
 
 	osStdout := os.Stdout
 	cmd.Stdout = os.Stdout

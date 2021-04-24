@@ -7,10 +7,12 @@ const (
 	EnvBracketLeft   string = "{"
 	EnvBracketRight  string = "}"
 	EnvKeyValSep     string = "="
+	EnvValDelMark    string = "-"
+	EnvValDelAllMark string = "--"
 	AbbrSep          string = "|"
 
 	SelfName            string = "ticat"
-	EnvRuntimeSysPrefix string = "runtime.sys."
+	EnvRuntimeSysPrefix string = "sys."
 	CmdRootNodeName     string = "<root>"
 	ErrStrPrefix        string = "[ERR] "
 

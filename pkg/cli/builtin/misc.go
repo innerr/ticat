@@ -26,6 +26,10 @@ func Sleep(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	return true
 }
 
+func MockStub(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
+	return true
+}
+
 func Dummy(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	fmt.Println("Dummy cmd here")
 	return true

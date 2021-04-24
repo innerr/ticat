@@ -18,7 +18,7 @@ func (self Env) GetInt(name string) int {
 }
 
 func (self Env) PlusInt(name string, val int) {
-	self.SetInt(name, self.GetInt(name) + val)
+	self.SetInt(name, self.GetInt(name)+val)
 }
 
 func (self Env) GetBool(name string) bool {

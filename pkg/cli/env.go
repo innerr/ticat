@@ -59,10 +59,24 @@ func (self *Env) GetLayer(tp EnvLayerType) *Env {
 	return self.parent.GetLayer(tp)
 }
 
+func (self Env) DeleteSelf(name string) {
+	delete(self.pairs, name)
+}
+
 func (self Env) Delete(name string) {
 	delete(self.pairs, name)
 	if self.parent != nil {
 		self.parent.Delete(name)
+	}
+}
+
+func (self Env) DeleteExt(name string, stopLayer EnvLayerType) {
+	if self.tp == stopLayer {
+		return
+	}
+	delete(self.pairs, name)
+	if self.parent != nil {
+		self.parent.DeleteExt(name, stopLayer)
 	}
 }
 
@@ -85,6 +99,18 @@ func (self Env) GetExt(name string) (EnvVal, bool) {
 func (self *Env) Merge(x *Env) {
 	for k, v := range x.pairs {
 		self.pairs[k] = EnvVal{v.Raw, false, nil}
+	}
+}
+
+func (self *Env) Deduplicate() {
+	if self.parent == nil {
+		return
+	}
+	for k, _ := range self.pairs {
+		_, ok := self.parent.GetExt(k)
+		if ok {
+			delete(self.pairs, k)
+		}
 	}
 }
 
