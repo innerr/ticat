@@ -8,10 +8,10 @@ type Cli struct {
 	GlobalEnv *Env
 	Screen    *Screen
 	Cmds      *CmdTree
-	Parser    *Parser
+	Parser    CliParser
 }
 
-func NewCli(builtinModsLoader func(*CmdTree), envLoader func(*Env)) *Cli {
+func NewCli(builtinModsLoader func(*CmdTree), envLoader func(*Env), parser CliParser) *Cli {
 	env := NewEnv().NewLayers(
 		EnvLayerDefault,
 		EnvLayerPersisted,
@@ -21,7 +21,7 @@ func NewCli(builtinModsLoader func(*CmdTree), envLoader func(*Env)) *Cli {
 		env,
 		NewScreen(),
 		NewCmdTree(),
-		NewParser(),
+		parser,
 	}
 	builtinModsLoader(cli.Cmds)
 	envLoader(cli.GlobalEnv)

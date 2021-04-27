@@ -10,7 +10,7 @@ type EnvAbbr struct {
 }
 
 func NewEnvAbbr() *EnvAbbr {
-	return &EnvAbbr() {
+	return &EnvAbbr {
 		"",
 		map[string]string{},
 	}
@@ -41,4 +41,5 @@ func (self *EnvAbbr) TryMatch(path string, sep string, cmd *CmdTree) bool {
 			return false
 		}
 	}
+	return true
 }

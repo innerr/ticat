@@ -1,8 +1,10 @@
-package cli
+package parser
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/pingcap/ticat/pkg/cli"
 )
 
 type cmdParser struct {
@@ -13,27 +15,27 @@ type cmdParser struct {
 	cmdRootNodeName string
 }
 
-func (self *cmdParser) Parse(tree *CmdTree, input []string) ParsedCmd {
-	parsed := ParsedCmd{}
+func (self *cmdParser) Parse(tree *cli.CmdTree, input []string) cli.ParsedCmd {
+	parsed := cli.ParsedCmd{}
 	segs := self.parse(tree, input)
-	curr := ParsedCmdSeg{nil, MatchedCmd{}}
+	curr := cli.ParsedCmdSeg{nil, cli.MatchedCmd{}}
 	path := ""
 	for _, seg := range segs {
 		if seg.Type == parsedSegTypeEnv {
-			env := seg.Val.(ParsedEnv)
+			env := seg.Val.(cli.ParsedEnv)
 			if len(path) != 0 {
 				env.AddPrefix(path)
 			}
 			if curr.Env != nil {
 				curr.Env.Merge(env)
 			} else {
-				curr.Env = seg.Val.(ParsedEnv)
+				curr.Env = seg.Val.(cli.ParsedEnv)
 			}
 		} else if seg.Type == parsedSegTypeCmd {
-			matchedCmd := seg.Val.(MatchedCmd)
-			if !curr.isEmpty() {
+			matchedCmd := seg.Val.(cli.MatchedCmd)
+			if !curr.IsEmpty() {
 				parsed = append(parsed, curr)
-				curr = ParsedCmdSeg{nil, matchedCmd}
+				curr = cli.ParsedCmdSeg{nil, matchedCmd}
 			} else {
 				curr.Cmd = matchedCmd
 			}
@@ -42,67 +44,13 @@ func (self *cmdParser) Parse(tree *CmdTree, input []string) ParsedCmd {
 			// ignore parsedSegTypeSep
 		}
 	}
-	if !curr.isEmpty() {
+	if !curr.IsEmpty() {
 		parsed = append(parsed, curr)
 	}
 	return parsed
 }
 
-type ParsedCmd []ParsedCmdSeg
-
-func (self ParsedCmd) Args() *Args {
-	if len(self) == 0 {
-		return nil
-	}
-	last := self[len(self)-1].Cmd.Cmd
-	if last == nil || last.cmd == nil {
-		return nil
-	}
-	return &last.cmd.args
-}
-
-func (self ParsedCmd) IsPowerCmd() bool {
-	return len(self) != 0 && self[len(self)-1].IsPowerCmd()
-}
-
-func (self ParsedCmd) Path() (path []string) {
-	for _, it := range self {
-		if it.Cmd.Cmd != nil {
-			path = append(path, it.Cmd.Cmd.Name())
-		}
-	}
-	return
-}
-
-func (self ParsedCmd) GenEnv(env *Env) *Env {
-	env = env.NewLayer(EnvLayerCmd)
-	for _, seg := range self {
-		if seg.Env != nil {
-			seg.Env.WriteTo(env)
-		}
-	}
-	return env
-}
-
-type ParsedCmdSeg struct {
-	Env ParsedEnv
-	Cmd MatchedCmd
-}
-
-func (self ParsedCmdSeg) IsPowerCmd() bool {
-	return self.Cmd.Cmd != nil && self.Cmd.Cmd.IsPowerCmd()
-}
-
-func (self *ParsedCmdSeg) isEmpty() bool {
-	return self.Env == nil && len(self.Cmd.Name) == 0 && self.Cmd.Cmd == nil
-}
-
-type MatchedCmd struct {
-	Name string
-	Cmd  *CmdTree
-}
-
-func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
+func (self *cmdParser) parse(tree *cli.CmdTree, input []string) []parsedSeg {
 	var parsed []parsedSeg
 	var matchedCmdPath []string
 	var curr = tree
@@ -111,7 +59,7 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 	var notExpectArg bool
 
 	for len(input) != 0 {
-		var env ParsedEnv
+		var env cli.ParsedEnv
 		var err error
 		var succeeded bool
 
@@ -167,7 +115,7 @@ func (self *cmdParser) parse(tree *CmdTree, input []string) []parsedSeg {
 		sub := curr.GetSub(input[0])
 		if sub != nil {
 			curr = sub
-			parsed = append(parsed, parsedSeg{parsedSegTypeCmd, MatchedCmd{input[0], sub}})
+			parsed = append(parsed, parsedSeg{parsedSegTypeCmd, cli.MatchedCmd{input[0], sub}})
 			matchedCmdPath = append(matchedCmdPath, input[0])
 			input = input[1:]
 			continue

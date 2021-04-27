@@ -1,8 +1,10 @@
-package cli
+package parser
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/pingcap/ticat/pkg/cli"
 )
 
 type envParser struct {
@@ -11,8 +13,8 @@ type envParser struct {
 	kvSep    string
 }
 
-func (self *envParser) TryParse(cmd *CmdTree,
-	input []string) (env ParsedEnv, rest []string, found bool, err error) {
+func (self *envParser) TryParse(cmd *cli.CmdTree,
+	input []string) (env cli.ParsedEnv, rest []string, found bool, err error) {
 
 	var again bool
 	rest, found, again = self.findLeft(input)
@@ -41,9 +43,9 @@ func (self *envParser) TryParse(cmd *CmdTree,
 	return env, tryTrimStrings(rest), true, nil
 }
 
-func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv, rest []string) {
-	normalized, foundKvSep := normalizeEnvRawStr(input, self.kvSep, Spaces)
-	env = ParsedEnv{}
+func (self *envParser) TryParseRaw(cmd *cli.CmdTree, input []string) (env cli.ParsedEnv, rest []string) {
+	normalized, foundKvSep := normalizeEnvRawStr(input, self.kvSep, cli.Spaces)
+	env = cli.ParsedEnv{}
 	rest = normalized.data
 
 	genResult := func(normalizedIdx int) []string {
@@ -56,7 +58,7 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 	}
 
 	// It's non-args env definition
-	if cmd == nil || cmd.cmd == nil {
+	if cmd == nil || cmd.Cmd() == nil {
 		if !foundKvSep {
 			return tryTrimParsedEnv(env), tryTrimStrings(rest)
 		}
@@ -67,14 +69,14 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 			}
 			key := rest[i]
 			value := rest[i+2]
-			env[key] = ParsedEnvVal{value, false}
+			env[key] = cli.ParsedEnvVal{value, false}
 		}
 		return tryTrimParsedEnv(env), genResult(i)
 	}
 
 	// It's args env definition
 
-	args := cmd.cmd.args
+	args := cmd.Args()
 	i := 0
 	if !foundKvSep {
 		list := args.List()
@@ -86,14 +88,14 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 					return tryTrimParsedEnv(env), genResult(i)
 				}
 				value := rest[i+1]
-				env[key] = ParsedEnvVal{value, true}
+				env[key] = cli.ParsedEnvVal{value, true}
 				curr += 1
 			}
 		} else {
 			for ; i < len(rest); i += 1 {
 				key := list[i]
 				value := rest[i]
-				env[key] = ParsedEnvVal{value, true}
+				env[key] = cli.ParsedEnvVal{value, true}
 				curr += 1
 			}
 		}
@@ -104,70 +106,10 @@ func (self *envParser) TryParseRaw(cmd *CmdTree, input []string) (env ParsedEnv,
 				return tryTrimParsedEnv(env), genResult(i)
 			}
 			value := rest[i+2]
-			env[key] = ParsedEnvVal{value, true}
+			env[key] = cli.ParsedEnvVal{value, true}
 		}
 	}
 	return tryTrimParsedEnv(env), genResult(i)
-}
-
-type ParsedEnv map[string]ParsedEnvVal
-
-type ParsedEnvVal struct {
-	Val   string
-	IsArg bool
-}
-
-func (self ParsedEnv) AddPrefix(prefix string) {
-	var keys []string
-	for k, _ := range self {
-		keys = append(keys, k)
-	}
-	for _, k := range keys {
-		self[prefix+k] = self[k]
-		delete(self, k)
-	}
-}
-
-func (self ParsedEnv) Merge(x ParsedEnv) {
-	for k, v := range x {
-		self[k] = v
-	}
-}
-
-func (self ParsedEnv) Equal(x ParsedEnv) bool {
-	if len(self) != len(x) {
-		return false
-	}
-	for k, v := range x {
-		if self[k] != v {
-			return false
-		}
-	}
-	return true
-}
-
-func (self ParsedEnv) WriteTo(env *Env) {
-	for k, v := range self {
-		if v.Val == EnvValDelMark {
-			env.DeleteExt(k, EnvLayerDefault)
-		} else if v.Val == EnvValDelAllMark {
-			env.Delete(k)
-		} else {
-			env.SetExt(k, v.Val, v.IsArg)
-		}
-	}
-}
-
-func (self ParsedEnv) WriteNotArgTo(env *Env) {
-	for k, v := range self {
-		if v.Val == EnvValDelMark {
-			env.DeleteExt(k, EnvLayerDefault)
-		} else if v.Val == EnvValDelAllMark {
-			env.Delete(k)
-		} else if !v.IsArg {
-			env.SetExt(k, v.Val, v.IsArg)
-		}
-	}
 }
 
 func (self *envParser) findLeft(input []string) (rest []string, found bool, again bool) {
@@ -281,7 +223,7 @@ func tryTrimStrings(input []string) []string {
 	return input
 }
 
-func tryTrimParsedEnv(env ParsedEnv) ParsedEnv {
+func tryTrimParsedEnv(env cli.ParsedEnv) cli.ParsedEnv {
 	if len(env) == 0 {
 		return nil
 	}

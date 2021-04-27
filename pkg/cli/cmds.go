@@ -127,6 +127,17 @@ func (self *CmdTree) addSubAbbr(name string, abbrs ...string) {
 	self.subAbbrsRevIdx[name] = name
 }
 
+func (self *CmdTree) Realname(abbr string) (realname string) {
+	if abbr == self.name {
+		return abbr
+	}
+	if self.parent == nil {
+		return
+	}
+	realname, _ = self.parent.subAbbrsRevIdx[abbr]
+	return
+}
+
 func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {
 	if len(path) == 0 {
 		return self
@@ -143,4 +154,15 @@ func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {
 		sub = self.AddSub(name)
 	}
 	return sub.getSub(addIfNotExists, path[1:]...)
+}
+
+func (self *CmdTree) Cmd() *Cmd {
+	return self.cmd
+}
+
+func (self *CmdTree) Args() (args Args) {
+	if self.cmd == nil {
+		return
+	}
+	return self.cmd.args
 }

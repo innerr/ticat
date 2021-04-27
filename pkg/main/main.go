@@ -5,6 +5,7 @@ import (
 
 	"github.com/pingcap/ticat/pkg/cli"
 	"github.com/pingcap/ticat/pkg/cli/builtin"
+	"github.com/pingcap/ticat/pkg/cli/parser"
 )
 
 func main() {
@@ -15,7 +16,8 @@ func main() {
 	env := cli.GenEnvFromStdin()
 	succeeded := cli.NewCli(
 		builtin.RegisterBuiltinMods,
-		builtin.LoadDefaultEnv).Execute(bootstrap, env, os.Args[1:]...)
+		builtin.LoadDefaultEnv,
+		parser.NewParser()).Execute(bootstrap, env, os.Args[1:]...)
 	if !succeeded {
 		os.Exit(1)
 	}

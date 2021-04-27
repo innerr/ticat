@@ -1,4 +1,8 @@
-package cli
+package parser
+
+import (
+	"github.com/pingcap/ticat/pkg/cli"
+)
 
 type Parser struct {
 	seqParser *sequenceParser
@@ -11,19 +15,9 @@ type Parser struct {
 //         - TODO: how to store this info(to a file?) and still keep it human-editable ?
 //   * The dynamite info(registered modules and env KVs) could use for disambiguation
 //         - Inconvenient to use a LEX/YACC lib to parse
-//
-//   ParsedCmds                - A list of cmd
-//       ParsedEnv             - Global env, map[string]string
-//       []ParsedCmd           - Full path of cmd
-//           []ParsedCmdSeg    - A path = a segment list
-//               MatchedCmd    - A segment
-//                   Name      - string
-//                   *CmdTree  - The executable function
-//               ParsedEnv     - The function's env, include argv
-//
-func (self *Parser) Parse(tree *CmdTree, input ...string) *ParsedCmds {
+func (self *Parser) Parse(tree *cli.CmdTree, input ...string) *cli.ParsedCmds {
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
-	cmds := ParsedCmds{ParsedEnv{}, nil}
+	cmds := cli.ParsedCmds{cli.ParsedEnv{}, nil}
 	for _, seq := range seqs {
 		cmds.Cmds = append(cmds.Cmds, self.cmdParser.Parse(tree, seq))
 	}
@@ -46,23 +40,18 @@ func NewParser() *Parser {
 		},
 		&cmdParser{
 			&envParser{
-				&brackets{EnvBracketLeft, EnvBracketRight},
-				Spaces,
-				EnvKeyValSep,
+				&brackets{cli.EnvBracketLeft, cli.EnvBracketRight},
+				cli.Spaces,
+				cli.EnvKeyValSep,
 			},
-			CmdPathSep,
-			Spaces + CmdPathAlterSeps,
-			Spaces,
-			CmdRootNodeName,
+			cli.CmdPathSep,
+			cli.Spaces + cli.CmdPathAlterSeps,
+			cli.Spaces,
+			cli.CmdRootNodeName,
 		},
 	}
 }
 
 func (self *Parser) CmdPathSep() string {
 	return self.cmdParser.cmdSep
-}
-
-type ParsedCmds struct {
-	GlobalEnv ParsedEnv
-	Cmds      []ParsedCmd
 }
