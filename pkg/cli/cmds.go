@@ -8,7 +8,7 @@ import (
 type CmdTree struct {
 	name           string
 	parent         *CmdTree
-	sub            map[string]*CmdTree
+	subs            map[string]*CmdTree
 	cmd            *Cmd
 	subAbbrsRevIdx map[string]string
 }
@@ -51,13 +51,13 @@ func (self *CmdTree) RegQuietPowerCmd(cmd PowerCmd) *Cmd {
 }
 
 func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
-	if _, ok := self.sub[name]; ok {
+	if _, ok := self.subs[name]; ok {
 		panic(fmt.Errorf("[CmdTree.AddSub] %s%s: sub-cmd name conflicted: %s", ErrStrPrefix, self.DisplayPath(), name))
 	}
 	sub := NewCmdTree()
 	sub.name = name
 	sub.parent = self
-	self.sub[name] = sub
+	self.subs[name] = sub
 	self.addSubAbbr(name, abbrs...)
 	return sub
 }
@@ -146,7 +146,7 @@ func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {
 	if realName, ok := self.subAbbrsRevIdx[name]; ok {
 		name = realName
 	}
-	sub, ok := self.sub[name]
+	sub, ok := self.subs[name]
 	if !ok {
 		if !addIfNotExists {
 			return nil

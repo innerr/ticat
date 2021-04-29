@@ -82,7 +82,7 @@ func dumpMod(screen *Screen, mod *CmdTree, printAlias bool, indent int) {
 			}
 		}
 	}
-	for _, it := range mod.sub {
+	for _, it := range mod.subs {
 		dumpMod(screen, it, printAlias, indent+1)
 	}
 }
