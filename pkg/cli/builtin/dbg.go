@@ -17,6 +17,6 @@ func DbgDumpEnv(_ cli.ArgVals, cc *cli.Cli, env *cli.Env) bool {
 }
 
 func DbgDumpMods(argv cli.ArgVals, cc *cli.Cli, _ *cli.Env) bool {
-	cli.DumpMods(cc, argv.GetBool("alias"))
+	cli.DumpMods(cc)
 	return true
 }

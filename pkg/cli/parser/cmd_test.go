@@ -38,13 +38,13 @@ func TestCmdParserParseSeg(t *testing.T) {
 		}
 	}
 
-	root := cli.NewCmdTree()
+	root := cli.NewCmdTree("<root>", ".")
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
 	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}, cli.Spaces, "="},
-		".", cli.Spaces + "./", cli.Spaces, cli.CmdRootNodeName,
+		&envParser{&brackets{"{", "}"}, "\t ", "=", "."},
+		".", "\t ./", "\t ", "<root>",
 	}
 
 	sep := parsedSeg{parsedSegTypeSep, nil}
@@ -61,7 +61,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	}
 
 	test := func(a []string, b []parsedSeg) {
-		parsed := parser.parse(root, a)
+		parsed := parser.parse(root, nil, a)
 		assertEq(a, parsed, b)
 	}
 
@@ -119,13 +119,13 @@ func TestCmdParserParse(t *testing.T) {
 		}
 	}
 
-	root := cli.NewCmdTree()
+	root := cli.NewCmdTree("<root>", ".")
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
 	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}, cli.Spaces, "="},
-		".", cli.Spaces + "./", cli.Spaces, cli.CmdRootNodeName,
+		&envParser{&brackets{"{", "}"}, "\t ", "=", "."},
+		".", "\t ./", "\t ", "<root>",
 	}
 
 	seg := func(cmdName string, envKeyNames ...string) cli.ParsedCmdSeg {
@@ -140,7 +140,7 @@ func TestCmdParserParse(t *testing.T) {
 	}
 
 	test := func(a []string, b cli.ParsedCmd) {
-		parsed := parser.Parse(root, a)
+		parsed := parser.Parse(root, nil, a)
 		assertEq(parsed, b)
 	}
 

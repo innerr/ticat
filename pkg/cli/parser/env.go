@@ -8,12 +8,13 @@ import (
 )
 
 type envParser struct {
-	brackets *brackets
-	spaces   string
-	kvSep    string
+	brackets   *brackets
+	spaces     string
+	kvSep      string
+	envPathSep string
 }
 
-func (self *envParser) TryParse(cmd *cli.CmdTree,
+func (self *envParser) TryParse(cmd *cli.CmdTree, envAbbrs *cli.EnvAbbrs,
 	input []string) (env cli.ParsedEnv, rest []string, found bool, err error) {
 
 	var again bool
@@ -33,7 +34,7 @@ func (self *envParser) TryParse(cmd *cli.CmdTree,
 	}
 
 	var envRest []string
-	env, envRest = self.TryParseRaw(cmd, envStrs)
+	env, envRest = self.TryParseRaw(cmd, envAbbrs, envStrs)
 	if len(envRest) != 0 {
 		return nil, tryTrimStrings(input), true,
 			fmt.Errorf("[envParser.TryParse] env difinition can't be recognized '" +
@@ -43,7 +44,7 @@ func (self *envParser) TryParse(cmd *cli.CmdTree,
 	return env, tryTrimStrings(rest), true, nil
 }
 
-func (self *envParser) TryParseRaw(cmd *cli.CmdTree, input []string) (env cli.ParsedEnv, rest []string) {
+func (self *envParser) TryParseRaw(cmd *cli.CmdTree, envAbbrs *cli.EnvAbbrs, input []string) (env cli.ParsedEnv, rest []string) {
 	normalized, foundKvSep := normalizeEnvRawStr(input, self.kvSep, cli.Spaces)
 	env = cli.ParsedEnv{}
 	rest = normalized.data
@@ -68,6 +69,12 @@ func (self *envParser) TryParseRaw(cmd *cli.CmdTree, input []string) (env cli.Pa
 				return tryTrimParsedEnv(env), genResult(i)
 			}
 			key := rest[i]
+			if envAbbrs != nil {
+				matchedEnvPath, matched := envAbbrs.TryMatch(key, self.envPathSep)
+				if matched {
+					key = strings.Join(matchedEnvPath, self.envPathSep)
+				}
+			}
 			value := rest[i+2]
 			env[key] = cli.ParsedEnvVal{value, false}
 		}
@@ -79,9 +86,9 @@ func (self *envParser) TryParseRaw(cmd *cli.CmdTree, input []string) (env cli.Pa
 	args := cmd.Args()
 	i := 0
 	if !foundKvSep {
-		list := args.List()
+		names := args.Names()
 		curr := 0
-		if len(rest) > len(list) || (len(rest) > 0 && len(args.Realname(rest[0])) != 0) {
+		if len(rest) > len(names) || (len(rest) > 0 && len(args.Realname(rest[0])) != 0) {
 			for ; i+1 < len(rest); i += 2 {
 				key := args.Realname(rest[i])
 				if len(key) == 0 {
@@ -93,7 +100,7 @@ func (self *envParser) TryParseRaw(cmd *cli.CmdTree, input []string) (env cli.Pa
 			}
 		} else {
 			for ; i < len(rest); i += 1 {
-				key := list[i]
+				key := names[i]
 				value := rest[i]
 				env[key] = cli.ParsedEnvVal{value, true}
 				curr += 1

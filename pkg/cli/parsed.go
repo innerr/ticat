@@ -10,7 +10,7 @@ package cli
 //              ParsedEnv     - The function's env, include argv
 
 type CliParser interface {
-	Parse(tree *CmdTree, input ...string) *ParsedCmds
+	Parse(tree *CmdTree, envAbbrs *EnvAbbrs, input ...string) *ParsedCmds
 	CmdPathSep() string
 }
 
@@ -21,15 +21,16 @@ type ParsedCmds struct {
 
 type ParsedCmd []ParsedCmdSeg
 
-func (self ParsedCmd) Args() *Args {
+func (self ParsedCmd) Args() (args Args) {
 	if len(self) == 0 {
-		return nil
+		return
 	}
 	last := self[len(self)-1].Cmd.Cmd
 	if last == nil || last.cmd == nil {
-		return nil
+		return
 	}
-	return &last.cmd.args
+	args = last.cmd.Args()
+	return
 }
 
 func (self ParsedCmd) IsPowerCmd() bool {

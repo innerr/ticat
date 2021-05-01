@@ -9,12 +9,14 @@ import (
 )
 
 func EnvOutput(env *Env, writer io.Writer) error {
-	if env.parent != nil {
-		EnvOutput(env.parent, writer)
+	if env.Parent() != nil {
+		EnvOutput(env.Parent(), writer)
 	}
-	for k, v := range env.pairs {
+	keys, vals := env.Pairs()
+	for i, k := range keys {
+		v := vals[i]
 		_, err := fmt.Fprintf(writer, "%s%s%s%s%s%s%s\n", ProtoEnvMark,
-			ProtoSep, k, ProtoSep, v.Raw, ProtoSep, env.tp)
+			ProtoSep, k, ProtoSep, v.Raw, ProtoSep, env.LayerType())
 		if err != nil {
 			return err
 		}

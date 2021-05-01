@@ -37,10 +37,10 @@ func printCmdResult(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env, s
 	printRealname := env.GetBool("display.mod.realname")
 	line := " " + getCmdPath(cmd, sep, printRealname)
 	durStr := formatDuration(elapsed)
-	if width - len(durStr) - 6 < 20 {
+	if width-len(durStr)-6 < 20 {
 		width = len(durStr) + 6 + 20
 	}
-	line = "│" + " " + resStr + padRight(line, " ", width - len(durStr) - 6) + durStr + " " + "│"
+	line = "│" + " " + resStr + padRight(line, " ", width-len(durStr)-6) + durStr + " " + "│"
 
 	screen.Println("┌" + strings.Repeat("─", width-2) + "┐")
 	screen.Println(line)
@@ -168,11 +168,8 @@ func printCmdStack(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env,
 		screen.Println("│" + padRight(line, " ", width-2) + "│")
 
 		args := cmd.Args()
-		if args == nil {
-			continue
-		}
 		argv := cmd.GenEnv(env.GetLayer(EnvLayerSession)).GetArgv(cmd.Path(), sep, cmd.Args())
-		for _, line := range args.Dump(argv, false) {
+		for _, line := range DumpArgs(&args, argv, false) {
 			screen.Println("│" + padRight(strings.Repeat(" ", 8)+line, " ", width-2) + "│")
 		}
 	}

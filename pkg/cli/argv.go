@@ -26,7 +26,7 @@ func (self ArgVals) GetInt(name string) int {
 	}
 	intVal, err := strconv.ParseInt(val.Raw, 10, 64)
 	if err != nil {
-		panic(fmt.Errorf("[ArgVals.GetInt] %v", err))
+		panic(fmt.Errorf("[ArgVals.GetInt] arg '%s' = '%s' is not int: %v", name, val.Raw, err))
 	}
 	return int(intVal)
 }

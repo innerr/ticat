@@ -10,25 +10,25 @@ import (
 
 func LoadDefaultEnv(env *cli.Env) {
 	env = env.GetLayer(cli.EnvLayerDefault)
-	env.Set("sys.stack-depth", "0")
 	env.Set("sys.version", "dev")
-	env.Set("display", "true")
-	env.Set("display.bootstrap", "false")
-	env.Set("display.width", "80")
-	env.Set("display.one-cmd", "false")
-	env.Set("display.max-cmd-cnt", "7")
-	env.Set("display.env", "true")
-	env.Set("display.env.layer", "false")
-	env.Set("display.env.default", "false")
-	env.Set("display.mod.quiet", "false")
-	env.Set("display.mod.realname", "true")
+	env.SetInt("sys.stack-depth", 0)
+	env.SetBool("display", true)
+	env.SetBool("display.bootstrap", false)
+	env.SetInt("display.width", 80)
+	env.SetBool("display.one-cmd", false)
+	env.SetInt("display.max-cmd-cnt", 7)
+	env.SetBool("display.env", true)
+	env.SetBool("display.env.layer", false)
+	env.SetBool("display.env.default", false)
+	env.SetBool("display.mod.quiet", false)
+	env.SetBool("display.mod.realname", true)
 }
 
 func LoadRuntimeEnv(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	env = env.GetLayer(cli.EnvLayerSession)
 	path, err := filepath.Abs(os.Args[0])
 	if err != nil {
-		panic(fmt.Errorf("[LoadRuntimeEnv] get selfpath's abs fail: %v", err))
+		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path '%s' fail: %v", os.Args[0], err))
 	}
 	env.Set("sys.paths.ticat", path)
 	data := path + ".data"

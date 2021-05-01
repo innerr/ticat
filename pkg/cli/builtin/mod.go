@@ -12,13 +12,14 @@ import (
 )
 
 func LoadLocalMods(_ cli.ArgVals, cc *cli.Cli, env *cli.Env) bool {
+	sep := "."
 	root := env.Get("sys.paths.mods").Raw
 	if root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		ext := filepath.Ext(path)
-		if ext != "."+cli.SelfName {
+		if ext != sep+cli.SelfName {
 			return nil
 		}
 		target := path[0 : len(path)-len(ext)]
@@ -31,7 +32,7 @@ func LoadLocalMods(_ cli.ArgVals, cc *cli.Cli, env *cli.Env) bool {
 			return nil
 		}
 		ext = filepath.Ext(target)
-		if ext == ".bash" {
+		if ext == sep+"bash" {
 			regBashMod(cc, path, target, target[len(root)+1:len(target)-len(ext)])
 		}
 		return nil
@@ -58,13 +59,14 @@ func regDirMod(cc *cli.Cli, metaPath string, dirPath string, cmdPath string) {
 
 func regBashMod(cc *cli.Cli, metaPath string, filePath string, cmdPath string) {
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
-	cmd := mod.RegBashCmd(filePath)
 
 	ini := goini.New()
 	err := ini.ParseFile(metaPath)
 	if err != nil {
 		panic(fmt.Errorf("[LoadLocalMods.regBashMod] parse mod's meta file failed: %v", err))
 	}
+	help, _ := ini.SectionGet("", "help")
+	cmd := mod.RegBashCmd(filePath, help)
 	abbrs, ok := ini.SectionGet("", "abbrs")
 	if ok {
 		abbrs = strings.Trim(abbrs, "'\"")

@@ -14,8 +14,8 @@ const (
 	EnvLayerCmd                    = "command"
 )
 
-func EnvLayerName(tp EnvLayerType) string {
-	return string(tp)
+func EnvLayerName(ty EnvLayerType) string {
+	return string(ty)
 }
 
 type EnvVal struct {
@@ -27,36 +27,36 @@ type EnvVal struct {
 type Env struct {
 	pairs  map[string]EnvVal
 	parent *Env
-	tp     EnvLayerType
+	ty     EnvLayerType
 }
 
 func NewEnv() *Env {
 	return &Env{map[string]EnvVal{}, nil, EnvLayerDefault}
 }
 
-func (self *Env) NewLayer(tp EnvLayerType) *Env {
+func (self *Env) NewLayer(ty EnvLayerType) *Env {
 	env := NewEnv()
 	env.parent = self
-	env.tp = tp
+	env.ty = ty
 	return env
 }
 
-func (self *Env) NewLayers(tp ...EnvLayerType) *Env {
+func (self *Env) NewLayers(ty ...EnvLayerType) *Env {
 	env := self
-	for _, it := range tp {
+	for _, it := range ty {
 		env = env.NewLayer(it)
 	}
 	return env
 }
 
-func (self *Env) GetLayer(tp EnvLayerType) *Env {
-	if self.tp == tp {
+func (self *Env) GetLayer(ty EnvLayerType) *Env {
+	if self.ty == ty {
 		return self
 	}
 	if self.parent == nil {
-		panic(fmt.Errorf("[Env.GetLayer] env layer '%s' not found", tp))
+		panic(fmt.Errorf("[Env.GetLayer] env layer '%s' not found", ty))
 	}
-	return self.parent.GetLayer(tp)
+	return self.parent.GetLayer(ty)
 }
 
 func (self Env) DeleteSelf(name string) {
@@ -71,29 +71,13 @@ func (self Env) Delete(name string) {
 }
 
 func (self Env) DeleteExt(name string, stopLayer EnvLayerType) {
-	if self.tp == stopLayer {
+	if self.ty == stopLayer {
 		return
 	}
 	delete(self.pairs, name)
 	if self.parent != nil {
 		self.parent.DeleteExt(name, stopLayer)
 	}
-}
-
-func (self Env) Get(name string) EnvVal {
-	val, ok := self.pairs[name]
-	if !ok && self.parent != nil {
-		return self.parent.Get(name)
-	}
-	return val
-}
-
-func (self Env) GetExt(name string) (EnvVal, bool) {
-	val, ok := self.pairs[name]
-	if !ok && self.parent != nil {
-		return self.parent.GetExt(name)
-	}
-	return val, ok
 }
 
 func (self *Env) Merge(x *Env) {
@@ -136,12 +120,9 @@ func (self *Env) Parent() *Env {
 	return self.parent
 }
 
-func (self *Env) GetArgv(path []string, sep string, args *Args) ArgVals {
-	if args == nil {
-		return nil
-	}
+func (self *Env) GetArgv(path []string, sep string, args Args) ArgVals {
 	argv := ArgVals{}
-	list := args.List()
+	list := args.Names()
 	for _, it := range list {
 		key := strings.Join(append(path, it), sep)
 		val := self.Get(key)
@@ -157,6 +138,38 @@ func (self *Env) GetArgv(path []string, sep string, args *Args) ArgVals {
 	return argv
 }
 
+func (self Env) Get(name string) EnvVal {
+	val, ok := self.pairs[name]
+	if !ok && self.parent != nil {
+		return self.parent.Get(name)
+	}
+	return val
+}
+
+func (self Env) GetExt(name string) (EnvVal, bool) {
+	val, ok := self.pairs[name]
+	if !ok && self.parent != nil {
+		return self.parent.GetExt(name)
+	}
+	return val, ok
+}
+
+func (self Env) Pairs() (keys []string, vals []EnvVal) {
+	for k, v := range self.pairs {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+	return
+}
+
+func (self Env) LayerType() EnvLayerType {
+	return self.ty
+}
+
+func (self Env) LayerTypeName() string {
+	return EnvLayerName(self.ty)
+}
+
 func (self Env) Compact(includeDefault bool, filterPrefixs []string) map[string]string {
 	res := map[string]string{}
 	self.compact(includeDefault, filterPrefixs, res)
@@ -164,7 +177,7 @@ func (self Env) Compact(includeDefault bool, filterPrefixs []string) map[string]
 }
 
 func (self *Env) compact(includeDefault bool, filterPrefixs []string, res map[string]string) {
-	if self.tp == EnvLayerDefault && !includeDefault {
+	if self.ty == EnvLayerDefault && !includeDefault {
 		return
 	}
 	if self.parent != nil {

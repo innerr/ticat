@@ -15,11 +15,11 @@ type cmdParser struct {
 	cmdRootNodeName string
 }
 
-func (self *cmdParser) Parse(tree *cli.CmdTree, input []string) cli.ParsedCmd {
+func (self *cmdParser) Parse(tree *cli.CmdTree, envAbbrs *cli.EnvAbbrs, input []string) cli.ParsedCmd {
 	parsed := cli.ParsedCmd{}
-	segs := self.parse(tree, input)
+	segs := self.parse(tree, envAbbrs, input)
 	curr := cli.ParsedCmdSeg{nil, cli.MatchedCmd{}}
-	path := ""
+	var path string
 	for _, seg := range segs {
 		if seg.Type == parsedSegTypeEnv {
 			env := seg.Val.(cli.ParsedEnv)
@@ -50,10 +50,11 @@ func (self *cmdParser) Parse(tree *cli.CmdTree, input []string) cli.ParsedCmd {
 	return parsed
 }
 
-func (self *cmdParser) parse(tree *cli.CmdTree, input []string) []parsedSeg {
+func (self *cmdParser) parse(tree *cli.CmdTree, envAbbrs *cli.EnvAbbrs, input []string) []parsedSeg {
 	var parsed []parsedSeg
 	var matchedCmdPath []string
 	var curr = tree
+	var currEnvAbbrs = envAbbrs
 
 	var lastNotExpectArg bool
 	var notExpectArg bool
@@ -64,7 +65,7 @@ func (self *cmdParser) parse(tree *cli.CmdTree, input []string) []parsedSeg {
 		var succeeded bool
 
 		// Try to parse input to env
-		env, input, succeeded, err = self.envParser.TryParse(curr, input)
+		env, input, succeeded, err = self.envParser.TryParse(curr, currEnvAbbrs, input)
 		if err != nil {
 			self.err("parse", matchedCmdPath, "unmatched env brackets '"+strings.Join(input, " ")+"'")
 			break
@@ -115,6 +116,9 @@ func (self *cmdParser) parse(tree *cli.CmdTree, input []string) []parsedSeg {
 		sub := curr.GetSub(input[0])
 		if sub != nil {
 			curr = sub
+			if currEnvAbbrs != nil {
+				currEnvAbbrs = currEnvAbbrs.GetSub(input[0])
+			}
 			parsed = append(parsed, parsedSeg{parsedSegTypeCmd, cli.MatchedCmd{input[0], sub}})
 			matchedCmdPath = append(matchedCmdPath, input[0])
 			input = input[1:]
@@ -126,12 +130,12 @@ func (self *cmdParser) parse(tree *cli.CmdTree, input []string) []parsedSeg {
 			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ",")+
 				"', should be a cmd or env definition")
 		}
-		env, input = self.envParser.TryParseRaw(curr, input)
+		env, input = self.envParser.TryParseRaw(curr, currEnvAbbrs, input)
 		if env != nil {
 			parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
 		}
 		if len(input) != 0 {
-			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ",")+"', should be args")
+			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ","))
 		}
 		break
 	}

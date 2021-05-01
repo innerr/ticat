@@ -6,26 +6,27 @@ import (
 
 type Args struct {
 	// Use a map as a set
-	pairs map[string]bool
-
-	list []string
-	// Not support no-default-value yet, so pairs could be insteaded by defVals now
+	names map[string]bool
+	// Not support no-default-value arg yet, so names could be insteaded by defVals now
 	defVals map[string]string
 
+	orderedList []string
+	abbrs       map[string][]string
 	abbrsRevIdx map[string]string
 }
 
 func newArgs() Args {
 	return Args{
 		map[string]bool{},
-		[]string{},
 		map[string]string{},
+		[]string{},
+		map[string][]string{},
 		map[string]string{},
 	}
 }
 
 func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...string) {
-	if _, ok := self.pairs[name]; ok {
+	if _, ok := self.names[name]; ok {
 		panic(fmt.Errorf("[Args.AddArg] %s%s: arg name conflicted: %s", ErrStrPrefix, owner.DisplayPath(), name))
 	}
 	for _, abbr := range abbrs {
@@ -38,14 +39,15 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 		}
 		self.abbrsRevIdx[abbr] = name
 	}
+	self.abbrs[name] = abbrs
 	self.abbrsRevIdx[name] = name
-	self.pairs[name] = true
+	self.names[name] = true
 	self.defVals[name] = defVal
-	self.list = append(self.list, name)
+	self.orderedList = append(self.orderedList, name)
 }
 
-func (self *Args) List() []string {
-	return self.list
+func (self *Args) Names() []string {
+	return self.orderedList
 }
 
 func (self *Args) DefVal(name string) string {
@@ -57,30 +59,7 @@ func (self *Args) Realname(nameOrAbbr string) string {
 	return name
 }
 
-func (self *Args) Dump(argv ArgVals, printDef bool) (output []string) {
-	for _, k := range self.List() {
-		defV := self.DefVal(k)
-		if len(defV) == 0 {
-			defV = "'" + defV + "'"
-		}
-		line := k + " = "
-		if argv != nil {
-			v := argv[k].Raw
-			if len(v) == 0 {
-				v = "'" + v + "'"
-			}
-			line += v
-			if printDef {
-				if defV != v {
-					line += " (def:" + defV + ")"
-				} else {
-					line += " (=def)"
-				}
-			}
-		} else {
-			line += defV + "'"
-		}
-		output = append(output, line)
-	}
+func (self *Args) Abbrs(name string) (abbrs []string) {
+	abbrs, _ = self.abbrs[name]
 	return
 }

@@ -9,6 +9,7 @@ type Cli struct {
 	Screen    *Screen
 	Cmds      *CmdTree
 	Parser    CliParser
+	EnvAbbrs  *EnvAbbrs
 }
 
 func NewCli(builtinModsLoader func(*CmdTree), envLoader func(*Env), parser CliParser) *Cli {
@@ -17,15 +18,16 @@ func NewCli(builtinModsLoader func(*CmdTree), envLoader func(*Env), parser CliPa
 		EnvLayerPersisted,
 		EnvLayerSession,
 	)
-	cli := &Cli{
+	cc := &Cli{
 		env,
 		NewScreen(),
-		NewCmdTree(),
+		NewCmdTree(CmdRootDisplayName, CmdPathSep),
 		parser,
+		NewEnvAbbrs(CmdRootDisplayName),
 	}
-	builtinModsLoader(cli.Cmds)
-	envLoader(cli.GlobalEnv)
-	return cli
+	builtinModsLoader(cc.Cmds)
+	envLoader(cc.GlobalEnv)
+	return cc
 }
 
 func (self *Cli) Execute(bootstrap string, env *Env, script ...string) bool {
@@ -56,7 +58,8 @@ func (self *Cli) execute(isBootstrap bool, script ...string) bool {
 	if len(script) == 0 {
 		return true
 	}
-	cmds := self.Parser.Parse(self.Cmds, script...)
+	useCmdAbbrs(self.EnvAbbrs, self.Cmds)
+	cmds := self.Parser.Parse(self.Cmds, self.EnvAbbrs, script...)
 	return self.executeCmds(isBootstrap, cmds)
 }
 
@@ -112,4 +115,21 @@ func (self *Cli) executeCmd(isBootstrap bool, cmd ParsedCmd, env *Env, cmds []Pa
 	}
 	printCmdResult(isBootstrap, self.Screen, cmd, cmdEnv, succeeded, time.Now().Sub(start), cmds, currCmdIdx, sep)
 	return
+}
+
+func useCmdAbbrs(abbrs *EnvAbbrs, tree *CmdTree) {
+	if tree == nil {
+		return
+	}
+	for _, subName := range tree.SubNames() {
+		subAbbrs := tree.SubAbbrs(subName)
+		subEnv := abbrs.GetSub(subName)
+		if subEnv == nil {
+			subEnv = abbrs.AddSub(subName, subAbbrs...)
+		} else {
+			abbrs.AddSubAbbrs(subName, subAbbrs...)
+		}
+		subTree := tree.GetSub(subName)
+		useCmdAbbrs(subEnv, subTree)
+	}
 }

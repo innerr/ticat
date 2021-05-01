@@ -5,30 +5,47 @@ import (
 )
 
 func RegisterBuiltinMods(cmds *cli.CmdTree) {
-	cmds.AddSub("help", "h", "H", "?").RegQuietPowerCmd(GlobalHelp)
-	cmds.AddSub("mod", "mods").RegCmd(DbgDumpMods).AddArg("alias", "off", "a", "A")
-	cmds.AddSub("desc", "d", "D").RegQuietPowerCmd(DbgDumpCmds)
-	cmds.AddSub("save", "persist", "s", "S").RegQuietCmd(SaveEnvToLocal)
+	cmds.AddSub("help", "h", "H", "?").
+		RegPowerCmd(GlobalHelp, "TODO").SetQuiet()
+	cmds.AddSub("mod", "mods").
+		RegCmd(DbgDumpMods, "list builtin and loaded mods")
+	cmds.AddSub("desc", "d", "D").
+		RegPowerCmd(DbgDumpCmds, "desc the cmds about to execute").SetQuiet()
+	cmds.AddSub("save", "persist", "s", "S").
+		RegCmd(SaveEnvToLocal, "save session env changes to local").SetQuiet()
 	env := cmds.AddSub("env", "e", "E")
-	env.RegCmd(DbgDumpEnv)
+	env.RegCmd(DbgDumpEnv, "list all env KVs")
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
-		RegQuietCmd(RemoveEnvValAndSaveToLocal).AddArg("key", "", "k", "K")
+		RegCmd(RemoveEnvValAndSaveToLocal, "remove specific env KV and save changes to local").
+		SetQuiet().AddArg("key", "", "k", "K")
 
-	cmds.AddSub("verbose", "verb", "v", "V").RegQuietCmd(SetVerbMode)
-	cmds.AddSub("verb+", "v+").RegQuietCmd(IncreaseVerb).AddArg("volume", "1", "vol", "v", "V")
-	cmds.AddSub("verb-", "v-").RegQuietCmd(DecreaseVerb).AddArg("volume", "1", "vol", "v", "V")
-	cmds.AddSub("quiet", "q", "Q").RegQuietCmd(SetQuietMode)
+	cmds.AddSub("verbose", "verb", "v", "V").
+		RegCmd(SetVerbMode, "change into verbose mode").SetQuiet()
+	cmds.AddSub("verb+", "v+").
+		RegCmd(IncreaseVerb, "increase verbose").SetQuiet().
+		AddArg("volume", "1", "vol", "v", "V")
+	cmds.AddSub("verb-", "v-").
+		RegCmd(DecreaseVerb, "decrease verbose").SetQuiet().
+		AddArg("volume", "1", "vol", "v", "V")
+	cmds.AddSub("quiet", "q", "Q").
+		RegCmd(SetQuietMode, "change into quiet mode").SetQuiet()
 
-	cmds.AddSub("dummy", "dmy", "dm").RegCmd(Dummy)
-	cmds.AddSub("sleep", "slp").RegCmd(Sleep).AddArg("duration", "1s", "dur", "d", "D")
+	cmds.AddSub("dummy", "dmy", "dm").
+		RegCmd(Dummy, "dummy cmd for testing")
+	cmds.AddSub("sleep", "slp").
+		RegCmd(Sleep, "sleep for specific duration").
+		AddArg("duration", "1s", "dur", "d", "D")
 
 	builtin := cmds.AddSub("builtin", "b", "B")
 
-	builtinEnv := builtin.AddSub("env", "E")
-	envLoad := builtinEnv.AddSub("load", "L")
-	envLoad.AddSub("local", "l", "L").RegQuietCmd(LoadLocalEnv)
-	envLoad.AddSub("runtime", "rt", "r", "R").RegQuietCmd(LoadRuntimeEnv)
+	builtinEnv := builtin.AddSub("env", "e", "E")
+	envLoad := builtinEnv.AddSub("load", "l", "L")
+	envLoad.AddSub("local", "l", "L").
+		RegCmd(LoadLocalEnv, "load env KVs from local").SetQuiet()
+	envLoad.AddSub("runtime", "rt", "r", "R").
+		RegCmd(LoadRuntimeEnv, "setup runtime env KVs").SetQuiet()
 
-	mod := builtin.AddSub("mod", "mods", "M")
-	mod.AddSub("load", "L").AddSub("local", "l", "L").RegQuietCmd(LoadLocalMods)
+	mod := builtin.AddSub("mod", "mods", "m", "M")
+	mod.AddSub("load", "L").AddSub("local", "l", "L").
+		RegCmd(LoadLocalMods, "load mods from local").SetQuiet()
 }

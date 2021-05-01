@@ -8,11 +8,11 @@ import (
 )
 
 func TestEnvParserTryParseRaw(t *testing.T) {
-	root := cli.NewCmdTree()
-	parser := &envParser{&brackets{"{", "}"}, cli.Spaces, "="}
+	root := cli.NewCmdTree("<root>", ".")
+	parser := &envParser{&brackets{"{", "}"}, "\t ", "=", "."}
 
 	test := func(a []string, bEnv cli.ParsedEnv, bRest []string) {
-		aEnv, aRest := parser.TryParseRaw(root, a)
+		aEnv, aRest := parser.TryParseRaw(root, nil, a)
 		aRestStr := fmt.Sprintf("%#v", aRest)
 		bRestStr := fmt.Sprintf("%#v", bRest)
 		if !bEnv.Equal(aEnv) || aRestStr != bRestStr {
@@ -47,7 +47,7 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	dummy := func(cli.ArgVals, *cli.Cli, *cli.Env) bool {
 		return true
 	}
-	cmd := root.RegCmd(dummy)
+	cmd := root.RegCmd(dummy, "")
 
 	test(nil, nil, nil)
 	test([]string{}, nil, nil)
@@ -107,7 +107,7 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 }
 
 func TestEnvParserFindLeft(t *testing.T) {
-	parser := &envParser{&brackets{"{", "}"}, cli.Spaces, "="}
+	parser := &envParser{&brackets{"{", "}"}, "\t ", "=", "."}
 
 	test := func(a []string, bRest []string, bFound bool, bAgain bool) {
 		aRest, aFound, aAgain := parser.findLeft(a)
@@ -139,7 +139,7 @@ func TestEnvParserFindLeft(t *testing.T) {
 }
 
 func TestEnvParserFindRight(t *testing.T) {
-	parser := &envParser{&brackets{"{", "}"}, cli.Spaces, "="}
+	parser := &envParser{&brackets{"{", "}"}, "\t ", "=", "."}
 
 	test := func(a []string, bEnv []string, bRest []string, bFound bool) {
 		aEnv, aRest, aFound := parser.findRight(a)
@@ -182,11 +182,11 @@ func TestEnvParserFindRight(t *testing.T) {
 }
 
 func TestEnvParserTryParse(t *testing.T) {
-	root := cli.NewCmdTree()
-	parser := &envParser{&brackets{"{", "}"}, cli.Spaces, "="}
+	root := cli.NewCmdTree("<root>", ".")
+	parser := &envParser{&brackets{"{", "}"}, "\t ", "=", "."}
 
 	test := func(a []string, bEnv cli.ParsedEnv, bRest []string, bFound bool, bErr error) {
-		aEnv, aRest, aFound, aErr := parser.TryParse(root, a)
+		aEnv, aRest, aFound, aErr := parser.TryParse(root, nil, a)
 		aRestStr := fmt.Sprintf("%#v", aRest)
 		bRestStr := fmt.Sprintf("%#v", bRest)
 		if !bEnv.Equal(aEnv) || aRestStr != bRestStr || aFound != bFound || (bErr == nil) != (aErr == nil) {
