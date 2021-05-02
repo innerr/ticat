@@ -4,68 +4,72 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func DumpCmdsEx(screen *Screen, env *Env, cmds []ParsedCmd, sep string) {
+func DumpCmdsEx(screen core.Screen, env *core.Env, cmds []core.ParsedCmd, sep string) {
 	if len(cmds) == 0 {
 		return
 	}
 	indentSize := 4
-	screen.Println("[cmds:" + strconv.Itoa(len(cmds)) + "]")
+	screen.Print("[cmds:" + strconv.Itoa(len(cmds)) + "]\n")
 	for i, cmd := range cmds {
 		line := strings.Repeat(" ", indentSize*1) + "[cmd:" + strconv.Itoa(i) + "] "
 		line += getCmdPath(cmd, sep, true)
-		screen.Println(line)
+		screen.Print(line + "\n")
 		args := cmd.Args()
-		argv := cmd.GenEnv(env).GetArgv(cmd.Path(), sep, args)
+		// TODO: XX
+		argv := cmd.GenEnv(env, "-", "--").GetArgv(cmd.Path(), sep, args)
 		for j, line := range DumpArgs(&args, argv, true) {
-			screen.Println(strings.Repeat(" ", indentSize*2) + "[arg:" + strconv.Itoa(j) + "] " + line)
+			screen.Print(strings.Repeat(" ", indentSize*2) + "[arg:" + strconv.Itoa(j) + "] " + line + "\n")
 		}
 	}
 }
 
-func DumpCmds(cc *Cli, cmds []ParsedCmd) {
-	DumpCmdsEx(cc.Screen, cc.GlobalEnv, cmds, cc.Parser.CmdPathSep())
+func DumpCmds(cc *core.Cli, cmds []core.ParsedCmd) {
+	DumpCmdsEx(cc.Screen, cc.GlobalEnv, cmds, cc.Cmds.Strs.PathSep)
 }
 
-func DumpEnv(screen *Screen, env *Env) {
+func DumpEnv(screen core.Screen, env *core.Env) {
 	lines := dumpEnv(env, true, true, true, nil)
 	for _, line := range lines {
-		screen.Println(line)
+		screen.Print(line + "\n")
 	}
 }
 
-func DumpMods(cc *Cli) {
+func DumpMods(cc *core.Cli) {
 	dumpMod(cc.Screen, cc.Cmds, -1)
 }
 
-func dumpMod(screen *Screen, mod *CmdTree, indent int) {
+func dumpMod(screen core.Screen, mod *core.CmdTree, indent int) {
 	if mod == nil {
 		return
 	}
 	indentPrint := func(msg string) {
 		if indent >= 0 {
-			screen.Println(strings.Repeat(" ", indent*4) + msg)
+			screen.Print(strings.Repeat(" ", indent*4) + msg + "\n")
 		}
 	}
 	name := strings.Join(append([]string{mod.DisplayName()}, mod.Abbrs()...), "|")
 	indentPrint("[" + name + "]")
-	if mod.cmd != nil {
+	cmd := mod.Cmd()
+	if cmd != nil {
 		if mod.Parent() != nil && mod.Parent().Parent() != nil {
 			indentPrint("- full-path: " + mod.DisplayPath())
 		}
-		indentPrint("- help: " + mod.cmd.Help())
-		line := "- cmd-type: " + string(mod.cmd.Type())
-		if mod.cmd.IsQuiet() {
+		indentPrint("- help: " + cmd.Help())
+		line := "- cmd-type: " + string(cmd.Type())
+		if cmd.IsQuiet() {
 			line += " (quiet)"
 		}
-		if mod.cmd.Type() != CmdTypeNormal || mod.cmd.IsQuiet() {
+		if cmd.Type() != core.CmdTypeNormal || cmd.IsQuiet() {
 			indentPrint(line)
 		}
-		if mod.cmd.Type() == CmdTypeBash {
-			indentPrint("- executable: " + mod.cmd.BashCmdLine())
+		if cmd.Type() == core.CmdTypeBash {
+			indentPrint("- executable: " + cmd.BashCmdLine())
 		}
-		args := mod.cmd.Args()
+		args := cmd.Args()
 		for i, name := range args.Names() {
 			val := args.DefVal(name)
 			names := append([]string{name}, args.Abbrs(name)...)
@@ -77,11 +81,13 @@ func dumpMod(screen *Screen, mod *CmdTree, indent int) {
 	}
 }
 
-func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool,
+func dumpEnv(env *core.Env, printEnvLayer bool, printDefEnv bool,
 	printRuntimeEnv bool, filterPrefixs []string) (res []string) {
 
 	if !printRuntimeEnv {
-		filterPrefixs = append(filterPrefixs, EnvRuntimeSysPrefix)
+		sep := env.Get("strs.env-path-sep").Raw
+		sysPrefix := env.Get("strs.env-sys-path").Raw + sep
+		filterPrefixs = append(filterPrefixs, sysPrefix, "strs" + sep)
 	}
 	if !printEnvLayer {
 		compacted := env.Compact(printDefEnv, filterPrefixs)
@@ -99,8 +105,8 @@ func dumpEnv(env *Env, printEnvLayer bool, printDefEnv bool,
 	return
 }
 
-func dumpEnvLayer(env *Env, printEnvLayer bool, printDefEnv bool, filterPrefixs []string, res *[]string, depth int) {
-	if env.LayerType() == EnvLayerDefault && !printDefEnv {
+func dumpEnvLayer(env *core.Env, printEnvLayer bool, printDefEnv bool, filterPrefixs []string, res *[]string, depth int) {
+	if env.LayerType() == core.EnvLayerDefault && !printDefEnv {
 		return
 	}
 	var output []string
@@ -129,7 +135,7 @@ func dumpEnvLayer(env *Env, printEnvLayer bool, printDefEnv bool, filterPrefixs 
 	}
 }
 
-func getCmdPath(cmd ParsedCmd, sep string, printRealname bool) string {
+func getCmdPath(cmd core.ParsedCmd, sep string, printRealname bool) string {
 	var path []string
 	for _, seg := range cmd {
 		if seg.Cmd.Cmd != nil {
@@ -144,7 +150,7 @@ func getCmdPath(cmd ParsedCmd, sep string, printRealname bool) string {
 	return strings.Join(path, sep)
 }
 
-func DumpArgs(args *Args, argv ArgVals, printDef bool) (output []string) {
+func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []string) {
 	for _, k := range args.Names() {
 		defV := args.DefVal(k)
 		if len(defV) == 0 {

@@ -4,27 +4,39 @@ import (
 	"strings"
 )
 
-type sequenceParser struct {
-	Sep            string
-	UnbreakPrefixs []string
-	UnbreakSuffixs []string
+type SequenceParser struct {
+	sep            string
+	unbreakPrefixs []string
+	unbreakSuffixs []string
 }
 
-func (self *sequenceParser) Normalize(argv []string) []string {
-	sepN := len(self.Sep)
+func NewSequenceParser(
+	sep            string,
+	unbreakPrefixs []string,
+	unbreakSuffixs []string) *SequenceParser {
+
+	return &SequenceParser{
+		sep,
+		unbreakPrefixs,
+		unbreakSuffixs,
+	}
+}
+
+func (self *SequenceParser) Normalize(argv []string) []string {
+	sepN := len(self.sep)
 	res := []string{}
 	for _, arg := range argv {
 		handledIdx := 0
 		searchIdx := 0
 		for ; handledIdx < len(arg); searchIdx += sepN {
-			i := strings.Index(arg[searchIdx:], self.Sep)
+			i := strings.Index(arg[searchIdx:], self.sep)
 			if i < 0 {
 				res = append(res, arg[handledIdx:])
 				break
 			}
 			searchIdx += i
 			unbreakable := false
-			for _, prefix := range self.UnbreakPrefixs {
+			for _, prefix := range self.unbreakPrefixs {
 				if searchIdx >= len(prefix) && prefix == arg[searchIdx-len(prefix):searchIdx] {
 					unbreakable = true
 					break
@@ -33,7 +45,7 @@ func (self *sequenceParser) Normalize(argv []string) []string {
 			if unbreakable {
 				continue
 			}
-			for _, suffix := range self.UnbreakSuffixs {
+			for _, suffix := range self.unbreakSuffixs {
 				if searchIdx+sepN+len(suffix) <= len(arg) && suffix == arg[searchIdx+sepN:searchIdx+sepN+len(suffix)] {
 					unbreakable = true
 					break
@@ -45,25 +57,25 @@ func (self *sequenceParser) Normalize(argv []string) []string {
 			if handledIdx != searchIdx {
 				res = append(res, arg[handledIdx:searchIdx])
 			}
-			res = append(res, self.Sep)
+			res = append(res, self.sep)
 			handledIdx = searchIdx + sepN
 		}
 	}
 	return res
 }
 
-func (self *sequenceParser) Parse(argv []string) (parsed [][]string, firstIsGlobal bool) {
+func (self *SequenceParser) Parse(argv []string) (parsed [][]string, firstIsGlobal bool) {
 	argv = self.Normalize(argv)
 
 	firstIsGlobal = true
-	if len(argv) != 0 && argv[0] == self.Sep {
+	if len(argv) != 0 && argv[0] == self.sep {
 		firstIsGlobal = false
 	}
 
 	parsed = [][]string{}
 	curr := []string{}
 	for _, arg := range argv {
-		if arg != self.Sep {
+		if arg != self.sep {
 			arg = strings.TrimSpace(arg)
 			if len(arg) != 0 {
 				curr = append(curr, arg)

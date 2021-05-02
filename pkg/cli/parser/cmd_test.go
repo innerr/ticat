@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/pingcap/ticat/pkg/cli"
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
 func TestCmdParserParseSeg(t *testing.T) {
@@ -19,14 +19,14 @@ func TestCmdParserParseSeg(t *testing.T) {
 				fatal()
 			}
 			if a[i].Type == parsedSegTypeCmd {
-				ac := a[i].Val.(cli.MatchedCmd)
-				bc := b[i].Val.(cli.MatchedCmd)
+				ac := a[i].Val.(core.MatchedCmd)
+				bc := b[i].Val.(core.MatchedCmd)
 				if ac.Name != bc.Name {
 					fatal()
 				}
 			} else if a[i].Type == parsedSegTypeEnv {
-				ae := a[i].Val.(cli.ParsedEnv)
-				be := b[i].Val.(cli.ParsedEnv)
+				ae := a[i].Val.(core.ParsedEnv)
+				be := b[i].Val.(core.ParsedEnv)
 				if !ae.Equal(be) {
 					fatal()
 				}
@@ -38,24 +38,24 @@ func TestCmdParserParseSeg(t *testing.T) {
 		}
 	}
 
-	root := cli.NewCmdTree("<root>", ".")
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", "-", "--", "DUMB", "DUMB"})
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
-	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}, "\t ", "=", "."},
+	parser := &CmdParser{
+		&EnvParser{Brackets{"{", "}"}, "\t ", "=", "."},
 		".", "\t ./", "\t ", "<root>",
 	}
 
 	sep := parsedSeg{parsedSegTypeSep, nil}
 
 	cmd := func(name string) parsedSeg {
-		return parsedSeg{parsedSegTypeCmd, cli.MatchedCmd{name, nil}}
+		return parsedSeg{parsedSegTypeCmd, core.MatchedCmd{name, nil}}
 	}
 	env := func(names ...string) parsedSeg {
-		env := cli.ParsedEnv{}
+		env := core.ParsedEnv{}
 		for _, name := range names {
-			env[name] = cli.ParsedEnvVal{"V", false}
+			env[name] = core.ParsedEnvVal{"V", false}
 		}
 		return parsedSeg{parsedSegTypeEnv, env}
 	}
@@ -98,7 +98,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 }
 
 func TestCmdParserParse(t *testing.T) {
-	assertEq := func(a cli.ParsedCmd, b cli.ParsedCmd) {
+	assertEq := func(a core.ParsedCmd, b core.ParsedCmd) {
 		for i, av := range a {
 			if i >= len(b) {
 				t.Fatalf("size not eq: %#v != %#v\n", len(a), len(b))
@@ -119,59 +119,59 @@ func TestCmdParserParse(t *testing.T) {
 		}
 	}
 
-	root := cli.NewCmdTree("<root>", ".")
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", "-", "--", "DUMB", "DUMB"})
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
-	parser := &cmdParser{
-		&envParser{&brackets{"{", "}"}, "\t ", "=", "."},
+	parser := &CmdParser{
+		&EnvParser{Brackets{"{", "}"}, "\t ", "=", "."},
 		".", "\t ./", "\t ", "<root>",
 	}
 
-	seg := func(cmdName string, envKeyNames ...string) cli.ParsedCmdSeg {
-		var env cli.ParsedEnv
+	seg := func(cmdName string, envKeyNames ...string) core.ParsedCmdSeg {
+		var env core.ParsedEnv
 		if len(envKeyNames) != 0 {
-			env = cli.ParsedEnv{}
+			env = core.ParsedEnv{}
 			for _, name := range envKeyNames {
-				env[name] = cli.ParsedEnvVal{"V", false}
+				env[name] = core.ParsedEnvVal{"V", false}
 			}
 		}
-		return cli.ParsedCmdSeg{env, cli.MatchedCmd{cmdName, nil}}
+		return core.ParsedCmdSeg{env, core.MatchedCmd{cmdName, nil}}
 	}
 
-	test := func(a []string, b cli.ParsedCmd) {
+	test := func(a []string, b core.ParsedCmd) {
 		parsed := parser.Parse(root, nil, a)
 		assertEq(parsed, b)
 	}
 
-	test(nil, cli.ParsedCmd{})
-	test([]string{}, cli.ParsedCmd{})
-	test([]string{}, cli.ParsedCmd{})
+	test(nil, core.ParsedCmd{})
+	test([]string{}, core.ParsedCmd{})
+	test([]string{}, core.ParsedCmd{})
 
-	test([]string{"X"}, cli.ParsedCmd{seg("X")})
-	test([]string{"X", "21"}, cli.ParsedCmd{seg("X"), seg("21")})
-	test([]string{"X/21"}, cli.ParsedCmd{seg("X"), seg("21")})
-	test([]string{"X.21"}, cli.ParsedCmd{seg("X"), seg("21")})
-	test([]string{"X 21"}, cli.ParsedCmd{seg("X"), seg("21")})
-	test([]string{"X \t 21"}, cli.ParsedCmd{seg("X"), seg("21")})
-	test([]string{"X", "twenty-one"}, cli.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X"}, core.ParsedCmd{seg("X")})
+	test([]string{"X", "21"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X/21"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X.21"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X 21"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X \t 21"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X", "twenty-one"}, core.ParsedCmd{seg("X"), seg("21")})
 
-	test([]string{"{a=V}", "X", "21"}, cli.ParsedCmd{seg("", "a"), seg("X"), seg("21")})
-	test([]string{"X", "{a=V}", "21"}, cli.ParsedCmd{seg("X", "X.a"), seg("21")})
-	test([]string{"X", "21", "{a=V}"}, cli.ParsedCmd{seg("X"), seg("21", "X.21.a")})
-	test([]string{"X", "twenty-one", "{a=V}"}, cli.ParsedCmd{seg("X"), seg("21", "X.21.a")})
+	test([]string{"{a=V}", "X", "21"}, core.ParsedCmd{seg("", "a"), seg("X"), seg("21")})
+	test([]string{"X", "{a=V}", "21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
+	test([]string{"X", "21", "{a=V}"}, core.ParsedCmd{seg("X"), seg("21", "X.21.a")})
+	test([]string{"X", "twenty-one", "{a=V}"}, core.ParsedCmd{seg("X"), seg("21", "X.21.a")})
 
-	test([]string{"X{a=V}/21"}, cli.ParsedCmd{seg("X", "X.a"), seg("21")})
-	test([]string{"X{a=V}/{b=V}21"}, cli.ParsedCmd{seg("X", "X.a", "X.b"), seg("21")})
-	test([]string{"X{a=V}./{b=V}21"}, cli.ParsedCmd{seg("X", "X.a", "X.b"), seg("21")})
-	test([]string{"X/{a=V}21"}, cli.ParsedCmd{seg("X", "X.a"), seg("21")})
+	test([]string{"X{a=V}/21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
+	test([]string{"X{a=V}/{b=V}21"}, core.ParsedCmd{seg("X", "X.a", "X.b"), seg("21")})
+	test([]string{"X{a=V}./{b=V}21"}, core.ParsedCmd{seg("X", "X.a", "X.b"), seg("21")})
+	test([]string{"X/{a=V}21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
 	test([]string{"X{a=V}{b=V} / / {c=V}{d=V}21{e=V}{f=V}"},
-		cli.ParsedCmd{seg("X", "X.a", "X.b", "X.c", "X.d"), seg("21", "X.21.e", "X.21.f")})
+		core.ParsedCmd{seg("X", "X.a", "X.b", "X.c", "X.d"), seg("21", "X.21.e", "X.21.f")})
 
-	test([]string{"X{a=V}21"}, cli.ParsedCmd{seg("X", "X.a"), seg("21")})
-	test([]string{"X/ {a=V}21"}, cli.ParsedCmd{seg("X", "X.a"), seg("21")})
-	test([]string{"X /{a=V}21"}, cli.ParsedCmd{seg("X", "X.a"), seg("21")})
-	test([]string{"X / {a=V} 21"}, cli.ParsedCmd{seg("X", "X.a"), seg("21")})
+	test([]string{"X{a=V}21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
+	test([]string{"X/ {a=V}21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
+	test([]string{"X /{a=V}21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
+	test([]string{"X / {a=V} 21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
 	test([]string{"{a=V}{b=V}X{c=V}21{d=V}{e=V}"},
-		cli.ParsedCmd{seg("", "a", "b"), seg("X", "X.c"), seg("21", "X.21.d", "X.21.e")})
+		core.ParsedCmd{seg("", "a", "b"), seg("X", "X.c"), seg("21", "X.21.d", "X.21.e")})
 }

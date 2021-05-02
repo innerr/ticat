@@ -1,12 +1,12 @@
 package parser
 
 import (
-	"github.com/pingcap/ticat/pkg/cli"
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
 type Parser struct {
-	seqParser *sequenceParser
-	cmdParser *cmdParser
+	seqParser *SequenceParser
+	cmdParser *CmdParser
 }
 
 // A very simple implement of command line parsing, lack of char escaping
@@ -15,9 +15,9 @@ type Parser struct {
 //         - TODO: how to store this info(to a file?) and still keep it human-editable ?
 //   * The dynamite info(registered modules and env KVs) could use for disambiguation
 //         - Inconvenient to use a LEX/YACC lib to parse
-func (self *Parser) Parse(tree *cli.CmdTree, envAbbrs *cli.EnvAbbrs, input ...string) *cli.ParsedCmds {
+func (self *Parser) Parse(tree *core.CmdTree, envAbbrs *core.EnvAbbrs, input ...string) *core.ParsedCmds {
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
-	cmds := cli.ParsedCmds{cli.ParsedEnv{}, nil}
+	cmds := core.ParsedCmds{core.ParsedEnv{}, nil}
 	for _, seq := range seqs {
 		cmds.Cmds = append(cmds.Cmds, self.cmdParser.Parse(tree, envAbbrs, seq))
 	}
@@ -31,28 +31,6 @@ func (self *Parser) Parse(tree *cli.CmdTree, envAbbrs *cli.EnvAbbrs, input ...st
 	return &cmds
 }
 
-func NewParser() *Parser {
-	return &Parser{
-		&sequenceParser{
-			":",
-			[]string{"http", "HTTP"},
-			[]string{"/"},
-		},
-		&cmdParser{
-			&envParser{
-				&brackets{cli.EnvBracketLeft, cli.EnvBracketRight},
-				cli.Spaces,
-				cli.EnvKeyValSep,
-				cli.EnvPathSep,
-			},
-			cli.CmdPathSep,
-			cli.Spaces + cli.CmdPathAlterSeps,
-			cli.Spaces,
-			cli.CmdRootDisplayName,
-		},
-	}
-}
-
-func (self *Parser) CmdPathSep() string {
-	return self.cmdParser.cmdSep
+func NewParser(seqParser *SequenceParser, cmdParser *CmdParser) *Parser {
+	return &Parser{seqParser, cmdParser}
 }

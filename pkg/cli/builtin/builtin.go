@@ -1,10 +1,10 @@
 package builtin
 
 import (
-	"github.com/pingcap/ticat/pkg/cli"
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func RegisterBuiltinMods(cmds *cli.CmdTree) {
+func RegisterBuiltinMods(cmds *core.CmdTree) {
 	cmds.AddSub("help", "h", "H", "?").
 		RegPowerCmd(GlobalHelp, "TODO").SetQuiet()
 	cmds.AddSub("mod", "mods").

@@ -4,18 +4,32 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli"
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-type envParser struct {
-	brackets   *brackets
+type EnvParser struct {
+	brackets   Brackets
 	spaces     string
 	kvSep      string
 	envPathSep string
 }
 
-func (self *envParser) TryParse(cmd *cli.CmdTree, envAbbrs *cli.EnvAbbrs,
-	input []string) (env cli.ParsedEnv, rest []string, found bool, err error) {
+func NewEnvParser(
+	brackets   Brackets,
+	spaces     string,
+	kvSep      string,
+	envPathSep string) *EnvParser {
+
+	return &EnvParser {
+		brackets,
+		spaces,
+		kvSep,
+		envPathSep,
+	}
+}
+
+func (self *EnvParser) TryParse(cmd *core.CmdTree, envAbbrs *core.EnvAbbrs,
+	input []string) (env core.ParsedEnv, rest []string, found bool, err error) {
 
 	var again bool
 	rest, found, again = self.findLeft(input)
@@ -30,23 +44,23 @@ func (self *envParser) TryParse(cmd *cli.CmdTree, envAbbrs *cli.EnvAbbrs,
 	envStrs, rest, found = self.findRight(rest)
 	if !found {
 		return nil, tryTrimStrings(input), true,
-			fmt.Errorf("[envParser.TryParse] unmatched env brackets '" + strings.Join(input, " ") + "'")
+			fmt.Errorf("[EnvParser.TryParse] unmatched env brackets '" + strings.Join(input, " ") + "'")
 	}
 
 	var envRest []string
 	env, envRest = self.TryParseRaw(cmd, envAbbrs, envStrs)
 	if len(envRest) != 0 {
 		return nil, tryTrimStrings(input), true,
-			fmt.Errorf("[envParser.TryParse] env difinition can't be recognized '" +
+			fmt.Errorf("[EnvParser.TryParse] env difinition can't be recognized '" +
 				strings.Join(envRest, " ") + "'")
 	}
 
 	return env, tryTrimStrings(rest), true, nil
 }
 
-func (self *envParser) TryParseRaw(cmd *cli.CmdTree, envAbbrs *cli.EnvAbbrs, input []string) (env cli.ParsedEnv, rest []string) {
-	normalized, foundKvSep := normalizeEnvRawStr(input, self.kvSep, cli.Spaces)
-	env = cli.ParsedEnv{}
+func (self *EnvParser) TryParseRaw(cmd *core.CmdTree, envAbbrs *core.EnvAbbrs, input []string) (env core.ParsedEnv, rest []string) {
+	normalized, foundKvSep := normalizeEnvRawStr(input, self.kvSep, self.spaces)
+	env = core.ParsedEnv{}
 	rest = normalized.data
 
 	genResult := func(normalizedIdx int) []string {
@@ -76,7 +90,7 @@ func (self *envParser) TryParseRaw(cmd *cli.CmdTree, envAbbrs *cli.EnvAbbrs, inp
 				}
 			}
 			value := rest[i+2]
-			env[key] = cli.ParsedEnvVal{value, false}
+			env[key] = core.ParsedEnvVal{value, false}
 		}
 		return tryTrimParsedEnv(env), genResult(i)
 	}
@@ -95,14 +109,14 @@ func (self *envParser) TryParseRaw(cmd *cli.CmdTree, envAbbrs *cli.EnvAbbrs, inp
 					return tryTrimParsedEnv(env), genResult(i)
 				}
 				value := rest[i+1]
-				env[key] = cli.ParsedEnvVal{value, true}
+				env[key] = core.ParsedEnvVal{value, true}
 				curr += 1
 			}
 		} else {
 			for ; i < len(rest); i += 1 {
 				key := names[i]
 				value := rest[i]
-				env[key] = cli.ParsedEnvVal{value, true}
+				env[key] = core.ParsedEnvVal{value, true}
 				curr += 1
 			}
 		}
@@ -113,13 +127,13 @@ func (self *envParser) TryParseRaw(cmd *cli.CmdTree, envAbbrs *cli.EnvAbbrs, inp
 				return tryTrimParsedEnv(env), genResult(i)
 			}
 			value := rest[i+2]
-			env[key] = cli.ParsedEnvVal{value, true}
+			env[key] = core.ParsedEnvVal{value, true}
 		}
 	}
 	return tryTrimParsedEnv(env), genResult(i)
 }
 
-func (self *envParser) findLeft(input []string) (rest []string, found bool, again bool) {
+func (self *EnvParser) findLeft(input []string) (rest []string, found bool, again bool) {
 	rest = tryTrimStrings(input)
 	found = false
 	again = false
@@ -148,7 +162,7 @@ func (self *envParser) findLeft(input []string) (rest []string, found bool, agai
 	return
 }
 
-func (self *envParser) findRight(input []string) (env []string, rest []string, found bool) {
+func (self *EnvParser) findRight(input []string) (env []string, rest []string, found bool) {
 	rightLen := len(self.brackets.Right)
 
 	for i, it := range input {
@@ -218,7 +232,7 @@ func normalizeEnvRawStr(input []string, sep string, spaces string) (output norma
 	return
 }
 
-type brackets struct {
+type Brackets struct {
 	Left  string
 	Right string
 }
@@ -230,7 +244,7 @@ func tryTrimStrings(input []string) []string {
 	return input
 }
 
-func tryTrimParsedEnv(env cli.ParsedEnv) cli.ParsedEnv {
+func tryTrimParsedEnv(env core.ParsedEnv) core.ParsedEnv {
 	if len(env) == 0 {
 		return nil
 	}

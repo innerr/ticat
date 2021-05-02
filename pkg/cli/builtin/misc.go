@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pingcap/ticat/pkg/cli"
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func Sleep(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
+func Sleep(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	durStr := argv.GetRaw("duration")
 
 	// Default unit is 's'
@@ -26,11 +26,11 @@ func Sleep(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	return true
 }
 
-func MockStub(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
+func MockStub(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func Dummy(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
+func Dummy(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	fmt.Println("Dummy cmd here")
 	return true
 }

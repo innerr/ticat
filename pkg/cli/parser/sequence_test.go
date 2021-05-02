@@ -19,7 +19,7 @@ func TestSequenceParserNormalize(t *testing.T) {
 		}
 	}
 
-	parser := sequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
+	parser := SequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
 	test := func(a []string, b []string) {
 		assertEq(a, parser.Normalize(a), b)
 	}
@@ -88,7 +88,7 @@ func TestSequenceParserBreak(t *testing.T) {
 		}
 	}
 
-	parser := sequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
+	parser := SequenceParser{":", []string{"http", "HTTP"}, []string{"/"}}
 	test := func(a []string, b [][]string) {
 		parsed, _ := parser.Parse(a)
 		assertEq(parsed, b)

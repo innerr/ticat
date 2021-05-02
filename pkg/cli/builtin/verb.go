@@ -1,17 +1,17 @@
 package builtin
 
 import (
-	"github.com/pingcap/ticat/pkg/cli"
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func SetQuietMode(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
-	env = env.GetLayer(cli.EnvLayerSession)
+func SetQuietMode(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerSession)
 	env.Set("display", "false")
 	return true
 }
 
-func SetVerbMode(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
-	env = env.GetLayer(cli.EnvLayerSession)
+func SetVerbMode(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerSession)
 	env.Set("display", "true")
 	env.Set("display.env", "true")
 	env.Set("display.env.layer", "true")
@@ -23,8 +23,8 @@ func SetVerbMode(_ cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	return true
 }
 
-func IncreaseVerb(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
-	env = env.GetLayer(cli.EnvLayerSession)
+func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerSession)
 
 	volume := argv.GetInt("volume")
 	if volume <= 0 {
@@ -78,8 +78,8 @@ func IncreaseVerb(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
 	return true
 }
 
-func DecreaseVerb(argv cli.ArgVals, _ *cli.Cli, env *cli.Env) bool {
-	env = env.GetLayer(cli.EnvLayerSession)
+func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerSession)
 
 	volume := argv.GetInt("volume")
 	if volume <= 0 {

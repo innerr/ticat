@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func printCmdResult(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env, succeeded bool,
-	elapsed time.Duration, cmds []ParsedCmd, currCmdIdx int, sep string) {
+func printCmdResult(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env *core.Env, succeeded bool,
+	elapsed time.Duration, cmds []core.ParsedCmd, currCmdIdx int, sep string) {
 
 	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display") {
 		return
@@ -42,26 +44,26 @@ func printCmdResult(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env, s
 	}
 	line = "│" + " " + resStr + padRight(line, " ", width-len(durStr)-6) + durStr + " " + "│"
 
-	screen.Println("┌" + strings.Repeat("─", width-2) + "┐")
-	screen.Println(line)
+	screen.Print("┌" + strings.Repeat("─", width-2) + "┐" + "\n")
+	screen.Print(line + "\n")
 	/*
 		for k, v := range argv {
 			line = "│" + padRight(strings.Repeat(" ", len(resStr) + 4) + k + " = " + v.Raw,
 				" ", width-3) + " " + "│"
-			screen.Println(line)
+			screen.Print(line + "\n")
 		}
 	*/
-	screen.Println("└" + strings.Repeat("─", width-2) + "┘")
+	screen.Print("└" + strings.Repeat("─", width-2) + "┘" + "\n")
 
 	if currCmdIdx >= len(cmds)-1 || !succeeded {
-		screen.Println(strings.Repeat(" ", width-len(timeStr)-2) + timeStr)
+		screen.Print(strings.Repeat(" ", width-len(timeStr)-2) + timeStr + "\n")
 	} else {
-		screen.Println("\n")
+		screen.Print("\n\n")
 	}
 }
 
-func printCmdStack(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env,
-	cmds []ParsedCmd, currCmdIdx int, sep string) {
+func printCmdStack(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env *core.Env,
+	cmds []core.ParsedCmd, currCmdIdx int, sep string) {
 
 	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display") {
 		return
@@ -135,18 +137,18 @@ func printCmdStack(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env,
 		}
 	}
 
-	screen.Println("┌" + strings.Repeat("─", titleWidth-2) + "┐")
-	screen.Println(titleLine)
-	screen.Println(topBorder)
+	screen.Print("┌" + strings.Repeat("─", titleWidth-2) + "┐" + "\n")
+	screen.Print(titleLine + "\n")
+	screen.Print(topBorder + "\n")
 
 	if printEnv {
 		filterPrefixs := []string{strings.Join(cmd.Path(), sep) + sep}
 		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, filterPrefixs)
 		for _, line := range envLines {
-			screen.Println("│" + padRight("    "+line, " ", width-2) + "│")
+			screen.Print("│" + padRight("    "+line, " ", width-2) + "│" + "\n")
 		}
 		if len(envLines) != 0 {
-			screen.Println("├" + strings.Repeat("─", width-2) + "┤")
+			screen.Print("├" + strings.Repeat("─", width-2) + "┤" + "\n")
 		}
 	}
 
@@ -165,43 +167,44 @@ func printCmdStack(isBootstrap bool, screen *Screen, cmd ParsedCmd, env *Env,
 			}
 			line += getCmdPath(cmd, sep, printRealname)
 		}
-		screen.Println("│" + padRight(line, " ", width-2) + "│")
+		screen.Print("│" + padRight(line, " ", width-2) + "│" + "\n")
 
 		args := cmd.Args()
-		argv := cmd.GenEnv(env.GetLayer(EnvLayerSession)).GetArgv(cmd.Path(), sep, cmd.Args())
+		// TOOD: XX
+		argv := cmd.GenEnv(env.GetLayer(core.EnvLayerSession), "-", "--").GetArgv(cmd.Path(), sep, cmd.Args())
 		for _, line := range DumpArgs(&args, argv, false) {
-			screen.Println("│" + padRight(strings.Repeat(" ", 8)+line, " ", width-2) + "│")
+			screen.Print("│" + padRight(strings.Repeat(" ", 8)+line, " ", width-2) + "│" + "\n")
 		}
 	}
 
-	screen.Println("└" + strings.Repeat("─", width-2) + "┘")
+	screen.Print("└" + strings.Repeat("─", width-2) + "┘" + "\n")
 }
 
-func checkPrintFilter(cmd ParsedCmd, env *Env, sep string) bool {
+func checkPrintFilter(cmd core.ParsedCmd, env *core.Env, sep string) bool {
 	if len(cmd) == 0 {
 		return true
 	}
 	lastSeg := cmd[len(cmd)-1]
-	if lastSeg.Cmd.Cmd == nil || lastSeg.Cmd.Cmd.cmd == nil ||
+	if lastSeg.Cmd.Cmd == nil || lastSeg.Cmd.Cmd.Cmd() == nil ||
 		(lastSeg.Cmd.Cmd.IsQuiet() && !env.GetBool("display.mod.quiet")) {
 		return true
 	}
 	return false
 }
 
-func filterQuietCmds(env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int) {
+func filterQuietCmds(env *core.Env, cmds []core.ParsedCmd, currCmdIdx int) ([]core.ParsedCmd, int) {
 	if env.GetBool("display.mod.quiet") {
 		return cmds, currCmdIdx
 	}
 
-	var newCmds []ParsedCmd
+	var newCmds []core.ParsedCmd
 	newIdx := currCmdIdx
 	for i, cmd := range cmds {
 		if len(cmd) == 0 {
 			continue
 		}
 		lastSeg := cmd[len(cmd)-1].Cmd
-		if lastSeg.Cmd == nil || lastSeg.Cmd.cmd == nil || lastSeg.Cmd.IsQuiet() {
+		if lastSeg.Cmd == nil || lastSeg.Cmd.Cmd() == nil || lastSeg.Cmd.IsQuiet() {
 			if i < currCmdIdx {
 				newIdx -= 1
 			}
