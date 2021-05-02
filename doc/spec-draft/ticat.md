@@ -28,15 +28,6 @@ tpcc
 tpcc.report
     ...
 
-$> ticat env interact
-interact = on
-$> ticat env interact=off
-interact = off
-$> ticat env interact off
-interact = off
-$> ticat env interact = off
-interact = off
-
 # one-time only env vars
 $> ticat {interact=off cluster=cluster-2} (other commands...)
 $> ticat {interact = off} (other commands...)
