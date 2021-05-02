@@ -19,6 +19,7 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetBool("display.executor", true)
 	env.SetBool("display.bootstrap", false)
 	env.SetBool("display.one-cmd", false)
+	env.SetBool("display.utf8", true)
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.sys", false)
 	env.SetBool("display.env.layer", false)

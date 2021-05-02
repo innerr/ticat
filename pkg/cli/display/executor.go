@@ -8,66 +8,16 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func PrintCmdResult(
-	isBootstrap bool,
-	screen core.Screen,
-	cmd core.ParsedCmd,
-	env *core.Env,
-	succeeded bool,
-	elapsed time.Duration,
-	flow []core.ParsedCmd,
-	currCmdIdx int,
-	strs *core.CmdTreeStrs) {
-
-	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
-		return
-	}
-	if checkPrintFilter(cmd, env) {
-		return
-	}
-	flow, currCmdIdx = filterQuietCmds(env, flow, currCmdIdx)
-	if len(flow) == 1 && !env.GetBool("display.one-cmd") {
-		return
-	}
-	if len(flow) == 0 {
-		return
-	}
-
-	width := env.GetInt("display.width")
-
-	var resStr string
-	if succeeded {
-		resStr = " ✓" //"OK"
-	} else {
-		resStr = " ✘" //"EE"
-	}
-
-	timeStr := time.Now().Format("01-02 15:04:05")
-
-	printRealname := env.GetBool("display.mod.realname")
-	line := " " + getCmdPath(cmd, strs.PathSep, printRealname)
-	durStr := formatDuration(elapsed)
-	if width-len(durStr)-6 < 20 {
-		width = len(durStr) + 6 + 20
-	}
-	line = "│" + " " + resStr + padRight(line, " ", width-len(durStr)-6) + durStr + " " + "│"
-
-	screen.Print("┌" + strings.Repeat("─", width-2) + "┐" + "\n")
-	screen.Print(line + "\n")
-	/*
-		for k, v := range argv {
-			line = "│" + padRight(strings.Repeat(" ", len(resStr) + 4) + k + " = " + v.Raw,
-				" ", width-3) + " " + "│"
-			screen.Print(line + "\n")
-		}
-	*/
-	screen.Print("└" + strings.Repeat("─", width-2) + "┘" + "\n")
-
-	if currCmdIdx >= len(flow)-1 || !succeeded {
-		screen.Print(strings.Repeat(" ", width-len(timeStr)-2) + timeStr + "\n")
-	} else {
-		screen.Print("\n\n")
-	}
+type CmdStackLines struct {
+	Display bool
+	StackDepth string
+	StackDepthLen int
+	Time string
+	TimeLen int
+	Env []string
+	EnvLen []int
+	Flow []string
+	FlowLen []int
 }
 
 func PrintCmdStack(
@@ -77,7 +27,7 @@ func PrintCmdStack(
 	env *core.Env,
 	flow []core.ParsedCmd,
 	currCmdIdx int,
-	strs *core.CmdTreeStrs) {
+	strs *core.CmdTreeStrs) (lines CmdStackLines) {
 
 	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
 		return
@@ -93,7 +43,7 @@ func PrintCmdStack(
 		return
 	}
 
-	width := env.GetInt("display.width")
+	lines.Display = true
 
 	const cmdCntKey = "display.max-cmd-cnt"
 	cmdDisplayCnt := env.GetInt(cmdCntKey)
@@ -101,39 +51,17 @@ func PrintCmdStack(
 		panic(fmt.Errorf("[PrintCmdStack] %s should not less than 4", cmdCntKey))
 	}
 
-	printEnv := env.GetBool("display.env")
-	printEnvLayer := env.GetBool("display.env.layer")
-	printDefEnv := env.GetBool("display.env.default")
-	printRuntimeEnv := env.GetBool("display.env.sys")
-	printRealname := env.GetBool("display.mod.realname")
-
 	stackDepth := env.Get("sys.stack-depth").Raw
 	if len(stackDepth) > 2 {
 		stackDepth = "[..]"
 	} else {
 		stackDepth = "[" + stackDepth + "]" + strings.Repeat(" ", 2+1-len(stackDepth))
 	}
-	stackDepth = " stack-level: " + stackDepth
-	titleLine := "│" + stackDepth + "│"
+	lines.StackDepth = "stack-level: " + stackDepth
+	lines.StackDepthLen = len(lines.StackDepth)
 
-	// Notice that len(str) will return wrong size since we are using non-ascii chars
-	titleWidth := len(stackDepth) + 2
-
-	titleLine += "   (=`ω´=)   "
-	titleLineLen := titleWidth + 3 + 7 + 3
-
-	timeStr := time.Now().Format("01-02 15:04:05")
-	// This "1" is for left border
-	if width < titleLineLen+len(timeStr)+1 {
-		width = titleLineLen + len(timeStr) + 1
-	}
-	if width < 1+titleLineLen+len(timeStr)+1 {
-		width = 1 + titleLineLen + len(timeStr) + 1
-	}
-	titleLine += strings.Repeat(" ", width-1-titleLineLen-len(timeStr)-1) + timeStr
-
-	topBorder := "├" + strings.Repeat("─", titleWidth-2) + "┴"
-	topBorder = topBorder + strings.Repeat("─", width-1-titleWidth) + "┐"
+	lines.Time = time.Now().Format("01-02 15:04:05")
+	lines.TimeLen = len(lines.Time)
 
 	displayIdxStart := 0
 	displayIdxEnd := len(flow)
@@ -150,18 +78,19 @@ func PrintCmdStack(
 		}
 	}
 
-	screen.Print("┌" + strings.Repeat("─", titleWidth-2) + "┐" + "\n")
-	screen.Print(titleLine + "\n")
-	screen.Print(topBorder + "\n")
+	printEnv := env.GetBool("display.env")
+	printEnvLayer := env.GetBool("display.env.layer")
+	printDefEnv := env.GetBool("display.env.default")
+	printRuntimeEnv := env.GetBool("display.env.sys")
+	printRealname := env.GetBool("display.mod.realname")
 
 	if printEnv {
 		filterPrefixs := []string{strings.Join(cmd.Path(), strs.PathSep) + strs.PathSep}
 		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, false, filterPrefixs, 4)
 		for _, line := range envLines {
-			screen.Print("│" + padRight("    "+line, " ", width-2) + "│" + "\n")
-		}
-		if len(envLines) != 0 {
-			screen.Print("├" + strings.Repeat("─", width-2) + "┤" + "\n")
+			line := "   "+line
+			lines.Env = append(lines.Env, line)
+			lines.EnvLen = append(lines.EnvLen, len(line))
 		}
 	}
 
@@ -171,27 +100,99 @@ func PrintCmdStack(
 		}
 		var line string
 		if (i == displayIdxStart && i != 0) || (i+1 == displayIdxEnd && i+1 != len(flow)) {
-			line += "    ..."
+			line += "   ..."
 		} else {
 			if i == currCmdIdx {
-				line += " >> "
+				line += ">> "
 			} else {
-				line += "    "
+				line += "   "
 			}
 			line += getCmdPath(cmd, strs.PathSep, printRealname)
 		}
-		screen.Print("│" + padRight(line, " ", width-2) + "│" + "\n")
+		lines.Flow = append(lines.Flow, line)
+		lines.FlowLen = append(lines.FlowLen, len(line))
 
 		cmdEnv := cmd.GenEnv(env.GetLayer(core.EnvLayerSession),
 			strs.EnvValDelMark, strs.EnvValDelAllMark)
 		args := cmd.Args()
 		argv := cmdEnv.GetArgv(cmd.Path(), strs.PathSep, cmd.Args())
 		for _, line := range DumpArgs(&args, argv, false) {
-			screen.Print("│" + padRight(strings.Repeat(" ", 8)+line, " ", width-2) + "│" + "\n")
+			line := strings.Repeat(" ", 3+4)+line
+			lines.Flow = append(lines.Flow, line)
+			lines.FlowLen = append(lines.FlowLen, len(line))
 		}
 	}
 
-	screen.Print("└" + strings.Repeat("─", width-2) + "┘" + "\n")
+	return
+}
+
+type CmdResultLines struct {
+	Display bool
+	Cmd string
+	CmdLen int
+	Res string
+	ResLen int
+	Dur string
+	DurLen int
+	Footer string
+	FooterLen int
+}
+
+func PrintCmdResult(
+	isBootstrap bool,
+	screen core.Screen,
+	cmd core.ParsedCmd,
+	env *core.Env,
+	succeeded bool,
+	elapsed time.Duration,
+	flow []core.ParsedCmd,
+	currCmdIdx int,
+	strs *core.CmdTreeStrs) (lines CmdResultLines) {
+
+	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
+		return
+	}
+	if checkPrintFilter(cmd, env) {
+		return
+	}
+	flow, currCmdIdx = filterQuietCmds(env, flow, currCmdIdx)
+	if len(flow) == 1 && !env.GetBool("display.one-cmd") {
+		return
+	}
+	if len(flow) == 0 {
+		return
+	}
+
+	lines.Display = true
+	lines.Dur = formatDuration(elapsed)
+	lines.DurLen = len(lines.Dur)
+
+	useUtf8 := env.GetBool("display.utf8")
+	if useUtf8 {
+		if succeeded {
+			lines.Res = " ✓"
+		} else {
+			lines.Res = " ✘"
+		}
+	} else {
+		if succeeded {
+			lines.Res = "OK"
+		} else {
+			lines.Res = "EE"
+		}
+	}
+	lines.ResLen = 2
+
+	lines.Cmd = getCmdPath(cmd, strs.PathSep, env.GetBool("display.mod.realname"))
+	lines.CmdLen = len(lines.Cmd)
+
+	if currCmdIdx >= len(flow)-1 || !succeeded {
+		lines.Footer = time.Now().Format("01-02 15:04:05")
+	} else {
+		lines.Footer = "\n"
+	}
+	lines.FooterLen = len(lines.Footer)
+	return
 }
 
 func checkPrintFilter(cmd core.ParsedCmd, env *core.Env) bool {

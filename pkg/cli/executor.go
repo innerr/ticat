@@ -69,16 +69,22 @@ func (self *Executor) executeCmd(
 	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
 
-	display.PrintCmdStack(isBootstrap, cc.Screen, cmd, cmdEnv, flow, currCmdIdx, cc.Cmds.Strs)
+	stackLines := display.PrintCmdStack(isBootstrap, cc.Screen, cmd, cmdEnv, flow, currCmdIdx, cc.Cmds.Strs)
+	display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
+
 	last := cmd[len(cmd)-1].Cmd.Cmd
 	start := time.Now()
 	if last != nil {
-		newCmds, newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
+		newCmds, newCurrCmdIdx, succeeded = last.Execute(argv,
+			cc, cmdEnv, flow, currCmdIdx)
 	} else {
 		newCmds, newCurrCmdIdx, succeeded = flow, currCmdIdx, false
 	}
 	elapsed := time.Now().Sub(start)
-	display.PrintCmdResult(isBootstrap, cc.Screen, cmd, cmdEnv, succeeded, elapsed, flow, currCmdIdx, cc.Cmds.Strs)
+
+	resultLines := display.PrintCmdResult(isBootstrap, cc.Screen, cmd,
+		cmdEnv, succeeded, elapsed, flow, currCmdIdx, cc.Cmds.Strs)
+	display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
 	return
 }
 

@@ -14,6 +14,10 @@ func EnvOutput(env *Env, writer io.Writer, protoEnvMark string, protoSep string)
 	keys, vals := env.Pairs()
 	for i, k := range keys {
 		v := vals[i]
+		// TODO: "strs.proto-sep" can't be save, handle it better
+		if len(strings.TrimSpace(v.Raw)) == 0 {
+			continue
+		}
 		_, err := fmt.Fprintf(writer, "%s%s%s%s%s%s%s\n", protoEnvMark,
 			protoSep, k, protoSep, v.Raw, protoSep, env.LayerType())
 		if err != nil {
