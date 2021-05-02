@@ -6,12 +6,12 @@ import (
 )
 
 type CmdTreeStrs struct {
-	RootDisplayName string
-	PathSep         string
-	EnvValDelMark string
+	RootDisplayName  string
+	PathSep          string
+	EnvValDelMark    string
 	EnvValDelAllMark string
-	ProtoEnvMark    string
-	ProtoSep        string
+	ProtoEnvMark     string
+	ProtoSep         string
 }
 
 type CmdTree struct {

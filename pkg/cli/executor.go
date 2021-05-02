@@ -9,13 +9,7 @@ import (
 type Executor struct {
 }
 
-func (self *Executor) Execute(cc *core.Cli, bootstrap string, env *core.Env, script ...string) bool {
-	// This could be very useful for customized mods-loader or env-loader
-	// (those loaders will be loaded from 'bootstrap string' above)
-	if env != nil {
-		cc.GlobalEnv.GetLayer(core.EnvLayerSession).Merge(env)
-	}
-
+func (self *Executor) Execute(cc *core.Cli, bootstrap string, script ...string) bool {
 	if !self.execute(cc, true, bootstrap) {
 		return false
 	}

@@ -11,7 +11,7 @@ type SequenceParser struct {
 }
 
 func NewSequenceParser(
-	sep            string,
+	sep string,
 	unbreakPrefixs []string,
 	unbreakSuffixs []string) *SequenceParser {
 

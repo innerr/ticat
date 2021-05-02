@@ -15,12 +15,12 @@ type EnvParser struct {
 }
 
 func NewEnvParser(
-	brackets   Brackets,
-	spaces     string,
-	kvSep      string,
+	brackets Brackets,
+	spaces string,
+	kvSep string,
 	envPathSep string) *EnvParser {
 
-	return &EnvParser {
+	return &EnvParser{
 		brackets,
 		spaces,
 		kvSep,

@@ -104,7 +104,7 @@ func (self *Cmd) executeBash(argv ArgVals, cc *Cli, env *Env) bool {
 		os.Stdout = osStdout
 	}()
 
-	printLine := func (text string) {
+	printLine := func(text string) {
 		cc.Screen.Print(text + "\n")
 	}
 

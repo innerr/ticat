@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+// TODO: stdin/stderr
+
 type Screen struct {
 }
 

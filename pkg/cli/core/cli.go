@@ -12,3 +12,12 @@ type Cli struct {
 	EnvAbbrs  *EnvAbbrs
 }
 
+func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser) *Cli {
+	return &Cli{
+		env,
+		screen,
+		cmds,
+		parser,
+		NewEnvAbbrs(cmds.Strs.RootDisplayName),
+	}
+}

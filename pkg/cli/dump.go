@@ -87,7 +87,7 @@ func dumpEnv(env *core.Env, printEnvLayer bool, printDefEnv bool,
 	if !printRuntimeEnv {
 		sep := env.Get("strs.env-path-sep").Raw
 		sysPrefix := env.Get("strs.env-sys-path").Raw + sep
-		filterPrefixs = append(filterPrefixs, sysPrefix, "strs" + sep)
+		filterPrefixs = append(filterPrefixs, sysPrefix, "strs"+sep)
 	}
 	if !printEnvLayer {
 		compacted := env.Compact(printDefEnv, filterPrefixs)
