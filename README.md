@@ -21,30 +21,35 @@ TiDB wizard
 * More details: [how-ticat-works](./doc/how-ticat-works.md)
 
 ## Progess
-* Design
 ```
-****-  The concept of ticat
-***--  CLI framework
-**---  Component framework
+****-  Cli framework
+***--      Command line parsing
+*****      Full abbrs supporting
+*****      Env save and load
+****-      Self status dumping
+-----      Command line help
+****-  Mod framework
+****-      Builtin mod supporting
+****-      Bash mod supporting
+-----      Background running
+-----  Flow framework
+-----      Flatten in executing and desc
+-----      Save and edit flow
+-----  Hub framework
+-----      Mod and flow sharing
+-----      Authority control
 -----  Scenarios
-*----    Benchmark
------    Integration testing
------    (TBD)
-*----  Components
-***--    Cluster
-****-    Raw backup
------    (TBD)
-```
-* Implement
-```
-*----  CLI framework
------  Component framework
------  Scenarios
------    Benchmark
------    Integration testing
------    (TBD)
+-----      Benchmark
+-----      Integration testing
+-----      (TBD)
 -----  Components
------    Cluster
------    Raw backup
------    (TBD)
+-----      Tiup cluster operating
+-----      Ti.sh cluster operating
+-----      Cluster raw backup
+-----      Jitter detecting
+-----      Simple auto config tuning
+-----      Workloads: TPCC
+-----      Workloads: sysbench
+-----      Workloads: ycsb
+-----      (TBD)
 ```
