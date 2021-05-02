@@ -27,10 +27,11 @@ TiDB wizard
 ```
 ****-  Cli framework
 ***--      Command line parsing
-****-      Full abbrs supporting
-*****      Env save and load
+****-      Full abbrs supporting. TODO: env abbrs from cmds
+****-      Env save and load. TODO: save or load from a tag
 ****-      Self status dumping
 -----      Command line help
+****-  Env framework
 ****-  Mod framework
 ****-      Builtin mod supporting
 ****-      Bash mod supporting
