@@ -32,12 +32,12 @@ func NewCmdParser(
 }
 
 func (self *CmdParser) Parse(
-	tree *core.CmdTree,
+	cmds *core.CmdTree,
 	envAbbrs *core.EnvAbbrs,
 	input []string) core.ParsedCmd {
 
 	parsed := core.ParsedCmd{}
-	segs := self.parse(tree, envAbbrs, input)
+	segs := self.parse(cmds, envAbbrs, input)
 	curr := core.ParsedCmdSeg{nil, core.MatchedCmd{}}
 	var path string
 	for _, seg := range segs {
@@ -71,13 +71,13 @@ func (self *CmdParser) Parse(
 }
 
 func (self *CmdParser) parse(
-	tree *core.CmdTree,
+	cmds *core.CmdTree,
 	envAbbrs *core.EnvAbbrs,
 	input []string) []parsedSeg {
 
 	var parsed []parsedSeg
 	var matchedCmdPath []string
-	var curr = tree
+	var curr = cmds
 	var currEnvAbbrs = envAbbrs
 
 	var lastNotExpectArg bool

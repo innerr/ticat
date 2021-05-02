@@ -8,6 +8,7 @@ import (
 type CmdTreeStrs struct {
 	RootDisplayName  string
 	PathSep          string
+	AbbrsSep         string
 	EnvValDelMark    string
 	EnvValDelAllMark string
 	ProtoEnvMark     string
@@ -38,7 +39,13 @@ func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
 	}
 }
 
-func (self *CmdTree) Execute(argv ArgVals, cc *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int, bool) {
+func (self *CmdTree) Execute(
+	argv ArgVals,
+	cc *Cli,
+	env *Env,
+	cmds []ParsedCmd,
+	currCmdIdx int) ([]ParsedCmd, int, bool) {
+
 	if self.cmd == nil {
 		return cmds, currCmdIdx, true
 	} else {
@@ -63,7 +70,8 @@ func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
 
 func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	if old, ok := self.subs[name]; ok && old.name != name {
-		panic(fmt.Errorf("[CmdTree.AddSub] %s: sub-cmd name conflicted: %s", self.DisplayPath(), name))
+		panic(fmt.Errorf("[CmdTree.AddSub] %s: sub-cmd name conflicted: %s",
+			self.DisplayPath(), name))
 	}
 	sub := NewCmdTree(self.Strs)
 	sub.name = name
@@ -174,7 +182,8 @@ func (self *CmdTree) addSubAbbr(name string, abbrs ...string) {
 		}
 		if old, ok := self.subAbbrsRevIdx[abbr]; ok && old != name {
 			panic(fmt.Errorf(
-				"[CmdTree.addSubAbbr] %s: command abbr name '%s' conflicted, old for '%s', new for '%s'",
+				"[CmdTree.addSubAbbr] %s: command abbr name '%s' conflicted, "+
+					"old for '%s', new for '%s'",
 				self.DisplayPath(), abbr, old, name))
 		}
 		self.subAbbrsRevIdx[abbr] = name

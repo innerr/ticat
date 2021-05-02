@@ -20,8 +20,9 @@ func main() {
 	// Any mod could get the specific string val from env when it's called
 	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
 	defEnv.Set("strs.meta-ext", SelfName)
-	defEnv.Set("strs.abbrs-sep", ProtoAbbrsSep)
+	defEnv.Set("strs.abbrs-sep", AbbrsSep)
 	defEnv.Set("strs.env-sys-path", EnvRuntimeSysPrefix)
+	defEnv.Set("strs.env-strs-path", EnvStrsPrefix)
 	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)
 	defEnv.Set("strs.proto-sep", ProtoSep)
 	defEnv.Set("strs.proto-bash-ext", ProtoBashExt)
@@ -31,12 +32,13 @@ func main() {
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
 		CmdRootDisplayName,
 		CmdPathSep,
+		AbbrsSep,
 		EnvValDelMark,
 		EnvValDelAllMark,
 		ProtoEnvMark,
 		ProtoSep,
 	})
-	builtin.RegisterBuiltinMods(tree)
+	builtin.RegisterBuiltinCmds(tree)
 
 	// A simple parser, should be insteaded in the future
 	seqParser := parser.NewSequenceParser(
@@ -74,11 +76,11 @@ func main() {
 	//   2. put a string val with key 'bootstrap' to env could launch it as an extra bootstrap
 	stdinEnv := cli.GenEnvFromStdin(ProtoEnvMark, ProtoSep)
 	if stdinEnv != nil {
-		golbalEnv.GetLayer(core.EnvLayerSession).Merge(env)
+		globalEnv.GetLayer(core.EnvLayerSession).Merge(stdinEnv)
 	}
 
 	executor := cli.Executor{}
-	succeeded := executor.Execute(cc, bootstrap, stdinEnv, os.Args[1:]...)
+	succeeded := executor.Execute(cc, bootstrap, os.Args[1:]...)
 	if !succeeded {
 		os.Exit(1)
 	}
@@ -88,6 +90,7 @@ const (
 	SelfName            string = "ticat"
 	CmdRootDisplayName  string = "<root>"
 	Spaces              string = "\t\n\r "
+	AbbrsSep            string = "|"
 	SequenceSep         string = ":"
 	CmdPathSep          string = "."
 	CmdPathAlterSeps    string = Spaces + "./"
@@ -97,9 +100,9 @@ const (
 	EnvPathSep          string = "."
 	EnvValDelMark       string = "-"
 	EnvValDelAllMark    string = "--"
-	EnvRuntimeSysPrefix string = "sys."
+	EnvRuntimeSysPrefix string = "sys"
+	EnvStrsPrefix       string = "strs"
 	EnvFileName         string = "bootstrap.env"
-	ProtoAbbrsSep       string = "|"
 	ProtoMark           string = "proto." + SelfName
 	ProtoEnvMark        string = ProtoMark + ".env"
 	ProtoSep            string = "\t"

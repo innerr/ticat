@@ -10,31 +10,39 @@ import (
 
 func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
-	env.Set("sys.version", "dev")
+
+	env.Set("sys.version", "1.0.0")
+	env.Set("sys.dev.name", "kitty")
+
 	env.SetInt("sys.stack-depth", 0)
-	env.SetBool("display", true)
+
+	env.SetBool("display.executor", true)
 	env.SetBool("display.bootstrap", false)
-	env.SetInt("display.width", 80)
 	env.SetBool("display.one-cmd", false)
-	env.SetInt("display.max-cmd-cnt", 7)
 	env.SetBool("display.env", true)
+	env.SetBool("display.env.sys", false)
 	env.SetBool("display.env.layer", false)
 	env.SetBool("display.env.default", false)
 	env.SetBool("display.mod.quiet", false)
 	env.SetBool("display.mod.realname", true)
+
+	env.SetInt("display.width", 80)
+	env.SetInt("display.max-cmd-cnt", 7)
 }
 
 func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env = env.GetLayer(core.EnvLayerSession)
+
 	path, err := filepath.Abs(os.Args[0])
 	if err != nil {
-		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path '%s' fail: %v", os.Args[0], err))
+		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path '%s' fail: %v",
+			os.Args[0], err))
 	}
+
 	env.Set("sys.paths.ticat", path)
 	data := path + ".data"
 	env.Set("sys.paths.data", data)
 	env.Set("sys.paths.mods", filepath.Join(data, "mods"))
-	env.Set("sys.self.name", "ticat")
 	return true
 }
 
@@ -44,16 +52,20 @@ func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	path := getEnvLocalFilePath(env)
 	file, err := os.Open(path)
 	if err != nil && !os.IsNotExist(err) {
-		panic(fmt.Errorf("[LoadLocalEnv] open local env file '%s' failed: %v", path, err))
+		panic(fmt.Errorf("[LoadLocalEnv] open local env file '%s' failed: %v",
+			path, err))
 	}
 	defer file.Close()
 
-	rest, err := core.EnvInput(env.GetLayer(core.EnvLayerPersisted), file, protoEnvMark, protoSep)
+	rest, err := core.EnvInput(env.GetLayer(core.EnvLayerPersisted),
+		file, protoEnvMark, protoSep)
 	if err != nil {
-		panic(fmt.Errorf("[LoadLocalEnv] read local env file '%s' failed: %v", path, err))
+		panic(fmt.Errorf("[LoadLocalEnv] read local env file '%s' failed: %v",
+			path, err))
 	}
 	if len(rest) != 0 {
-		panic(fmt.Errorf("[LoadLocalEnv] env file '%s': lines cant' be parsed '%v'", path, rest))
+		panic(fmt.Errorf("[LoadLocalEnv] env file '%s': lines cant' be parsed '%v'",
+			path, rest))
 	}
 	env.GetLayer(core.EnvLayerPersisted).DeleteSelf("sys.stack-depth")
 	env.GetLayer(core.EnvLayerSession).Deduplicate()
@@ -71,13 +83,15 @@ func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		panic(fmt.Errorf("[SaveEnvToLocal] open local env file '%s' failed: %v", tmp, err))
 	}
 	defer file.Close()
+
 	err = core.EnvOutput(env, file, protoEnvMark, protoSep)
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToLocal] write local env file '%s' failed: %v", tmp, err))
 	}
 	err = os.Rename(tmp, path)
 	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToLocal] rename env file '%s' to '%s' failed: %v", tmp, path, err))
+		panic(fmt.Errorf("[SaveEnvToLocal] rename env file '%s' to '%s' failed: %v",
+			tmp, path, err))
 	}
 	return true
 }
@@ -95,7 +109,7 @@ func getEnvLocalFilePath(env *core.Env) string {
 	path := env.Get("sys.paths.data").Raw
 	file := env.Get("strs.env-file-name").Raw
 	if len(path) == 0 || len(file) == 0 {
-		panic(fmt.Errorf("[SaveEnvToLocal] can't find local data path"))
+		panic(fmt.Errorf("[getEnvLocalFilePath] can't find local data path"))
 	}
 	return filepath.Join(path, file)
 }

@@ -21,12 +21,12 @@ func (self Env) PlusInt(name string, val int) {
 	self.SetInt(name, self.GetInt(name)+val)
 }
 
-func (self Env) GetBool(name string) bool {
-	return StrToBool(self.Get(name).Raw)
-}
-
 func (self Env) SetBool(name string, val bool) bool {
 	old := StrToBool(self.Get(name).Raw)
 	self.Set(name, fmt.Sprintf("%v", val))
 	return old
+}
+
+func (self Env) GetBool(name string) bool {
+	return StrToBool(self.Get(name).Raw)
 }

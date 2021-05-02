@@ -10,7 +10,7 @@ package core
 //              ParsedEnv     - The function's env, include argv
 
 type CliParser interface {
-	Parse(tree *CmdTree, envAbbrs *EnvAbbrs, input ...string) *ParsedCmds
+	Parse(cmds *CmdTree, envAbbrs *EnvAbbrs, input ...string) *ParsedCmds
 }
 
 type ParsedCmds struct {

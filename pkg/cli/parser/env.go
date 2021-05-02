@@ -28,7 +28,9 @@ func NewEnvParser(
 	}
 }
 
-func (self *EnvParser) TryParse(cmd *core.CmdTree, envAbbrs *core.EnvAbbrs,
+func (self *EnvParser) TryParse(
+	cmd *core.CmdTree,
+	envAbbrs *core.EnvAbbrs,
 	input []string) (env core.ParsedEnv, rest []string, found bool, err error) {
 
 	var again bool
@@ -44,7 +46,8 @@ func (self *EnvParser) TryParse(cmd *core.CmdTree, envAbbrs *core.EnvAbbrs,
 	envStrs, rest, found = self.findRight(rest)
 	if !found {
 		return nil, tryTrimStrings(input), true,
-			fmt.Errorf("[EnvParser.TryParse] unmatched env brackets '" + strings.Join(input, " ") + "'")
+			fmt.Errorf("[EnvParser.TryParse] unmatched env brackets '" +
+				strings.Join(input, " ") + "'")
 	}
 
 	var envRest []string
@@ -58,7 +61,11 @@ func (self *EnvParser) TryParse(cmd *core.CmdTree, envAbbrs *core.EnvAbbrs,
 	return env, tryTrimStrings(rest), true, nil
 }
 
-func (self *EnvParser) TryParseRaw(cmd *core.CmdTree, envAbbrs *core.EnvAbbrs, input []string) (env core.ParsedEnv, rest []string) {
+func (self *EnvParser) TryParseRaw(
+	cmd *core.CmdTree,
+	envAbbrs *core.EnvAbbrs,
+	input []string) (env core.ParsedEnv, rest []string) {
+
 	normalized, foundKvSep := normalizeEnvRawStr(input, self.kvSep, self.spaces)
 	env = core.ParsedEnv{}
 	rest = normalized.data

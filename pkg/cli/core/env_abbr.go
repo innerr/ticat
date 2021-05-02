@@ -26,14 +26,10 @@ func NewEnvAbbrs(rootDisplayName string) *EnvAbbrs {
 	}
 }
 
-func (self *EnvAbbrs) GetSub(name string) *EnvAbbrs {
-	sub, _ := self.subs[name]
-	return sub
-}
-
 func (self *EnvAbbrs) AddSub(name string, abbrs ...string) *EnvAbbrs {
 	if old, ok := self.subs[name]; ok && old.name != name {
-		panic(fmt.Errorf("[EnvAbbrs.AddSub] %s: sub-node name conflicted: %s", self.DisplayPath(), name))
+		panic(fmt.Errorf("[EnvAbbrs.AddSub] %s: sub-node name conflicted: %s",
+			self.DisplayPath(), name))
 	}
 	sub := NewEnvAbbrs(self.rootDisplayName)
 	sub.name = name
@@ -42,6 +38,23 @@ func (self *EnvAbbrs) AddSub(name string, abbrs ...string) *EnvAbbrs {
 	self.AddSubAbbrs(name, abbrs...)
 	self.subAbbrsRevIdx[name] = name
 	return sub
+}
+
+func (self *EnvAbbrs) AddSubAbbrs(name string, abbrs ...string) {
+	for _, abbr := range abbrs {
+		if len(abbr) == 0 {
+			continue
+		}
+		if old, ok := self.subAbbrsRevIdx[abbr]; ok && old != name {
+			panic(fmt.Errorf(
+				"[EnvAbbrs.AddSubAbbrs] %s: command abbr name '%s' conflicted, "+
+					"old for '%s', new for '%s'",
+				self.DisplayPath(), abbr, old, name))
+		}
+		self.subAbbrsRevIdx[abbr] = name
+	}
+	olds, _ := self.subAbbrs[name]
+	self.subAbbrs[name] = append(olds, abbrs...)
 }
 
 func (self *EnvAbbrs) TryMatch(path string, sep string) (matchedPath []string, matched bool) {
@@ -76,6 +89,11 @@ func (self *EnvAbbrs) TryMatch(path string, sep string) (matchedPath []string, m
 	return
 }
 
+func (self *EnvAbbrs) GetSub(name string) *EnvAbbrs {
+	sub, _ := self.subs[name]
+	return sub
+}
+
 func (self *EnvAbbrs) Path() []string {
 	if self.parent == nil {
 		return []string{}
@@ -101,20 +119,4 @@ func (self *EnvAbbrs) DisplayName() string {
 		return self.rootDisplayName
 	}
 	return self.name
-}
-
-func (self *EnvAbbrs) AddSubAbbrs(name string, abbrs ...string) {
-	for _, abbr := range abbrs {
-		if len(abbr) == 0 {
-			continue
-		}
-		if old, ok := self.subAbbrsRevIdx[abbr]; ok && old != name {
-			panic(fmt.Errorf(
-				"[EnvAbbrs.AddSubAbbrs] %s: command abbr name '%s' conflicted, old for '%s', new for '%s'",
-				self.DisplayPath(), abbr, old, name))
-		}
-		self.subAbbrsRevIdx[abbr] = name
-	}
-	olds, _ := self.subAbbrs[name]
-	self.subAbbrs[name] = append(olds, abbrs...)
 }

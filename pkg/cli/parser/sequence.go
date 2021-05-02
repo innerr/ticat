@@ -37,7 +37,8 @@ func (self *SequenceParser) Normalize(argv []string) []string {
 			searchIdx += i
 			unbreakable := false
 			for _, prefix := range self.unbreakPrefixs {
-				if searchIdx >= len(prefix) && prefix == arg[searchIdx-len(prefix):searchIdx] {
+				if searchIdx >= len(prefix) &&
+					prefix == arg[searchIdx-len(prefix):searchIdx] {
 					unbreakable = true
 					break
 				}
@@ -46,7 +47,8 @@ func (self *SequenceParser) Normalize(argv []string) []string {
 				continue
 			}
 			for _, suffix := range self.unbreakSuffixs {
-				if searchIdx+sepN+len(suffix) <= len(arg) && suffix == arg[searchIdx+sepN:searchIdx+sepN+len(suffix)] {
+				if searchIdx+sepN+len(suffix) <= len(arg) &&
+					suffix == arg[searchIdx+sepN:searchIdx+sepN+len(suffix)] {
 					unbreakable = true
 					break
 				}

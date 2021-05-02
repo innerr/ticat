@@ -27,14 +27,16 @@ func newArgs() Args {
 
 func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...string) {
 	if _, ok := self.names[name]; ok {
-		panic(fmt.Errorf("[Args.AddArg] %s: arg name conflicted: %s", owner.DisplayPath(), name))
+		panic(fmt.Errorf("[Args.AddArg] %s: arg name conflicted: %s",
+			owner.DisplayPath(), name))
 	}
 	for _, abbr := range abbrs {
 		if len(abbr) == 0 {
 			continue
 		}
 		if old, ok := self.abbrsRevIdx[abbr]; ok {
-			panic(fmt.Errorf("[Args.AddArg] %s: arg abbr name '%s' conflicted, old for '%s', new for '%s'",
+			panic(fmt.Errorf("[Args.AddArg] %s: arg abbr name '%s' conflicted,"+
+				" old for '%s', new for '%s'",
 				owner.DisplayPath(), abbr, old, name))
 		}
 		self.abbrsRevIdx[abbr] = name

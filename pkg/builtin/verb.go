@@ -6,20 +6,20 @@ import (
 
 func SetQuietMode(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env = env.GetLayer(core.EnvLayerSession)
-	env.Set("display", "false")
+	env.SetBool("display.executor", false)
 	return true
 }
 
 func SetVerbMode(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env = env.GetLayer(core.EnvLayerSession)
-	env.Set("display", "true")
-	env.Set("display.env", "true")
-	env.Set("display.env.layer", "true")
-	env.Set("display.env.default", "true")
-	env.Set("display.env.sys", "true")
-	env.Set("display.mod.quiet", "true")
-	env.Set("display.mod.realname", "true")
-	env.Set("display.max-cmd-cnt", "9999")
+	env.SetBool("display.executor", true)
+	env.SetBool("display.env", true)
+	env.SetBool("display.env.layer", true)
+	env.SetBool("display.env.default", true)
+	env.SetBool("display.env.sys", true)
+	env.SetBool("display.mod.quiet", true)
+	env.SetBool("display.mod.realname", true)
+	env.SetInt("display.max-cmd-cnt", 9999)
 	return true
 }
 
@@ -31,7 +31,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 		return true
 	}
 
-	if !env.SetBool("display", true) {
+	if !env.SetBool("display.executor", true) {
 		volume -= 1
 	}
 	env.SetInt("display.max-cmd-cnt", 8)
@@ -121,7 +121,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 		return true
 	}
 
-	if env.SetBool("display", false) {
+	if env.SetBool("display.executor", false) {
 		volume -= 1
 	}
 	env.SetInt("display.max-cmd-cnt", 7)

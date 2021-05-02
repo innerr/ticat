@@ -41,7 +41,13 @@ func NewBashCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeBash, false, newArgs(), nil, nil, cmd}
 }
 
-func (self *Cmd) Execute(argv ArgVals, cc *Cli, env *Env, cmds []ParsedCmd, currCmdIdx int) ([]ParsedCmd, int, bool) {
+func (self *Cmd) Execute(
+	argv ArgVals,
+	cc *Cli,
+	env *Env,
+	cmds []ParsedCmd,
+	currCmdIdx int) ([]ParsedCmd, int, bool) {
+
 	switch self.ty {
 	case CmdTypePower:
 		return self.power(argv, cc, env, cmds, currCmdIdx)
@@ -138,7 +144,7 @@ func (self *Cmd) executeBash(argv ArgVals, cc *Cli, env *Env) bool {
 		return false
 	}
 
-	// Output from bash
+	// The output result from bash command's stderr
 	stderrLines, err := EnvInput(env.GetLayer(EnvLayerSession), stderr,
 		self.owner.Strs.ProtoEnvMark, self.owner.Strs.ProtoSep)
 

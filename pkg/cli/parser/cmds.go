@@ -15,20 +15,24 @@ type Parser struct {
 //         - TODO: how to store this info(to a file?) and still keep it human-editable ?
 //   * The dynamite info(registered modules and env KVs) could use for disambiguation
 //         - Inconvenient to use a LEX/YACC lib to parse
-func (self *Parser) Parse(tree *core.CmdTree, envAbbrs *core.EnvAbbrs, input ...string) *core.ParsedCmds {
+func (self *Parser) Parse(
+	cmds *core.CmdTree,
+	envAbbrs *core.EnvAbbrs,
+	input ...string) *core.ParsedCmds {
+
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
-	cmds := core.ParsedCmds{core.ParsedEnv{}, nil}
+	flow := core.ParsedCmds{core.ParsedEnv{}, nil}
 	for _, seq := range seqs {
-		cmds.Cmds = append(cmds.Cmds, self.cmdParser.Parse(tree, envAbbrs, seq))
+		flow.Cmds = append(flow.Cmds, self.cmdParser.Parse(cmds, envAbbrs, seq))
 	}
-	if firstIsGlobal && len(cmds.Cmds) != 0 && len(cmds.Cmds[0]) != 0 {
-		firstCmd := cmds.Cmds[0]
+	if firstIsGlobal && len(flow.Cmds) != 0 && len(flow.Cmds[0]) != 0 {
+		firstCmd := flow.Cmds[0]
 		for _, seg := range firstCmd {
-			cmds.GlobalEnv.Merge(seg.Env)
+			flow.GlobalEnv.Merge(seg.Env)
 			seg.Env = nil
 		}
 	}
-	return &cmds
+	return &flow
 }
 
 func NewParser(seqParser *SequenceParser, cmdParser *CmdParser) *Parser {

@@ -1,4 +1,4 @@
-package cli
+package display
 
 import (
 	"fmt"
@@ -8,20 +8,28 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func printCmdResult(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env *core.Env, succeeded bool,
-	elapsed time.Duration, cmds []core.ParsedCmd, currCmdIdx int, sep string) {
+func PrintCmdResult(
+	isBootstrap bool,
+	screen core.Screen,
+	cmd core.ParsedCmd,
+	env *core.Env,
+	succeeded bool,
+	elapsed time.Duration,
+	flow []core.ParsedCmd,
+	currCmdIdx int,
+	strs *core.CmdTreeStrs) {
 
-	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display") {
+	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
 		return
 	}
-	if checkPrintFilter(cmd, env, sep) {
+	if checkPrintFilter(cmd, env) {
 		return
 	}
-	cmds, currCmdIdx = filterQuietCmds(env, cmds, currCmdIdx)
-	if len(cmds) == 1 && !env.GetBool("display.one-cmd") {
+	flow, currCmdIdx = filterQuietCmds(env, flow, currCmdIdx)
+	if len(flow) == 1 && !env.GetBool("display.one-cmd") {
 		return
 	}
-	if len(cmds) == 0 {
+	if len(flow) == 0 {
 		return
 	}
 
@@ -37,7 +45,7 @@ func printCmdResult(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, en
 	timeStr := time.Now().Format("01-02 15:04:05")
 
 	printRealname := env.GetBool("display.mod.realname")
-	line := " " + getCmdPath(cmd, sep, printRealname)
+	line := " " + getCmdPath(cmd, strs.PathSep, printRealname)
 	durStr := formatDuration(elapsed)
 	if width-len(durStr)-6 < 20 {
 		width = len(durStr) + 6 + 20
@@ -55,27 +63,33 @@ func printCmdResult(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, en
 	*/
 	screen.Print("└" + strings.Repeat("─", width-2) + "┘" + "\n")
 
-	if currCmdIdx >= len(cmds)-1 || !succeeded {
+	if currCmdIdx >= len(flow)-1 || !succeeded {
 		screen.Print(strings.Repeat(" ", width-len(timeStr)-2) + timeStr + "\n")
 	} else {
 		screen.Print("\n\n")
 	}
 }
 
-func printCmdStack(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env *core.Env,
-	cmds []core.ParsedCmd, currCmdIdx int, sep string) {
+func PrintCmdStack(
+	isBootstrap bool,
+	screen core.Screen,
+	cmd core.ParsedCmd,
+	env *core.Env,
+	flow []core.ParsedCmd,
+	currCmdIdx int,
+	strs *core.CmdTreeStrs) {
 
-	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display") {
+	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
 		return
 	}
-	if checkPrintFilter(cmd, env, sep) {
+	if checkPrintFilter(cmd, env) {
 		return
 	}
-	cmds, currCmdIdx = filterQuietCmds(env, cmds, currCmdIdx)
-	if len(cmds) == 1 && !env.GetBool("display.one-cmd") {
+	flow, currCmdIdx = filterQuietCmds(env, flow, currCmdIdx)
+	if len(flow) == 1 && !env.GetBool("display.one-cmd") {
 		return
 	}
-	if len(cmds) == 0 {
+	if len(flow) == 0 {
 		return
 	}
 
@@ -84,14 +98,13 @@ func printCmdStack(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env
 	const cmdCntKey = "display.max-cmd-cnt"
 	cmdDisplayCnt := env.GetInt(cmdCntKey)
 	if cmdDisplayCnt < 4 {
-		panic(fmt.Errorf("[printCmdStack] %s should not less than 4", cmdCntKey))
+		panic(fmt.Errorf("[PrintCmdStack] %s should not less than 4", cmdCntKey))
 	}
 
 	printEnv := env.GetBool("display.env")
 	printEnvLayer := env.GetBool("display.env.layer")
 	printDefEnv := env.GetBool("display.env.default")
 	printRuntimeEnv := env.GetBool("display.env.sys")
-
 	printRealname := env.GetBool("display.mod.realname")
 
 	stackDepth := env.Get("sys.stack-depth").Raw
@@ -123,14 +136,14 @@ func printCmdStack(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env
 	topBorder = topBorder + strings.Repeat("─", width-1-titleWidth) + "┐"
 
 	displayIdxStart := 0
-	displayIdxEnd := len(cmds)
-	if len(cmds) > cmdDisplayCnt {
+	displayIdxEnd := len(flow)
+	if len(flow) > cmdDisplayCnt {
 		displayIdxStart = currCmdIdx - cmdDisplayCnt/2
 		if displayIdxStart < 0 {
 			displayIdxStart = 0
 		}
-		if displayIdxStart+cmdDisplayCnt > len(cmds) {
-			displayIdxEnd = len(cmds)
+		if displayIdxStart+cmdDisplayCnt > len(flow) {
+			displayIdxEnd = len(flow)
 			displayIdxStart = displayIdxEnd - cmdDisplayCnt
 		} else {
 			displayIdxEnd = displayIdxStart + cmdDisplayCnt
@@ -142,8 +155,8 @@ func printCmdStack(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env
 	screen.Print(topBorder + "\n")
 
 	if printEnv {
-		filterPrefixs := []string{strings.Join(cmd.Path(), sep) + sep}
-		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, filterPrefixs)
+		filterPrefixs := []string{strings.Join(cmd.Path(), strs.PathSep) + strs.PathSep}
+		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, false, filterPrefixs, 4)
 		for _, line := range envLines {
 			screen.Print("│" + padRight("    "+line, " ", width-2) + "│" + "\n")
 		}
@@ -152,12 +165,12 @@ func printCmdStack(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env
 		}
 	}
 
-	for i, cmd := range cmds {
+	for i, cmd := range flow {
 		if i < displayIdxStart || i >= displayIdxEnd {
 			continue
 		}
 		var line string
-		if (i == displayIdxStart && i != 0) || (i+1 == displayIdxEnd && i+1 != len(cmds)) {
+		if (i == displayIdxStart && i != 0) || (i+1 == displayIdxEnd && i+1 != len(flow)) {
 			line += "    ..."
 		} else {
 			if i == currCmdIdx {
@@ -165,13 +178,14 @@ func printCmdStack(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env
 			} else {
 				line += "    "
 			}
-			line += getCmdPath(cmd, sep, printRealname)
+			line += getCmdPath(cmd, strs.PathSep, printRealname)
 		}
 		screen.Print("│" + padRight(line, " ", width-2) + "│" + "\n")
 
+		cmdEnv := cmd.GenEnv(env.GetLayer(core.EnvLayerSession),
+			strs.EnvValDelMark, strs.EnvValDelAllMark)
 		args := cmd.Args()
-		// TOOD: XX
-		argv := cmd.GenEnv(env.GetLayer(core.EnvLayerSession), "-", "--").GetArgv(cmd.Path(), sep, cmd.Args())
+		argv := cmdEnv.GetArgv(cmd.Path(), strs.PathSep, cmd.Args())
 		for _, line := range DumpArgs(&args, argv, false) {
 			screen.Print("│" + padRight(strings.Repeat(" ", 8)+line, " ", width-2) + "│" + "\n")
 		}
@@ -180,7 +194,7 @@ func printCmdStack(isBootstrap bool, screen core.Screen, cmd core.ParsedCmd, env
 	screen.Print("└" + strings.Repeat("─", width-2) + "┘" + "\n")
 }
 
-func checkPrintFilter(cmd core.ParsedCmd, env *core.Env, sep string) bool {
+func checkPrintFilter(cmd core.ParsedCmd, env *core.Env) bool {
 	if len(cmd) == 0 {
 		return true
 	}
@@ -192,14 +206,14 @@ func checkPrintFilter(cmd core.ParsedCmd, env *core.Env, sep string) bool {
 	return false
 }
 
-func filterQuietCmds(env *core.Env, cmds []core.ParsedCmd, currCmdIdx int) ([]core.ParsedCmd, int) {
+func filterQuietCmds(env *core.Env, flow []core.ParsedCmd, currCmdIdx int) ([]core.ParsedCmd, int) {
 	if env.GetBool("display.mod.quiet") {
-		return cmds, currCmdIdx
+		return flow, currCmdIdx
 	}
 
 	var newCmds []core.ParsedCmd
 	newIdx := currCmdIdx
-	for i, cmd := range cmds {
+	for i, cmd := range flow {
 		if len(cmd) == 0 {
 			continue
 		}

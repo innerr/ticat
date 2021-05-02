@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/zieckey/goini"
+
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
 func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {

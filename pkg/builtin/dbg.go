@@ -1,23 +1,27 @@
 package builtin
 
 import (
-	"github.com/pingcap/ticat/pkg/cli"
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func DbgDumpCmds(_ core.ArgVals, cc *core.Cli, env *core.Env, cmds []core.ParsedCmd,
+func DbgDumpFlow(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	cmds []core.ParsedCmd,
 	currCmdIdx int) ([]core.ParsedCmd, int, bool) {
 
-	cli.DumpCmdsEx(cc.Screen, env, cmds, cc.Cmds.Strs.PathSep)
+	display.DumpFlow(cc, env, cmds, cc.Cmds.Strs.PathSep, 4)
 	return nil, 0, true
 }
 
 func DbgDumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	cli.DumpEnv(cc.Screen, env)
+	display.DumpEnv(cc.Screen, env, 4)
 	return true
 }
 
-func DbgDumpMods(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	cli.DumpMods(cc)
+func DbgDumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, 4)
 	return true
 }

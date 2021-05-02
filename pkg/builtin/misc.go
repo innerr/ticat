@@ -31,6 +31,6 @@ func MockStub(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 }
 
 func Dummy(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
-	fmt.Println("Dummy cmd here")
+	fmt.Println("dummy cmd here")
 	return true
 }
