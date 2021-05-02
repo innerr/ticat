@@ -9,7 +9,7 @@ TiDB wizard
 ## How ticat can achieve that?
 * Human friendly
     * Organize job flow with (shell) commands
-    * All commands are highly compacted, support fuzzy input, hands on in on time
+    * All commands are highly compacted, support fuzzy input, hands on in no time
 * Scenario-centered
     * Focus on get things done smoothly in a scenario
 * Feature-rich
@@ -17,6 +17,9 @@ TiDB wizard
         * Components can be easily written in any language
         * ..or from any existing utility by wrapping it up
     * Components' interacting form high-level features
+* Write once, run anywhere
+    * Save or edit flow easily
+    * Share modules and flows easily
 * An example: [autotune + benchmark](./doc/usage-draft/benchmark.md)
 * More details: [how-ticat-works](./doc/how-ticat-works.md)
 
@@ -24,7 +27,7 @@ TiDB wizard
 ```
 ****-  Cli framework
 ***--      Command line parsing
-*****      Full abbrs supporting
+****-      Full abbrs supporting
 *****      Env save and load
 ****-      Self status dumping
 -----      Command line help
@@ -33,6 +36,7 @@ TiDB wizard
 ****-      Bash mod supporting
 -----      Background running
 -----  Flow framework
+-----      Connector-env-val checking
 -----      Flatten in executing and desc
 -----      Save and edit flow
 -----  Hub framework
