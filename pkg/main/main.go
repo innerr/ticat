@@ -21,6 +21,7 @@ func main() {
 	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
 	defEnv.Set("strs.meta-ext", SelfName)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)
+	defEnv.Set("strs.env-path-sep", EnvPathSep)
 	defEnv.Set("strs.env-sys-path", EnvRuntimeSysPrefix)
 	defEnv.Set("strs.env-strs-path", EnvStrsPrefix)
 	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)

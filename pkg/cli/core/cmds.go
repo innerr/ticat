@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+// TODO: share some code with EnvAbbrs
+
 type CmdTreeStrs struct {
 	RootDisplayName  string
 	PathSep          string
@@ -180,16 +182,20 @@ func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 		if len(abbr) == 0 {
 			continue
 		}
-		if old, ok := self.subAbbrsRevIdx[abbr]; ok && old != name {
+		old, ok := self.subAbbrsRevIdx[abbr]
+		if old == name {
+			continue
+		}
+		if ok {
 			panic(fmt.Errorf(
 				"[CmdTree.addSubAbbrs] %s: command abbr name '%s' conflicted, "+
 					"old for '%s', new for '%s'",
 				self.DisplayPath(), abbr, old, name))
 		}
 		self.subAbbrsRevIdx[abbr] = name
+		olds, _ := self.subAbbrs[name]
+		self.subAbbrs[name] = append(olds, abbr)
 	}
-	olds, _ := self.subAbbrs[name]
-	self.subAbbrs[name] = append(olds, abbrs...)
 }
 
 func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {

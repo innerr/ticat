@@ -16,6 +16,7 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	root := env.Get("sys.paths.mods").Raw
 	metaExt := "." + env.Get("strs.meta-ext").Raw
 	abbrsSep := env.Get("strs.abbrs-sep").Raw
+	envPathSep := env.Get("strs.env-path-sep").Raw
 	bashExt := "." + env.Get("strs.proto-bash-ext").Raw
 
 	if root[len(root)-1] == filepath.Separator {
@@ -37,7 +38,8 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		}
 		ext = filepath.Ext(target)
 		if ext == bashExt {
-			regBashMod(cc, path, target, target[len(root)+1:len(target)-len(ext)], abbrsSep)
+			cmdPath := target[len(root)+1:len(target)-len(ext)]
+			regBashMod(cc, path, target, cmdPath, abbrsSep, envPathSep)
 		}
 		return nil
 	})
@@ -61,7 +63,14 @@ func regDirMod(cc *core.Cli, metaPath string, dirPath string, cmdPath string, ab
 	}
 }
 
-func regBashMod(cc *core.Cli, metaPath string, filePath string, cmdPath string, abbrsSep string) {
+func regBashMod(
+	cc *core.Cli,
+	metaPath string,
+	filePath string,
+	cmdPath string,
+	abbrsSep string,
+	envPathSep string) {
+
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
 
 	ini := goini.New()
@@ -69,22 +78,79 @@ func regBashMod(cc *core.Cli, metaPath string, filePath string, cmdPath string, 
 	if err != nil {
 		panic(fmt.Errorf("[LoadLocalMods.regBashMod] parse mod's meta file failed: %v", err))
 	}
+
 	help, _ := ini.SectionGet("", "help")
 	cmd := mod.RegBashCmd(filePath, help)
+
 	abbrs, ok := ini.SectionGet("", "abbrs")
 	if ok {
 		abbrs = strings.Trim(abbrs, "'\"")
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
+
 	args, ok := ini.GetKvmap("args")
 	if ok {
 		for names, defVal := range args {
 			names = strings.Trim(names, "'\"")
 			defVal = strings.Trim(defVal, "'\"")
 			nameAndAbbrs := strings.Split(names, abbrsSep)
-			name := nameAndAbbrs[0]
-			argAbbrs := nameAndAbbrs[1:]
+			name := strings.TrimSpace(nameAndAbbrs[0])
+			var argAbbrs []string
+			for _, abbr := range nameAndAbbrs[1:] {
+				argAbbrs = append(argAbbrs, strings.TrimSpace(abbr))
+			}
 			cmd.AddArg(name, defVal, argAbbrs...)
+		}
+	}
+
+	envRw, ok := ini.GetKvmap("env")
+	if ok {
+		for names, rw := range envRw {
+			segs := strings.Split(strings.Trim(names, "'\""), envPathSep)
+			envAbbrs := cc.EnvAbbrs
+			var path []string
+			for _, seg := range segs {
+				var abbrs []string
+				for _, abbr := range strings.Split(seg, abbrsSep) {
+					abbrs = append(abbrs, strings.TrimSpace(abbr))
+				}
+				name := abbrs[0]
+				abbrs = abbrs[1:]
+				subEnvAbbrs := envAbbrs.GetOrAddSub(name)
+				if len(abbrs) > 0 {
+					envAbbrs.AddSubAbbrs(name, abbrs...)
+				}
+				envAbbrs = subEnvAbbrs
+				path = append(path, name)
+			}
+
+			key := strings.Join(path, envPathSep)
+			rwFields := strings.Split(strings.Trim(rw, "'\""), abbrsSep)
+			for _, it := range rwFields {
+				field := strings.ToLower(it)
+				may := strings.Index(field, "may") >= 0 || strings.Index(field, "opt") >= 0
+				write := strings.Index(field, "w") >= 0
+				read := strings.Index(field, "rd") >= 0 ||
+					strings.Index(field, "read") >= 0 || field == "r"
+				if write && read {
+					panic(fmt.Errorf("[LoadLocalMods.regBashMod] " +
+						"parse env r|w definition failed: %v", it))
+				}
+				if write {
+					if may {
+						cmd.AddEnvOp(key, core.EnvOpTypeMayWrite)
+					} else {
+						cmd.AddEnvOp(key, core.EnvOpTypeWrite)
+					}
+				}
+				if read {
+					if may {
+						cmd.AddEnvOp(key, core.EnvOpTypeMayRead)
+					} else {
+						cmd.AddEnvOp(key, core.EnvOpTypeRead)
+					}
+				}
+			}
 		}
 	}
 }

@@ -28,18 +28,22 @@ type Cmd struct {
 	normal   NormalCmd
 	power    PowerCmd
 	bash     string
+	envOps   EnvOps
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
-	return &Cmd{owner, help, CmdTypeNormal, false, false, newArgs(), cmd, nil, ""}
+	return &Cmd{owner, help, CmdTypeNormal, false, false,
+		newArgs(), cmd, nil, "", newEnvOps()}
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
-	return &Cmd{owner, help, CmdTypePower, false, false, newArgs(), nil, cmd, ""}
+	return &Cmd{owner, help, CmdTypePower, false, false,
+		newArgs(), nil, cmd, "", newEnvOps()}
 }
 
 func NewBashCmd(owner *CmdTree, help string, cmd string) *Cmd {
-	return &Cmd{owner, help, CmdTypeBash, false, false, newArgs(), nil, nil, cmd}
+	return &Cmd{owner, help, CmdTypeBash, false, false,
+		newArgs(), nil, nil, cmd, newEnvOps()}
 }
 
 func (self *Cmd) Execute(
@@ -63,6 +67,11 @@ func (self *Cmd) Execute(
 
 func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
 	self.args.AddArg(self.owner, name, defVal, abbrs...)
+	return self
+}
+
+func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
+	self.envOps.AddOp(name, op)
 	return self
 }
 
