@@ -29,7 +29,7 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) {
 
 	width := env.GetInt("display.width") - 2
 	if width < titleLineLen+meowLen+l.TimeLen {
-		width = titleLineLen+meowLen+l.TimeLen
+		width = titleLineLen + meowLen + l.TimeLen
 	}
 
 	pln(c.P1 + strings.Repeat(c.H, titleInner) + c.P3)
@@ -58,7 +58,7 @@ func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen) {
 	}
 
 	width := env.GetInt("display.width") - 2
-	pad := width-1-l.ResLen-1-l.CmdLen-l.DurLen-1
+	pad := width - 1 - l.ResLen - 1 - l.CmdLen - l.DurLen - 1
 
 	if pad < 0 {
 		width += -pad
@@ -92,7 +92,7 @@ type FrameChars struct {
 }
 
 func FrameCharsUtf8() *FrameChars {
-	return &FrameChars {
+	return &FrameChars{
 		"│", "─",
 		"┌", "┬", "┐",
 		"├", "┼", "┤",
@@ -101,7 +101,7 @@ func FrameCharsUtf8() *FrameChars {
 }
 
 func FrameCharsAscii() *FrameChars {
-	return &FrameChars {
+	return &FrameChars{
 		"|", "-",
 		"+", "+", "+",
 		"+", "+", "+",
@@ -110,7 +110,7 @@ func FrameCharsAscii() *FrameChars {
 }
 
 func FrameCharsNoSlash() *FrameChars {
-	return &FrameChars {
+	return &FrameChars{
 		"-", "-",
 		"+", "+", "+",
 		"+", "+", "+",
@@ -119,7 +119,7 @@ func FrameCharsNoSlash() *FrameChars {
 }
 
 func FrameCharsNoCorner() *FrameChars {
-	return &FrameChars {
+	return &FrameChars{
 		"|", "-",
 		" ", " ", " ",
 		" ", " ", " ",

@@ -21,7 +21,17 @@ func DbgDumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func DbgDumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DbgDumpCmds(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	display.DumpCmds(cc, 4)
+	return true
+}
+
+func DbgDumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpEnvAbbrs(cc, 4)
+	return true
+}
+
+func DbgDumpEnvFlattenVals(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	display.DumpEnvFlattenVals(cc.Screen, env)
 	return true
 }

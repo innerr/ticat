@@ -57,7 +57,7 @@ func regDirMod(cc *core.Cli, metaPath string, dirPath string, cmdPath string, ab
 	abbrs, ok := ini.SectionGet("", "abbrs")
 	if ok {
 		abbrs = strings.Trim(abbrs, "'\"")
-		mod.AddAbbr(strings.Split(abbrs, abbrsSep)...)
+		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
 }
 
@@ -74,7 +74,7 @@ func regBashMod(cc *core.Cli, metaPath string, filePath string, cmdPath string, 
 	abbrs, ok := ini.SectionGet("", "abbrs")
 	if ok {
 		abbrs = strings.Trim(abbrs, "'\"")
-		mod.AddAbbr(strings.Split(abbrs, abbrsSep)...)
+		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
 	args, ok := ini.GetKvmap("args")
 	if ok {

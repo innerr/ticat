@@ -64,8 +64,8 @@ func main() {
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser)
 
-	// Load runtime env, load local-stored env, load local mods
-	bootstrap := "B.E.L.R:B.E.L.L:B.M.L.L"
+	// Load env abbrs, load runtime env, load local-stored env, load local mods
+	bootstrap := "B.E.L.A:B.E.L.R:B.E.L.L:B.M.L.L"
 
 	// Interacting methods between ticat and mods:
 	//   1. mod.stdin(as mod's input args) -> mod.stderr(as mods's return)
@@ -93,7 +93,7 @@ const (
 	AbbrsSep            string = "|"
 	SequenceSep         string = ":"
 	CmdPathSep          string = "."
-	CmdPathAlterSeps    string = Spaces + "./"
+	CmdPathAlterSeps    string = "./"
 	EnvBracketLeft      string = "{"
 	EnvBracketRight     string = "}"
 	EnvKeyValSep        string = "="

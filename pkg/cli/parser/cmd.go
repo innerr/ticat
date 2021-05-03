@@ -91,7 +91,7 @@ func (self *CmdParser) parse(
 		// Try to parse input to env
 		env, input, succeeded, err = self.envParser.TryParse(curr, currEnvAbbrs, input)
 		if err != nil {
-			self.err("parse", matchedCmdPath, "unmatched env brackets '"+strings.Join(input, " ")+"'")
+			self.err("parse", matchedCmdPath, err.Error())
 			break
 		}
 		if succeeded {
@@ -151,8 +151,9 @@ func (self *CmdParser) parse(
 
 		// Try to parse cmd args
 		if lastNotExpectArg {
-			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ",")+
-				"', should be a cmd or env definition")
+			brackets := strings.Join(self.envParser.Brackets(), "")
+			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, " ")+
+				"', tips: try to enclose env definition or args with '"+brackets+"' to disambiguation")
 		}
 		env, input = self.envParser.TryParseRaw(curr, currEnvAbbrs, input)
 		if env != nil {

@@ -47,7 +47,7 @@ func (self *EnvParser) TryParse(
 	if !found {
 		return nil, tryTrimStrings(input), true,
 			fmt.Errorf("[EnvParser.TryParse] unmatched env brackets '" +
-				strings.Join(input, " ") + "'")
+				strings.Join(rest, " ") + "'")
 	}
 
 	var envRest []string
@@ -138,6 +138,13 @@ func (self *EnvParser) TryParseRaw(
 		}
 	}
 	return tryTrimParsedEnv(env), genResult(i)
+}
+
+func (self *EnvParser) Brackets() []string {
+	return []string{
+		self.brackets.Left,
+		self.brackets.Right,
+	}
 }
 
 func (self *EnvParser) findLeft(input []string) (rest []string, found bool, again bool) {

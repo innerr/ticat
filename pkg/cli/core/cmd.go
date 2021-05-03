@@ -19,15 +19,15 @@ type PowerCmd func(argv ArgVals, cc *Cli, env *Env, cmds []ParsedCmd,
 	currCmdIdx int) (newCmds []ParsedCmd, newCurrCmdIdx int, succeeded bool)
 
 type Cmd struct {
-	owner  *CmdTree
-	help   string
-	ty     CmdType
-	quiet  bool
+	owner    *CmdTree
+	help     string
+	ty       CmdType
+	quiet    bool
 	priority bool
-	args   Args
-	normal NormalCmd
-	power  PowerCmd
-	bash   string
+	args     Args
+	normal   NormalCmd
+	power    PowerCmd
+	bash     string
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {

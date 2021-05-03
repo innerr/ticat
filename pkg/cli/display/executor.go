@@ -9,15 +9,15 @@ import (
 )
 
 type CmdStackLines struct {
-	Display bool
-	StackDepth string
+	Display       bool
+	StackDepth    string
 	StackDepthLen int
-	Time string
-	TimeLen int
-	Env []string
-	EnvLen []int
-	Flow []string
-	FlowLen []int
+	Time          string
+	TimeLen       int
+	Env           []string
+	EnvLen        []int
+	Flow          []string
+	FlowLen       []int
 }
 
 func PrintCmdStack(
@@ -88,7 +88,7 @@ func PrintCmdStack(
 		filterPrefixs := []string{strings.Join(cmd.Path(), strs.PathSep) + strs.PathSep}
 		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, false, filterPrefixs, 4)
 		for _, line := range envLines {
-			line := "   "+line
+			line := "   " + line
 			lines.Env = append(lines.Env, line)
 			lines.EnvLen = append(lines.EnvLen, len(line))
 		}
@@ -117,7 +117,7 @@ func PrintCmdStack(
 		args := cmd.Args()
 		argv := cmdEnv.GetArgv(cmd.Path(), strs.PathSep, cmd.Args())
 		for _, line := range DumpArgs(&args, argv, false) {
-			line := strings.Repeat(" ", 3+4)+line
+			line := strings.Repeat(" ", 3+4) + line
 			lines.Flow = append(lines.Flow, line)
 			lines.FlowLen = append(lines.FlowLen, len(line))
 		}
@@ -127,14 +127,14 @@ func PrintCmdStack(
 }
 
 type CmdResultLines struct {
-	Display bool
-	Cmd string
-	CmdLen int
-	Res string
-	ResLen int
-	Dur string
-	DurLen int
-	Footer string
+	Display   bool
+	Cmd       string
+	CmdLen    int
+	Res       string
+	ResLen    int
+	Dur       string
+	DurLen    int
+	Footer    string
 	FooterLen int
 }
 

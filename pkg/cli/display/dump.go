@@ -38,7 +38,23 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 }
 
 func DumpCmds(cc *core.Cli, indentSize int) {
-	dumpCmd(cc.Screen, cc.Cmds, indentSize, -1)
+	dumpCmd(cc.Screen, cc.Cmds, indentSize, 0)
+}
+
+func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
+	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
+}
+
+func DumpEnvFlattenVals(screen core.Screen, env *core.Env) {
+	flatten := env.Flatten(true, nil)
+	var keys []string
+	for k, _ := range flatten {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		screen.Print(k + " = " + mayQuoteStr(flatten[k]) + "\n")
+	}
 }
 
 func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []string) {
@@ -61,6 +77,30 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 		output = append(output, line)
 	}
 	return
+}
+
+func dumpEnvAbbrs(
+	screen core.Screen,
+	abbrs *core.EnvAbbrs,
+	abbrsSep string,
+	indentSize int,
+	indent int) {
+
+	if abbrs == nil {
+		return
+	}
+	indentPrint := func(msg string) {
+		if indent >= 0 {
+			screen.Print(strings.Repeat(" ", indentSize*indent) + msg + "\n")
+		}
+	}
+
+	name := strings.Join(append([]string{abbrs.DisplayName()}, abbrs.Abbrs()...), abbrsSep)
+	indentPrint("[" + name + "]")
+
+	for _, name := range abbrs.SubNames() {
+		dumpEnvAbbrs(screen, abbrs.GetSub(name), abbrsSep, indentSize, indent+1)
+	}
 }
 
 func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, indent int) {
@@ -127,14 +167,14 @@ func dumpEnv(
 	}
 
 	if !printEnvLayer {
-		compacted := env.Compact(printDefEnv, filterPrefixs)
+		flatten := env.Flatten(printDefEnv, filterPrefixs)
 		var keys []string
-		for k, _ := range compacted {
+		for k, _ := range flatten {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			res = append(res, k+" = "+compacted[k])
+			res = append(res, k+" = "+flatten[k])
 		}
 	} else {
 		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefixs, &res, indentSize, 0)

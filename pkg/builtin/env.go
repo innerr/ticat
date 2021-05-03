@@ -16,6 +16,13 @@ func LoadDefaultEnv(env *core.Env) {
 	setToDefaultVerb(env)
 }
 
+func LoadEnvAbbrs(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	display := cc.EnvAbbrs.GetOrAddSub("display").AddAbbrs("dis", "disp")
+	display.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
+	display.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
+	return true
+}
+
 func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env = env.GetLayer(core.EnvLayerSession)
 
