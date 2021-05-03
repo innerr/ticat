@@ -12,19 +12,20 @@ func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, in
 	if len(flow) == 0 {
 		return
 	}
-	cc.Screen.Print("[flow:" + strconv.Itoa(len(flow)) + "]\n")
+	cc.Screen.Print("[cmds:" + strconv.Itoa(len(flow)) + "]\n")
 
 	for i, cmd := range flow {
 		indents := strings.Repeat(" ", indentSize)
+		indent2 := strings.Repeat(" ", indentSize*2)
 		line := indents + "[cmd:" + strconv.Itoa(i) + "] " + getCmdPath(cmd, sep, true)
 		cc.Screen.Print(line + "\n")
+		cc.Screen.Print(indent2 + "'" + cmd.Help() + "'\n")
 
 		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 		args := cmd.Args()
 		argv := cmdEnv.GetArgv(cmd.Path(), sep, args)
 		for j, line := range DumpArgs(&args, argv, true) {
-			indents := strings.Repeat(" ", indentSize*2)
-			cc.Screen.Print(indents + "[arg:" + strconv.Itoa(j) + "] " + line + "\n")
+			cc.Screen.Print(indent2 + "- arg:" + strconv.Itoa(j) + " " + line + "\n")
 		}
 	}
 }

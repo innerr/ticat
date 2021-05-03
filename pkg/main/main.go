@@ -38,7 +38,7 @@ func main() {
 		ProtoEnvMark,
 		ProtoSep,
 	})
-	builtin.RegisterBuiltinCmds(tree)
+	builtin.RegisterCmds(tree)
 
 	// A simple parser, should be insteaded in the future
 	seqParser := parser.NewSequenceParser(

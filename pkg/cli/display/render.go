@@ -76,6 +76,9 @@ func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen) {
 }
 
 type FrameChars struct {
+	V string
+	H string
+
 	// Sudoku positions
 	P1 string
 	P2 string
@@ -86,45 +89,56 @@ type FrameChars struct {
 	P7 string
 	P8 string
 	P9 string
-
-	V string
-	H string
 }
 
 func FrameCharsUtf8() *FrameChars {
 	return &FrameChars {
+		"│", "─",
 		"┌", "┬", "┐",
 		"├", "┼", "┤",
 		"└", "┴", "┘",
-		"│", "─",
 	}
 }
 
 func FrameCharsAscii() *FrameChars {
 	return &FrameChars {
-		"+", "+", "+",
-		"+", "+", "+",
-		"+", "+", "+",
 		"|", "-",
+		"+", "+", "+",
+		"+", "+", "+",
+		"+", "+", "+",
+	}
+}
+
+func FrameCharsNoSlash() *FrameChars {
+	return &FrameChars {
+		"-", "-",
+		"+", "+", "+",
+		"+", "+", "+",
+		"+", "+", "+",
 	}
 }
 
 func FrameCharsNoCorner() *FrameChars {
 	return &FrameChars {
-		" ", " ", " ",
-		" ", " ", " ",
-		" ", " ", " ",
 		"|", "-",
+		" ", " ", " ",
+		" ", " ", " ",
+		" ", " ", " ",
 	}
 }
 
-// TODO: respect env val "display.utf8"
 func getFrameChars(env *core.Env) *FrameChars {
-	if env.GetBool("display.utf8") {
+	name := strings.ToLower(env.Get("display.style").Raw)
+	if strings.Index(name, "utf") >= 0 && env.GetBool("display.utf8") {
 		return FrameCharsUtf8()
-	} else {
-		return FrameCharsAscii()
 	}
+	if strings.Index(name, "slash") >= 0 {
+		return FrameCharsNoSlash()
+	}
+	if strings.Index(name, "corner") >= 0 {
+		return FrameCharsNoCorner()
+	}
+	return FrameCharsAscii()
 }
 
 func rpt(char string, count int) string {

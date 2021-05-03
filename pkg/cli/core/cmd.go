@@ -23,6 +23,7 @@ type Cmd struct {
 	help   string
 	ty     CmdType
 	quiet  bool
+	priority bool
 	args   Args
 	normal NormalCmd
 	power  PowerCmd
@@ -30,15 +31,15 @@ type Cmd struct {
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
-	return &Cmd{owner, help, CmdTypeNormal, false, newArgs(), cmd, nil, ""}
+	return &Cmd{owner, help, CmdTypeNormal, false, false, newArgs(), cmd, nil, ""}
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
-	return &Cmd{owner, help, CmdTypePower, false, newArgs(), nil, cmd, ""}
+	return &Cmd{owner, help, CmdTypePower, false, false, newArgs(), nil, cmd, ""}
 }
 
 func NewBashCmd(owner *CmdTree, help string, cmd string) *Cmd {
-	return &Cmd{owner, help, CmdTypeBash, false, newArgs(), nil, nil, cmd}
+	return &Cmd{owner, help, CmdTypeBash, false, false, newArgs(), nil, nil, cmd}
 }
 
 func (self *Cmd) Execute(
@@ -70,6 +71,11 @@ func (self *Cmd) SetQuiet() *Cmd {
 	return self
 }
 
+func (self *Cmd) SetPriority() *Cmd {
+	self.priority = true
+	return self
+}
+
 func (self *Cmd) Help() string {
 	return self.help
 }
@@ -80,6 +86,10 @@ func (self *Cmd) IsPowerCmd() bool {
 
 func (self *Cmd) IsQuiet() bool {
 	return self.quiet
+}
+
+func (self *Cmd) IsPriority() bool {
+	return self.priority
 }
 
 func (self *Cmd) Type() CmdType {

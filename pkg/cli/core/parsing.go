@@ -36,6 +36,27 @@ func (self ParsedCmd) IsPowerCmd() bool {
 	return len(self) != 0 && self[len(self)-1].IsPowerCmd()
 }
 
+func (self ParsedCmd) Help() (help string) {
+	if len(self) == 0 {
+		return
+	}
+	return self[len(self)-1].Help()
+}
+
+func (self ParsedCmd) IsPriority() bool {
+	return len(self) != 0 && self[len(self)-1].IsPriority()
+}
+
+func (self ParsedCmd) TotallyEmpty() bool {
+	for _, seg := range self {
+		cmd := seg.Cmd.Cmd
+		if cmd != nil && cmd.Cmd() != nil {
+			return false
+		}
+	}
+	return true
+}
+
 func (self ParsedCmd) Path() (path []string) {
 	for _, it := range self {
 		if it.Cmd.Cmd != nil {
@@ -64,8 +85,19 @@ func (self ParsedCmdSeg) IsPowerCmd() bool {
 	return self.Cmd.Cmd != nil && self.Cmd.Cmd.IsPowerCmd()
 }
 
+func (self ParsedCmdSeg) IsPriority() bool {
+	return self.Cmd.Cmd != nil && self.Cmd.Cmd.Cmd().IsPriority()
+}
+
 func (self *ParsedCmdSeg) IsEmpty() bool {
 	return self.Env == nil && len(self.Cmd.Name) == 0 && self.Cmd.Cmd == nil
+}
+
+func (self ParsedCmdSeg) Help() (help string) {
+	if self.Cmd.Cmd == nil || self.Cmd.Cmd.Cmd() == nil {
+		return
+	}
+	return self.Cmd.Cmd.Cmd().Help()
 }
 
 type MatchedCmd struct {

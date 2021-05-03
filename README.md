@@ -31,10 +31,10 @@ TiDB wizard
 ****-      Env save and load. TODO: save or load from a tag
 ****-      Self status dumping
 -----      Command line help
-****-  Env framework
 ****-  Mod framework
 ****-      Builtin mod supporting
 ****-      Bash mod supporting
+-----      Mocking execute
 -----      Background running
 -----  Flow framework
 -----      Connector-env-val checking

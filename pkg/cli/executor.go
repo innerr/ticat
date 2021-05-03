@@ -34,7 +34,7 @@ func (self *Executor) execute(cc *core.Cli, isBootstrap bool, input ...string) b
 	}
 	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
-	filterEmptyCmds(flow)
+	filterEmptyCmdsAndReorderByPriority(flow)
 	return self.executeFlow(cc, isBootstrap, flow)
 }
 
@@ -105,16 +105,20 @@ func useCmdsAbbrs(abbrs *core.EnvAbbrs, cmds *core.CmdTree) {
 	}
 }
 
-// Remove the cmds only have cmd-level env definication but have no executable
-func filterEmptyCmds(flow *core.ParsedCmds) {
-	var filtered []core.ParsedCmd
+// 1. remove the cmds only have cmd-level env definication but have no executable
+// 2. move priority cmds to the head
+func filterEmptyCmdsAndReorderByPriority(flow *core.ParsedCmds) {
+	var unfiltered []core.ParsedCmd
+	var priorities []core.ParsedCmd
 	for _, cmd := range flow.Cmds {
-		for _, seg := range cmd {
-			if seg.Cmd.Cmd != nil {
-				filtered = append(filtered, cmd)
-				break
-			}
+		if cmd.TotallyEmpty() {
+			continue
+		}
+		if cmd.IsPriority() {
+			priorities = append(priorities, cmd)
+		} else {
+			unfiltered = append(unfiltered, cmd)
 		}
 	}
-	flow.Cmds = filtered
+	flow.Cmds = append(priorities, unfiltered...)
 }

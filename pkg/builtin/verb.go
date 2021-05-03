@@ -131,3 +131,9 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 
 	return true
 }
+
+func SetToDefaultVerb(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerSession)
+	setToDefaultVerb(env)
+	return true
+}

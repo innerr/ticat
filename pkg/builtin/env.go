@@ -10,25 +10,10 @@ import (
 
 func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
-
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "kitty")
-
 	env.SetInt("sys.stack-depth", 0)
-
-	env.SetBool("display.executor", true)
-	env.SetBool("display.bootstrap", false)
-	env.SetBool("display.one-cmd", false)
-	env.SetBool("display.utf8", true)
-	env.SetBool("display.env", true)
-	env.SetBool("display.env.sys", false)
-	env.SetBool("display.env.layer", false)
-	env.SetBool("display.env.default", false)
-	env.SetBool("display.mod.quiet", false)
-	env.SetBool("display.mod.realname", true)
-
-	env.SetInt("display.width", 80)
-	env.SetInt("display.max-cmd-cnt", 7)
+	setToDefaultVerb(env)
 }
 
 func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
@@ -113,4 +98,21 @@ func getEnvLocalFilePath(env *core.Env) string {
 		panic(fmt.Errorf("[getEnvLocalFilePath] can't find local data path"))
 	}
 	return filepath.Join(path, file)
+}
+
+func setToDefaultVerb(env *core.Env) {
+	env.SetBool("display.executor", true)
+	env.SetBool("display.bootstrap", false)
+	env.SetBool("display.one-cmd", false)
+	env.Set("display.style", "utf8")
+	env.SetBool("display.utf8", true)
+	env.SetBool("display.env", true)
+	env.SetBool("display.env.sys", false)
+	env.SetBool("display.env.layer", false)
+	env.SetBool("display.env.default", false)
+	env.SetBool("display.mod.quiet", false)
+	env.SetBool("display.mod.realname", true)
+
+	env.SetInt("display.width", 80)
+	env.SetInt("display.max-cmd-cnt", 7)
 }

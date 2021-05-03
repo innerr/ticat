@@ -4,15 +4,26 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func RegisterBuiltinCmds(cmds *core.CmdTree) {
+func RegisterCmds(cmds *core.CmdTree) {
+	RegisterExecutorCmds(cmds)
+	RegisterEnvOpCmds(cmds)
+	RegisterVerbCmds(cmds)
+	RegisterTrivialCmds(cmds)
+	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B"))
+}
+
+func RegisterExecutorCmds(cmds *core.CmdTree) {
 	cmds.AddSub("help", "h", "H", "?").
 		RegPowerCmd(GlobalHelp, "TODO").SetQuiet()
+	cmds.AddSub("desc", "d", "D").
+		RegPowerCmd(DbgDumpFlow,
+			"desc the flow about to execute").SetQuiet().SetPriority()
 	cmds.AddSub("cmds", "cmd", "mod", "mods").
 		RegCmd(DbgDumpCmds,
 			"list builtin and loaded cmds")
-	cmds.AddSub("desc", "d", "D").
-		RegPowerCmd(DbgDumpFlow,
-			"desc the flow about to execute").SetQuiet()
+}
+
+func RegisterEnvOpCmds(cmds *core.CmdTree) {
 	cmds.AddSub("save", "persist", "s", "S").
 		RegCmd(SaveEnvToLocal,
 			"save session env changes to local").SetQuiet()
@@ -21,44 +32,50 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
 		RegCmd(RemoveEnvValAndSaveToLocal,
 			"remove specific env KV and save changes to local").
-		SetQuiet().AddArg("key", "", "k", "K")
+			SetQuiet().AddArg("key", "", "k", "K")
+}
 
-	cmds.AddSub("verbose", "verb", "v", "V").
-		RegCmd(SetVerbMode,
+func RegisterVerbCmds(cmds *core.CmdTree) {
+	verbose := cmds.AddSub("verbose", "verb", "v", "V")
+	verbose.RegCmd(SetVerbMode,
 			"change into verbose mode").SetQuiet()
-	cmds.AddSub("verb+", "v+").
+	verbose.AddSub("default", "def", "d", "D").
+		RegCmd(SetToDefaultVerb,
+			"set to default verbose mode").SetQuiet()
+	verbose.AddSub("increase", "inc", "v+", "+").
 		RegCmd(IncreaseVerb,
 			"increase verbose").SetQuiet().
-		AddArg("volume", "1", "vol", "v", "V")
-	cmds.AddSub("verb-", "v-").
+			AddArg("volume", "1", "vol", "v", "V")
+	verbose.AddSub("decrease", "dec", "v-", "-").
 		RegCmd(DecreaseVerb,
 			"decrease verbose").SetQuiet().
-		AddArg("volume", "1", "vol", "v", "V")
+			AddArg("volume", "1", "vol", "v", "V")
 	cmds.AddSub("quiet", "q", "Q").
 		RegCmd(SetQuietMode,
 			"change into quiet mode").SetQuiet()
+}
 
-	cmds.AddSub("dummy", "dmy", "dm").
-		RegCmd(Dummy,
-			"dummy cmd for testing")
-	cmds.AddSub("sleep", "slp").
-		RegCmd(Sleep,
-			"sleep for specific duration").
-		AddArg("duration", "1s", "dur", "d", "D")
-
-	builtin := cmds.AddSub("builtin", "b", "B")
-
-	builtinEnv := builtin.AddSub("env", "e", "E")
-	envLoad := builtinEnv.AddSub("load", "l", "L")
+func RegisterBuiltinCmds(cmds *core.CmdTree) {
+	env := cmds.AddSub("env", "e", "E")
+	envLoad := env.AddSub("load", "l", "L")
 	envLoad.AddSub("local", "l", "L").
 		RegCmd(LoadLocalEnv,
 			"load env KVs from local").SetQuiet()
 	envLoad.AddSub("runtime", "rt", "r", "R").
 		RegCmd(LoadRuntimeEnv,
 			"setup runtime env KVs").SetQuiet()
-
-	mod := builtin.AddSub("mod", "mods", "m", "M")
-	mod.AddSub("load", "L").AddSub("local", "l", "L").
+	mod := cmds.AddSub("mod", "mods", "m", "M")
+	mod.AddSub("load", "l", "L").AddSub("local", "l", "L").
 		RegCmd(LoadLocalMods,
 			"load mods from local").SetQuiet()
+}
+
+func RegisterTrivialCmds(cmds *core.CmdTree) {
+	cmds.AddSub("dummy", "dmy", "dm").
+		RegCmd(Dummy,
+			"dummy cmd for testing")
+	cmds.AddSub("sleep", "slp").
+		RegCmd(Sleep,
+			"sleep for specific duration").
+			AddArg("duration", "1s", "dur", "d", "D")
 }
