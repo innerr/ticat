@@ -141,6 +141,14 @@ func (self *CmdTree) Path() []string {
 	return append(self.parent.Path(), self.name)
 }
 
+func (self *CmdTree) Depth() int {
+	if self.parent == nil {
+		return 0
+	} else {
+		return self.parent.Depth() + 1
+	}
+}
+
 func (self *CmdTree) DisplayPath() string {
 	path := self.Path()
 	if len(path) == 0 {

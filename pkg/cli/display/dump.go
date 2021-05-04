@@ -38,7 +38,7 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 }
 
 func DumpCmds(cc *core.Cli, indentSize int) {
-	dumpCmd(cc.Screen, cc.Cmds, indentSize, 0)
+	dumpCmd(cc.Screen, cc.Cmds, indentSize, true)
 }
 
 func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
@@ -103,10 +103,11 @@ func dumpEnvAbbrs(
 	}
 }
 
-func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, indent int) {
+func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, recursive bool) {
 	if cmd == nil {
 		return
 	}
+	indent := cmd.Depth()
 	indentPrint := func(msg string) {
 		if indent >= 0 {
 			screen.Print(strings.Repeat(" ", indentSize*indent) + msg + "\n")
@@ -133,6 +134,11 @@ func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, indent int) 
 		if cic.Type() == core.CmdTypeBash {
 			indentPrint("- executable: " + cic.BashCmdLine())
 		}
+		envOps := cic.EnvOps()
+		envOpKeys := envOps.EnvKeys()
+		for _, k := range envOpKeys {
+			indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.Ops(k), abbrsSep))
+		}
 		args := cic.Args()
 		for i, name := range args.Names() {
 			val := args.DefVal(name)
@@ -143,7 +149,7 @@ func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, indent int) 
 	}
 
 	for _, name := range cmd.SubNames() {
-		dumpCmd(screen, cmd.GetSub(name), indentSize, indent+1)
+		dumpCmd(screen, cmd.GetSub(name), indentSize, recursive)
 	}
 }
 
@@ -218,6 +224,29 @@ func dumpEnvLayer(
 		*res = append(*res, indent+"["+env.LayerTypeName()+"]")
 		*res = append(*res, output...)
 	}
+}
+
+func dumpEnvOps(ops []uint, sep string) (str string) {
+	var strs []string
+	for _, op := range ops {
+		strs = append(strs, dumpEnvOp(op))
+	}
+	return strings.Join(strs, sep)
+}
+
+func dumpEnvOp(op uint) (str string) {
+	switch op {
+	case core.EnvOpTypeWrite:
+		str = "write"
+	case core.EnvOpTypeMayWrite:
+		str = "may-write"
+	case core.EnvOpTypeRead:
+		str = "read"
+	case core.EnvOpTypeMayRead:
+		str = "may-read"
+	default:
+	}
+	return
 }
 
 func getCmdPath(cmd core.ParsedCmd, sep string, printRealname bool) string {

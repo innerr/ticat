@@ -80,7 +80,7 @@ func regBashMod(
 	}
 
 	help, _ := ini.SectionGet("", "help")
-	cmd := mod.RegBashCmd(filePath, help)
+	cmd := mod.RegBashCmd(filePath, strings.TrimSpace(strings.Trim(help, "'\"")))
 
 	abbrs, ok := ini.SectionGet("", "abbrs")
 	if ok {
@@ -103,9 +103,9 @@ func regBashMod(
 		}
 	}
 
-	envRw, ok := ini.GetKvmap("env")
+	envOps, ok := ini.GetKvmap("env")
 	if ok {
-		for names, rw := range envRw {
+		for names, op := range envOps {
 			segs := strings.Split(strings.Trim(names, "'\""), envPathSep)
 			envAbbrs := cc.EnvAbbrs
 			var path []string
@@ -125,8 +125,8 @@ func regBashMod(
 			}
 
 			key := strings.Join(path, envPathSep)
-			rwFields := strings.Split(strings.Trim(rw, "'\""), abbrsSep)
-			for _, it := range rwFields {
+			opFields := strings.Split(strings.Trim(op, "'\""), abbrsSep)
+			for _, it := range opFields {
 				field := strings.ToLower(it)
 				may := strings.Index(field, "may") >= 0 || strings.Index(field, "opt") >= 0
 				write := strings.Index(field, "w") >= 0

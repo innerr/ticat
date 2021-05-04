@@ -113,6 +113,10 @@ func (self *Cmd) Args() Args {
 	return self.args
 }
 
+func (self *Cmd) EnvOps() EnvOps {
+	return self.envOps
+}
+
 func (self *Cmd) executeBash(argv ArgVals, cc *Cli, env *Env) bool {
 	var args []string
 	args = append(args, self.bash)

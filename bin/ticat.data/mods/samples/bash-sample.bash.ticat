@@ -1,3 +1,4 @@
+help = "a simple bash mod example"
 abbrs = "bash|sh"
 
 [args]
