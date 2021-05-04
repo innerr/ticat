@@ -71,6 +71,9 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	envLoad.AddSub("runtime", "rt", "r", "R").
 		RegCmd(LoadRuntimeEnv,
 			"setup runtime env KVs").SetQuiet()
+	envLoad.AddSub("stdin", "s", "S").
+		RegCmd(LoadStdinEnv,
+			"load env KVs from stdin").SetQuiet()
 	envLoad.AddSub("abbrs", "abbr", "a", "A").
 		RegCmd(LoadEnvAbbrs,
 			"setup runtime env abbrs").SetQuiet()

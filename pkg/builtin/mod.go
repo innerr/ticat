@@ -17,7 +17,6 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	metaExt := "." + env.Get("strs.meta-ext").Raw
 	abbrsSep := env.Get("strs.abbrs-sep").Raw
 	envPathSep := env.Get("strs.env-path-sep").Raw
-	bashExt := "." + env.Get("strs.proto-bash-ext").Raw
 
 	if root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
@@ -36,11 +35,17 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		if !fileExists(target) {
 			return nil
 		}
-		ext = filepath.Ext(target)
-		if ext == bashExt {
-			cmdPath := target[len(root)+1:len(target)-len(ext)]
-			regBashMod(cc, path, target, cmdPath, abbrsSep, envPathSep)
+
+		cmdPath := target[len(root)+1:]
+		for {
+			ext := filepath.Ext(cmdPath)
+			if len(ext) == 0 {
+				break
+			} else {
+				cmdPath = cmdPath[0 : len(cmdPath)-len(ext)]
+			}
 		}
+		regBashMod(cc, path, target, cmdPath, abbrsSep, envPathSep)
 		return nil
 	})
 	return true
@@ -133,7 +138,7 @@ func regBashMod(
 				read := strings.Index(field, "rd") >= 0 ||
 					strings.Index(field, "read") >= 0 || field == "r"
 				if write && read {
-					panic(fmt.Errorf("[LoadLocalMods.regBashMod] " +
+					panic(fmt.Errorf("[LoadLocalMods.regBashMod] "+
 						"parse env r|w definition failed: %v", it))
 				}
 				if write {

@@ -137,7 +137,7 @@ func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, recursive bo
 		envOps := cic.EnvOps()
 		envOpKeys := envOps.EnvKeys()
 		for _, k := range envOpKeys {
-			indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.Ops(k), abbrsSep))
+			indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.OpSet(k), abbrsSep))
 		}
 		args := cic.Args()
 		for i, name := range args.Names() {

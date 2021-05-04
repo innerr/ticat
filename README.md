@@ -36,6 +36,7 @@ TiDB wizard
 ****-      Bash mod supporting
 -----      Mocking execute
 -----      Background running
+-----      Support more typs: python, etc
 -----  Flow framework
 -----      Connector-env-val checking
 -----      Flatten in executing and desc

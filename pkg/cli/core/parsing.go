@@ -47,6 +47,17 @@ func (self ParsedCmd) IsPriority() bool {
 	return len(self) != 0 && self[len(self)-1].IsPriority()
 }
 
+func (self ParsedCmd) LastCmd() (cmd *Cmd) {
+	if len(self) == 0 {
+		return
+	}
+	last := self[len(self)-1].Cmd.Cmd
+	if last == nil {
+		return
+	}
+	return last.Cmd()
+}
+
 func (self ParsedCmd) TotallyEmpty() bool {
 	for _, seg := range self {
 		cmd := seg.Cmd.Cmd

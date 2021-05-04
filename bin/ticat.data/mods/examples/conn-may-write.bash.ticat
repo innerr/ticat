@@ -1,0 +1,5 @@
+help = "example: env-may-write dependency declaration"
+abbrs = "maywrite|mayw|mw"
+
+[env]
+examples.my-key|m|M|key|k|Key = may-write

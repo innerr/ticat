@@ -65,20 +65,7 @@ func main() {
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser)
 
-	// Load env abbrs, load runtime env, load local-stored env, load local mods
-	bootstrap := "B.E.L.A:B.E.L.R:B.E.L.L:B.M.L.L"
-
-	// Interacting methods between ticat and mods:
-	//   1. mod.stdin(as mod's input args) -> mod.stderr(as mods's return)
-	//   2. (recursively) calling ticat inside a mod -> ticat.stdin(pass the env from mod to ticat)
-	//
-	// The stdin-env could be very useful for customized mods-loader or env-loader
-	//   1. those loaders will be loaded from 'bootstrap' string above
-	//   2. put a string val with key 'bootstrap' to env could launch it as an extra bootstrap
-	stdinEnv := cli.GenEnvFromStdin(ProtoEnvMark, ProtoSep)
-	if stdinEnv != nil {
-		globalEnv.GetLayer(core.EnvLayerSession).Merge(stdinEnv)
-	}
+	bootstrap := "B.E.L.A : B.E.L.R : B.E.L.L : B.E.L.S : B.M.L.L"
 
 	executor := cli.Executor{}
 	succeeded := executor.Execute(cc, bootstrap, os.Args[1:]...)
