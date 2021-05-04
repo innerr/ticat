@@ -12,19 +12,20 @@ func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, in
 	if len(flow) == 0 {
 		return
 	}
-	cc.Screen.Print("[flow:" + strconv.Itoa(len(flow)) + "]\n")
+	cc.Screen.Print("[cmds:" + strconv.Itoa(len(flow)) + "]\n")
 
 	for i, cmd := range flow {
 		indents := strings.Repeat(" ", indentSize)
+		indent2 := strings.Repeat(" ", indentSize*2)
 		line := indents + "[cmd:" + strconv.Itoa(i) + "] " + getCmdPath(cmd, sep, true)
 		cc.Screen.Print(line + "\n")
+		cc.Screen.Print(indent2 + "'" + cmd.Help() + "'\n")
 
 		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 		args := cmd.Args()
 		argv := cmdEnv.GetArgv(cmd.Path(), sep, args)
 		for j, line := range DumpArgs(&args, argv, true) {
-			indents := strings.Repeat(" ", indentSize*2)
-			cc.Screen.Print(indents + "[arg:" + strconv.Itoa(j) + "] " + line + "\n")
+			cc.Screen.Print(indent2 + "- arg:" + strconv.Itoa(j) + " " + line + "\n")
 		}
 	}
 }
@@ -37,7 +38,23 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 }
 
 func DumpCmds(cc *core.Cli, indentSize int) {
-	dumpCmd(cc.Screen, cc.Cmds, indentSize, -1)
+	dumpCmd(cc.Screen, cc.Cmds, indentSize, true)
+}
+
+func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
+	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
+}
+
+func DumpEnvFlattenVals(screen core.Screen, env *core.Env) {
+	flatten := env.Flatten(true, nil)
+	var keys []string
+	for k, _ := range flatten {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		screen.Print(k + " = " + mayQuoteStr(flatten[k]) + "\n")
+	}
 }
 
 func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []string) {
@@ -62,10 +79,35 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 	return
 }
 
-func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, indent int) {
+func dumpEnvAbbrs(
+	screen core.Screen,
+	abbrs *core.EnvAbbrs,
+	abbrsSep string,
+	indentSize int,
+	indent int) {
+
+	if abbrs == nil {
+		return
+	}
+	indentPrint := func(msg string) {
+		if indent >= 0 {
+			screen.Print(strings.Repeat(" ", indentSize*indent) + msg + "\n")
+		}
+	}
+
+	name := strings.Join(append([]string{abbrs.DisplayName()}, abbrs.Abbrs()...), abbrsSep)
+	indentPrint("[" + name + "]")
+
+	for _, name := range abbrs.SubNames() {
+		dumpEnvAbbrs(screen, abbrs.GetSub(name), abbrsSep, indentSize, indent+1)
+	}
+}
+
+func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, recursive bool) {
 	if cmd == nil {
 		return
 	}
+	indent := cmd.Depth()
 	indentPrint := func(msg string) {
 		if indent >= 0 {
 			screen.Print(strings.Repeat(" ", indentSize*indent) + msg + "\n")
@@ -92,6 +134,11 @@ func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, indent int) 
 		if cic.Type() == core.CmdTypeBash {
 			indentPrint("- executable: " + cic.BashCmdLine())
 		}
+		envOps := cic.EnvOps()
+		envOpKeys := envOps.EnvKeys()
+		for _, k := range envOpKeys {
+			indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.OpSet(k), abbrsSep))
+		}
 		args := cic.Args()
 		for i, name := range args.Names() {
 			val := args.DefVal(name)
@@ -102,7 +149,7 @@ func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, indent int) 
 	}
 
 	for _, name := range cmd.SubNames() {
-		dumpCmd(screen, cmd.GetSub(name), indentSize, indent+1)
+		dumpCmd(screen, cmd.GetSub(name), indentSize, recursive)
 	}
 }
 
@@ -126,14 +173,14 @@ func dumpEnv(
 	}
 
 	if !printEnvLayer {
-		compacted := env.Compact(printDefEnv, filterPrefixs)
+		flatten := env.Flatten(printDefEnv, filterPrefixs)
 		var keys []string
-		for k, _ := range compacted {
+		for k, _ := range flatten {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			res = append(res, k+" = "+compacted[k])
+			res = append(res, k+" = "+flatten[k])
 		}
 	} else {
 		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefixs, &res, indentSize, 0)
@@ -177,6 +224,29 @@ func dumpEnvLayer(
 		*res = append(*res, indent+"["+env.LayerTypeName()+"]")
 		*res = append(*res, output...)
 	}
+}
+
+func dumpEnvOps(ops []uint, sep string) (str string) {
+	var strs []string
+	for _, op := range ops {
+		strs = append(strs, dumpEnvOp(op))
+	}
+	return strings.Join(strs, sep)
+}
+
+func dumpEnvOp(op uint) (str string) {
+	switch op {
+	case core.EnvOpTypeWrite:
+		str = "write"
+	case core.EnvOpTypeMayWrite:
+		str = "may-write"
+	case core.EnvOpTypeRead:
+		str = "read"
+	case core.EnvOpTypeMayRead:
+		str = "may-read"
+	default:
+	}
+	return
 }
 
 func getCmdPath(cmd core.ParsedCmd, sep string, printRealname bool) string {

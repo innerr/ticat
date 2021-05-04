@@ -1,4 +1,5 @@
-abbrs = "bash|sh"
+help = "example: pass args to a mod"
+abbrs = "arg"
 
 [args]
 arg_a|a = "default-A"

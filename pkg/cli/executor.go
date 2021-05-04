@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -11,12 +13,11 @@ type Executor struct {
 }
 
 func (self *Executor) Execute(cc *core.Cli, bootstrap string, input ...string) bool {
-	if !self.execute(cc, true, bootstrap) {
-		return false
+	overWriteBootstrap := cc.GlobalEnv.Get("bootstrap").Raw
+	if len(overWriteBootstrap) != 0 {
+		bootstrap = overWriteBootstrap
 	}
-
-	extra := cc.GlobalEnv.Get("bootstrap").Raw
-	if len(extra) != 0 && !self.execute(cc, true, extra) {
+	if !self.execute(cc, true, bootstrap) {
 		return false
 	}
 
@@ -34,7 +35,8 @@ func (self *Executor) execute(cc *core.Cli, isBootstrap bool, input ...string) b
 	}
 	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
-	filterEmptyCmds(flow)
+	filterEmptyCmdsAndReorderByPriority(flow)
+	checkEnvOps(flow, cc)
 	return self.executeFlow(cc, isBootstrap, flow)
 }
 
@@ -70,7 +72,9 @@ func (self *Executor) executeCmd(
 	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
 
 	stackLines := display.PrintCmdStack(isBootstrap, cc.Screen, cmd, cmdEnv, flow, currCmdIdx, cc.Cmds.Strs)
-	display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
+	if stackLines.Display {
+		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
+	}
 
 	last := cmd[len(cmd)-1].Cmd.Cmd
 	start := time.Now()
@@ -82,10 +86,50 @@ func (self *Executor) executeCmd(
 	}
 	elapsed := time.Now().Sub(start)
 
-	resultLines := display.PrintCmdResult(isBootstrap, cc.Screen, cmd,
-		cmdEnv, succeeded, elapsed, flow, currCmdIdx, cc.Cmds.Strs)
-	display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
+	if stackLines.Display {
+		resultLines := display.PrintCmdResult(isBootstrap, cc.Screen, cmd,
+			cmdEnv, succeeded, elapsed, flow, currCmdIdx, cc.Cmds.Strs)
+		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
+	}
 	return
+}
+
+// 1. remove the cmds only have cmd-level env definication but have no executable
+// 2. move priority cmds to the head
+func filterEmptyCmdsAndReorderByPriority(flow *core.ParsedCmds) {
+	var unfiltered []core.ParsedCmd
+	var priorities []core.ParsedCmd
+	for _, cmd := range flow.Cmds {
+		if cmd.TotallyEmpty() {
+			continue
+		}
+		if cmd.IsPriority() {
+			priorities = append(priorities, cmd)
+		} else {
+			unfiltered = append(unfiltered, cmd)
+		}
+	}
+	flow.Cmds = append(priorities, unfiltered...)
+}
+
+func checkEnvOps(flow *core.ParsedCmds, cc *core.Cli) bool {
+	checker := core.EnvOpsChecker{}
+	for _, cmd := range flow.Cmds {
+		last := cmd.LastCmd()
+		if last == nil {
+			continue
+		}
+		result := checker.OnCallCmd(cmd, cc.Cmds.Strs.PathSep, last, true)
+		// TODO: tell user more details
+		for _, res := range result {
+			cc.Screen.Print(fmt.Sprintf("[ERR] cmd '%s' reads empty env '%s'\n",
+				strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep), res.Key))
+		}
+		if len(result) != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func useCmdsAbbrs(abbrs *core.EnvAbbrs, cmds *core.CmdTree) {
@@ -103,18 +147,4 @@ func useCmdsAbbrs(abbrs *core.EnvAbbrs, cmds *core.CmdTree) {
 		subTree := cmds.GetSub(subName)
 		useCmdsAbbrs(subEnv, subTree)
 	}
-}
-
-// Remove the cmds only have cmd-level env definication but have no executable
-func filterEmptyCmds(flow *core.ParsedCmds) {
-	var filtered []core.ParsedCmd
-	for _, cmd := range flow.Cmds {
-		for _, seg := range cmd {
-			if seg.Cmd.Cmd != nil {
-				filtered = append(filtered, cmd)
-				break
-			}
-		}
-	}
-	flow.Cmds = filtered
 }

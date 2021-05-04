@@ -11,6 +11,12 @@ func EnvOutput(env *Env, writer io.Writer, protoEnvMark string, protoSep string)
 	if env.Parent() != nil {
 		EnvOutput(env.Parent(), writer, protoEnvMark, protoSep)
 	}
+
+	protoPrefix := ""
+	if len(protoEnvMark) != 0 {
+		protoPrefix = protoEnvMark + protoSep
+	}
+
 	keys, vals := env.Pairs()
 	for i, k := range keys {
 		v := vals[i]
@@ -18,8 +24,8 @@ func EnvOutput(env *Env, writer io.Writer, protoEnvMark string, protoSep string)
 		if len(strings.TrimSpace(v.Raw)) == 0 {
 			continue
 		}
-		_, err := fmt.Fprintf(writer, "%s%s%s%s%s%s%s\n", protoEnvMark,
-			protoSep, k, protoSep, v.Raw, protoSep, env.LayerType())
+		_, err := fmt.Fprintf(writer, "%s%s%s%s%s%s\n", protoPrefix,
+			k, protoSep, v.Raw, protoSep, env.LayerType())
 		if err != nil {
 			return err
 		}

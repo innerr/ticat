@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+// TODO: share some code with EnvAbbrs
+
 type CmdTreeStrs struct {
 	RootDisplayName  string
 	PathSep          string
@@ -78,16 +80,16 @@ func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	sub.parent = self
 	self.subs[name] = sub
 	self.subOrderedNames = append(self.subOrderedNames, name)
-	self.addSubAbbr(name, abbrs...)
+	self.addSubAbbrs(name, abbrs...)
 	self.subAbbrsRevIdx[name] = name
 	return sub
 }
 
-func (self *CmdTree) AddAbbr(abbrs ...string) {
+func (self *CmdTree) AddAbbrs(abbrs ...string) {
 	if self.parent == nil {
-		panic(fmt.Errorf("[CmdTree.AddAbbr] can't add abbrs %v to root", abbrs))
+		panic(fmt.Errorf("[CmdTree.AddAbbrs] can't add abbrs %v to root", abbrs))
 	}
-	self.parent.addSubAbbr(self.name, abbrs...)
+	self.parent.addSubAbbrs(self.name, abbrs...)
 }
 
 func (self *CmdTree) GetOrAddSub(path ...string) *CmdTree {
@@ -139,6 +141,14 @@ func (self *CmdTree) Path() []string {
 	return append(self.parent.Path(), self.name)
 }
 
+func (self *CmdTree) Depth() int {
+	if self.parent == nil {
+		return 0
+	} else {
+		return self.parent.Depth() + 1
+	}
+}
+
 func (self *CmdTree) DisplayPath() string {
 	path := self.Path()
 	if len(path) == 0 {
@@ -175,21 +185,25 @@ func (self *CmdTree) Abbrs() (abbrs []string) {
 	return self.parent.SubAbbrs(self.name)
 }
 
-func (self *CmdTree) addSubAbbr(name string, abbrs ...string) {
+func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 	for _, abbr := range abbrs {
 		if len(abbr) == 0 {
 			continue
 		}
-		if old, ok := self.subAbbrsRevIdx[abbr]; ok && old != name {
+		old, ok := self.subAbbrsRevIdx[abbr]
+		if old == name {
+			continue
+		}
+		if ok {
 			panic(fmt.Errorf(
-				"[CmdTree.addSubAbbr] %s: command abbr name '%s' conflicted, "+
+				"[CmdTree.addSubAbbrs] %s: command abbr name '%s' conflicted, "+
 					"old for '%s', new for '%s'",
 				self.DisplayPath(), abbr, old, name))
 		}
 		self.subAbbrsRevIdx[abbr] = name
+		olds, _ := self.subAbbrs[name]
+		self.subAbbrs[name] = append(olds, abbr)
 	}
-	olds, _ := self.subAbbrs[name]
-	self.subAbbrs[name] = append(olds, abbrs...)
 }
 
 func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {

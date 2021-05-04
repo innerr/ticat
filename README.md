@@ -9,7 +9,7 @@ TiDB wizard
 ## How ticat can achieve that?
 * Human friendly
     * Organize job flow with (shell) commands
-    * All commands are highly compacted, support fuzzy input, hands on in on time
+    * All commands are highly compacted, support fuzzy input, hands on in no time
 * Scenario-centered
     * Focus on get things done smoothly in a scenario
 * Feature-rich
@@ -17,34 +17,45 @@ TiDB wizard
         * Components can be easily written in any language
         * ..or from any existing utility by wrapping it up
     * Components' interacting form high-level features
+* Write once, run anywhere
+    * Save or edit flow easily
+    * Share modules and flows easily
 * An example: [autotune + benchmark](./doc/usage-draft/benchmark.md)
 * More details: [how-ticat-works](./doc/how-ticat-works.md)
 
 ## Progess
-* Design
 ```
-****-  The concept of ticat
-***--  CLI framework
-**---  Component framework
+****-  Cli framework
+***--      Command line parsing
+****-      Full abbrs supporting. TODO: env abbrs from cmds
+****-      Env save and load. TODO: save or load from a tag
+****-      Self status dumping
+-----      Command line help
+****-  Mod framework
+****-      Builtin mod supporting
+****-      Bash mod supporting
+-----      Mocking execute
+-----      Background running
+-----      Support more typs: python, etc
+-----  Flow framework
+-----      Connector-env-val checking
+-----      Flatten in executing and desc
+-----      Save and edit flow
+-----  Hub framework
+-----      Mod and flow sharing
+-----      Authority control
 -----  Scenarios
-*----    Benchmark
------    Integration testing
------    (TBD)
-*----  Components
-***--    Cluster
-****-    Raw backup
------    (TBD)
-```
-* Implement
-```
-*----  CLI framework
------  Component framework
------  Scenarios
------    Benchmark
------    Integration testing
------    (TBD)
+-----      Benchmark
+-----      Integration testing
+-----      (TBD)
 -----  Components
------    Cluster
------    Raw backup
------    (TBD)
+-----      Tiup cluster operating
+-----      Ti.sh cluster operating
+-----      Cluster raw backup
+-----      Jitter detecting
+-----      Simple auto config tuning
+-----      Workloads: TPCC
+-----      Workloads: sysbench
+-----      Workloads: ycsb
+-----      (TBD)
 ```

@@ -4,9 +4,17 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func SetQuietMode(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+func SetQuietMode(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	env = env.GetLayer(core.EnvLayerSession)
 	env.SetBool("display.executor", false)
+	env.SetBool("display.env", false)
+	env.SetBool("display.env.layer", false)
+	env.SetBool("display.env.default", false)
+	env.SetBool("display.env.display", false)
+	env.SetBool("display.env.sys", false)
+	env.SetBool("display.mod.quiet", false)
+	env.SetBool("display.mod.realname", false)
+	env.SetInt("display.max-cmd-cnt", 7)
 	return true
 }
 
@@ -16,6 +24,7 @@ func SetVerbMode(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.layer", true)
 	env.SetBool("display.env.default", true)
+	env.SetBool("display.env.display", true)
 	env.SetBool("display.env.sys", true)
 	env.SetBool("display.mod.quiet", true)
 	env.SetBool("display.mod.realname", true)
@@ -60,16 +69,24 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	if !env.SetBool("display.env.default", true) {
 		volume -= 1
 	}
+	env.SetBool("display.env.display", true)
 	env.SetInt("display.max-cmd-cnt", 11)
 	if volume <= 0 {
 		return true
 	}
 
-	if !env.SetBool("display.env.sys", true) ||
-		!env.SetBool("display.mod.quiet", true) {
+	if !env.SetBool("display.mod.quiet", true) {
 		volume -= 1
 	}
 	env.SetInt("display.max-cmd-cnt", 12)
+	if volume <= 0 {
+		return true
+	}
+
+	if !env.SetBool("display.env.sys", true) {
+		volume -= 1
+	}
+	env.SetInt("display.max-cmd-cnt", 13)
 	if volume <= 0 {
 		return true
 	}
@@ -86,10 +103,17 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 		return true
 	}
 
-	env.SetInt("display.max-cmd-cnt", 12)
+	env.SetInt("display.max-cmd-cnt", 13)
 
-	if env.SetBool("display.env.sys", false) ||
-		env.SetBool("display.mod.quiet", false) {
+	if env.SetBool("display.env.sys", false) {
+		volume -= 1
+	}
+	env.SetInt("display.max-cmd-cnt", 12)
+	if volume <= 0 {
+		return true
+	}
+
+	if env.SetBool("display.mod.quiet", false) {
 		volume -= 1
 	}
 	env.SetInt("display.max-cmd-cnt", 11)
@@ -100,6 +124,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	if env.SetBool("display.env.default", false) {
 		volume -= 1
 	}
+	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 10)
 	if volume <= 0 {
 		return true
@@ -129,5 +154,11 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env.SetBool("display.one-cmd", false)
 	env.SetBool("display.mod.realname", false)
 
+	return true
+}
+
+func SetToDefaultVerb(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerSession)
+	setToDefaultVerb(env)
 	return true
 }

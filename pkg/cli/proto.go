@@ -1,5 +1,6 @@
 package cli
 
+/*
 import (
 	"fmt"
 	"os"
@@ -25,3 +26,4 @@ func GenEnvFromStdin(protoEnvMark string, protoSep string) *core.Env {
 	}
 	return env
 }
+*/

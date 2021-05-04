@@ -8,11 +8,12 @@ import (
 type EnvAbbrs struct {
 	rootDisplayName string
 
-	name           string
-	parent         *EnvAbbrs
-	subs           map[string]*EnvAbbrs
-	subAbbrs       map[string][]string
-	subAbbrsRevIdx map[string]string
+	name            string
+	parent          *EnvAbbrs
+	subs            map[string]*EnvAbbrs
+	subOrderedNames []string
+	subAbbrs        map[string][]string
+	subAbbrsRevIdx  map[string]string
 }
 
 func NewEnvAbbrs(rootDisplayName string) *EnvAbbrs {
@@ -21,6 +22,7 @@ func NewEnvAbbrs(rootDisplayName string) *EnvAbbrs {
 		"",
 		nil,
 		map[string]*EnvAbbrs{},
+		nil,
 		map[string][]string{},
 		map[string]string{},
 	}
@@ -35,6 +37,7 @@ func (self *EnvAbbrs) AddSub(name string, abbrs ...string) *EnvAbbrs {
 	sub.name = name
 	sub.parent = self
 	self.subs[name] = sub
+	self.subOrderedNames = append(self.subOrderedNames, name)
 	self.AddSubAbbrs(name, abbrs...)
 	self.subAbbrsRevIdx[name] = name
 	return sub
@@ -45,16 +48,28 @@ func (self *EnvAbbrs) AddSubAbbrs(name string, abbrs ...string) {
 		if len(abbr) == 0 {
 			continue
 		}
-		if old, ok := self.subAbbrsRevIdx[abbr]; ok && old != name {
+		old, ok := self.subAbbrsRevIdx[abbr]
+		if old == name {
+			continue
+		}
+		if ok {
 			panic(fmt.Errorf(
 				"[EnvAbbrs.AddSubAbbrs] %s: command abbr name '%s' conflicted, "+
 					"old for '%s', new for '%s'",
 				self.DisplayPath(), abbr, old, name))
 		}
 		self.subAbbrsRevIdx[abbr] = name
+		olds, _ := self.subAbbrs[name]
+		self.subAbbrs[name] = append(olds, abbr)
 	}
-	olds, _ := self.subAbbrs[name]
-	self.subAbbrs[name] = append(olds, abbrs...)
+}
+
+func (self *EnvAbbrs) AddAbbrs(abbrs ...string) *EnvAbbrs {
+	if self.parent == nil {
+		panic(fmt.Errorf("[EnvAbbrs.AddAbbr] can't add abbrs %v to root", abbrs))
+	}
+	self.parent.AddSubAbbrs(self.name, abbrs...)
+	return self
 }
 
 func (self *EnvAbbrs) TryMatch(path string, sep string) (matchedPath []string, matched bool) {
@@ -77,6 +92,7 @@ func (self *EnvAbbrs) TryMatch(path string, sep string) (matchedPath []string, m
 			matched = false
 			return
 		}
+		matchedPath = append(matchedPath, subName)
 		sub, _ := self.subs[subName]
 		var subMatchedPath []string
 		subMatchedPath, matched = sub.TryMatch(path, sep)
@@ -87,6 +103,14 @@ func (self *EnvAbbrs) TryMatch(path string, sep string) (matchedPath []string, m
 	}
 	matched = true
 	return
+}
+
+func (self *EnvAbbrs) GetOrAddSub(name string) *EnvAbbrs {
+	sub, _ := self.subs[name]
+	if sub == nil {
+		sub = self.AddSub(name)
+	}
+	return sub
 }
 
 func (self *EnvAbbrs) GetSub(name string) *EnvAbbrs {
@@ -108,6 +132,22 @@ func (self *EnvAbbrs) DisplayPath() string {
 	} else {
 		return strings.Join(path, ".")
 	}
+}
+
+func (self *EnvAbbrs) SubNames() []string {
+	return self.subOrderedNames
+}
+
+func (self *EnvAbbrs) SubAbbrs(name string) (abbrs []string) {
+	abbrs, _ = self.subAbbrs[name]
+	return
+}
+
+func (self *EnvAbbrs) Abbrs() (abbrs []string) {
+	if self.parent == nil {
+		return
+	}
+	return self.parent.SubAbbrs(self.name)
 }
 
 func (self *EnvAbbrs) Name() string {

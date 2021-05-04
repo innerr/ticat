@@ -10,25 +10,17 @@ import (
 
 func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
-
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "kitty")
-
 	env.SetInt("sys.stack-depth", 0)
+	setToDefaultVerb(env)
+}
 
-	env.SetBool("display.executor", true)
-	env.SetBool("display.bootstrap", false)
-	env.SetBool("display.one-cmd", false)
-	env.SetBool("display.utf8", true)
-	env.SetBool("display.env", true)
-	env.SetBool("display.env.sys", false)
-	env.SetBool("display.env.layer", false)
-	env.SetBool("display.env.default", false)
-	env.SetBool("display.mod.quiet", false)
-	env.SetBool("display.mod.realname", true)
-
-	env.SetInt("display.width", 80)
-	env.SetInt("display.max-cmd-cnt", 7)
+func LoadEnvAbbrs(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	display := cc.EnvAbbrs.GetOrAddSub("display").AddAbbrs("dis", "disp")
+	display.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
+	display.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
+	return true
 }
 
 func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
@@ -44,6 +36,23 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	data := path + ".data"
 	env.Set("sys.paths.data", data)
 	env.Set("sys.paths.mods", filepath.Join(data, "mods"))
+	return true
+}
+
+// Interacting methods between ticat and mods:
+//   1. mod.stdin(as mod's input args) -> mod.stderr(as mods's return)
+//   2. (recursively) calling ticat inside a mod -> ticat.stdin(pass the env from mod to ticat)
+//
+// The stdin-env could be very useful for customized mods-loader or env-loader
+//   1. those loaders will be loaded from 'bootstrap' string above
+//   2. put a string val with key 'bootstrap' to env could launch it as an extra bootstrap
+func LoadStdinEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+	protoEnvMark := env.Get("strs.proto-env-mark").Raw
+	protoSep := env.Get("strs.proto-sep").Raw
+	stdinEnv := genEnvFromStdin(protoEnvMark, protoSep)
+	if stdinEnv != nil {
+		env.GetLayer(core.EnvLayerSession).Merge(stdinEnv)
+	}
 	return true
 }
 
@@ -113,4 +122,40 @@ func getEnvLocalFilePath(env *core.Env) string {
 		panic(fmt.Errorf("[getEnvLocalFilePath] can't find local data path"))
 	}
 	return filepath.Join(path, file)
+}
+
+func setToDefaultVerb(env *core.Env) {
+	env.SetBool("display.executor", true)
+	env.SetBool("display.bootstrap", false)
+	env.SetBool("display.one-cmd", false)
+	env.Set("display.style", "utf8")
+	env.SetBool("display.utf8", true)
+	env.SetBool("display.env", true)
+	env.SetBool("display.env.sys", false)
+	env.SetBool("display.env.layer", false)
+	env.SetBool("display.env.default", false)
+	env.SetBool("display.mod.quiet", false)
+	env.SetBool("display.mod.realname", true)
+
+	env.SetInt("display.width", 80)
+	env.SetInt("display.max-cmd-cnt", 7)
+}
+
+func genEnvFromStdin(protoEnvMark string, protoSep string) *core.Env {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		panic(fmt.Errorf("[GenEnvFromStdin] get stdin stat failed %v", err))
+	}
+	if (stat.Mode() & os.ModeCharDevice) != 0 {
+		return nil
+	}
+	env := core.NewEnv()
+	rest, err := core.EnvInput(env, os.Stdin, protoEnvMark, protoSep)
+	if err != nil {
+		panic(fmt.Errorf("[GenEnvFromStdin] parse stdin failed %v", err))
+	}
+	if len(rest) != 0 {
+		panic(fmt.Errorf("[GenEnvFromStdin] lines cant' be parsed '%v'", rest))
+	}
+	return env
 }

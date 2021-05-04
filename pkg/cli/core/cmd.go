@@ -19,26 +19,31 @@ type PowerCmd func(argv ArgVals, cc *Cli, env *Env, cmds []ParsedCmd,
 	currCmdIdx int) (newCmds []ParsedCmd, newCurrCmdIdx int, succeeded bool)
 
 type Cmd struct {
-	owner  *CmdTree
-	help   string
-	ty     CmdType
-	quiet  bool
-	args   Args
-	normal NormalCmd
-	power  PowerCmd
-	bash   string
+	owner    *CmdTree
+	help     string
+	ty       CmdType
+	quiet    bool
+	priority bool
+	args     Args
+	normal   NormalCmd
+	power    PowerCmd
+	bash     string
+	envOps   EnvOps
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
-	return &Cmd{owner, help, CmdTypeNormal, false, newArgs(), cmd, nil, ""}
+	return &Cmd{owner, help, CmdTypeNormal, false, false,
+		newArgs(), cmd, nil, "", newEnvOps()}
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
-	return &Cmd{owner, help, CmdTypePower, false, newArgs(), nil, cmd, ""}
+	return &Cmd{owner, help, CmdTypePower, false, false,
+		newArgs(), nil, cmd, "", newEnvOps()}
 }
 
 func NewBashCmd(owner *CmdTree, help string, cmd string) *Cmd {
-	return &Cmd{owner, help, CmdTypeBash, false, newArgs(), nil, nil, cmd}
+	return &Cmd{owner, help, CmdTypeBash, false, false,
+		newArgs(), nil, nil, cmd, newEnvOps()}
 }
 
 func (self *Cmd) Execute(
@@ -65,8 +70,18 @@ func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
 	return self
 }
 
+func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
+	self.envOps.AddOp(name, op)
+	return self
+}
+
 func (self *Cmd) SetQuiet() *Cmd {
 	self.quiet = true
+	return self
+}
+
+func (self *Cmd) SetPriority() *Cmd {
+	self.priority = true
 	return self
 }
 
@@ -82,6 +97,10 @@ func (self *Cmd) IsQuiet() bool {
 	return self.quiet
 }
 
+func (self *Cmd) IsPriority() bool {
+	return self.priority
+}
+
 func (self *Cmd) Type() CmdType {
 	return self.ty
 }
@@ -92,6 +111,10 @@ func (self *Cmd) BashCmdLine() string {
 
 func (self *Cmd) Args() Args {
 	return self.args
+}
+
+func (self *Cmd) EnvOps() EnvOps {
+	return self.envOps
 }
 
 func (self *Cmd) executeBash(argv ArgVals, cc *Cli, env *Env) bool {
