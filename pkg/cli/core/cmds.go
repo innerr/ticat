@@ -149,6 +149,40 @@ func (self *CmdTree) Depth() int {
 	}
 }
 
+func (self *CmdTree) MatchFind(findStrs ...string) bool {
+	for _, str := range findStrs {
+		if !self.matchFind(str) {
+			return false
+		}
+	}
+	return true
+}
+
+func (self *CmdTree) matchFind(findStr string) bool {
+	if len(findStr) == 0 {
+		return true
+	}
+	if strings.Index(self.name, findStr) >= 0 {
+		return true
+	}
+	if self.cmd != nil {
+		if strings.Index(self.cmd.Help(), findStr) >= 0 {
+			return true
+		}
+		if strings.Index(self.cmd.BashCmdLine(), findStr) >= 0 {
+			return true
+		}
+	}
+	if self.parent != nil {
+		for _, abbr := range self.parent.SubAbbrs(self.name) {
+			if strings.Index(abbr, findStr) >= 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (self *CmdTree) DisplayPath() string {
 	path := self.Path()
 	if len(path) == 0 {

@@ -14,12 +14,24 @@ func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, in
 	}
 	cc.Screen.Print("[cmds:" + strconv.Itoa(len(flow)) + "]\n")
 
+	abbrsSep := cc.Cmds.Strs.AbbrsSep
+
 	for i, cmd := range flow {
 		indents := strings.Repeat(" ", indentSize)
 		indent2 := strings.Repeat(" ", indentSize*2)
 		line := indents + "[cmd:" + strconv.Itoa(i) + "] " + getCmdPath(cmd, sep, true)
 		cc.Screen.Print(line + "\n")
 		cc.Screen.Print(indent2 + "'" + cmd.Help() + "'\n")
+
+		cic := cmd.LastCmd()
+		if cic != nil {
+			envOps := cic.EnvOps()
+			envOpKeys := envOps.EnvKeys()
+			for _, k := range envOpKeys {
+				cc.Screen.Print(indent2 + "- env-op: " + k + " = " +
+					dumpEnvOps(envOps.OpSet(k), abbrsSep) + "\n")
+			}
+		}
 
 		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 		args := cmd.Args()
@@ -37,23 +49,27 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 	}
 }
 
-func DumpCmds(cc *core.Cli, indentSize int) {
-	dumpCmd(cc.Screen, cc.Cmds, indentSize, true)
+func DumpCmds(cc *core.Cli, indentSize int, flatten bool, findStr string) {
+	dumpCmd(cc.Screen, cc.Cmds, indentSize, true, flatten, findStr)
 }
 
 func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
 	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
 }
 
-func DumpEnvFlattenVals(screen core.Screen, env *core.Env) {
-	flatten := env.Flatten(true, nil)
+func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStr string) {
+	flatten := env.Flatten(true, nil, true)
 	var keys []string
 	for k, _ := range flatten {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		screen.Print(k + " = " + mayQuoteStr(flatten[k]) + "\n")
+		v := flatten[k]
+		if len(findStr) == 0 || strings.Index(k, findStr) >= 0 ||
+			strings.Index(v, findStr) >= 0 {
+			screen.Print(k + " = " + mayQuoteStr(v) + "\n")
+		}
 	}
 }
 
@@ -103,53 +119,75 @@ func dumpEnvAbbrs(
 	}
 }
 
-func dumpCmd(screen core.Screen, cmd *core.CmdTree, indentSize int, recursive bool) {
+func dumpCmd(
+	screen core.Screen,
+	cmd *core.CmdTree,
+	indentSize int,
+	recursive bool,
+	flatten bool,
+	findStr string) {
+
 	if cmd == nil {
 		return
 	}
-	indent := cmd.Depth()
-	indentPrint := func(msg string) {
-		if indent >= 0 {
-			screen.Print(strings.Repeat(" ", indentSize*indent) + msg + "\n")
+
+	if cmd.Parent() == nil || cmd.MatchFind(findStr) {
+		indent := cmd.Depth()
+		indentPrint := func(msg string) {
+			if flatten {
+				if msg[0] == '[' {
+					screen.Print(msg + "\n")
+				} else {
+					screen.Print(strings.Repeat(" ", indentSize) + msg + "\n")
+				}
+				return
+			}
+			if indent >= 0 {
+				screen.Print(strings.Repeat(" ", indentSize*indent) + msg + "\n")
+			}
+		}
+		abbrsSep := cmd.Strs.AbbrsSep
+		cic := cmd.Cmd()
+		name := strings.Join(append([]string{cmd.DisplayName()}, cmd.Abbrs()...), abbrsSep)
+
+		if !flatten || cic != nil {
+			indentPrint("[" + name + "]")
+			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
+				indentPrint("- full-cmd: " + cmd.DisplayPath())
+			}
+		}
+
+		if cic != nil {
+			indentPrint("- help: " + cic.Help())
+			line := "- cmd-type: " + string(cic.Type())
+			if cic.IsQuiet() {
+				line += " (quiet)"
+			}
+			if cic.Type() != core.CmdTypeNormal || cic.IsQuiet() {
+				indentPrint(line)
+			}
+			if cic.Type() == core.CmdTypeBash {
+				indentPrint("- executable: " + cic.BashCmdLine())
+			}
+			envOps := cic.EnvOps()
+			envOpKeys := envOps.EnvKeys()
+			for _, k := range envOpKeys {
+				indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.OpSet(k), abbrsSep))
+			}
+			args := cic.Args()
+			for i, name := range args.Names() {
+				val := args.DefVal(name)
+				names := append([]string{name}, args.Abbrs(name)...)
+				nameStr := strings.Join(names, abbrsSep)
+				indentPrint("- arg#" + strconv.Itoa(i) + " " + nameStr + " = " + mayQuoteStr(val))
+			}
 		}
 	}
-	abbrsSep := cmd.Strs.AbbrsSep
 
-	name := strings.Join(append([]string{cmd.DisplayName()}, cmd.Abbrs()...), abbrsSep)
-	indentPrint("[" + name + "]")
-
-	cic := cmd.Cmd()
-	if cic != nil {
-		if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
-			indentPrint("- full-path: " + cmd.DisplayPath())
+	if recursive {
+		for _, name := range cmd.SubNames() {
+			dumpCmd(screen, cmd.GetSub(name), indentSize, recursive, flatten, findStr)
 		}
-		indentPrint("- help: " + cic.Help())
-		line := "- cmd-type: " + string(cic.Type())
-		if cic.IsQuiet() {
-			line += " (quiet)"
-		}
-		if cic.Type() != core.CmdTypeNormal || cic.IsQuiet() {
-			indentPrint(line)
-		}
-		if cic.Type() == core.CmdTypeBash {
-			indentPrint("- executable: " + cic.BashCmdLine())
-		}
-		envOps := cic.EnvOps()
-		envOpKeys := envOps.EnvKeys()
-		for _, k := range envOpKeys {
-			indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.OpSet(k), abbrsSep))
-		}
-		args := cic.Args()
-		for i, name := range args.Names() {
-			val := args.DefVal(name)
-			names := append([]string{name}, args.Abbrs(name)...)
-			nameStr := strings.Join(names, abbrsSep)
-			indentPrint("- arg#" + strconv.Itoa(i) + " " + nameStr + " = " + mayQuoteStr(val))
-		}
-	}
-
-	for _, name := range cmd.SubNames() {
-		dumpCmd(screen, cmd.GetSub(name), indentSize, recursive)
 	}
 }
 
@@ -173,7 +211,7 @@ func dumpEnv(
 	}
 
 	if !printEnvLayer {
-		flatten := env.Flatten(printDefEnv, filterPrefixs)
+		flatten := env.Flatten(printDefEnv, filterPrefixs, true)
 		var keys []string
 		for k, _ := range flatten {
 			keys = append(keys, k)
@@ -267,6 +305,10 @@ func getCmdPath(cmd core.ParsedCmd, sep string, printRealname bool) string {
 func mayQuoteStr(origin string) string {
 	trimed := strings.TrimSpace(origin)
 	if len(trimed) == 0 || len(trimed) != len(origin) {
+		return "'" + origin + "'"
+	}
+	fields := strings.Fields(origin)
+	if len(fields) != 1 {
 		return "'" + origin + "'"
 	}
 	return origin

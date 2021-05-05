@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/pingcap/ticat/pkg/builtin"
@@ -67,7 +68,14 @@ func main() {
 
 	bootstrap := "B.E.L.A : B.E.L.R : B.E.L.L : B.E.L.S : B.M.L.L : B.M.L.E"
 
-	executor := cli.Executor{}
+	// TODO: handle error by types
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+			os.Exit(-1)
+		}
+	}()
+	executor := cli.NewExecutor()
 	succeeded := executor.Execute(cc, bootstrap, os.Args[1:]...)
 	if !succeeded {
 		os.Exit(1)

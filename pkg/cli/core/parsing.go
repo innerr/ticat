@@ -77,6 +77,15 @@ func (self ParsedCmd) Path() (path []string) {
 	return
 }
 
+func (self ParsedCmd) MatchedPath() (path []string) {
+	for _, it := range self {
+		if it.Cmd.Cmd != nil {
+			path = append(path, it.Cmd.Name)
+		}
+	}
+	return
+}
+
 func (self ParsedCmd) GenEnv(env *Env, valDelMark string, valDelAllMark string) *Env {
 	env = env.NewLayer(EnvLayerCmd)
 	for _, seg := range self {

@@ -170,18 +170,27 @@ func (self Env) LayerTypeName() string {
 	return EnvLayerName(self.ty)
 }
 
-func (self Env) Flatten(includeDefault bool, filterPrefixs []string) map[string]string {
+func (self Env) Flatten(
+	includeDefault bool,
+	filterPrefixs []string,
+	filterArgs bool) map[string]string {
+
 	res := map[string]string{}
-	self.flatten(includeDefault, filterPrefixs, res)
+	self.flatten(includeDefault, filterPrefixs, res, filterArgs)
 	return res
 }
 
-func (self *Env) flatten(includeDefault bool, filterPrefixs []string, res map[string]string) {
+func (self *Env) flatten(
+	includeDefault bool,
+	filterPrefixs []string,
+	res map[string]string,
+	filterArgs bool) {
+
 	if self.ty == EnvLayerDefault && !includeDefault {
 		return
 	}
 	if self.parent != nil {
-		self.parent.flatten(includeDefault, filterPrefixs, res)
+		self.parent.flatten(includeDefault, filterPrefixs, res, filterArgs)
 	}
 	for k, v := range self.pairs {
 		filtered := false
@@ -192,7 +201,9 @@ func (self *Env) flatten(includeDefault bool, filterPrefixs []string, res map[st
 			}
 		}
 		if !filtered {
-			res[k] = v.Raw
+			if !filterArgs || !v.IsArg {
+				res[k] = v.Raw
+			}
 		}
 	}
 }

@@ -21,8 +21,12 @@ func DbgDumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func DbgDumpCmds(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, 4)
+func DbgDumpCmdTree(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	return true
+}
+
+func DbgDumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, 4, true, argv.GetRaw("find-string"))
 	return true
 }
 
@@ -31,7 +35,7 @@ func DbgDumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	return true
 }
 
-func DbgDumpEnvFlattenVals(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	display.DumpEnvFlattenVals(cc.Screen, env)
+func DbgDumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	display.DumpEnvFlattenVals(cc.Screen, env, argv.GetRaw("find-string"))
 	return true
 }

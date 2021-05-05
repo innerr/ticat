@@ -9,7 +9,20 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
+type ExecFunc func(cc *core.Cli, isBootstrap bool, flow *core.ParsedCmds) bool
+
 type Executor struct {
+	funcs []ExecFunc
+}
+
+func NewExecutor() *Executor {
+	return &Executor{
+		[]ExecFunc{
+			// TODO: implement and add functions: flowFlatten, mockModInject, stepByStepInject
+			filterEmptyCmdsAndReorderByPriority,
+			checkEnvOps,
+		},
+	}
 }
 
 func (self *Executor) Execute(cc *core.Cli, bootstrap string, input ...string) bool {
@@ -35,8 +48,11 @@ func (self *Executor) execute(cc *core.Cli, isBootstrap bool, input ...string) b
 	}
 	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
-	filterEmptyCmdsAndReorderByPriority(flow)
-	checkEnvOps(flow, cc)
+	for _, function := range self.funcs {
+		if !function(cc, isBootstrap, flow) {
+			return false
+		}
+	}
 	return self.executeFlow(cc, isBootstrap, flow)
 }
 
@@ -96,7 +112,11 @@ func (self *Executor) executeCmd(
 
 // 1. remove the cmds only have cmd-level env definication but have no executable
 // 2. move priority cmds to the head
-func filterEmptyCmdsAndReorderByPriority(flow *core.ParsedCmds) {
+func filterEmptyCmdsAndReorderByPriority(
+	cc *core.Cli,
+	isBootstrap bool,
+	flow *core.ParsedCmds) bool {
+
 	var unfiltered []core.ParsedCmd
 	var priorities []core.ParsedCmd
 	for _, cmd := range flow.Cmds {
@@ -110,20 +130,28 @@ func filterEmptyCmdsAndReorderByPriority(flow *core.ParsedCmds) {
 		}
 	}
 	flow.Cmds = append(priorities, unfiltered...)
+	return true
 }
 
-func checkEnvOps(flow *core.ParsedCmds, cc *core.Cli) bool {
+func checkEnvOps(cc *core.Cli, isBootstrap bool, flow *core.ParsedCmds) bool {
 	checker := core.EnvOpsChecker{}
+	sep := cc.Cmds.Strs.PathSep
 	for _, cmd := range flow.Cmds {
 		last := cmd.LastCmd()
 		if last == nil {
 			continue
 		}
 		result := checker.OnCallCmd(cmd, cc.Cmds.Strs.PathSep, last, true)
-		// TODO: tell user more details
+		// TODO: tell user more details, auto-find the provider
 		for _, res := range result {
-			cc.Screen.Print(fmt.Sprintf("[ERR] cmd '%s' reads empty env '%s'\n",
-				strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep), res.Key))
+			realPath := strings.Join(cmd.Path(), sep)
+			matchedPath := strings.Join(cmd.MatchedPath(), sep)
+			var shortFor string
+			if realPath != matchedPath {
+				shortFor = " (short for '" + realPath + "')"
+			}
+			cc.Screen.Print(fmt.Sprintf("[ERR] cmd '%s'%s reads '%s' but no one provide it\n",
+				matchedPath, shortFor, res.Key))
 		}
 		if len(result) != 0 {
 			return false

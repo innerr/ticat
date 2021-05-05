@@ -89,8 +89,8 @@ func (self EnvOpsChecker) OnCallCmd(
 
 		var res EnvOpsCheckResult
 		res.Key = key
-		if (before.val & EnvOpTypeWrite) == 0 &&
-			(before.val & EnvOpTypeMayWrite) == 0 {
+		if (before.val&EnvOpTypeWrite) == 0 &&
+			(before.val&EnvOpTypeMayWrite) == 0 {
 			if (before.val & EnvOpTypeRead) != 0 {
 				res.ReadNotExist = true
 			} else if (before.val & EnvOpTypeMayRead) != 0 {

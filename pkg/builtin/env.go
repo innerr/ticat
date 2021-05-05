@@ -10,6 +10,7 @@ import (
 
 func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
+	env.Set("bootstrap", "")
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "kitty")
 	env.SetInt("sys.stack-depth", 0)
