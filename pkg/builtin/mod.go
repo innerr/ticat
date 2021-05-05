@@ -160,6 +160,15 @@ func regBashMod(
 	}
 }
 
+func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerDefault)
+	env.Set("sys.ext.exec.bash", "bash")
+	env.Set("sys.ext.exec.sh", "sh")
+	env.Set("sys.ext.exec.py", "python")
+	env.Set("sys.ext.exec.go", "go run")
+	return true
+}
+
 func dirExists(path string) bool {
 	info, err := os.Stat(path)
 	return !os.IsNotExist(err) && info.IsDir()

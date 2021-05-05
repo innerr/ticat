@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 type CmdType string
@@ -118,12 +120,29 @@ func (self *Cmd) EnvOps() EnvOps {
 }
 
 func (self *Cmd) executeBash(argv ArgVals, cc *Cli, env *Env) bool {
+	var bin string
 	var args []string
+	ext := filepath.Ext(self.bash)
+
+	// TODO: move this code block out?
+	runner := env.Get("sys.ext.exec" + ext).Raw
+	if len(runner) != 0 {
+		fields := strings.Fields(runner)
+		if len(fields) == 1 {
+			bin = runner
+		} else {
+			bin = fields[0]
+			args = append(args, fields[1:]...)
+		}
+	} else {
+		bin = "bash"
+	}
+
 	args = append(args, self.bash)
 	for _, k := range self.args.Names() {
 		args = append(args, argv[k].Raw)
 	}
-	cmd := exec.Command("bash", args...)
+	cmd := exec.Command(bin, args...)
 
 	errPrefix := "[ERR] execute bash failed: %v\n"
 

@@ -65,7 +65,7 @@ func main() {
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser)
 
-	bootstrap := "B.E.L.A : B.E.L.R : B.E.L.L : B.E.L.S : B.M.L.L"
+	bootstrap := "B.E.L.A : B.E.L.R : B.E.L.L : B.E.L.S : B.M.L.L : B.M.L.E"
 
 	executor := cli.Executor{}
 	succeeded := executor.Execute(cc, bootstrap, os.Args[1:]...)

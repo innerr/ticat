@@ -78,9 +78,13 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 		RegCmd(LoadEnvAbbrs,
 			"setup runtime env abbrs").SetQuiet()
 	mod := cmds.AddSub("mod", "mods", "m", "M")
-	mod.AddSub("load", "l", "L").AddSub("local", "l", "L").
+	modLoad := mod.AddSub("load", "l", "L")
+	modLoad.AddSub("local", "l", "L").
 		RegCmd(LoadLocalMods,
 			"load mods from local").SetQuiet()
+	modLoad.AddSub("ext-exec", "ext", "e", "E").
+		RegCmd(SetExtExec,
+			"load default setting of how to run a executable file by ext name")
 }
 
 func RegisterTrivialCmds(cmds *core.CmdTree) {
