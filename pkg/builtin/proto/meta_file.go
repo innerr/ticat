@@ -6,14 +6,14 @@ import (
 	"io/ioutil"
 )
 
-func NewSection() Section {
-	return Section {
+func NewSection() *Section {
+	return &Section {
 		map[string]string{},
 		[]string{},
 	}
 }
 
-type Sections map[string]Section
+type Sections map[string]*Section
 
 type Meta struct {
 	sections Sections
@@ -24,16 +24,17 @@ func (self *Meta) Get(key string) string {
 }
 
 func (self *Meta) SectionGet(sectionKey string, key string) (val string) {
-	section, ok := self.sections[sectionKey]
-	if ok {
-		return section.Get(key)
+	section := self.sections[sectionKey]
+	if section != nil {
+		val = section.Get(key)
 	}
+	println("NNN", sectionKey, "key:", key, "val:", val)
 	return
 }
 
-func (self *Meta) GetSection(name string) (section Section, ok bool) {
-	section, ok = self.sections[name]
-	return section, ok
+func (self *Meta) GetSection(name string) (section *Section) {
+	section = self.sections[name]
+	return
 }
 
 func NewMeta(path string, lineSep string, kvSep string) (*Meta, error) {

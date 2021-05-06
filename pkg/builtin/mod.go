@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/builtin/proto"
+	"github.com/zieckey/goini"
+
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
@@ -55,11 +56,13 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 func regDirMod(cc *core.Cli, metaPath string, dirPath string, cmdPath string, abbrsSep string) {
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
 
-	meta, err := proto.NewMeta(metaPath, "\n", "=")
+	meta := goini.New()
+	meta.SetTrimQuotes(true)
+	err := meta.ParseFile(metaPath)
 	if err != nil {
 		panic(fmt.Errorf("[LoadLocalMods.regDirMod] parse mod's meta file failed: %v", err))
 	}
-	abbrs := meta.SectionGet("", "abbrs")
+	abbrs, _ := meta.Get("abbrs")
 	if len(abbrs) != 0 {
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
@@ -75,23 +78,24 @@ func regBashMod(
 
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
 
-	meta, err := proto.NewMeta(metaPath, "\n", "=")
+	meta := goini.New()
+	meta.SetTrimQuotes(true)
+	err := meta.ParseFile(metaPath)
 	if err != nil {
 		panic(fmt.Errorf("[LoadLocalMods.regBashMod] parse mod's meta file failed: %v", err))
 	}
 
-	help := meta.SectionGet("", "help")
+	help, _ := meta.Get("help")
 	cmd := mod.RegBashCmd(filePath, strings.TrimSpace(help))
 
-	abbrs := meta.SectionGet("", "abbrs")
+	abbrs, _ := meta.Get("abbrs")
 	if len(abbrs) != 0 {
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
 
-	args, ok := meta.GetSection("args")
+	args, ok := meta.GetKvmap("args")
 	if ok {
-		for _, names := range args.Keys() {
-			defVal := args.Get(names)
+		for names, defVal := range args {
 			nameAndAbbrs := strings.Split(names, abbrsSep)
 			name := strings.TrimSpace(nameAndAbbrs[0])
 			var argAbbrs []string
@@ -102,10 +106,9 @@ func regBashMod(
 		}
 	}
 
-	envOps, ok := meta.GetSection("env")
+	envOps, ok := meta.GetKvmap("env")
 	if ok {
-		for _, names := range envOps.Keys() {
-			op := envOps.Get(names)
+		for names, op := range envOps {
 			segs := strings.Split(names, envPathSep)
 			envAbbrs := cc.EnvAbbrs
 			var path []string

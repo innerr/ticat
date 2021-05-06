@@ -29,7 +29,7 @@ func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, in
 			envOpKeys := envOps.EnvKeys()
 			for _, k := range envOpKeys {
 				cc.Screen.Print(indent2 + "- env-op: " + k + " = " +
-					dumpEnvOps(envOps.OpSet(k), abbrsSep) + "\n")
+					dumpEnvOps(envOps.Ops(k), abbrsSep) + "\n")
 			}
 		}
 
@@ -172,7 +172,7 @@ func dumpCmd(
 			envOps := cic.EnvOps()
 			envOpKeys := envOps.EnvKeys()
 			for _, k := range envOpKeys {
-				indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.OpSet(k), abbrsSep))
+				indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.Ops(k), abbrsSep))
 			}
 			args := cic.Args()
 			for i, name := range args.Names() {
