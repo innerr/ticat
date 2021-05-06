@@ -10,7 +10,8 @@ func DbgDumpFlow(
 	cc *core.Cli,
 	env *core.Env,
 	cmds []core.ParsedCmd,
-	currCmdIdx int) ([]core.ParsedCmd, int, bool) {
+	currCmdIdx int,
+	input []string) ([]core.ParsedCmd, int, bool) {
 
 	display.DumpFlow(cc, env, cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
 	return nil, 0, true

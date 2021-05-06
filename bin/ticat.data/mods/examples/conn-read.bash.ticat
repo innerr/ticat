@@ -2,4 +2,4 @@ help = "example: env-read dependency declaration"
 abbrs = "read|rd"
 
 [env]
-examples.my-key|m|M|key|k|Key = read
+examples.my-key|m|M|key|k|Key = read|write

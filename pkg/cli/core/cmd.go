@@ -18,7 +18,7 @@ const (
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env) (succeeded bool)
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, cmds []ParsedCmd,
-	currCmdIdx int) (newCmds []ParsedCmd, newCurrCmdIdx int, succeeded bool)
+	currCmdIdx int, input []string) (newCmds []ParsedCmd, newCurrCmdIdx int, succeeded bool)
 
 type Cmd struct {
 	owner    *CmdTree
@@ -53,11 +53,12 @@ func (self *Cmd) Execute(
 	cc *Cli,
 	env *Env,
 	cmds []ParsedCmd,
-	currCmdIdx int) ([]ParsedCmd, int, bool) {
+	currCmdIdx int,
+	input []string) ([]ParsedCmd, int, bool) {
 
 	switch self.ty {
 	case CmdTypePower:
-		return self.power(argv, cc, env, cmds, currCmdIdx)
+		return self.power(argv, cc, env, cmds, currCmdIdx, input)
 	case CmdTypeNormal:
 		return cmds, currCmdIdx, self.normal(argv, cc, env)
 	case CmdTypeBash:

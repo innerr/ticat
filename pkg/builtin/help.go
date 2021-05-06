@@ -10,7 +10,8 @@ func GlobalHelp(
 	cc *core.Cli,
 	env *core.Env,
 	cmds []core.ParsedCmd,
-	currCmdIdx int) ([]core.ParsedCmd, int, bool) {
+	currCmdIdx int,
+	input []string) ([]core.ParsedCmd, int, bool) {
 
 	if len(argv.GetRaw("find-string")) != 0 {
 		ok := FindAny(argv, cc, env)

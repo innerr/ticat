@@ -20,7 +20,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		AddArg("find-string", "", "str", "s", "S").
 		SetQuiet().
 		SetPriority()
-	cmds.AddSub("find", "search", "fnd", "f", "F").
+	cmds.AddSub("search", "find", "fnd", "s", "S").
 		RegCmd(FindAny,
 			"find anything with given string").
 		AddArg("find-string", "", "str", "s", "S")
@@ -40,15 +40,13 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 }
 
 func RegisterFlowCmds(cmds *core.CmdTree) {
-	/*
-		flow := cmds.AddSub("flow", "fl", "f", "F")
-		flow.AddSub("save", "persist", "s", "S").
-			RegPowerCmd(SaveFlow,
-				"save current cmds as a flow").
-				SetQuiet().
-				SetPriority().
-				AddArg("to-cmd-path", "path", "p", "P")
-	*/
+	flow := cmds.AddSub("flow", "fl", "f", "F")
+	flow.AddSub("save", "persist", "s", "S").
+		RegPowerCmd(SaveFlow,
+			"save current cmds as a flow").
+		SetQuiet().
+		SetPriority().
+		AddArg("to-cmd-path", "", "path", "p", "P")
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {

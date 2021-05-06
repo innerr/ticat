@@ -53,10 +53,15 @@ func (self *Executor) execute(cc *core.Cli, isBootstrap bool, input ...string) b
 			return false
 		}
 	}
-	return self.executeFlow(cc, isBootstrap, flow)
+	return self.executeFlow(cc, isBootstrap, flow, input)
 }
 
-func (self *Executor) executeFlow(cc *core.Cli, isBootstrap bool, flow *core.ParsedCmds) bool {
+func (self *Executor) executeFlow(
+	cc *core.Cli,
+	isBootstrap bool,
+	flow *core.ParsedCmds,
+	input []string) bool {
+
 	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
 	if flow.GlobalEnv != nil {
 		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
@@ -65,7 +70,7 @@ func (self *Executor) executeFlow(cc *core.Cli, isBootstrap bool, flow *core.Par
 		var newCmds []core.ParsedCmd
 		var succeeded bool
 		cmd := flow.Cmds[i]
-		newCmds, i, succeeded = self.executeCmd(cc, isBootstrap, cmd, env, flow.Cmds, i)
+		newCmds, i, succeeded = self.executeCmd(cc, isBootstrap, cmd, env, flow.Cmds, i, input)
 		if !succeeded {
 			return false
 		}
@@ -80,7 +85,8 @@ func (self *Executor) executeCmd(
 	cmd core.ParsedCmd,
 	env *core.Env,
 	flow []core.ParsedCmd,
-	currCmdIdx int) (newCmds []core.ParsedCmd, newCurrCmdIdx int, succeeded bool) {
+	currCmdIdx int,
+	input []string) (newCmds []core.ParsedCmd, newCurrCmdIdx int, succeeded bool) {
 
 	// The env modifications from input will be popped out after a command is executed
 	// (TODO) But if a mod modified the env, the modifications stay in session level
@@ -96,7 +102,7 @@ func (self *Executor) executeCmd(
 	start := time.Now()
 	if last != nil {
 		newCmds, newCurrCmdIdx, succeeded = last.Execute(argv,
-			cc, cmdEnv, flow, currCmdIdx)
+			cc, cmdEnv, flow, currCmdIdx, input)
 	} else {
 		newCmds, newCurrCmdIdx, succeeded = flow, currCmdIdx, false
 	}

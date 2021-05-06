@@ -46,12 +46,13 @@ func (self *CmdTree) Execute(
 	cc *Cli,
 	env *Env,
 	cmds []ParsedCmd,
-	currCmdIdx int) ([]ParsedCmd, int, bool) {
+	currCmdIdx int,
+	input []string) ([]ParsedCmd, int, bool) {
 
 	if self.cmd == nil {
 		return cmds, currCmdIdx, true
 	} else {
-		return self.cmd.Execute(argv, cc, env, cmds, currCmdIdx)
+		return self.cmd.Execute(argv, cc, env, cmds, currCmdIdx, input)
 	}
 }
 
