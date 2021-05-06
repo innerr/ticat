@@ -22,6 +22,7 @@ func DbgDumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func DbgDumpCmdTree(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, 4, false, "")
 	return true
 }
 

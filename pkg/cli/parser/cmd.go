@@ -123,7 +123,7 @@ func (self *CmdParser) parse(
 			continue
 		} else if i > 0 && allowSub {
 			head := strings.TrimRight(input[0][0:i], self.cmdSpaces)
-			rest := strings.TrimLeft(input[0][i+1:], self.cmdAlterSeps + self.cmdSpaces)
+			rest := strings.TrimLeft(input[0][i+1:], self.cmdAlterSeps+self.cmdSpaces)
 			input = input[1:]
 			var lead []string
 			if len(head) != 0 {
@@ -152,7 +152,7 @@ func (self *CmdParser) parse(
 				continue
 			} else {
 				self.err("parse", matchedCmdPath, "unknow input '"+
-					strings.Join(input, " ")+"', shoud be sub cmd")
+					strings.Join(input, " ")+"', shoud be sub cmd by gramma")
 			}
 		} else {
 			// Try to parse cmd args
@@ -161,9 +161,8 @@ func (self *CmdParser) parse(
 				parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
 			}
 			if len(input) != 0 {
-				brackets := strings.Join(self.envParser.Brackets(), "")
-				self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, " ")+
-					"', should be args, tips: try to enclose env definition or args with '"+brackets+"' to disambiguation")
+				self.err("parse", matchedCmdPath, "unknow input '"+
+					strings.Join(input, " ")+"', should be args by gramma")
 			}
 			break
 		}

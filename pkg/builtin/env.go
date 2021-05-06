@@ -27,10 +27,9 @@ func LoadEnvAbbrs(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env = env.GetLayer(core.EnvLayerSession)
 
-	path, err := filepath.Abs(os.Args[0])
+	path, err := os.Executable()
 	if err != nil {
-		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path '%s' fail: %v",
-			os.Args[0], err))
+		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path fail: %v", err))
 	}
 
 	env.Set("sys.paths.ticat", path)

@@ -7,8 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zieckey/goini"
-
+	"github.com/pingcap/ticat/pkg/builtin/proto"
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
@@ -51,19 +50,17 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-// TODO: mod's meta definition file (*.ticat) should have a formal formal manager
+// TODO: mod's meta definition file (*.ticat) should have a formal manager
 
 func regDirMod(cc *core.Cli, metaPath string, dirPath string, cmdPath string, abbrsSep string) {
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
 
-	ini := goini.New()
-	err := ini.ParseFile(metaPath)
+	meta, err := proto.NewMeta(metaPath, "\n", "=")
 	if err != nil {
 		panic(fmt.Errorf("[LoadLocalMods.regDirMod] parse mod's meta file failed: %v", err))
 	}
-	abbrs, ok := ini.SectionGet("", "abbrs")
-	if ok {
-		abbrs = strings.Trim(abbrs, "'\"")
+	abbrs := meta.SectionGet("", "abbrs")
+	if len(abbrs) != 0 {
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
 }
@@ -78,26 +75,23 @@ func regBashMod(
 
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
 
-	ini := goini.New()
-	err := ini.ParseFile(metaPath)
+	meta, err := proto.NewMeta(metaPath, "\n", "=")
 	if err != nil {
 		panic(fmt.Errorf("[LoadLocalMods.regBashMod] parse mod's meta file failed: %v", err))
 	}
 
-	help, _ := ini.SectionGet("", "help")
-	cmd := mod.RegBashCmd(filePath, strings.TrimSpace(strings.Trim(help, "'\"")))
+	help := meta.SectionGet("", "help")
+	cmd := mod.RegBashCmd(filePath, strings.TrimSpace(help))
 
-	abbrs, ok := ini.SectionGet("", "abbrs")
-	if ok {
-		abbrs = strings.Trim(abbrs, "'\"")
+	abbrs := meta.SectionGet("", "abbrs")
+	if len(abbrs) != 0 {
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
 
-	args, ok := ini.GetKvmap("args")
+	args, ok := meta.GetSection("args")
 	if ok {
-		for names, defVal := range args {
-			names = strings.Trim(names, "'\"")
-			defVal = strings.Trim(defVal, "'\"")
+		for _, names := range args.Keys() {
+			defVal := args.Get(names)
 			nameAndAbbrs := strings.Split(names, abbrsSep)
 			name := strings.TrimSpace(nameAndAbbrs[0])
 			var argAbbrs []string
@@ -108,10 +102,11 @@ func regBashMod(
 		}
 	}
 
-	envOps, ok := ini.GetKvmap("env")
+	envOps, ok := meta.GetSection("env")
 	if ok {
-		for names, op := range envOps {
-			segs := strings.Split(strings.Trim(names, "'\""), envPathSep)
+		for _, names := range envOps.Keys() {
+			op := envOps.Get(names)
+			segs := strings.Split(names, envPathSep)
 			envAbbrs := cc.EnvAbbrs
 			var path []string
 			for _, seg := range segs {
@@ -130,7 +125,7 @@ func regBashMod(
 			}
 
 			key := strings.Join(path, envPathSep)
-			opFields := strings.Split(strings.Trim(op, "'\""), abbrsSep)
+			opFields := strings.Split(op, abbrsSep)
 			for _, it := range opFields {
 				field := strings.ToLower(it)
 				may := strings.Index(field, "may") >= 0 || strings.Index(field, "opt") >= 0

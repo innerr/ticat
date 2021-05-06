@@ -80,8 +80,8 @@ func TestCmdParserParseSeg(t *testing.T) {
 
 	test([]string{"{a=V}", "X", "/", "21"}, []parsedSeg{env("a"), cmd("X"), sep, cmd("21")})
 	test([]string{"X", ".{a=V}.", "21"}, []parsedSeg{cmd("X"), sep, env("a"), sep, cmd("21")})
-	test([]string{"X.", "21.", "{a=V}"}, []parsedSeg{cmd("X"), sep, cmd("21"), sep,  env("a")})
-	test([]string{"X.", ".21.", "{a=V}"}, []parsedSeg{cmd("X"), sep, cmd("21"), sep,  env("a")})
+	test([]string{"X.", "21.", "{a=V}"}, []parsedSeg{cmd("X"), sep, cmd("21"), sep, env("a")})
+	test([]string{"X.", ".21.", "{a=V}"}, []parsedSeg{cmd("X"), sep, cmd("21"), sep, env("a")})
 
 	test([]string{"X.{a=V}21"}, []parsedSeg{cmd("X"), sep, env("a"), cmd("21")})
 	test([]string{"X{a=V}.21"}, []parsedSeg{cmd("X"), env("a"), sep, cmd("21")})
