@@ -72,6 +72,7 @@ func (self *EnvAbbrs) AddAbbrs(abbrs ...string) *EnvAbbrs {
 	return self
 }
 
+// TODO: move to parser dir
 func (self *EnvAbbrs) TryMatch(path string, sep string) (matchedPath []string, matched bool) {
 	for len(path) > 0 {
 		i := strings.Index(path, sep)
