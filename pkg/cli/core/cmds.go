@@ -10,6 +10,7 @@ import (
 type CmdTreeStrs struct {
 	RootDisplayName  string
 	PathSep          string
+	PathAlterSeps    string
 	AbbrsSep         string
 	EnvValDelMark    string
 	EnvValDelAllMark string
@@ -45,14 +46,13 @@ func (self *CmdTree) Execute(
 	argv ArgVals,
 	cc *Cli,
 	env *Env,
-	cmds []ParsedCmd,
-	currCmdIdx int,
-	input []string) ([]ParsedCmd, int, bool) {
+	flow *ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
 	if self.cmd == nil {
-		return cmds, currCmdIdx, true
+		return currCmdIdx, true
 	} else {
-		return self.cmd.Execute(argv, cc, env, cmds, currCmdIdx, input)
+		return self.cmd.Execute(argv, cc, env, flow, currCmdIdx)
 	}
 }
 

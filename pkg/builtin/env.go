@@ -36,6 +36,7 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	data := path + ".data"
 	env.Set("sys.paths.data", data)
 	env.Set("sys.paths.mods", filepath.Join(data, "mods"))
+	env.Set("sys.paths.flows", filepath.Join(data, "flows"))
 	return true
 }
 

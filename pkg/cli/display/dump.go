@@ -1,6 +1,7 @@
 package display
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,7 +20,7 @@ func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, in
 	for i, cmd := range flow {
 		indents := strings.Repeat(" ", indentSize)
 		indent2 := strings.Repeat(" ", indentSize*2)
-		line := indents + "[cmd:" + strconv.Itoa(i) + "] " + getCmdPath(cmd, sep, true)
+		line := indents + "[cmd:" + strconv.Itoa(i) + "] " + GetCmdPath(cmd, sep, true)
 		cc.Screen.Print(line + "\n")
 		cc.Screen.Print(indent2 + "'" + cmd.Help() + "'\n")
 
@@ -272,6 +273,27 @@ func dumpEnvOps(ops []uint, sep string) (str string) {
 	return strings.Join(strs, sep)
 }
 
+// TODO: unused
+func envDisplayKey(key string, val *core.ParsedEnvVal, sep string) string {
+	fields := strings.Split(key, sep)
+	if len(fields) != len(val.MatchedPath) {
+		if len(val.MatchedPath) == 1 {
+			return key
+		}
+		panic(fmt.Errorf("[envDisplayKey] internal error, key: '%v', matched: '%v'",
+			key, val.MatchedPath))
+	}
+	var strs []string
+	for i, field := range fields {
+		abbr := val.MatchedPath[i]
+		if abbr != field {
+			field = abbr + "(=" + field + ")"
+		}
+		strs = append(strs, field)
+	}
+	return strings.Join(strs, sep)
+}
+
 func dumpEnvOp(op uint) (str string) {
 	switch op {
 	case core.EnvOpTypeWrite:
@@ -287,7 +309,7 @@ func dumpEnvOp(op uint) (str string) {
 	return
 }
 
-func getCmdPath(cmd core.ParsedCmd, sep string, printRealname bool) string {
+func GetCmdPath(cmd core.ParsedCmd, sep string, printRealname bool) string {
 	var path []string
 	for _, seg := range cmd {
 		if seg.Cmd.Cmd != nil {

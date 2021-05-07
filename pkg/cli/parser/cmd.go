@@ -39,12 +39,12 @@ func (self *CmdParser) Parse(
 	parsed := core.ParsedCmd{}
 	segs := self.parse(cmds, envAbbrs, input)
 	curr := core.ParsedCmdSeg{nil, core.MatchedCmd{}}
-	var path string
+	var path []string
 	for _, seg := range segs {
 		if seg.Type == parsedSegTypeEnv {
 			env := seg.Val.(core.ParsedEnv)
 			if len(path) != 0 {
-				env.AddPrefix(path)
+				env.AddPrefix(path, self.cmdSep)
 			}
 			if curr.Env != nil {
 				curr.Env.Merge(env)
@@ -59,7 +59,7 @@ func (self *CmdParser) Parse(
 			} else {
 				curr.Cmd = matchedCmd
 			}
-			path += matchedCmd.Cmd.Name() + self.cmdSep
+			path = append(path, matchedCmd.Cmd.Name())
 		} else {
 			// ignore parsedSegTypeSep
 		}

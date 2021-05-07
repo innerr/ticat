@@ -21,15 +21,19 @@ func (self *Parser) Parse(
 	input ...string) *core.ParsedCmds {
 
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
-	flow := core.ParsedCmds{core.ParsedEnv{}, nil}
+	flow := core.ParsedCmds{core.ParsedEnv{}, nil, -1}
 	for _, seq := range seqs {
 		flow.Cmds = append(flow.Cmds, self.cmdParser.Parse(cmds, envAbbrs, seq))
 	}
-	if firstIsGlobal && len(flow.Cmds) != 0 && len(flow.Cmds[0]) != 0 {
-		firstCmd := flow.Cmds[0]
-		for _, seg := range firstCmd {
-			flow.GlobalEnv.Merge(seg.Env)
-			seg.Env = nil
+	if firstIsGlobal && len(flow.Cmds) != 0 {
+		flow.GlobalSeqIdx = 0
+		// TODO: remove GlobalEnv?
+		if len(flow.Cmds[0]) != 0 {
+			firstCmd := flow.Cmds[0]
+			for _, seg := range firstCmd {
+				flow.GlobalEnv.Merge(seg.Env)
+				seg.Env = nil
+			}
 		}
 	}
 	return &flow

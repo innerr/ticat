@@ -38,7 +38,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 		}
 	}
 
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", "|", "-", "--", "DUMB", "DUMB"})
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "DUMB", "DUMB"})
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
@@ -55,7 +55,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	env := func(names ...string) parsedSeg {
 		env := core.ParsedEnv{}
 		for _, name := range names {
-			env[name] = core.ParsedEnvVal{"V", false}
+			env[name] = core.NewParsedEnvVal(name, "V")
 		}
 		return parsedSeg{parsedSegTypeEnv, env}
 	}
@@ -123,7 +123,7 @@ func TestCmdParserParse(t *testing.T) {
 		}
 	}
 
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", "|", "-", "--", "DUMB", "DUMB"})
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "DUMB", "DUMB"})
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
@@ -137,7 +137,7 @@ func TestCmdParserParse(t *testing.T) {
 		if len(envKeyNames) != 0 {
 			env = core.ParsedEnv{}
 			for _, name := range envKeyNames {
-				env[name] = core.ParsedEnvVal{"V", false}
+				env[name] = core.NewParsedEnvVal(name, "V")
 			}
 		}
 		return core.ParsedCmdSeg{env, core.MatchedCmd{cmdName, nil}}

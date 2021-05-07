@@ -67,14 +67,12 @@ func (self *Executor) executeFlow(
 		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 	}
 	for i := 0; i < len(flow.Cmds); i++ {
-		var newCmds []core.ParsedCmd
-		var succeeded bool
 		cmd := flow.Cmds[i]
-		newCmds, i, succeeded = self.executeCmd(cc, isBootstrap, cmd, env, flow.Cmds, i, input)
+		var succeeded bool
+		i, succeeded = self.executeCmd(cc, isBootstrap, cmd, env, flow, i)
 		if !succeeded {
 			return false
 		}
-		flow.Cmds = newCmds
 	}
 	return true
 }
@@ -84,16 +82,16 @@ func (self *Executor) executeCmd(
 	isBootstrap bool,
 	cmd core.ParsedCmd,
 	env *core.Env,
-	flow []core.ParsedCmd,
-	currCmdIdx int,
-	input []string) (newCmds []core.ParsedCmd, newCurrCmdIdx int, succeeded bool) {
+	flow *core.ParsedCmds,
+	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
 
 	// The env modifications from input will be popped out after a command is executed
 	// (TODO) But if a mod modified the env, the modifications stay in session level
 	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
 
-	stackLines := display.PrintCmdStack(isBootstrap, cc.Screen, cmd, cmdEnv, flow, currCmdIdx, cc.Cmds.Strs)
+	stackLines := display.PrintCmdStack(isBootstrap, cc.Screen, cmd,
+		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 	if stackLines.Display {
 		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
 	}
@@ -101,16 +99,15 @@ func (self *Executor) executeCmd(
 	last := cmd[len(cmd)-1].Cmd.Cmd
 	start := time.Now()
 	if last != nil {
-		newCmds, newCurrCmdIdx, succeeded = last.Execute(argv,
-			cc, cmdEnv, flow, currCmdIdx, input)
+		newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
 	} else {
-		newCmds, newCurrCmdIdx, succeeded = flow, currCmdIdx, false
+		newCurrCmdIdx, succeeded = currCmdIdx, false
 	}
 	elapsed := time.Now().Sub(start)
 
 	if stackLines.Display {
 		resultLines := display.PrintCmdResult(isBootstrap, cc.Screen, cmd,
-			cmdEnv, succeeded, elapsed, flow, currCmdIdx, cc.Cmds.Strs)
+			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
 	}
 	return
@@ -124,18 +121,33 @@ func filterEmptyCmdsAndReorderByPriority(
 	flow *core.ParsedCmds) bool {
 
 	var unfiltered []core.ParsedCmd
+	unfilteredGlobalSeqIdx := -1
 	var priorities []core.ParsedCmd
-	for _, cmd := range flow.Cmds {
+	prioritiesGlobalSeqIdx := -1
+
+	for i, cmd := range flow.Cmds {
 		if cmd.TotallyEmpty() {
 			continue
 		}
 		if cmd.IsPriority() {
 			priorities = append(priorities, cmd)
+			if i == flow.GlobalSeqIdx {
+				prioritiesGlobalSeqIdx = len(priorities) - 1
+			}
 		} else {
 			unfiltered = append(unfiltered, cmd)
+			if i == flow.GlobalSeqIdx {
+				unfilteredGlobalSeqIdx = len(unfiltered) - 1
+			}
 		}
 	}
 	flow.Cmds = append(priorities, unfiltered...)
+	if prioritiesGlobalSeqIdx >= 0 {
+		flow.GlobalSeqIdx = prioritiesGlobalSeqIdx
+	}
+	if unfilteredGlobalSeqIdx >= 0 {
+		flow.GlobalSeqIdx = len(priorities) + unfilteredGlobalSeqIdx
+	}
 	return true
 }
 

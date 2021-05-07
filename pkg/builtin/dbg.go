@@ -9,12 +9,12 @@ func DbgDumpFlow(
 	_ core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
-	cmds []core.ParsedCmd,
-	currCmdIdx int,
-	input []string) ([]core.ParsedCmd, int, bool) {
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
-	display.DumpFlow(cc, env, cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
-	return nil, 0, true
+	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
+	flow.Cmds = nil
+	return 0, true
 }
 
 func DbgDumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {

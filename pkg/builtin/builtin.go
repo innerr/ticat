@@ -47,6 +47,10 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority().
 		AddArg("to-cmd-path", "", "path", "p", "P")
+	flow.AddSub("remove", "rm", "delete", "del").
+		RegCmd(RemoveFlow,
+			"remove a saved flow").
+		AddArg("cmd-path", "", "path", "p", "P")
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
@@ -131,9 +135,20 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 }
 
 func RegisterTrivialCmds(cmds *core.CmdTree) {
-	cmds.AddSub("dummy", "dmy", "dm").
-		RegCmd(Dummy,
-			"dummy cmd for testing")
+	dummy := cmds.AddSub("dummy", "dmy", "dm")
+	dummy.RegCmd(Dummy,
+		"dummy cmd for testing")
+	dummy.AddSub("quiet", "q", "Q").
+		RegCmd(QuietDummy,
+			"quiet dummy cmd for testing").
+		SetQuiet()
+	dummy.AddSub("power", "p", "P").
+		RegPowerCmd(PowerDummy,
+			"power dummy cmd for testing")
+	dummy.AddSub("priority", "prior", "prio", "pri").
+		RegPowerCmd(PriorityPowerDummy,
+			"power dummy cmd for testing").
+		SetPriority()
 	cmds.AddSub("sleep", "slp").
 		RegCmd(Sleep,
 			"sleep for specific duration").

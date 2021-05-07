@@ -34,6 +34,7 @@ func main() {
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
 		CmdRootDisplayName,
 		CmdPathSep,
+		CmdPathAlterSeps,
 		AbbrsSep,
 		EnvValDelMark,
 		EnvValDelAllMark,

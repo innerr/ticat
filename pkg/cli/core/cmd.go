@@ -17,8 +17,8 @@ const (
 )
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env) (succeeded bool)
-type PowerCmd func(argv ArgVals, cc *Cli, env *Env, cmds []ParsedCmd,
-	currCmdIdx int, input []string) (newCmds []ParsedCmd, newCurrCmdIdx int, succeeded bool)
+type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
+	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
 type Cmd struct {
 	owner    *CmdTree
@@ -52,17 +52,16 @@ func (self *Cmd) Execute(
 	argv ArgVals,
 	cc *Cli,
 	env *Env,
-	cmds []ParsedCmd,
-	currCmdIdx int,
-	input []string) ([]ParsedCmd, int, bool) {
+	flow *ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
 	switch self.ty {
 	case CmdTypePower:
-		return self.power(argv, cc, env, cmds, currCmdIdx, input)
+		return self.power(argv, cc, env, flow, currCmdIdx)
 	case CmdTypeNormal:
-		return cmds, currCmdIdx, self.normal(argv, cc, env)
+		return currCmdIdx, self.normal(argv, cc, env)
 	case CmdTypeBash:
-		return cmds, currCmdIdx, self.executeBash(argv, cc, env)
+		return currCmdIdx, self.executeBash(argv, cc, env)
 	default:
 		panic(fmt.Errorf("[Cmd.Execute] unknown cmd executable type: %v", self.ty))
 	}

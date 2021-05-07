@@ -90,14 +90,16 @@ func (self *EnvParser) TryParseRaw(
 				return tryTrimParsedEnv(env), genResult(i)
 			}
 			key := rest[i]
+			value := rest[i+2]
 			if envAbbrs != nil {
 				matchedEnvPath, matched := envAbbrs.TryMatch(key, self.envPathSep)
 				if matched {
 					key = strings.Join(matchedEnvPath, self.envPathSep)
 				}
+				env[key] = core.ParsedEnvVal{value, false, matchedEnvPath}
+			} else {
+				env[key] = core.NewParsedEnvVal(key, value)
 			}
-			value := rest[i+2]
-			env[key] = core.ParsedEnvVal{value, false}
 		}
 		return tryTrimParsedEnv(env), genResult(i)
 	}
@@ -116,14 +118,14 @@ func (self *EnvParser) TryParseRaw(
 					return tryTrimParsedEnv(env), genResult(i)
 				}
 				value := rest[i+1]
-				env[key] = core.ParsedEnvVal{value, true}
+				env[key] = core.NewParsedEnvArgv(rest[i], value)
 				curr += 1
 			}
 		} else {
 			for ; i < len(rest); i += 1 {
 				key := names[i]
 				value := rest[i]
-				env[key] = core.ParsedEnvVal{value, true}
+				env[key] = core.NewParsedEnvArgv(key, value)
 				curr += 1
 			}
 		}
@@ -134,7 +136,7 @@ func (self *EnvParser) TryParseRaw(
 				return tryTrimParsedEnv(env), genResult(i)
 			}
 			value := rest[i+2]
-			env[key] = core.ParsedEnvVal{value, true}
+			env[key] = core.NewParsedEnvArgv(rest[i], value)
 		}
 	}
 	return tryTrimParsedEnv(env), genResult(i)

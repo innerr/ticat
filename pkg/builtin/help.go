@@ -9,18 +9,17 @@ func GlobalHelp(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
-	cmds []core.ParsedCmd,
-	currCmdIdx int,
-	input []string) ([]core.ParsedCmd, int, bool) {
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
 	if len(argv.GetRaw("find-string")) != 0 {
 		ok := FindAny(argv, cc, env)
-		return nil, 0, ok
+		return 0, ok
 	}
 
-	if len(cmds) > 1 {
-		display.DumpFlow(cc, env, cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
-		return nil, 0, true
+	if len(flow.Cmds) > 1 {
+		display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
+		return 0, true
 	}
 
 	pln := func(text string) {
@@ -43,7 +42,8 @@ func GlobalHelp(
 	pln("    use abbrs in env KVs setting:  - ticat {disp.w=120} : cmd1 : cmd2")
 	pln("                                   - ticat {disp.w=120} : e.s")
 
-	return nil, 0, true
+	flow.Cmds = nil
+	return 0, true
 }
 
 func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
