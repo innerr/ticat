@@ -16,20 +16,24 @@ func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, in
 	cc.Screen.Print("[cmds:" + strconv.Itoa(len(flow)) + "]\n")
 
 	abbrsSep := cc.Cmds.Strs.AbbrsSep
+	indent1 := rpt(" ", indentSize)
+	indent2 := indent1 + indent1
+	indent3 := indent1 + indent2
 
 	for i, cmd := range flow {
-		indents := strings.Repeat(" ", indentSize)
-		indent2 := strings.Repeat(" ", indentSize*2)
-		line := indents + "[cmd:" + strconv.Itoa(i) + "] " + GetCmdPath(cmd, sep, true)
+		line := indent1 + "[cmd:" + strconv.Itoa(i) + "] " + GetCmdPath(cmd, sep, true)
 		cc.Screen.Print(line + "\n")
-		cc.Screen.Print(indent2 + "'" + cmd.Help() + "'\n")
+		cc.Screen.Print(indent2 + " '" + cmd.Help() + "'\n")
 
 		cic := cmd.LastCmd()
 		if cic != nil {
 			envOps := cic.EnvOps()
 			envOpKeys := envOps.EnvKeys()
+			if len(envOpKeys) != 0 {
+				cc.Screen.Print(indent2 + "- env-ops:\n")
+			}
 			for _, k := range envOpKeys {
-				cc.Screen.Print(indent2 + "- env-op: " + k + " = " +
+				cc.Screen.Print(indent3 + k + " = " +
 					dumpEnvOps(envOps.Ops(k), abbrsSep) + "\n")
 			}
 		}
@@ -37,8 +41,12 @@ func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, in
 		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 		args := cmd.Args()
 		argv := cmdEnv.GetArgv(cmd.Path(), sep, args)
-		for j, line := range DumpArgs(&args, argv, true) {
-			cc.Screen.Print(indent2 + "- arg:" + strconv.Itoa(j) + " " + line + "\n")
+		argLines := DumpArgs(&args, argv, true)
+		if len(argLines) != 0 {
+			cc.Screen.Print(indent2 + "- args:\n")
+		}
+		for _, line := range argLines {
+			cc.Screen.Print(indent3 + line + "\n")
 		}
 	}
 }
@@ -93,7 +101,7 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 			line += mayQuoteStr(v)
 			if printDef {
 				if defV != v {
-					line += " (def:" + mayQuoteStr(defV) + ")"
+					line += " (def=" + mayQuoteStr(defV) + ")"
 				} else {
 					line += " (=def)"
 				}
@@ -116,14 +124,14 @@ func dumpEnvAbbrs(
 	if abbrs == nil {
 		return
 	}
-	indentPrint := func(msg string) {
+	prt := func(msg string) {
 		if indent >= 0 {
-			screen.Print(strings.Repeat(" ", indentSize*indent) + msg + "\n")
+			screen.Print(rpt(" ", indentSize*indent) + msg + "\n")
 		}
 	}
 
 	name := strings.Join(append([]string{abbrs.DisplayName()}, abbrs.Abbrs()...), abbrsSep)
-	indentPrint("[" + name + "]")
+	prt("[" + name + "]")
 
 	for _, name := range abbrs.SubNames() {
 		dumpEnvAbbrs(screen, abbrs.GetSub(name), abbrsSep, indentSize, indent+1)
@@ -142,60 +150,72 @@ func dumpCmd(
 		return
 	}
 
-	if cmd.Parent() == nil || cmd.MatchFind(findStrs...) {
-		indent := cmd.Depth()
-		indentPrint := func(msg string) {
-			if flatten {
-				if msg[0] == '[' {
-					screen.Print(msg + "\n")
-				} else {
-					screen.Print(strings.Repeat(" ", indentSize) + msg + "\n")
-				}
-				return
+	abbrsSep := cmd.Strs.AbbrsSep
+	indent := cmd.Depth()
+	indent1 := rpt(" ", indentSize)
+
+	prt := func(msg string) {
+		if flatten {
+			if msg[0] == '[' {
+				screen.Print(msg + "\n")
+			} else {
+				screen.Print(indent1 + msg + "\n")
 			}
-			if indent >= 0 {
-				screen.Print(strings.Repeat(" ", indentSize*indent) + msg + "\n")
-			}
+			return
 		}
-		abbrsSep := cmd.Strs.AbbrsSep
+		if indent >= 0 {
+			screen.Print(rpt(" ", indentSize*indent) + msg + "\n")
+		}
+	}
+
+	if cmd.Parent() == nil || cmd.MatchFind(findStrs...) {
 		cic := cmd.Cmd()
 		name := strings.Join(append([]string{cmd.DisplayName()}, cmd.Abbrs()...), abbrsSep)
 
 		if !flatten || cic != nil {
-			indentPrint("[" + name + "]")
+			prt("[" + name + "]")
+			if cic != nil {
+				prt(" '" + cic.Help() + "'")
+			}
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
-				indentPrint("- full-cmd: " + cmd.DisplayPath())
+				prt("- full-cmd:")
+				prt(indent1 + cmd.DisplayPath())
+				prt("- full-abbrs:")
+				prt(indent1 + cmd.DisplayAbbrsPath())
 			}
 		}
 
 		if cic != nil {
-			indentPrint("- help: " + cic.Help())
-			line := "- cmd-type: " + string(cic.Type())
+			line := string(cic.Type())
 			if cic.IsQuiet() {
 				line += " (quiet)"
 			}
 			if cic.Type() != core.CmdTypeNormal || cic.IsQuiet() {
-				indentPrint(line)
+				prt("- cmd-type:")
+				prt(indent1 + line)
 			}
 			if cic.Type() == core.CmdTypeBash {
-				indentPrint("- executable: " + cic.BashCmdLine())
+				prt("- executable:")
+				prt(indent1 + cic.BashCmdLine())
 			}
 			envOps := cic.EnvOps()
 			envOpKeys := envOps.EnvKeys()
+			if len(envOpKeys) != 0 {
+				prt("- env-ops: ")
+			}
 			for _, k := range envOpKeys {
-				indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.Ops(k), abbrsSep))
+				prt(indent1 + k + " = " + dumpEnvOps(envOps.Ops(k), abbrsSep))
 			}
 			args := cic.Args()
 			argNames := args.Names()
 			if len(argNames) != 0 {
-				indentPrint("- args:")
+				prt("- args:")
 			}
 			for _, name := range argNames {
 				val := args.DefVal(name)
 				names := append([]string{name}, args.Abbrs(name)...)
 				nameStr := strings.Join(names, abbrsSep)
-				indentPrint(rpt(" ", indentSize) + /*"#" + strconv.Itoa(i) + " " + */
-					nameStr + " = " + mayQuoteStr(val))
+				prt(indent1 + nameStr + " = " + mayQuoteStr(val))
 			}
 		}
 	}
@@ -255,7 +275,7 @@ func dumpEnvLayer(
 		return
 	}
 	var output []string
-	indent := strings.Repeat(" ", depth*indentSize)
+	indent := rpt(" ", depth*indentSize)
 	keys, _ := env.Pairs()
 	sort.Strings(keys)
 	for _, k := range keys {

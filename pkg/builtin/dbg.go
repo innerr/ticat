@@ -43,7 +43,7 @@ func DbgDumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool 
 }
 
 func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
-	str1 := argv.GetRaw("find-str")
+	str1 := argv.GetRaw("1st-str")
 	if len(str1) != 0 {
 		findStrs = append(findStrs, str1)
 	}

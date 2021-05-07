@@ -1,5 +1,9 @@
 package core
 
+import (
+	"strings"
+)
+
 const (
 	EnvOpTypeRead     uint = 0x01
 	EnvOpTypeWrite    uint = 0x02
@@ -22,6 +26,15 @@ func (self *EnvOps) AddOp(name string, op uint) {
 		self.orderedNames = append(self.orderedNames, name)
 	}
 	self.ops[name] = append(old, op)
+}
+
+func (self EnvOps) MatchFind(findStr string) bool {
+	for _, name := range self.orderedNames {
+		if strings.Index(name, findStr) >= 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func (self EnvOps) EnvKeys() []string {

@@ -19,13 +19,13 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"get help").
 		SetQuiet().
 		SetPriority().
-		AddArg("find-str", "", "1", "find", "str", "s", "S").
+		AddArg("1st-str", "", "1", "find", "str", "s", "S").
 		AddArg("2rd-str", "", "2").
 		AddArg("3th-str", "", "3")
 	cmds.AddSub("search", "find", "fnd", "s", "S").
 		RegCmd(FindAny,
 			"find anything with given string").
-		AddArg("find-str", "", "1", "find", "str", "s", "S").
+		AddArg("1st-str", "", "1", "find", "str", "s", "S").
 		AddArg("2rd-str", "", "2").
 		AddArg("3th-str", "", "3")
 	cmds.AddSub("desc", "d", "D").
@@ -33,14 +33,14 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"desc the flow about to execute").
 		SetQuiet().
 		SetPriority()
-	mod := cmds.AddSub("cmds", "cmd", "mod", "mods")
+	mod := cmds.AddSub("cmds", "cmd", "mod", "mods", "m", "M", "c", "C")
 	mod.AddSub("tree", "t", "T").
 		RegCmd(DbgDumpCmdTree,
 			"list builtin and loaded cmds")
-	mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
+	mod.AddSub("list", "ls", "l", "flatten", "flat", "f", "F").
 		RegCmd(DbgDumpCmds,
 			"list builtin and loaded cmds").
-		AddArg("find-str", "", "1", "find", "str", "s", "S").
+		AddArg("1st-str", "", "1", "find", "str", "s", "S").
 		AddArg("2rd-str", "", "2").
 		AddArg("3th-str", "", "3")
 }
@@ -70,7 +70,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 	env.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegCmd(DbgDumpEnvFlattenVals,
 			"list env values in flatten format").
-		AddArg("find-str", "", "1", "find", "str", "s", "S").
+		AddArg("1st-str", "", "1", "find", "str", "s", "S").
 		AddArg("2rd-str", "", "2").
 		AddArg("3th-str", "", "3")
 

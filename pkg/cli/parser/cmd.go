@@ -152,7 +152,7 @@ func (self *CmdParser) parse(
 				continue
 			} else {
 				self.err("parse", matchedCmdPath, "unknow input '"+
-					strings.Join(input, " ")+"', shoud be sub cmd by gramma")
+					strings.Join(input, " ")+"', shoud be sub cmd")
 			}
 		} else {
 			// Try to parse cmd args
@@ -162,7 +162,7 @@ func (self *CmdParser) parse(
 			}
 			if len(input) != 0 {
 				self.err("parse", matchedCmdPath, "unknow input '"+
-					strings.Join(input, " ")+"', should be args by gramma")
+					strings.Join(input, " ")+"', should be args")
 			}
 			break
 		}

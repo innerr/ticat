@@ -137,9 +137,17 @@ func (self *CmdTree) Args() (args Args) {
 
 func (self *CmdTree) Path() []string {
 	if self.parent == nil {
-		return []string{}
+		return nil
 	}
 	return append(self.parent.Path(), self.name)
+}
+
+func (self *CmdTree) AbbrsPath() []string {
+	if self.parent == nil {
+		return nil
+	}
+	abbrs := self.parent.SubAbbrs(self.name)
+	return append(self.parent.AbbrsPath(), strings.Join(abbrs, self.Strs.AbbrsSep))
 }
 
 func (self *CmdTree) Depth() int {
@@ -181,11 +189,28 @@ func (self *CmdTree) matchFind(findStr string) bool {
 			}
 		}
 	}
+	if self.cmd != nil {
+		if self.cmd.Args().MatchFind(findStr) {
+			return true
+		}
+		if self.cmd.EnvOps().MatchFind(findStr) {
+			return true
+		}
+	}
 	return false
 }
 
 func (self *CmdTree) DisplayPath() string {
 	path := self.Path()
+	if len(path) == 0 {
+		return self.Strs.RootDisplayName
+	} else {
+		return strings.Join(path, self.Strs.PathSep)
+	}
+}
+
+func (self *CmdTree) DisplayAbbrsPath() string {
+	path := self.AbbrsPath()
 	if len(path) == 0 {
 		return self.Strs.RootDisplayName
 	} else {

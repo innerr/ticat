@@ -12,7 +12,7 @@ func GlobalHelp(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	if len(argv.GetRaw("find-str")) != 0 {
+	if len(argv.GetRaw("1st-str")) != 0 {
 		ok := FindAny(argv, cc, env)
 		return 0, ok
 	}
