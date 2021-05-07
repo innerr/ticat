@@ -12,7 +12,7 @@ func GlobalHelp(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	if len(argv.GetRaw("find-string")) != 0 {
+	if len(argv.GetRaw("find-str")) != 0 {
 		ok := FindAny(argv, cc, env)
 		return 0, ok
 	}
@@ -28,7 +28,9 @@ func GlobalHelp(
 
 	pln("usages:")
 	pln("    list all cmds:                 - ticat cmd.tree")
-	pln("    find cmds or env KVs:          - ticat find 'finding string'")
+	pln("    find cmds or env KVs:          - ticat find example")
+	pln("                                   - ticat find example golang")
+	pln("                                   - ticat find str1 str2 str3")
 	pln("    list all env KVs:              - ticat env.tree")
 	pln("    execute a cmd with args:       - ticat example.golang arg1 arg2")
 	pln("                                     ticat example.golang {arg1 arg2}")
@@ -47,11 +49,11 @@ func GlobalHelp(
 }
 
 func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	findStr := argv.GetRaw("find-string")
-	if len(findStr) == 0 {
+	findStrs := getFindStrsFromArgv(argv)
+	if len(findStrs) == 0 {
 		return true
 	}
-	display.DumpEnvFlattenVals(cc.Screen, env, findStr)
-	display.DumpCmds(cc, 4, true, findStr)
+	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
+	display.DumpCmds(cc, 4, true, findStrs...)
 	return true
 }

@@ -50,15 +50,15 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 	}
 }
 
-func DumpCmds(cc *core.Cli, indentSize int, flatten bool, findStr string) {
-	dumpCmd(cc.Screen, cc.Cmds, indentSize, true, flatten, findStr)
+func DumpCmds(cc *core.Cli, indentSize int, flatten bool, findStrs ...string) {
+	dumpCmd(cc.Screen, cc.Cmds, indentSize, true, flatten, findStrs...)
 }
 
 func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
 	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
 }
 
-func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStr string) {
+func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 	flatten := env.Flatten(true, nil, true)
 	var keys []string
 	for k, _ := range flatten {
@@ -67,16 +67,26 @@ func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStr string) {
 	sort.Strings(keys)
 	for _, k := range keys {
 		v := flatten[k]
-		if len(findStr) == 0 || strings.Index(k, findStr) >= 0 ||
-			strings.Index(v, findStr) >= 0 {
-			screen.Print(k + " = " + mayQuoteStr(v) + "\n")
+		if len(findStrs) != 0 {
+			notMatched := false
+			for _, findStr := range findStrs {
+				if strings.Index(k, findStr) < 0 &&
+					strings.Index(v, findStr) < 0 {
+					notMatched = true
+					break
+				}
+			}
+			if notMatched {
+				continue
+			}
 		}
+		screen.Print(k + " = " + mayQuoteStr(v) + "\n")
 	}
 }
 
 func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []string) {
 	for _, k := range args.Names() {
-		defV := mayQuoteStr(args.DefVal(k))
+		defV := args.DefVal(k)
 		line := k + " = "
 		if argv != nil {
 			v := argv[k].Raw
@@ -126,13 +136,13 @@ func dumpCmd(
 	indentSize int,
 	recursive bool,
 	flatten bool,
-	findStr string) {
+	findStrs ...string) {
 
 	if cmd == nil {
 		return
 	}
 
-	if cmd.Parent() == nil || cmd.MatchFind(findStr) {
+	if cmd.Parent() == nil || cmd.MatchFind(findStrs...) {
 		indent := cmd.Depth()
 		indentPrint := func(msg string) {
 			if flatten {
@@ -176,18 +186,23 @@ func dumpCmd(
 				indentPrint("- env-op: " + k + " = " + dumpEnvOps(envOps.Ops(k), abbrsSep))
 			}
 			args := cic.Args()
-			for i, name := range args.Names() {
+			argNames := args.Names()
+			if len(argNames) != 0 {
+				indentPrint("- args:")
+			}
+			for _, name := range argNames {
 				val := args.DefVal(name)
 				names := append([]string{name}, args.Abbrs(name)...)
 				nameStr := strings.Join(names, abbrsSep)
-				indentPrint("- arg#" + strconv.Itoa(i) + " " + nameStr + " = " + mayQuoteStr(val))
+				indentPrint(rpt(" ", indentSize) + /*"#" + strconv.Itoa(i) + " " + */
+					nameStr + " = " + mayQuoteStr(val))
 			}
 		}
 	}
 
 	if recursive {
 		for _, name := range cmd.SubNames() {
-			dumpCmd(screen, cmd.GetSub(name), indentSize, recursive, flatten, findStr)
+			dumpCmd(screen, cmd.GetSub(name), indentSize, recursive, flatten, findStrs...)
 		}
 	}
 }

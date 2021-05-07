@@ -30,16 +30,16 @@ TiDB wizard
 ****-      Full abbrs supporting. TODO: env abbrs from cmds
 ****-      Env save and load. TODO: save or load from a tag
 ****-      Self status dumping
------      Command line help/search
+***--      Command line help/search
 ****-  Mod framework
 ****-      Builtin mod supporting
 ****-      Bash mod supporting
 -----      Mocking execute
 -----      Background running
-****-      Support more typs: python, go, etc
+***--      Support more typs: python, go, dir, etc
 -----  Flow framework
------      Save and edit flow
-**---      Connector-env-val checking
+***--      Save and edit flow
+****-      Connector-env-val checking
 -----      Flatten in executing and desc
 -----  Hub framework
 -----      Mod and flow sharing
