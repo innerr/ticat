@@ -1,2 +1,0 @@
-help = "example: print message to stderr"
-abbrs = "error|err"

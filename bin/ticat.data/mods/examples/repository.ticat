@@ -1,3 +1,0 @@
-help = "example: pass args to a mod"
-abbrs = repo
-cmd = script/run.sh
