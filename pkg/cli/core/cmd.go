@@ -13,7 +13,8 @@ type CmdType string
 const (
 	CmdTypeNormal CmdType = "normal"
 	CmdTypePower  CmdType = "power"
-	CmdTypeBash   CmdType = "bash"
+	CmdTypeFile   CmdType = "file"
+	CmdTypeDir    CmdType = "dir"
 )
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env) (succeeded bool)
@@ -29,7 +30,7 @@ type Cmd struct {
 	args     Args
 	normal   NormalCmd
 	power    PowerCmd
-	bash     string
+	cmdLine  string
 	envOps   EnvOps
 }
 
@@ -43,8 +44,8 @@ func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 		newArgs(), nil, cmd, "", newEnvOps()}
 }
 
-func NewBashCmd(owner *CmdTree, help string, cmd string) *Cmd {
-	return &Cmd{owner, help, CmdTypeBash, false, false,
+func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
+	return &Cmd{owner, help, CmdTypeFile, false, false,
 		newArgs(), nil, nil, cmd, newEnvOps()}
 }
 
@@ -60,8 +61,8 @@ func (self *Cmd) Execute(
 		return self.power(argv, cc, env, flow, currCmdIdx)
 	case CmdTypeNormal:
 		return currCmdIdx, self.normal(argv, cc, env)
-	case CmdTypeBash:
-		return currCmdIdx, self.executeBash(argv, cc, env)
+	case CmdTypeFile:
+		return currCmdIdx, self.executeFile(argv, cc, env)
 	default:
 		panic(fmt.Errorf("[Cmd.Execute] unknown cmd executable type: %v", self.ty))
 	}
@@ -107,8 +108,8 @@ func (self *Cmd) Type() CmdType {
 	return self.ty
 }
 
-func (self *Cmd) BashCmdLine() string {
-	return self.bash
+func (self *Cmd) CmdLine() string {
+	return self.cmdLine
 }
 
 func (self *Cmd) Args() Args {
@@ -119,10 +120,10 @@ func (self *Cmd) EnvOps() EnvOps {
 	return self.envOps
 }
 
-func (self *Cmd) executeBash(argv ArgVals, cc *Cli, env *Env) bool {
+func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 	var bin string
 	var args []string
-	ext := filepath.Ext(self.bash)
+	ext := filepath.Ext(self.cmdLine)
 
 	// TODO: move this code block out?
 	runner := env.Get("sys.ext.exec" + ext).Raw
@@ -138,13 +139,13 @@ func (self *Cmd) executeBash(argv ArgVals, cc *Cli, env *Env) bool {
 		bin = "bash"
 	}
 
-	args = append(args, self.bash)
+	args = append(args, self.cmdLine)
 	for _, k := range self.args.Names() {
 		args = append(args, argv[k].Raw)
 	}
 	cmd := exec.Command(bin, args...)
 
-	errPrefix := "[ERR] execute bash failed: %v\n"
+	errPrefix := "[ERR] execute file failed: %v\n"
 
 	osStdout := os.Stdout
 	cmd.Stdout = os.Stdout
@@ -176,10 +177,11 @@ func (self *Cmd) executeBash(argv ArgVals, cc *Cli, env *Env) bool {
 	}
 	defer stderr.Close()
 
+	// TODO: better stderr output
 	err = cmd.Start()
 	if err != nil {
 		printLine(fmt.Sprintf(errPrefix, err))
-		printLine("  - path: " + self.bash)
+		printLine("  - path: " + self.cmdLine)
 		for i, arg := range args[1:] {
 			printLine(fmt.Sprintf("  - arg:%d %s", i, arg))
 		}

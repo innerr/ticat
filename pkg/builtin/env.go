@@ -10,7 +10,7 @@ import (
 
 func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
-	env.Set("bootstrap", "")
+	env.Set("sys.bootstrap", "")
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "kitty")
 	env.SetInt("sys.stack-depth", 0)
@@ -113,6 +113,15 @@ func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env) 
 		panic(fmt.Errorf("[RemoveEnvValAndSaveToLocal] arg 'key' is empty"))
 	}
 	env.DeleteEx(key, core.EnvLayerDefault)
+	return true
+}
+
+func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	path := getEnvLocalFilePath(env)
+	err := os.Remove(path)
+	if err != nil {
+		panic(fmt.Errorf("[ResetLocalEnv] remove env file '%s' failed: %v", path, err))
+	}
 	return true
 }
 

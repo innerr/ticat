@@ -27,7 +27,6 @@ func main() {
 	defEnv.Set("strs.env-strs-path", EnvStrsPrefix)
 	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)
 	defEnv.Set("strs.proto-sep", ProtoSep)
-	defEnv.Set("strs.proto-bash-ext", ProtoBashExt)
 	defEnv.Set("strs.env-file-name", EnvFileName)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
@@ -103,5 +102,4 @@ const (
 	ProtoMark           string = "proto." + SelfName
 	ProtoEnvMark        string = ProtoMark + ".env"
 	ProtoSep            string = "\t"
-	ProtoBashExt        string = "bash"
 )

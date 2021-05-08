@@ -194,9 +194,9 @@ func dumpCmd(
 				prt("- cmd-type:")
 				prt(indent1 + line)
 			}
-			if cic.Type() == core.CmdTypeBash {
+			if cic.Type() == core.CmdTypeFile {
 				prt("- executable:")
-				prt(indent1 + cic.BashCmdLine())
+				prt(indent1 + cic.CmdLine())
 			}
 			envOps := cic.EnvOps()
 			envOpKeys := envOps.EnvKeys()

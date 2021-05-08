@@ -61,8 +61,8 @@ func (self *CmdTree) RegCmd(cmd NormalCmd, help string) *Cmd {
 	return self.cmd
 }
 
-func (self *CmdTree) RegBashCmd(cmd string, help string) *Cmd {
-	self.cmd = NewBashCmd(self, help, cmd)
+func (self *CmdTree) RegFileCmd(cmd string, help string) *Cmd {
+	self.cmd = NewFileCmd(self, help, cmd)
 	return self.cmd
 }
 
@@ -178,7 +178,7 @@ func (self *CmdTree) matchFind(findStr string) bool {
 		if strings.Index(self.cmd.Help(), findStr) >= 0 {
 			return true
 		}
-		if strings.Index(self.cmd.BashCmdLine(), findStr) >= 0 {
+		if strings.Index(self.cmd.CmdLine(), findStr) >= 0 {
 			return true
 		}
 	}

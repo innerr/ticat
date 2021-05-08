@@ -81,8 +81,10 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
 		RegCmd(RemoveEnvValAndSaveToLocal,
 			"remove specific env KV and save changes to local").
-		SetQuiet().
 		AddArg("key", "", "k", "K")
+	env.AddSub("reset-and-save", "reset").
+		RegCmd(ResetLocalEnv,
+			"reset all local saved env KVs")
 }
 
 func RegisterVerbCmds(cmds *core.CmdTree) {

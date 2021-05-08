@@ -26,7 +26,7 @@ func NewExecutor() *Executor {
 }
 
 func (self *Executor) Execute(cc *core.Cli, bootstrap string, input ...string) bool {
-	overWriteBootstrap := cc.GlobalEnv.Get("bootstrap").Raw
+	overWriteBootstrap := cc.GlobalEnv.Get("sys.bootstrap").Raw
 	if len(overWriteBootstrap) != 0 {
 		bootstrap = overWriteBootstrap
 	}

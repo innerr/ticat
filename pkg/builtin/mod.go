@@ -21,21 +21,21 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
-	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
-		ext := filepath.Ext(path)
+	filepath.Walk(root, func(metaPath string, _ fs.FileInfo, err error) error {
+		ext := filepath.Ext(metaPath)
 		if ext != metaExt {
 			return nil
 		}
-		target := path[0 : len(path)-len(ext)]
+		target := metaPath[0 : len(metaPath)-len(ext)]
 
-		if dirExists(target) {
-			regDirMod(cc, path, target, target[len(root)+1:], abbrsSep)
+		info, err := os.Stat(target)
+		if os.IsNotExist(err) {
+			panic(fmt.Errorf("[LoadLocalMods] target '%s' of meta file '%s' not exists",
+				target, metaPath))
 			return nil
 		}
-		if !fileExists(target) {
-			return nil
-		}
 
+		// Strip all ext from cmd-path
 		cmdPath := target[len(root)+1:]
 		for {
 			ext := filepath.Ext(cmdPath)
@@ -45,7 +45,8 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 				cmdPath = cmdPath[0 : len(cmdPath)-len(ext)]
 			}
 		}
-		regBashMod(cc, path, target, cmdPath, abbrsSep, envPathSep)
+
+		regMod(cc, metaPath, target, info.IsDir(), cmdPath, abbrsSep, envPathSep)
 		return nil
 	})
 	return true
@@ -53,25 +54,11 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 
 // TODO: mod's meta definition file (*.ticat) should have a formal manager
 
-func regDirMod(cc *core.Cli, metaPath string, dirPath string, cmdPath string, abbrsSep string) {
-	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
-
-	meta := goini.New()
-	meta.SetTrimQuotes(true)
-	err := meta.ParseFile(metaPath)
-	if err != nil {
-		panic(fmt.Errorf("[LoadLocalMods.regDirMod] parse mod's meta file failed: %v", err))
-	}
-	abbrs, _ := meta.Get("abbrs")
-	if len(abbrs) != 0 {
-		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
-	}
-}
-
-func regBashMod(
+func regMod(
 	cc *core.Cli,
 	metaPath string,
-	filePath string,
+	path string,
+	isDir bool,
 	cmdPath string,
 	abbrsSep string,
 	envPathSep string) {
@@ -82,11 +69,29 @@ func regBashMod(
 	meta.SetTrimQuotes(true)
 	err := meta.ParseFile(metaPath)
 	if err != nil {
-		panic(fmt.Errorf("[LoadLocalMods.regBashMod] parse mod's meta file failed: %v", err))
+		panic(fmt.Errorf("[LoadLocalMods.regMod] parse mod's meta file failed: %v", err))
 	}
 
+	// 'cmd' should be a relative path base on this file
+	cmdLine, _ := meta.Get("cmd")
 	help, _ := meta.Get("help")
-	cmd := mod.RegBashCmd(filePath, strings.TrimSpace(help))
+	if len(help) == 0 && (!isDir || len(cmdLine) != 0) {
+		panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' has no help string in '%s'",
+			cmdPath, metaPath))
+	}
+
+	if len(cmdLine) != 0 {
+		path, err = filepath.Abs(filepath.Join(path, cmdLine))
+		if err != nil {
+			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' get abs path of '%s' failed",
+				cmdPath, path))
+		}
+		if !fileExists(path) {
+			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' point to a not existed file '%s'",
+				cmdPath, path))
+		}
+	}
+	cmd := mod.RegFileCmd(path, strings.TrimSpace(help))
 
 	abbrs, _ := meta.Get("abbrs")
 	if len(abbrs) != 0 {
@@ -136,7 +141,7 @@ func regBashMod(
 				read := strings.Index(field, "rd") >= 0 ||
 					strings.Index(field, "read") >= 0 || field == "r"
 				if write && read {
-					panic(fmt.Errorf("[LoadLocalMods.regBashMod] "+
+					panic(fmt.Errorf("[LoadLocalMods.regMod] "+
 						"parse env r|w definition failed: %v", it))
 				}
 				if write {
@@ -165,11 +170,6 @@ func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	env.Set("sys.ext.exec.py", "python")
 	env.Set("sys.ext.exec.go", "go run")
 	return true
-}
-
-func dirExists(path string) bool {
-	info, err := os.Stat(path)
-	return !os.IsNotExist(err) && info.IsDir()
 }
 
 func fileExists(path string) bool {
