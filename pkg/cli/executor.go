@@ -9,7 +9,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-type ExecFunc func(cc *core.Cli, isBootstrap bool, flow *core.ParsedCmds) bool
+type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds) bool
 
 type Executor struct {
 	funcs []ExecFunc
@@ -25,7 +25,7 @@ func NewExecutor() *Executor {
 	}
 }
 
-func (self *Executor) Execute(cc *core.Cli, bootstrap string, input ...string) bool {
+func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool {
 	overWriteBootstrap := cc.GlobalEnv.Get("sys.bootstrap").Raw
 	if len(overWriteBootstrap) != 0 {
 		bootstrap = overWriteBootstrap
@@ -33,32 +33,35 @@ func (self *Executor) Execute(cc *core.Cli, bootstrap string, input ...string) b
 	if !self.execute(cc, true, bootstrap) {
 		return false
 	}
+	return self.Execute(cc, false, input...)
+}
 
+func (self *Executor) Execute(cc *core.Cli, quiet bool, input ...string) bool {
 	cc.GlobalEnv.PlusInt("sys.stack-depth", 1)
-	if !self.execute(cc, false, input...) {
+	if !self.execute(cc, quiet, input...) {
 		return false
 	}
 	cc.GlobalEnv.PlusInt("sys.stack-depth", -1)
 	return true
 }
 
-func (self *Executor) execute(cc *core.Cli, isBootstrap bool, input ...string) bool {
+func (self *Executor) execute(cc *core.Cli, quiet bool, input ...string) bool {
 	if len(input) == 0 {
 		return true
 	}
 	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
 	for _, function := range self.funcs {
-		if !function(cc, isBootstrap, flow) {
+		if !function(cc, flow) {
 			return false
 		}
 	}
-	return self.executeFlow(cc, isBootstrap, flow, input)
+	return self.executeFlow(cc, quiet, flow, input)
 }
 
 func (self *Executor) executeFlow(
 	cc *core.Cli,
-	isBootstrap bool,
+	quiet bool,
 	flow *core.ParsedCmds,
 	input []string) bool {
 
@@ -69,7 +72,7 @@ func (self *Executor) executeFlow(
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool
-		i, succeeded = self.executeCmd(cc, isBootstrap, cmd, env, flow, i)
+		i, succeeded = self.executeCmd(cc, quiet, cmd, env, flow, i)
 		if !succeeded {
 			return false
 		}
@@ -79,7 +82,7 @@ func (self *Executor) executeFlow(
 
 func (self *Executor) executeCmd(
 	cc *core.Cli,
-	isBootstrap bool,
+	quiet bool,
 	cmd core.ParsedCmd,
 	env *core.Env,
 	flow *core.ParsedCmds,
@@ -90,7 +93,7 @@ func (self *Executor) executeCmd(
 	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
 
-	stackLines := display.PrintCmdStack(isBootstrap, cc.Screen, cmd,
+	stackLines := display.PrintCmdStack(quiet, cc.Screen, cmd,
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 	if stackLines.Display {
 		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -106,7 +109,7 @@ func (self *Executor) executeCmd(
 	elapsed := time.Now().Sub(start)
 
 	if stackLines.Display {
-		resultLines := display.PrintCmdResult(isBootstrap, cc.Screen, cmd,
+		resultLines := display.PrintCmdResult(quiet, cc.Screen, cmd,
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
 	}
@@ -117,7 +120,6 @@ func (self *Executor) executeCmd(
 // 2. move priority cmds to the head
 func filterEmptyCmdsAndReorderByPriority(
 	cc *core.Cli,
-	isBootstrap bool,
 	flow *core.ParsedCmds) bool {
 
 	var unfiltered []core.ParsedCmd
@@ -151,7 +153,7 @@ func filterEmptyCmdsAndReorderByPriority(
 	return true
 }
 
-func checkEnvOps(cc *core.Cli, isBootstrap bool, flow *core.ParsedCmds) bool {
+func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds) bool {
 	checker := core.EnvOpsChecker{}
 	sep := cc.Cmds.Strs.PathSep
 	for _, cmd := range flow.Cmds {

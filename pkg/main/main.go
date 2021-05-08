@@ -66,7 +66,7 @@ func main() {
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser)
 
-	bootstrap := "B.E.L.A : B.E.L.R : B.E.L.L : B.E.L.S : B.M.L.L : B.M.L.E"
+	bootstrap := "B.E.L.A:B.E.L.R:B.E.L.L:B.E.L.S:B.M.L.L:B.M.L.E:B.M.L.F"
 
 	// TODO: handle error by types
 	defer func() {
@@ -76,7 +76,8 @@ func main() {
 		}
 	}()
 	executor := cli.NewExecutor()
-	succeeded := executor.Execute(cc, bootstrap, os.Args[1:]...)
+	cc.Executor = executor
+	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
 	if !succeeded {
 		os.Exit(1)
 	}

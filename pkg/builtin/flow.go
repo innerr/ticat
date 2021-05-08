@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -70,6 +71,38 @@ func SaveFlow(
 
 	flow.Cmds = nil
 	return 0, true
+}
+
+func LoadLocalFlows(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	root := env.Get("sys.paths.flows").Raw
+	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
+		root = root[:len(root)-1]
+	}
+	info, err := os.Stat(root)
+	if err != nil {
+		panic(fmt.Errorf("[LoadLocalFlows] access flows dir '%s' failed: %v", root, err))
+	}
+	if !info.IsDir() {
+		panic(fmt.Errorf("[LoadLocalFlows] flows dir '%s' is not dir", root))
+	}
+
+	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		cmdPath := path[len(root)+1:]
+		flow := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(cc.Cmds.Strs.PathSep))...)
+		data, err := ioutil.ReadFile(path)
+		cmds := strings.TrimSpace(string(data))
+		cmd := flow.RegFlowCmd(cmds, "(TODO: save/load help str of "+cmdPath+")")
+		// TODO: abbrs, help
+		_ = cmd
+		return nil
+	})
+	return true
 }
 
 func saveFlow(w io.Writer, flow *core.ParsedCmds, sep string) {

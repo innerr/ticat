@@ -18,7 +18,7 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	abbrsSep := env.Get("strs.abbrs-sep").Raw
 	envPathSep := env.Get("strs.env-path-sep").Raw
 
-	if root[len(root)-1] == filepath.Separator {
+	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
 	filepath.Walk(root, func(metaPath string, _ fs.FileInfo, err error) error {
@@ -91,7 +91,12 @@ func regMod(
 				cmdPath, path))
 		}
 	}
-	cmd := mod.RegFileCmd(path, strings.TrimSpace(help))
+	var cmd *core.Cmd
+	if isDir {
+		cmd = mod.RegDirCmd(path, strings.TrimSpace(help))
+	} else {
+		cmd = mod.RegFileCmd(path, strings.TrimSpace(help))
+	}
 
 	abbrs, _ := meta.Get("abbrs")
 	if len(abbrs) != 0 {

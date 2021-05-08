@@ -66,6 +66,16 @@ func (self *CmdTree) RegFileCmd(cmd string, help string) *Cmd {
 	return self.cmd
 }
 
+func (self *CmdTree) RegDirCmd(cmd string, help string) *Cmd {
+	self.cmd = NewDirCmd(self, help, cmd)
+	return self.cmd
+}
+
+func (self *CmdTree) RegFlowCmd(cmd string, help string) *Cmd {
+	self.cmd = NewFlowCmd(self, help, cmd)
+	return self.cmd
+}
+
 func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
 	self.cmd = NewPowerCmd(self, help, cmd)
 	return self.cmd
@@ -147,6 +157,9 @@ func (self *CmdTree) AbbrsPath() []string {
 		return nil
 	}
 	abbrs := self.parent.SubAbbrs(self.name)
+	if len(abbrs) == 0 {
+		return nil
+	}
 	return append(self.parent.AbbrsPath(), strings.Join(abbrs, self.Strs.AbbrsSep))
 }
 
@@ -212,7 +225,7 @@ func (self *CmdTree) DisplayPath() string {
 func (self *CmdTree) DisplayAbbrsPath() string {
 	path := self.AbbrsPath()
 	if len(path) == 0 {
-		return self.Strs.RootDisplayName
+		return ""
 	} else {
 		return strings.Join(path, self.Strs.PathSep)
 	}

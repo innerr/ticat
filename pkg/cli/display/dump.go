@@ -36,6 +36,9 @@ func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, in
 				cc.Screen.Print(indent3 + k + " = " +
 					dumpEnvOps(envOps.Ops(k), abbrsSep) + "\n")
 			}
+			if cic.Type() == core.CmdTypeFlow {
+				cc.Screen.Print(indent2 + "- " + cic.CmdLine() + "\n")
+			}
 		}
 
 		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
@@ -180,8 +183,11 @@ func dumpCmd(
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				prt("- full-cmd:")
 				prt(indent1 + cmd.DisplayPath())
-				prt("- full-abbrs:")
-				prt(indent1 + cmd.DisplayAbbrsPath())
+				abbrs := cmd.DisplayAbbrsPath()
+				if len(abbrs) != 0 {
+					prt("- full-abbrs:")
+					prt(indent1 + abbrs)
+				}
 			}
 		}
 
@@ -194,7 +200,8 @@ func dumpCmd(
 				prt("- cmd-type:")
 				prt(indent1 + line)
 			}
-			if cic.Type() == core.CmdTypeFile {
+			if cic.Type() == core.CmdTypeFile || cic.Type() == core.CmdTypeDir ||
+				cic.Type() == core.CmdTypeFlow {
 				prt("- executable:")
 				prt(indent1 + cic.CmdLine())
 			}

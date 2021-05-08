@@ -26,20 +26,28 @@ TiDB wizard
 ## Progess
 ```
 ****-  Cli framework
-***--      Command line parsing
-****-      Full abbrs supporting. TODO: env abbrs from cmds
-****-      Env save and load. TODO: save or load from a tag
-****-      Self status dumping
-***--      Command line help/search
+***--      Command line parsing. TODO: char-escaping
+****-      Full context search
+****-      Full abbrs supporting. TODO: extra abbrs manage
+****-      Env framework. TODO: save or load from a tag
 ****-  Mod framework
-****-      Builtin mod supporting
-****-      Bash mod supporting
------      Mocking execute
------      Background running
-*****      Support more typs: python, golang, dir(repo), etc
+****-      Connector framework
+***--      Args supporting. TODO: free args
+****-      Mod-ticat interacting
+*****      Support mod types:
+*****          Builtin
+*****          File by ext: python, golang
+*****          Executable file
+*****          Directory (include repo supporting)
+****-      Executor
+*****          Base executor
+-----          Intellegent
+-----          Mocking
+-----          Background running
 -----  Flow framework
-***--      Save and edit flow
-****-      Connector-env-val checking
+***--      Save and edit flow. TODO: execute
+-----      Help and abbrs
+-----      Executing ad-hot help
 -----      Flatten in executing and desc
 -----  Hub framework
 -----      Mod and flow sharing

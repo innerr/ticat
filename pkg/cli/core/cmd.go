@@ -15,6 +15,7 @@ const (
 	CmdTypePower  CmdType = "power"
 	CmdTypeFile   CmdType = "file"
 	CmdTypeDir    CmdType = "dir"
+	CmdTypeFlow   CmdType = "flow"
 )
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env) (succeeded bool)
@@ -49,6 +50,16 @@ func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
 		newArgs(), nil, nil, cmd, newEnvOps()}
 }
 
+func NewDirCmd(owner *CmdTree, help string, cmd string) *Cmd {
+	return &Cmd{owner, help, CmdTypeDir, false, false,
+		newArgs(), nil, nil, cmd, newEnvOps()}
+}
+
+func NewFlowCmd(owner *CmdTree, help string, flow string) *Cmd {
+	return &Cmd{owner, help, CmdTypeFlow, false, false,
+		newArgs(), nil, nil, flow, newEnvOps()}
+}
+
 func (self *Cmd) Execute(
 	argv ArgVals,
 	cc *Cli,
@@ -63,6 +74,10 @@ func (self *Cmd) Execute(
 		return currCmdIdx, self.normal(argv, cc, env)
 	case CmdTypeFile:
 		return currCmdIdx, self.executeFile(argv, cc, env)
+	case CmdTypeDir:
+		return currCmdIdx, self.executeFile(argv, cc, env)
+	case CmdTypeFlow:
+		return currCmdIdx, self.executeFlow(argv, cc, env)
 	default:
 		panic(fmt.Errorf("[Cmd.Execute] unknown cmd executable type: %v", self.ty))
 	}
@@ -118,6 +133,10 @@ func (self *Cmd) Args() Args {
 
 func (self *Cmd) EnvOps() EnvOps {
 	return self.envOps
+}
+
+func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
+	return cc.Executor.Execute(cc, false, strings.Fields(self.cmdLine)...)
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {

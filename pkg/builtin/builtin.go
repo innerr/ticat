@@ -139,6 +139,9 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 		RegCmd(LoadLocalMods,
 			"load mods from local").
 		SetQuiet()
+	modLoad.AddSub("flows", "flows", "f", "F").
+		RegCmd(LoadLocalFlows,
+			"load flows from local")
 	modLoad.AddSub("ext-exec", "ext", "e", "E").
 		RegCmd(SetExtExec,
 			"load default setting of how to run a executable file by ext name")
