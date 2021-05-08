@@ -30,6 +30,8 @@ TiDB wizard
 ****-      Full context search
 ****-      Full abbrs supporting. TODO: extra abbrs manage
 ****-      Env framework. TODO: save or load from a tag
+-----      Log and search
+-----      Command history and search
 ****-  Mod framework
 ****-      Connector framework
 ***--      Args supporting. TODO: free args
