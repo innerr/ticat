@@ -9,11 +9,12 @@ func DbgDumpFlow(
 	_ core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
-	cmds []core.ParsedCmd,
-	currCmdIdx int) ([]core.ParsedCmd, int, bool) {
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
-	display.DumpFlow(cc, env, cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
-	return nil, 0, true
+	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
+	flow.Cmds = nil
+	return 0, true
 }
 
 func DbgDumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
@@ -21,8 +22,13 @@ func DbgDumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func DbgDumpCmds(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, 4)
+func DbgDumpCmdTree(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, 4, false, "")
+	return true
+}
+
+func DbgDumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, 4, true, getFindStrsFromArgv(argv)...)
 	return true
 }
 
@@ -31,7 +37,23 @@ func DbgDumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	return true
 }
 
-func DbgDumpEnvFlattenVals(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	display.DumpEnvFlattenVals(cc.Screen, env)
+func DbgDumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	display.DumpEnvFlattenVals(cc.Screen, env, getFindStrsFromArgv(argv)...)
 	return true
+}
+
+func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
+	str1 := argv.GetRaw("1st-str")
+	if len(str1) != 0 {
+		findStrs = append(findStrs, str1)
+	}
+	str2 := argv.GetRaw("2rd-str")
+	if len(str2) != 0 {
+		findStrs = append(findStrs, str2)
+	}
+	str3 := argv.GetRaw("3th-str")
+	if len(str3) != 0 {
+		findStrs = append(findStrs, str3)
+	}
+	return
 }

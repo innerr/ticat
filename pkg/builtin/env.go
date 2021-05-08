@@ -10,6 +10,7 @@ import (
 
 func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
+	env.Set("sys.bootstrap", "")
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "kitty")
 	env.SetInt("sys.stack-depth", 0)
@@ -26,16 +27,16 @@ func LoadEnvAbbrs(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env = env.GetLayer(core.EnvLayerSession)
 
-	path, err := filepath.Abs(os.Args[0])
+	path, err := os.Executable()
 	if err != nil {
-		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path '%s' fail: %v",
-			os.Args[0], err))
+		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path fail: %v", err))
 	}
 
 	env.Set("sys.paths.ticat", path)
 	data := path + ".data"
 	env.Set("sys.paths.data", data)
 	env.Set("sys.paths.mods", filepath.Join(data, "mods"))
+	env.Set("sys.paths.flows", filepath.Join(data, "flows"))
 	return true
 }
 
@@ -115,6 +116,15 @@ func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env) 
 	return true
 }
 
+func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	path := getEnvLocalFilePath(env)
+	err := os.Remove(path)
+	if err != nil {
+		panic(fmt.Errorf("[ResetLocalEnv] remove env file '%s' failed: %v", path, err))
+	}
+	return true
+}
+
 func getEnvLocalFilePath(env *core.Env) string {
 	path := env.Get("sys.paths.data").Raw
 	file := env.Get("strs.env-file-name").Raw
@@ -128,7 +138,7 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.executor", true)
 	env.SetBool("display.bootstrap", false)
 	env.SetBool("display.one-cmd", false)
-	env.Set("display.style", "utf8")
+	env.Set("display.style", "ascii")
 	env.SetBool("display.utf8", true)
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.sys", false)

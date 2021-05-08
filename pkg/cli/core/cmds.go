@@ -10,6 +10,7 @@ import (
 type CmdTreeStrs struct {
 	RootDisplayName  string
 	PathSep          string
+	PathAlterSeps    string
 	AbbrsSep         string
 	EnvValDelMark    string
 	EnvValDelAllMark string
@@ -45,13 +46,13 @@ func (self *CmdTree) Execute(
 	argv ArgVals,
 	cc *Cli,
 	env *Env,
-	cmds []ParsedCmd,
-	currCmdIdx int) ([]ParsedCmd, int, bool) {
+	flow *ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
 	if self.cmd == nil {
-		return cmds, currCmdIdx, true
+		return currCmdIdx, true
 	} else {
-		return self.cmd.Execute(argv, cc, env, cmds, currCmdIdx)
+		return self.cmd.Execute(argv, cc, env, flow, currCmdIdx)
 	}
 }
 
@@ -60,8 +61,18 @@ func (self *CmdTree) RegCmd(cmd NormalCmd, help string) *Cmd {
 	return self.cmd
 }
 
-func (self *CmdTree) RegBashCmd(cmd string, help string) *Cmd {
-	self.cmd = NewBashCmd(self, help, cmd)
+func (self *CmdTree) RegFileCmd(cmd string, help string) *Cmd {
+	self.cmd = NewFileCmd(self, help, cmd)
+	return self.cmd
+}
+
+func (self *CmdTree) RegDirCmd(cmd string, help string) *Cmd {
+	self.cmd = NewDirCmd(self, help, cmd)
+	return self.cmd
+}
+
+func (self *CmdTree) RegFlowCmd(cmd string, help string) *Cmd {
+	self.cmd = NewFlowCmd(self, help, cmd)
 	return self.cmd
 }
 
@@ -136,9 +147,20 @@ func (self *CmdTree) Args() (args Args) {
 
 func (self *CmdTree) Path() []string {
 	if self.parent == nil {
-		return []string{}
+		return nil
 	}
 	return append(self.parent.Path(), self.name)
+}
+
+func (self *CmdTree) AbbrsPath() []string {
+	if self.parent == nil {
+		return nil
+	}
+	abbrs := self.parent.SubAbbrs(self.name)
+	if len(abbrs) == 0 {
+		return nil
+	}
+	return append(self.parent.AbbrsPath(), strings.Join(abbrs, self.Strs.AbbrsSep))
 }
 
 func (self *CmdTree) Depth() int {
@@ -149,10 +171,61 @@ func (self *CmdTree) Depth() int {
 	}
 }
 
+func (self *CmdTree) MatchFind(findStrs ...string) bool {
+	for _, str := range findStrs {
+		if !self.matchFind(str) {
+			return false
+		}
+	}
+	return true
+}
+
+func (self *CmdTree) matchFind(findStr string) bool {
+	if len(findStr) == 0 {
+		return true
+	}
+	if strings.Index(self.name, findStr) >= 0 {
+		return true
+	}
+	if self.cmd != nil {
+		if strings.Index(self.cmd.Help(), findStr) >= 0 {
+			return true
+		}
+		if strings.Index(self.cmd.CmdLine(), findStr) >= 0 {
+			return true
+		}
+	}
+	if self.parent != nil {
+		for _, abbr := range self.parent.SubAbbrs(self.name) {
+			if strings.Index(abbr, findStr) >= 0 {
+				return true
+			}
+		}
+	}
+	if self.cmd != nil {
+		if self.cmd.Args().MatchFind(findStr) {
+			return true
+		}
+		if self.cmd.EnvOps().MatchFind(findStr) {
+			return true
+		}
+	}
+	return false
+}
+
 func (self *CmdTree) DisplayPath() string {
 	path := self.Path()
 	if len(path) == 0 {
 		return self.Strs.RootDisplayName
+	} else {
+		return strings.Join(path, self.Strs.PathSep)
+	}
+}
+
+func (self *CmdTree) DisplayAbbrsPath() string {
+	path := self.AbbrsPath()
+	if len(path) == 0 {
+		return ""
 	} else {
 		return strings.Join(path, self.Strs.PathSep)
 	}

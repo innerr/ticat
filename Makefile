@@ -30,4 +30,4 @@ ticat:
 
 unit-test:
 	mkdir -p bin/cover
-	$(GOTEST) ./... -covermode=count -coverprofile bin/cover/cov.unit-test.out
+	$(GOTEST) ./pkg/... -covermode=count -coverprofile bin/cover/cov.unit-test.out

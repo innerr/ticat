@@ -12,7 +12,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 			t.Fatalf("%#v: %#v != %#v\n", input, a, b)
 		}
 		if len(a) != len(b) {
-			fatal()
+			t.Fatalf("%#v len not match: %v != %v\n", input, len(a), len(b))
 		}
 		for i, _ := range a {
 			if a[i].Type != b[i].Type {
@@ -38,13 +38,13 @@ func TestCmdParserParseSeg(t *testing.T) {
 		}
 	}
 
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", "|", "-", "--", "DUMB", "DUMB"})
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "DUMB", "DUMB"})
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
 	parser := &CmdParser{
 		&EnvParser{Brackets{"{", "}"}, "\t ", "=", "."},
-		".", "\t ./", "\t ", "<root>",
+		".", "./", "\t ", "<root>",
 	}
 
 	sep := parsedSeg{parsedSegTypeSep, nil}
@@ -55,7 +55,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	env := func(names ...string) parsedSeg {
 		env := core.ParsedEnv{}
 		for _, name := range names {
-			env[name] = core.ParsedEnvVal{"V", false}
+			env[name] = core.NewParsedEnvVal(name, "V")
 		}
 		return parsedSeg{parsedSegTypeEnv, env}
 	}
@@ -70,24 +70,28 @@ func TestCmdParserParseSeg(t *testing.T) {
 	test([]string{}, []parsedSeg{})
 
 	test([]string{"X"}, []parsedSeg{cmd("X")})
-	test([]string{"X", "21"}, []parsedSeg{cmd("X"), cmd("21")})
+	test([]string{"X/", ".21"}, []parsedSeg{cmd("X"), sep, cmd("21")})
 	test([]string{"X.21"}, []parsedSeg{cmd("X"), sep, cmd("21")})
 	test([]string{"X/21"}, []parsedSeg{cmd("X"), sep, cmd("21")})
-	test([]string{"X 21"}, []parsedSeg{cmd("X"), sep, cmd("21")})
-	test([]string{"X \t 21"}, []parsedSeg{cmd("X"), sep, cmd("21")})
-	test([]string{"X", "twenty-one"}, []parsedSeg{cmd("X"), cmd("twenty-one")})
 
-	test([]string{"{a=V}", "X", "21"}, []parsedSeg{env("a"), cmd("X"), cmd("21")})
-	test([]string{"X", "{a=V}", "21"}, []parsedSeg{cmd("X"), env("a"), cmd("21")})
-	test([]string{"X", "21", "{a=V}"}, []parsedSeg{cmd("X"), cmd("21"), env("a")})
+	test([]string{"X{}21"}, []parsedSeg{cmd("X"), cmd("21")})
+	test([]string{"X / . / 21"}, []parsedSeg{cmd("X"), sep, cmd("21")})
+	test([]string{"X.twenty-one"}, []parsedSeg{cmd("X"), sep, cmd("twenty-one")})
 
+	test([]string{"{a=V}", "X", "/", "21"}, []parsedSeg{env("a"), cmd("X"), sep, cmd("21")})
+	test([]string{"X", ".{a=V}.", "21"}, []parsedSeg{cmd("X"), sep, env("a"), sep, cmd("21")})
+	test([]string{"X.", "21.", "{a=V}"}, []parsedSeg{cmd("X"), sep, cmd("21"), sep, env("a")})
+	test([]string{"X.", ".21.", "{a=V}"}, []parsedSeg{cmd("X"), sep, cmd("21"), sep, env("a")})
+
+	test([]string{"X.{a=V}21"}, []parsedSeg{cmd("X"), sep, env("a"), cmd("21")})
+	test([]string{"X{a=V}.21"}, []parsedSeg{cmd("X"), env("a"), sep, cmd("21")})
 	test([]string{"X{a=V}/21"}, []parsedSeg{cmd("X"), env("a"), sep, cmd("21")})
 	test([]string{"X{a=V}/{b=V}21"}, []parsedSeg{cmd("X"), env("a"), sep, env("b"), cmd("21")})
 	test([]string{"X{a=V}./{b=V}21"}, []parsedSeg{cmd("X"), env("a"), sep, env("b"), cmd("21")})
 	test([]string{"X{a=V} / / {b=V}21"}, []parsedSeg{cmd("X"), env("a"), sep, env("b"), cmd("21")})
 
 	test([]string{"X/{a=V}21"}, []parsedSeg{cmd("X"), sep, env("a"), cmd("21")})
-	test([]string{"X{a=V}21"}, []parsedSeg{cmd("X"), env("a"), cmd("21")})
+	test([]string{"X{a=V}.21"}, []parsedSeg{cmd("X"), env("a"), sep, cmd("21")})
 	test([]string{"X/ {a=V}21"}, []parsedSeg{cmd("X"), sep, env("a"), cmd("21")})
 	test([]string{"X /{a=V}21"}, []parsedSeg{cmd("X"), sep, env("a"), cmd("21")})
 	test([]string{"X / {a=V} 21"}, []parsedSeg{cmd("X"), sep, env("a"), cmd("21")})
@@ -119,13 +123,13 @@ func TestCmdParserParse(t *testing.T) {
 		}
 	}
 
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", "|", "-", "--", "DUMB", "DUMB"})
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "DUMB", "DUMB"})
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
 	parser := &CmdParser{
 		&EnvParser{Brackets{"{", "}"}, "\t ", "=", "."},
-		".", "\t ./", "\t ", "<root>",
+		".", "./", "\t ", "<root>",
 	}
 
 	seg := func(cmdName string, envKeyNames ...string) core.ParsedCmdSeg {
@@ -133,7 +137,7 @@ func TestCmdParserParse(t *testing.T) {
 		if len(envKeyNames) != 0 {
 			env = core.ParsedEnv{}
 			for _, name := range envKeyNames {
-				env[name] = core.ParsedEnvVal{"V", false}
+				env[name] = core.NewParsedEnvVal(name, "V")
 			}
 		}
 		return core.ParsedCmdSeg{env, core.MatchedCmd{cmdName, nil}}
@@ -149,17 +153,17 @@ func TestCmdParserParse(t *testing.T) {
 	test([]string{}, core.ParsedCmd{})
 
 	test([]string{"X"}, core.ParsedCmd{seg("X")})
-	test([]string{"X", "21"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X.", "/21"}, core.ParsedCmd{seg("X"), seg("21")})
 	test([]string{"X/21"}, core.ParsedCmd{seg("X"), seg("21")})
 	test([]string{"X.21"}, core.ParsedCmd{seg("X"), seg("21")})
-	test([]string{"X 21"}, core.ParsedCmd{seg("X"), seg("21")})
-	test([]string{"X \t 21"}, core.ParsedCmd{seg("X"), seg("21")})
-	test([]string{"X", "twenty-one"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X{}21"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X/ \t .21"}, core.ParsedCmd{seg("X"), seg("21")})
+	test([]string{"X", "{}twenty-one"}, core.ParsedCmd{seg("X"), seg("21")})
 
-	test([]string{"{a=V}", "X", "21"}, core.ParsedCmd{seg("", "a"), seg("X"), seg("21")})
+	test([]string{"{a=V}", "X.", "/21"}, core.ParsedCmd{seg("", "a"), seg("X"), seg("21")})
 	test([]string{"X", "{a=V}", "21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
-	test([]string{"X", "21", "{a=V}"}, core.ParsedCmd{seg("X"), seg("21", "X.21.a")})
-	test([]string{"X", "twenty-one", "{a=V}"}, core.ParsedCmd{seg("X"), seg("21", "X.21.a")})
+	test([]string{"X", ".", "21", "{a=V}"}, core.ParsedCmd{seg("X"), seg("21", "X.21.a")})
+	test([]string{"X .", " / ", "/ twenty-one", "{a=V}"}, core.ParsedCmd{seg("X"), seg("21", "X.21.a")})
 
 	test([]string{"X{a=V}/21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
 	test([]string{"X{a=V}/{b=V}21"}, core.ParsedCmd{seg("X", "X.a", "X.b"), seg("21")})

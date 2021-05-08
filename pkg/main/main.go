@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/pingcap/ticat/pkg/builtin"
@@ -26,13 +27,13 @@ func main() {
 	defEnv.Set("strs.env-strs-path", EnvStrsPrefix)
 	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)
 	defEnv.Set("strs.proto-sep", ProtoSep)
-	defEnv.Set("strs.proto-bash-ext", ProtoBashExt)
 	defEnv.Set("strs.env-file-name", EnvFileName)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
 		CmdRootDisplayName,
 		CmdPathSep,
+		CmdPathAlterSeps,
 		AbbrsSep,
 		EnvValDelMark,
 		EnvValDelAllMark,
@@ -65,10 +66,18 @@ func main() {
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser)
 
-	bootstrap := "B.E.L.A : B.E.L.R : B.E.L.L : B.E.L.S : B.M.L.L"
+	bootstrap := "B.E.L.A:B.E.L.R:B.E.L.L:B.E.L.S:B.M.L.L:B.M.L.E:B.M.L.F"
 
-	executor := cli.Executor{}
-	succeeded := executor.Execute(cc, bootstrap, os.Args[1:]...)
+	// TODO: handle error by types
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+			os.Exit(-1)
+		}
+	}()
+	executor := cli.NewExecutor()
+	cc.Executor = executor
+	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
 	if !succeeded {
 		os.Exit(1)
 	}
@@ -94,5 +103,4 @@ const (
 	ProtoMark           string = "proto." + SelfName
 	ProtoEnvMark        string = ProtoMark + ".env"
 	ProtoSep            string = "\t"
-	ProtoBashExt        string = "bash"
 )

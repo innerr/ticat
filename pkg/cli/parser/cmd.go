@@ -39,12 +39,12 @@ func (self *CmdParser) Parse(
 	parsed := core.ParsedCmd{}
 	segs := self.parse(cmds, envAbbrs, input)
 	curr := core.ParsedCmdSeg{nil, core.MatchedCmd{}}
-	var path string
+	var path []string
 	for _, seg := range segs {
 		if seg.Type == parsedSegTypeEnv {
 			env := seg.Val.(core.ParsedEnv)
 			if len(path) != 0 {
-				env.AddPrefix(path)
+				env.AddPrefix(path, self.cmdSep)
 			}
 			if curr.Env != nil {
 				curr.Env.Merge(env)
@@ -59,7 +59,7 @@ func (self *CmdParser) Parse(
 			} else {
 				curr.Cmd = matchedCmd
 			}
-			path += matchedCmd.Cmd.Name() + self.cmdSep
+			path = append(path, matchedCmd.Cmd.Name())
 		} else {
 			// ignore parsedSegTypeSep
 		}
@@ -80,8 +80,7 @@ func (self *CmdParser) parse(
 	var curr = cmds
 	var currEnvAbbrs = envAbbrs
 
-	var lastNotExpectArg bool
-	var notExpectArg bool
+	allowSub := true
 
 	for len(input) != 0 {
 		var env core.ParsedEnv
@@ -98,6 +97,8 @@ func (self *CmdParser) parse(
 			if env != nil {
 				parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
 			}
+			// Allow use an env segment as cmd-path-sep
+			allowSub = true
 			continue
 		}
 
@@ -108,17 +109,21 @@ func (self *CmdParser) parse(
 		// Try to split input by cmd-sep
 		i := strings.IndexAny(input[0], self.cmdAlterSeps)
 		if i == 0 {
+			// Tolerat redundant path-sep
 			if len(parsed) != 0 && parsed[len(parsed)-1].Type != parsedSegTypeSep {
 				parsed = append(parsed, parsedSeg{parsedSegTypeSep, nil})
 			}
 			if len(input[0]) == 1 {
 				input = input[1:]
 			} else {
-				input = append([]string{input[0][1:]}, input[1:]...)
+				rest := strings.TrimLeft(input[0][1:], self.cmdSpaces)
+				input = append([]string{rest}, input[1:]...)
 			}
-		} else if i > 0 {
-			head := input[0][0:i]
-			rest := strings.TrimLeft(input[0][i+1:], self.cmdAlterSeps)
+			allowSub = true
+			continue
+		} else if i > 0 && allowSub {
+			head := strings.TrimRight(input[0][0:i], self.cmdSpaces)
+			rest := strings.TrimLeft(input[0][i+1:], self.cmdAlterSeps+self.cmdSpaces)
 			input = input[1:]
 			var lead []string
 			if len(head) != 0 {
@@ -129,40 +134,38 @@ func (self *CmdParser) parse(
 				lead = append(lead, rest)
 			}
 			input = append(lead, input...)
-		}
-		lastNotExpectArg = notExpectArg
-		notExpectArg = (i >= 0)
-		if i >= 0 {
 			continue
 		}
 
-		// Try to parse input as cmd-seg to sub
-		sub := curr.GetSub(input[0])
-		if sub != nil {
-			curr = sub
-			if currEnvAbbrs != nil {
-				currEnvAbbrs = currEnvAbbrs.GetSub(input[0])
+		if allowSub {
+			// Try to parse input as cmd-seg to sub
+			sub := curr.GetSub(input[0])
+			if sub != nil {
+				curr = sub
+				if currEnvAbbrs != nil {
+					currEnvAbbrs = currEnvAbbrs.GetSub(input[0])
+				}
+				parsed = append(parsed, parsedSeg{parsedSegTypeCmd, core.MatchedCmd{input[0], sub}})
+				matchedCmdPath = append(matchedCmdPath, input[0])
+				input = input[1:]
+				allowSub = false
+				continue
+			} else {
+				self.err("parse", matchedCmdPath, "unknow input '"+
+					strings.Join(input, " ")+"', shoud be sub cmd")
 			}
-			parsed = append(parsed, parsedSeg{parsedSegTypeCmd, core.MatchedCmd{input[0], sub}})
-			matchedCmdPath = append(matchedCmdPath, input[0])
-			input = input[1:]
-			continue
+		} else {
+			// Try to parse cmd args
+			env, input = self.envParser.TryParseRaw(curr, currEnvAbbrs, input)
+			if env != nil {
+				parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
+			}
+			if len(input) != 0 {
+				self.err("parse", matchedCmdPath, "unknow input '"+
+					strings.Join(input, " ")+"', should be args")
+			}
+			break
 		}
-
-		// Try to parse cmd args
-		if lastNotExpectArg {
-			brackets := strings.Join(self.envParser.Brackets(), "")
-			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, " ")+
-				"', tips: try to enclose env definition or args with '"+brackets+"' to disambiguation")
-		}
-		env, input = self.envParser.TryParseRaw(curr, currEnvAbbrs, input)
-		if env != nil {
-			parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
-		}
-		if len(input) != 0 {
-			self.err("parse", matchedCmdPath, "unknow input '"+strings.Join(input, ","))
-		}
-		break
 	}
 
 	return parsed

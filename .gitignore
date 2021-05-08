@@ -11,5 +11,10 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Temp directories
-bin/
+# Building output
+bin/cover
+bin/ticat
+bin/ticat.data/bootstrap.env
+
+# Temp directories or files
+*.swp

@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Args struct {
@@ -46,6 +47,15 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 	self.names[name] = true
 	self.defVals[name] = defVal
 	self.orderedList = append(self.orderedList, name)
+}
+
+func (self Args) MatchFind(findStr string) bool {
+	for k, _ := range self.abbrsRevIdx {
+		if strings.Index(k, findStr) >= 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func (self *Args) Names() []string {

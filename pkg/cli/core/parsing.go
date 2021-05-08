@@ -1,5 +1,9 @@
 package core
 
+import (
+	"strings"
+)
+
 //  ParsedCmds                - A list of cmd
 //      ParsedEnv             - Global env, map[string]string
 //      []ParsedCmd           - Full path of cmd
@@ -8,14 +12,24 @@ package core
 //                  Name      - string
 //                  *CmdTree  - The executable function
 //              ParsedEnv     - The function's env, include argv
+//      GlobalSeqIdx          - Point to the global seequence in []ParsedCmd
 
 type CliParser interface {
 	Parse(cmds *CmdTree, envAbbrs *EnvAbbrs, input ...string) *ParsedCmds
 }
 
 type ParsedCmds struct {
-	GlobalEnv ParsedEnv
-	Cmds      []ParsedCmd
+	GlobalEnv    ParsedEnv
+	Cmds         []ParsedCmd
+	GlobalSeqIdx int
+}
+
+func (self *ParsedCmds) RmLeadingCmds(count int) {
+	self.GlobalSeqIdx -= count
+	if self.GlobalSeqIdx < 0 {
+		self.GlobalSeqIdx = -1
+	}
+	self.Cmds = self.Cmds[count:]
 }
 
 type ParsedCmd []ParsedCmdSeg
@@ -77,6 +91,15 @@ func (self ParsedCmd) Path() (path []string) {
 	return
 }
 
+func (self ParsedCmd) MatchedPath() (path []string) {
+	for _, it := range self {
+		if it.Cmd.Cmd != nil {
+			path = append(path, it.Cmd.Name)
+		}
+	}
+	return
+}
+
 func (self ParsedCmd) GenEnv(env *Env, valDelMark string, valDelAllMark string) *Env {
 	env = env.NewLayer(EnvLayerCmd)
 	for _, seg := range self {
@@ -118,18 +141,18 @@ type MatchedCmd struct {
 
 type ParsedEnv map[string]ParsedEnvVal
 
-type ParsedEnvVal struct {
-	Val   string
-	IsArg bool
-}
-
-func (self ParsedEnv) AddPrefix(prefix string) {
+func (self ParsedEnv) AddPrefix(prefix []string, sep string) {
 	var keys []string
-	for k, _ := range self {
+	var vals []ParsedEnvVal
+	for k, v := range self {
 		keys = append(keys, k)
+		vals = append(vals, v)
 	}
-	for _, k := range keys {
-		self[prefix+k] = self[k]
+
+	prefixPath := strings.Join(prefix, sep) + sep
+	for i, k := range keys {
+		v := vals[i]
+		self[prefixPath+k] = ParsedEnvVal{v.Val, v.IsArg, append(prefix, v.MatchedPath...)}
 		delete(self, k)
 	}
 }
@@ -145,7 +168,7 @@ func (self ParsedEnv) Equal(x ParsedEnv) bool {
 		return false
 	}
 	for k, v := range x {
-		if self[k] != v {
+		if self[k].Val != v.Val {
 			return false
 		}
 	}
@@ -174,4 +197,18 @@ func (self ParsedEnv) WriteNotArgTo(env *Env, valDelMark string, valDelAllMark s
 			env.SetEx(k, v.Val, v.IsArg)
 		}
 	}
+}
+
+type ParsedEnvVal struct {
+	Val         string
+	IsArg       bool
+	MatchedPath []string
+}
+
+func NewParsedEnvVal(key string, val string) ParsedEnvVal {
+	return ParsedEnvVal{val, false, []string{key}}
+}
+
+func NewParsedEnvArgv(key string, val string) ParsedEnvVal {
+	return ParsedEnvVal{val, true, []string{key}}
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func TestEnvParserTryParseRaw(t *testing.T) {
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", "|", "-", "--", "DUMB", "DUMB"})
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "DUMB", "DUMB"})
 	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", "."}
 
 	test := func(a []string, bEnv core.ParsedEnv, bRest []string) {
@@ -21,10 +21,10 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	}
 
 	v := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, false}
+		return core.ParsedEnvVal{v, false, nil}
 	}
 	a := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, true}
+		return core.ParsedEnvVal{v, true, nil}
 	}
 
 	test(nil, nil, nil)
@@ -182,7 +182,7 @@ func TestEnvParserFindRight(t *testing.T) {
 }
 
 func TestEnvParserTryParse(t *testing.T) {
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", "|", "-", "--", "DUMB", "DUMB"})
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "DUMB", "DUMB"})
 	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", "."}
 
 	test := func(a []string, bEnv core.ParsedEnv, bRest []string, bFound bool, bErr error) {
@@ -198,7 +198,7 @@ func TestEnvParserTryParse(t *testing.T) {
 	}
 
 	v := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, false}
+		return core.ParsedEnvVal{v, false, nil}
 	}
 
 	test(nil, nil, nil, false, nil)
