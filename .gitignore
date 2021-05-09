@@ -12,9 +12,7 @@
 *.out
 
 # Building output
-bin/cover
-bin/ticat
-bin/ticat.data/bootstrap.env
+bin
 
 # Temp directories or files
 *.swp

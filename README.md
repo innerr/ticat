@@ -43,6 +43,7 @@ TiDB wizard
 *****          Directory (include repo supporting)
 ****-      Executor
 *****          Base executor
+-----          Middle re-enter
 -----          Intellegent
 -----          Mocking
 -----          Background running

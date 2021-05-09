@@ -1,5 +1,6 @@
 package core
 
+// TODO: use io.Write
 type Screen interface {
 	Print(text string)
 }
