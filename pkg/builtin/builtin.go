@@ -10,11 +10,12 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterVerbCmds(cmds)
 	RegisterTrivialCmds(cmds)
 	RegisterFlowCmds(cmds)
+	RegisterHubCmds(cmds)
 	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B"))
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
-	cmds.AddSub("help", "h", "H", "?").
+	cmds.AddSub("help", "?").
 		RegPowerCmd(GlobalHelp,
 			"get help").
 		SetQuiet().
@@ -113,6 +114,21 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 		AddArg("volume", "1", "vol", "v", "V")
 }
 
+func RegisterHubCmds(cmds *core.CmdTree) {
+	hub := cmds.AddSub("hub", "h", "H")
+	hub.AddSub("list", "ls", "l", "L").
+		RegCmd(ListLocalHub,
+			"list local hub")
+	hub.AddSub("update", "u", "U").
+		RegCmd(UpdateLocalHub,
+			"update mods defined in local hub")
+	add := hub.AddSub("add-and-update", "add", "a", "A")
+	add.RegCmd(AddToLocalHub,
+		"add a git address to local hub").
+		AddArg("git-address", "", "git", "address", "addr")
+	add.AddSub("default", "def", "d", "D")
+}
+
 func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	env := cmds.AddSub("env", "e", "E")
 	envLoad := env.AddSub("load", "l", "L")
@@ -145,6 +161,11 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	modLoad.AddSub("ext-exec", "ext", "e", "E").
 		RegCmd(SetExtExec,
 			"load default setting of how to run a executable file by ext name")
+	/*
+		modLoad.AddSub("hub", "h", "H").
+			RegCmd(LoadFromLocalHub,
+				"load flows and mods from local hub")
+	*/
 }
 
 func RegisterTrivialCmds(cmds *core.CmdTree) {

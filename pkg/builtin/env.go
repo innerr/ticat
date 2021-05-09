@@ -12,7 +12,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
 	env.Set("sys.bootstrap", "")
 	env.Set("sys.version", "1.0.0")
-	env.Set("sys.dev.name", "kitty")
+	env.Set("sys.dev.name", "mist")
+	env.Set("sys.hub.address", "git@github.com:innerr/mist.hub.ticat")
 	env.SetInt("sys.stack-depth", 0)
 	setToDefaultVerb(env)
 }
@@ -36,6 +37,7 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	data := path + ".data"
 	env.Set("sys.paths.data", data)
 	env.Set("sys.paths.mods", filepath.Join(data, "mods"))
+	env.Set("sys.paths.hub", filepath.Join(data, "hub"))
 	env.Set("sys.paths.flows", filepath.Join(data, "flows"))
 	return true
 }

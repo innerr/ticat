@@ -21,7 +21,12 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
+
+	// TODO: return filepath.SkipDir to avoid non-sense scanning
 	filepath.Walk(root, func(metaPath string, _ fs.FileInfo, err error) error {
+		if len(metaPath) > 0 && metaPath[0] == filepath.Separator {
+			return filepath.SkipDir
+		}
 		ext := filepath.Ext(metaPath)
 		if ext != metaExt {
 			return nil

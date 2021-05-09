@@ -55,7 +55,7 @@ func SaveFlow(
 	cc.Screen.Print(fmt.Sprintf("   %s\n", filePath))
 
 	dirPath := filepath.Dir(filePath)
-	os.MkdirAll(dirPath, os.ModePerm)
+	os.MkdirAll(dirPath, 0644)
 
 	tmp := filePath + ".tmp"
 	err = ioutil.WriteFile(tmp, []byte(data), os.ModePerm)
@@ -79,7 +79,9 @@ func LoadLocalFlows(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		root = root[:len(root)-1]
 	}
 	info, err := os.Stat(root)
-	if err != nil {
+	if os.IsNotExist(err) {
+		return true
+	} else {
 		panic(fmt.Errorf("[LoadLocalFlows] access flows dir '%s' failed: %v", root, err))
 	}
 	if !info.IsDir() {
