@@ -118,13 +118,12 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 
 func RegisterHubCmds(cmds *core.CmdTree) {
 	hub := cmds.AddSub("hub", "h", "H")
+	hub.AddSub("init").
+		RegCmd(AddDefaultToLocalHub,
+			"add and pull basic hub-repo to local")
 	add := hub.AddSub("add-and-update", "add", "a", "A")
 	add.RegCmd(AddToLocalHub,
 		"add and pull a git address to local hub").
-		AddArg("git-address", "", "git", "address", "addr")
-	add.AddSub("basic", "base", "default", "b", "B", "d", "D").
-		RegCmd(AddDefaultToLocalHub,
-			"add and pull basic hub-repo to local").
 		AddArg("git-address", "", "git", "address", "addr")
 	add.AddSub("local-dir", "local", "l", "L").
 		RegCmd(AddLocalDirToLocalHub,
@@ -135,7 +134,7 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 			"list local hub")
 	hub.AddSub("update", "u", "U").
 		RegCmd(UpdateLocalHub,
-			"update mods defined in local hub")
+			"update all repos and mods defined in local hub")
 	hub.AddSub("enable-git-address", "enable", "e", "E").
 		RegCmd(EnableAddrInLocalHub,
 			"enable a git repo address in local hub")
@@ -144,7 +143,8 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 			"disable a git repo address in local hub")
 	hub.AddSub("move-to-dir", "move", "m", "M").
 		RegCmd(MoveSavedFlowsToLocalDir,
-			"move all saved flows to a local dir (could be a git repo)")
+			"move all saved flows to a local dir (could be a git repo)").
+		AddArg("path", "", "p", "P")
 }
 
 func RegisterBuiltinCmds(cmds *core.CmdTree) {
