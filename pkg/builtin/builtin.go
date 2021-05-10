@@ -11,6 +11,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterTrivialCmds(cmds)
 	RegisterFlowCmds(cmds)
 	RegisterHubCmds(cmds)
+	RegisterDbgCmds(cmds.AddSub("dbg"))
 	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B"))
 }
 
@@ -187,4 +188,10 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 		RegCmd(Sleep,
 			"sleep for specific duration").
 		AddArg("duration", "1s", "dur", "d", "D")
+}
+
+func RegisterDbgCmds(cmds * core.CmdTree) {
+	cmds.AddSub("tty-read", "tty").
+		RegCmd(DbgReadFromTty,
+			"verify stdin and tty could work together")
 }
