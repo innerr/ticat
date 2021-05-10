@@ -30,16 +30,16 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		AddArg("2rd-str", "", "2").
 		AddArg("3th-str", "", "3")
 	cmds.AddSub("desc", "d", "D").
-		RegPowerCmd(DbgDumpFlow,
+		RegPowerCmd(DumpFlow,
 			"desc the flow about to execute").
 		SetQuiet().
 		SetPriority()
 	mod := cmds.AddSub("cmds", "cmd", "mod", "mods", "m", "M", "c", "C")
 	mod.AddSub("tree", "t", "T").
-		RegCmd(DbgDumpCmdTree,
+		RegCmd(DumpCmdTree,
 			"list builtin and loaded cmds")
 	mod.AddSub("list", "ls", "l", "flatten", "flat", "f", "F").
-		RegCmd(DbgDumpCmds,
+		RegCmd(DumpCmds,
 			"list builtin and loaded cmds").
 		AddArg("1st-str", "", "1", "find", "str", "s", "S").
 		AddArg("2rd-str", "", "2").
@@ -63,13 +63,13 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 func RegisterEnvCmds(cmds *core.CmdTree) {
 	env := cmds.AddSub("env", "e", "E")
 	env.AddSub("tree", "t", "T").
-		RegCmd(DbgDumpEnv,
+		RegCmd(DumpEnv,
 			"list all env layers and KVs in tree format")
 	env.AddSub("abbrs", "abbr", "a", "A").
-		RegCmd(DbgDumpEnvAbbrs,
+		RegCmd(DumpEnvAbbrs,
 			"list env tree and abbrs")
 	env.AddSub("list", "ls", "flatten", "flat", "f", "F").
-		RegCmd(DbgDumpEnvFlattenVals,
+		RegCmd(DumpEnvFlattenVals,
 			"list env values in flatten format").
 		AddArg("1st-str", "", "1", "find", "str", "s", "S").
 		AddArg("2rd-str", "", "2").

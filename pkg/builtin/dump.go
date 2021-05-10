@@ -5,7 +5,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func DbgDumpFlow(
+func DumpFlow(
 	_ core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -17,27 +17,27 @@ func DbgDumpFlow(
 	return 0, true
 }
 
-func DbgDumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	display.DumpEnv(cc.Screen, env, 4)
 	return true
 }
 
-func DbgDumpCmdTree(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DumpCmdTree(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	display.DumpCmds(cc, 4, false, "")
 	return true
 }
 
-func DbgDumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	display.DumpCmds(cc, 4, true, getFindStrsFromArgv(argv)...)
 	return true
 }
 
-func DbgDumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	display.DumpEnvAbbrs(cc, 4)
 	return true
 }
 
-func DbgDumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	display.DumpEnvFlattenVals(cc.Screen, env, getFindStrsFromArgv(argv)...)
 	return true
 }
