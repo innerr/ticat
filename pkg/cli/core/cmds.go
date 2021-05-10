@@ -157,6 +157,7 @@ func (self *CmdTree) AbbrsPath() []string {
 		return nil
 	}
 	abbrs := self.parent.SubAbbrs(self.name)
+	fmt.Println("FFF", self.name, abbrs)
 	if len(abbrs) == 0 {
 		return nil
 	}
@@ -231,14 +232,11 @@ func (self *CmdTree) DisplayAbbrsPath() string {
 	}
 }
 
-func (self *CmdTree) Realname(abbr string) (realname string) {
-	if abbr == self.name {
-		return abbr
-	}
+func (self *CmdTree) Realname(nameOrAbbr string) (realname string) {
 	if self.parent == nil {
 		return
 	}
-	realname, _ = self.parent.subAbbrsRevIdx[abbr]
+	realname, _ = self.parent.subAbbrsRevIdx[nameOrAbbr]
 	return
 }
 
@@ -259,7 +257,7 @@ func (self *CmdTree) Abbrs() (abbrs []string) {
 }
 
 func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
-	for _, abbr := range abbrs {
+	for _, abbr := range append([]string{name}, abbrs...) {
 		if len(abbr) == 0 {
 			continue
 		}

@@ -31,6 +31,7 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 		panic(fmt.Errorf("[Args.AddArg] %s: arg name conflicted: %s",
 			owner.DisplayPath(), name))
 	}
+	abbrs = append([]string{name}, abbrs...)
 	for _, abbr := range abbrs {
 		if len(abbr) == 0 {
 			continue
@@ -43,7 +44,6 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 		self.abbrsRevIdx[abbr] = name
 	}
 	self.abbrs[name] = abbrs
-	self.abbrsRevIdx[name] = name
 	self.names[name] = true
 	self.defVals[name] = defVal
 	self.orderedList = append(self.orderedList, name)

@@ -61,10 +61,18 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 	}
 }
 
-func DumpCmds(cc *core.Cli, indentSize int, flatten bool, findStrs ...string) {
-	dumpCmd(cc.Screen, cc.Cmds, indentSize, true, flatten, findStrs...)
+func DumpCmds(cc *core.Cli, indentSize int, flatten bool, path string, findStrs ...string) {
+	cmds := cc.Cmds
+	if len(path) != 0 {
+		cmds = cmds.GetSub(strings.Split(path, cc.Cmds.Strs.PathSep)...)
+		if cmds == nil {
+			panic(fmt.Errorf("[DumpCmds] can't find sub cmd tree by path '%s'", path))
+		}
+	}
+	dumpCmd(cc.Screen, cmds, indentSize, true, flatten, -cmds.Depth(), findStrs...)
 }
 
+// TODO: dump more info, eg: full path
 func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
 	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
 }
@@ -133,7 +141,7 @@ func dumpEnvAbbrs(
 		}
 	}
 
-	name := strings.Join(append([]string{abbrs.DisplayName()}, abbrs.Abbrs()...), abbrsSep)
+	name := strings.Join(abbrs.Abbrs(), abbrsSep)
 	prt("[" + name + "]")
 
 	for _, name := range abbrs.SubNames() {
@@ -147,6 +155,7 @@ func dumpCmd(
 	indentSize int,
 	recursive bool,
 	flatten bool,
+	indentAdjust int,
 	findStrs ...string) {
 
 	if cmd == nil {
@@ -154,7 +163,7 @@ func dumpCmd(
 	}
 
 	abbrsSep := cmd.Strs.AbbrsSep
-	indent := cmd.Depth()
+	indent := cmd.Depth() + indentAdjust
 	indent1 := rpt(" ", indentSize)
 
 	prt := func(msg string) {
@@ -173,7 +182,7 @@ func dumpCmd(
 
 	if cmd.Parent() == nil || cmd.MatchFind(findStrs...) {
 		cic := cmd.Cmd()
-		name := strings.Join(append([]string{cmd.DisplayName()}, cmd.Abbrs()...), abbrsSep)
+		name := strings.Join(cmd.Abbrs(), abbrsSep)
 
 		if !flatten || cic != nil {
 			prt("[" + name + "]")
@@ -220,8 +229,7 @@ func dumpCmd(
 			}
 			for _, name := range argNames {
 				val := args.DefVal(name)
-				names := append([]string{name}, args.Abbrs(name)...)
-				nameStr := strings.Join(names, abbrsSep)
+				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
 				prt(indent1 + nameStr + " = " + mayQuoteStr(val))
 			}
 		}
@@ -229,7 +237,7 @@ func dumpCmd(
 
 	if recursive {
 		for _, name := range cmd.SubNames() {
-			dumpCmd(screen, cmd.GetSub(name), indentSize, recursive, flatten, findStrs...)
+			dumpCmd(screen, cmd.GetSub(name), indentSize, recursive, flatten, indentAdjust, findStrs...)
 		}
 	}
 }

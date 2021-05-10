@@ -44,7 +44,7 @@ func (self *EnvAbbrs) AddSub(name string, abbrs ...string) *EnvAbbrs {
 }
 
 func (self *EnvAbbrs) AddSubAbbrs(name string, abbrs ...string) {
-	for _, abbr := range abbrs {
+	for _, abbr := range append([]string{name}, abbrs...) {
 		if len(abbr) == 0 {
 			continue
 		}
@@ -146,7 +146,7 @@ func (self *EnvAbbrs) SubAbbrs(name string) (abbrs []string) {
 
 func (self *EnvAbbrs) Abbrs() (abbrs []string) {
 	if self.parent == nil {
-		return
+		return []string{self.DisplayName()}
 	}
 	return self.parent.SubAbbrs(self.name)
 }

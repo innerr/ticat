@@ -11,6 +11,16 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func AddToLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	cc.Screen.Print("TODO: AddToLocalHub\n")
+	return true
+}
+
+func AddDefaultToLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	cc.Screen.Print("TODO: AddDefaultToLocalHub\n")
+	return true
+}
+
 func ListLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	cc.Screen.Print("TODO: ListLocalHub\n")
 	return true
@@ -21,8 +31,23 @@ func UpdateLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func AddToLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	cc.Screen.Print("TODO: AddToLocalHub\n")
+func EnableAddrInLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	cc.Screen.Print("TODO: EnableAddrInLocalHub\n")
+	return true
+}
+
+func DisableAddrInLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	cc.Screen.Print("TODO: DisableAddrInLocalHub\n")
+	return true
+}
+
+func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	cc.Screen.Print("TODO: MoveFlowToDir\n")
+	return true
+}
+
+func AddLocalDirToLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	cc.Screen.Print("TODO: AddLocalDir\n")
 	return true
 }
 
@@ -32,6 +57,7 @@ func LoadFromLocalHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
+// TODO:
 func Add(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if !isOsCmdExists("git") {
 		panic(fmt.Errorf("[LoadFromLocalHub] cant't find 'git'"))

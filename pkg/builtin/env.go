@@ -12,8 +12,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
 	env.Set("sys.bootstrap", "")
 	env.Set("sys.version", "1.0.0")
-	env.Set("sys.dev.name", "mist")
-	env.Set("sys.hub.address", "git@github.com:innerr/mist.hub.ticat")
+	env.Set("sys.dev.name", "marsh")
+	env.Set("sys.hub.address", "git@github.com:innerr/marsh.hub.ticat")
 	env.SetInt("sys.stack-depth", 0)
 	setToDefaultVerb(env)
 }

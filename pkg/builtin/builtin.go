@@ -19,7 +19,6 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	cmds.AddSub("help", "?").
 		RegPowerCmd(GlobalHelp,
 			"get help").
-		SetQuiet().
 		SetPriority().
 		AddArg("1st-str", "", "1", "find", "str", "s", "S").
 		AddArg("2rd-str", "", "2").
@@ -38,7 +37,8 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	mod := cmds.AddSub("cmds", "cmd", "mod", "mods", "m", "M", "c", "C")
 	mod.AddSub("tree", "t", "T").
 		RegCmd(DumpCmdTree,
-			"list builtin and loaded cmds")
+			"list builtin and loaded cmds").
+		AddArg("path", "", "p", "P")
 	mod.AddSub("list", "ls", "l", "flatten", "flat", "f", "F").
 		RegCmd(DumpCmds,
 			"list builtin and loaded cmds").
@@ -66,6 +66,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 	env.AddSub("tree", "t", "T").
 		RegCmd(DumpEnv,
 			"list all env layers and KVs in tree format")
+	// TODO: add search supporting
 	env.AddSub("abbrs", "abbr", "a", "A").
 		RegCmd(DumpEnvAbbrs,
 			"list env tree and abbrs")
@@ -117,17 +118,33 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 
 func RegisterHubCmds(cmds *core.CmdTree) {
 	hub := cmds.AddSub("hub", "h", "H")
+	add := hub.AddSub("add-and-update", "add", "a", "A")
+	add.RegCmd(AddToLocalHub,
+		"add and pull a git address to local hub").
+		AddArg("git-address", "", "git", "address", "addr")
+	add.AddSub("basic", "base", "default", "b", "B", "d", "D").
+		RegCmd(AddDefaultToLocalHub,
+			"add and pull basic hub-repo to local").
+		AddArg("git-address", "", "git", "address", "addr")
+	add.AddSub("local-dir", "local", "l", "L").
+		RegCmd(AddLocalDirToLocalHub,
+			"add a local dir (could be a git repo) to local hub").
+		AddArg("path", "", "p", "P")
 	hub.AddSub("list", "ls", "l", "L").
 		RegCmd(ListLocalHub,
 			"list local hub")
 	hub.AddSub("update", "u", "U").
 		RegCmd(UpdateLocalHub,
 			"update mods defined in local hub")
-	add := hub.AddSub("add-and-update", "add", "a", "A")
-	add.RegCmd(AddToLocalHub,
-		"add a git address to local hub").
-		AddArg("git-address", "", "git", "address", "addr")
-	add.AddSub("default", "def", "d", "D")
+	hub.AddSub("enable-git-address", "enable", "e", "E").
+		RegCmd(EnableAddrInLocalHub,
+			"enable a git repo address in local hub")
+	hub.AddSub("disable-git-address", "disable", "d", "D").
+		RegCmd(DisableAddrInLocalHub,
+			"disable a git repo address in local hub")
+	hub.AddSub("move-to-dir", "move", "m", "M").
+		RegCmd(MoveSavedFlowsToLocalDir,
+			"move all saved flows to a local dir (could be a git repo)")
 }
 
 func RegisterBuiltinCmds(cmds *core.CmdTree) {
@@ -190,7 +207,7 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 		AddArg("duration", "1s", "dur", "d", "D")
 }
 
-func RegisterDbgCmds(cmds * core.CmdTree) {
+func RegisterDbgCmds(cmds *core.CmdTree) {
 	cmds.AddSub("tty-read", "tty").
 		RegCmd(DbgReadFromTty,
 			"verify stdin and tty could work together")

@@ -22,13 +22,13 @@ func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func DumpCmdTree(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, 4, false, "")
+func DumpCmdTree(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, 4, false, argv.GetRaw("path"))
 	return true
 }
 
 func DumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, 4, true, getFindStrsFromArgv(argv)...)
+	display.DumpCmds(cc, 4, true, "", getFindStrsFromArgv(argv)...)
 	return true
 }
 
