@@ -25,6 +25,7 @@ func loadLocalMods(
 	cc *core.Cli,
 	root string,
 	metaExt string,
+	flowExt string,
 	abbrsSep string,
 	envPathSep string) {
 
@@ -40,6 +41,10 @@ func loadLocalMods(
 			if len(base) > 0 && base[0] == '.' {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+		if strings.HasSuffix(path, flowExt) {
+			loadFlow(cc, root, path, flowExt)
 			return nil
 		}
 		ext := filepath.Ext(path)

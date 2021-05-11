@@ -62,6 +62,10 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 	flow.AddSub("list-local", "list", "ls").
 		RegCmd(ListFlows,
 			"list local saved but unsynced (to any repo) flows")
+	flow.AddSub("load", "l", "L").
+		RegCmd(LoadFlowsFromDir,
+			"load flows from local dir").
+		AddArg("path", "", "p", "P")
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
@@ -177,8 +181,8 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	mod := cmds.AddSub("mod", "mods", "m", "M")
 	modLoad := mod.AddSub("load", "l", "L")
 	modLoad.AddSub("flows", "flows", "f", "F").
-		RegCmd(LoadLocalFlows,
-			"load flows from local")
+		RegCmd(LoadFlows,
+			"load saved flows from local")
 	modLoad.AddSub("ext-exec", "ext", "e", "E").
 		RegCmd(SetExtExec,
 			"load default setting of how to run a executable file by ext name")

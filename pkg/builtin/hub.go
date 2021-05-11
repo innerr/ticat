@@ -19,12 +19,13 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	}
 	// TODO: move to env
 	const ReposInfoFileName = "repos.hub"
-	metaExt := "." + env.GetRaw("strs.meta-ext")
+	metaExt := env.GetRaw("strs.meta-ext")
+	flowExt := env.GetRaw("strs.flow-ext")
 	abbrsSep := env.GetRaw("strs.abbrs-sep")
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	infos := readReposInfoFile(filepath.Join(path, ReposInfoFileName), true)
 	for _, info := range infos {
-		loadLocalMods(cc, info.Path, metaExt, abbrsSep, envPathSep)
+		loadLocalMods(cc, info.Path, metaExt, flowExt, abbrsSep, envPathSep)
 	}
 	return true
 }

@@ -24,7 +24,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		if path == root {
 			return nil
 		}
-		cmdPath := strings.TrimRight(path[len(root)+1:], flowExt)
+		cmdPath := strings.TrimRight(filepath.Base(path), flowExt)
 		cc.Screen.Print(fmt.Sprintf("=> %s\n", cmdPath))
 		return nil
 	})
@@ -91,8 +91,22 @@ func SaveFlow(
 	return 0, true
 }
 
-func LoadLocalFlows(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	root := env.GetRaw("sys.paths.flows")
+	if len(root) == 0 {
+		panic(fmt.Errorf("[LoadFlows] env 'sys.paths.flows' is empty"))
+	}
+	loadFlowsFromDir(root, cc, env)
+	return true
+}
+
+func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	root := argv.GetRaw("path")
+	loadFlowsFromDir(root, cc, env)
+	return true
+}
+
+func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env) bool {
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
@@ -119,16 +133,23 @@ func LoadLocalFlows(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		if !strings.HasSuffix(path, flowExt) {
 			return nil
 		}
-		cmdPath := strings.TrimRight(path[len(root)+1:], flowExt)
-		flow := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(cc.Cmds.Strs.PathSep))...)
-		data, err := ioutil.ReadFile(path)
-		cmds := strings.TrimSpace(string(data))
-		cmd := flow.RegFlowCmd(cmds, "(TODO: save/load help str of "+cmdPath+")")
-		// TODO: abbrs, help
-		_ = cmd
+		loadFlow(cc, root, path, flowExt)
 		return nil
 	})
 	return true
+}
+
+func loadFlow(cc *core.Cli, root string, path string, flowExt string) {
+	cmdPath := strings.TrimRight(filepath.Base(path), flowExt)
+	flow := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(cc.Cmds.Strs.PathSep))...)
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(fmt.Errorf("[loadFlow] read flow file '%s' failed: %v", path, err))
+	}
+	cmds := strings.TrimSpace(string(data))
+	cmd := flow.RegFlowCmd(cmds, "(TODO: save/load help str of "+cmdPath+")")
+	// TODO: abbrs, help
+	_ = cmd
 }
 
 func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.Env) {
