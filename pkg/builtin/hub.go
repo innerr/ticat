@@ -198,9 +198,12 @@ func readRepoListFromGitRepos(
 	topRepoHelpStr, addrs, helpStrs = readRepoListFromGitRepo(
 		hubPath, gitAddr, listFileName)
 
-	for _, addr := range addrs {
-		_, subAddrs, subHelpStrs := readRepoListFromGitRepos(
+	for i, addr := range addrs {
+		subTopHelpStr, subAddrs, subHelpStrs := readRepoListFromGitRepos(
 			screen, hubPath, addr, repoExt, listFileName)
+		if len(subTopHelpStr) != 0 {
+			helpStrs[i] = subTopHelpStr
+		}
 		addrs = append(addrs, subAddrs...)
 		helpStrs = append(helpStrs, subHelpStrs...)
 	}
