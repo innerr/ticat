@@ -1,8 +1,10 @@
 package core
 
-// TODO: use io.Write
+// TODO: use io.Write ?
 type Screen interface {
 	Print(text string)
+	// Same as line-number, but it's the count of 'Print'
+	OutputNum() int
 }
 
 type Executor interface {

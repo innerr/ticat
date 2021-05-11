@@ -318,5 +318,9 @@ func normalizeCmdPath(path string, sep string, alterSeps string) string {
 }
 
 func getCmdPath(path string, flowExt string) string {
-	return strings.TrimRight(filepath.Base(path), flowExt)
+	base := filepath.Base(path)
+	if !strings.HasSuffix(base, flowExt) {
+		panic(fmt.Errorf("[getCmdPath] flow file '%s' ext not match '%s'", path, flowExt))
+	}
+	return base[:len(base)-len(flowExt)]
 }

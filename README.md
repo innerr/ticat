@@ -48,7 +48,7 @@ TiDB wizard
 -----          Mocking
 -----          Background running
 -----  Flow framework
-***--      Save and edit flow. TODO: execute
+***--      Save, edit and execute flow
 -----      Help and abbrs
 -----      Executing ad-hot help
 -----      Flatten in executing and desc

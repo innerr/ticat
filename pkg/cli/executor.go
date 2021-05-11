@@ -93,6 +93,8 @@ func (self *Executor) executeCmd(
 	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
 
+	ln := cc.Screen.OutputNum()
+
 	stackLines := display.PrintCmdStack(quiet, cc.Screen, cmd,
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 	if stackLines.Display {
@@ -112,6 +114,8 @@ func (self *Executor) executeCmd(
 		resultLines := display.PrintCmdResult(quiet, cc.Screen, cmd,
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
+	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
+		cc.Screen.Print("\n")
 	}
 	return
 }

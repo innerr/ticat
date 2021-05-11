@@ -146,8 +146,8 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 		RegCmd(ListHub,
 			"list dir and repo info in hub")
 	hub.AddSub("remove", "rm", "delete", "del").
-		RegCmd(RemoveGitAddrFromHub,
-			"remove an added repo and related repos").
+		RegCmd(RemoveRepoFromHub,
+			"remove an added repo from hub").
 		AddArg("git-address", "", "git", "address", "addr")
 	hub.AddSub("update", "u", "U").
 		RegCmd(UpdateHub,

@@ -32,7 +32,7 @@ func AddGitAddrToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if len(addr) == 0 {
 		panic(fmt.Errorf("[AddGitAddrToHub] cant't get hub address"))
 	}
-	addRepoToHub(addr, argv, env)
+	addRepoToHub(addr, argv, cc.Screen, env)
 	return true
 }
 
@@ -41,7 +41,7 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if len(addr) == 0 {
 		panic(fmt.Errorf("[AddGitDefaultToHub] cant't get init-repo address from env"))
 	}
-	addRepoToHub(addr, argv, env)
+	addRepoToHub(addr, argv, cc.Screen, env)
 	return true
 }
 
@@ -87,7 +87,7 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 
 	err := os.Remove(metaPath)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if os.IsNotExist(err) && len(infos) == 0 {
 			return true
 		}
 		panic(fmt.Errorf("[RemoveAllFromHub] remove '%s' failed: %v", metaPath, err))
@@ -95,7 +95,7 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func RemoveGitAddrFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func RemoveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	fieldSep := env.GetRaw("strs.proto-sep")
 	repoExt := env.GetRaw("strs.mods-repo-ext")
 
@@ -103,24 +103,19 @@ func RemoveGitAddrFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	infos := readReposInfoFile(metaPath, true, fieldSep)
 	addr := argv.GetRaw("git-address")
 	if len(addr) == 0 {
-		panic(fmt.Errorf("[RemoveGitAddrFromHub] cant't get target repo address from args"))
+		panic(fmt.Errorf("[RemoveRepoFromHub] cant't get target repo addr from args"))
 	}
 
-	_, rest := extractAddrFromList(infos, addr)
-	for _, info := range rest {
-		path := strings.TrimSpace(info.Path)
-		if len(path) <= 1 {
-			panic(fmt.Errorf("[RemoveGitAddrFromHub] repo '%s', path '%v' looks not right",
-				info.Addr, info.Path))
-		}
-		err := os.RemoveAll(path)
-		if err != nil {
-			panic(fmt.Errorf("[RemoveFlow] remove repo dir '%s' failed: %v",
-				path, err))
-		}
-		cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", gitAddrAbbr(info.Addr, repoExt)))
-		cc.Screen.Print(fmt.Sprintf("    %s\n", path))
+	gitAddr := normalizeGitAddr(addr, repoExt)
+	info, rest := extractAddrFromList(infos, gitAddr)
+	if len(info.Path) == 0 {
+		panic(fmt.Errorf("[RemoveRepoFromHub] cant't find repo '%s', normalized: %s",
+			addr, gitAddr))
 	}
+	osRemoveDir(info.Path)
+
+	cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", gitAddrAbbr(info.Addr, repoExt)))
+	cc.Screen.Print(fmt.Sprintf("    %s\n", info.Path))
 
 	writeReposInfoFile(metaPath, rest, fieldSep)
 	return true
@@ -152,12 +147,13 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func addRepoToHub(
-	addr string,
+	gitAddr string,
 	argv core.ArgVals,
+	screen core.Screen,
 	env *core.Env) (addrs []string, helpStrs []string) {
 
 	repoExt := env.GetRaw("strs.mods-repo-ext")
-	addr = normalizeGitAddr(addr, repoExt)
+	gitAddr = normalizeGitAddr(gitAddr, repoExt)
 
 	if !isOsCmdExists("git") {
 		panic(fmt.Errorf("[addRepoToHub] cant't find 'git'"))
@@ -173,12 +169,17 @@ func addRepoToHub(
 	}
 
 	listFileName := env.GetRaw("strs.repos-file-name")
-	addrs, helpStrs = readRepoListFromGitRepos(path, addr, listFileName)
+	var topRepoHelpStr string
+	topRepoHelpStr, addrs, helpStrs = readRepoListFromGitRepos(
+		screen, path, gitAddr, repoExt, listFileName)
+
+	addrs = append([]string{gitAddr}, addrs...)
+	helpStrs = append([]string{topRepoHelpStr}, helpStrs...)
 
 	var infos []repoInfo
 	for i, addr := range addrs {
 		repoPath := getRepoPath(path, addr)
-		infos = append(infos, repoInfo{addr, addr, repoPath, helpStrs[i]})
+		infos = append(infos, repoInfo{addr, gitAddr, repoPath, helpStrs[i]})
 	}
 	metaPath := getReposInfoPath(env, "addRepoToHub")
 	fieldSep := env.GetRaw("strs.proto-sep")
@@ -187,23 +188,30 @@ func addRepoToHub(
 }
 
 func readRepoListFromGitRepos(
+	screen core.Screen,
 	hubPath string,
 	gitAddr string,
-	listFileName string) (addrs []string, helpStrs []string) {
+	repoExt string,
+	listFileName string) (topRepoHelpStr string, addrs []string, helpStrs []string) {
 
-	addrs, helpStrs = readRepoListFromGitRepo(hubPath, gitAddr, listFileName)
+	screen.Print(fmt.Sprintf("[%s] => git clone\n", gitAddrAbbr(gitAddr, repoExt)))
+	topRepoHelpStr, addrs, helpStrs = readRepoListFromGitRepo(
+		hubPath, gitAddr, listFileName)
+
 	for _, addr := range addrs {
-		subAddrs, subHelpStrs := readRepoListFromGitRepo(hubPath, addr, listFileName)
+		_, subAddrs, subHelpStrs := readRepoListFromGitRepos(
+			screen, hubPath, addr, repoExt, listFileName)
 		addrs = append(addrs, subAddrs...)
 		helpStrs = append(helpStrs, subHelpStrs...)
 	}
-	return
+
+	return topRepoHelpStr, addrs, helpStrs
 }
 
 func readRepoListFromGitRepo(
 	hubPath string,
 	gitAddr string,
-	listFileName string) (addrs []string, helpStrs []string) {
+	listFileName string) (helpStr string, addrs []string, helpStrs []string) {
 
 	repoPath := getRepoPath(hubPath, gitAddr)
 	cmdStrs := []string{"git", "clone", gitAddr, repoPath}
@@ -218,7 +226,7 @@ func readRepoListFromGitRepo(
 	return readRepoListFromFile(listFilePath)
 }
 
-func readRepoListFromFile(path string) (addrs []string, helpStrs []string) {
+func readRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs []string) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(fmt.Errorf("[readRepoListFromFile] read list file '%v' failed: %v",
@@ -229,7 +237,19 @@ func readRepoListFromFile(path string) (addrs []string, helpStrs []string) {
 
 	// TODO: move to specific package
 	const StartMark = "[ticat.hub]"
-	for _, line := range list {
+	for i, line := range list {
+		line = strings.TrimSpace(line)
+		if i != 0 && len(line) > 0 && len(helpStr) == 0 {
+			j := strings.LastIndex(line, ":")
+			if j < 0 {
+				helpStr = line
+			} else {
+				text := strings.TrimSpace(line[j+1:])
+				if len(text) > 0 {
+					helpStr = text
+				}
+			}
+		}
 		if strings.HasPrefix(line, StartMark) {
 			meetMark = true
 		}
@@ -259,10 +279,10 @@ func readRepoListFromFile(path string) (addrs []string, helpStrs []string) {
 	return
 }
 
-func extractAddrFromList(infos []repoInfo, target string) (extracted []repoInfo, rest []repoInfo) {
+func extractAddrFromList(infos []repoInfo, target string) (extracted repoInfo, rest []repoInfo) {
 	for _, info := range infos {
 		if info.Addr == target {
-			extracted = append(extracted, info)
+			extracted = info
 		} else {
 			rest = append(rest, info)
 		}
