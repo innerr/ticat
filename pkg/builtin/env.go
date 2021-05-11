@@ -13,7 +13,7 @@ func LoadDefaultEnv(env *core.Env) {
 	env.Set("sys.bootstrap", "")
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "marsh")
-	env.Set("sys.hub.address", "git@github.com:innerr/marsh.hub.ticat")
+	env.Set("sys.hub.init-repo", "git@github.com:innerr/marsh.hub.ticat")
 	env.SetInt("sys.stack-depth", 0)
 	setToDefaultVerb(env)
 }
@@ -64,7 +64,10 @@ func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	protoSep := env.Get("strs.proto-sep").Raw
 	path := getEnvLocalFilePath(env)
 	file, err := os.Open(path)
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil {
+		if os.IsNotExist(err) {
+			return true
+		}
 		panic(fmt.Errorf("[LoadLocalEnv] open local env file '%s' failed: %v",
 			path, err))
 	}
@@ -101,6 +104,8 @@ func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToLocal] write local env file '%s' failed: %v", tmp, err))
 	}
+	file.Close()
+
 	err = os.Rename(tmp, path)
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToLocal] rename env file '%s' to '%s' failed: %v",

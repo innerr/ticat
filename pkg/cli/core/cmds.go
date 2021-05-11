@@ -157,7 +157,6 @@ func (self *CmdTree) AbbrsPath() []string {
 		return nil
 	}
 	abbrs := self.parent.SubAbbrs(self.name)
-	fmt.Println("FFF", self.name, abbrs)
 	if len(abbrs) == 0 {
 		return nil
 	}

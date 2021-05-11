@@ -119,28 +119,32 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 func RegisterHubCmds(cmds *core.CmdTree) {
 	hub := cmds.AddSub("hub", "h", "H")
 	hub.AddSub("init").
-		RegCmd(AddDefaultToLocalHub,
+		RegCmd(AddGitDefaultToHub,
 			"add and pull basic hub-repo to local")
 	add := hub.AddSub("add-and-update", "add", "a", "A")
-	add.RegCmd(AddToLocalHub,
-		"add and pull a git address to local hub").
+	add.RegCmd(AddGitAddrToHub,
+		"add and pull a git address to hub").
 		AddArg("git-address", "", "git", "address", "addr")
 	add.AddSub("local-dir", "local", "l", "L").
-		RegCmd(AddLocalDirToLocalHub,
-			"add a local dir (could be a git repo) to local hub").
+		RegCmd(AddLocalDirToHub,
+			"add a local dir (could be a git repo) to hub").
 		AddArg("path", "", "p", "P")
 	hub.AddSub("list", "ls", "l", "L").
-		RegCmd(ListLocalHub,
-			"list local hub")
+		RegCmd(ListHub,
+			"list dir and repo info in hub")
+	hub.AddSub("remove", "rm", "delete", "del").
+		RegCmd(RemoveGitAddrFromHub,
+			"remove an added repo and related repos").
+		AddArg("git-address", "", "git", "address", "addr")
 	hub.AddSub("update", "u", "U").
-		RegCmd(UpdateLocalHub,
-			"update all repos and mods defined in local hub")
+		RegCmd(UpdateHub,
+			"update all repos and mods defined in hub")
 	hub.AddSub("enable-git-address", "enable", "e", "E").
-		RegCmd(EnableAddrInLocalHub,
-			"enable a git repo address in local hub")
+		RegCmd(EnableAddrInHub,
+			"enable a git repo address in hub")
 	hub.AddSub("disable-git-address", "disable", "d", "D").
-		RegCmd(DisableAddrInLocalHub,
-			"disable a git repo address in local hub")
+		RegCmd(DisableAddrInHub,
+			"disable a git repo address in hub")
 	hub.AddSub("move-to-dir", "move", "m", "M").
 		RegCmd(MoveSavedFlowsToLocalDir,
 			"move all saved flows to a local dir (could be a git repo)").
@@ -179,11 +183,9 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	modLoad.AddSub("ext-exec", "ext", "e", "E").
 		RegCmd(SetExtExec,
 			"load default setting of how to run a executable file by ext name")
-	/*
-		modLoad.AddSub("hub", "h", "H").
-			RegCmd(LoadFromLocalHub,
-				"load flows and mods from local hub")
-	*/
+	modLoad.AddSub("hub", "h", "H").
+		RegCmd(LoadModsFromHub,
+			"load flows and mods from local hub")
 }
 
 func RegisterTrivialCmds(cmds *core.CmdTree) {

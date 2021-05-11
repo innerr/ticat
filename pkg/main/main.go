@@ -74,6 +74,7 @@ func main() {
 		B.M.L.L:
 		B.M.L.E:
 		B.M.L.F:
+		B.M.L.H:
 	`
 
 	// TODO: handle error by types

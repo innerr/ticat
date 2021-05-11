@@ -12,18 +12,37 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerDefault)
+	env.Set("sys.ext.exec.bash", "bash")
+	env.Set("sys.ext.exec.sh", "sh")
+	env.Set("sys.ext.exec.py", "python")
+	env.Set("sys.ext.exec.go", "go run")
+	return true
+}
+
 func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	root := env.Get("sys.paths.mods").Raw
 	metaExt := "." + env.Get("strs.meta-ext").Raw
 	abbrsSep := env.Get("strs.abbrs-sep").Raw
 	envPathSep := env.Get("strs.env-path-sep").Raw
+	loadLocalMods(cc, root, metaExt, abbrsSep, envPathSep)
+	return true
+}
+
+func loadLocalMods(
+	cc *core.Cli,
+	root string,
+	metaExt string,
+	abbrsSep string,
+	envPathSep string) {
 
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
 
 	// TODO: return filepath.SkipDir to avoid non-sense scanning
-	filepath.Walk(root, func(metaPath string, _ fs.FileInfo, err error) error {
+	filepath.Walk(root, func(metaPath string, info fs.FileInfo, err error) error {
 		if len(metaPath) > 0 && metaPath[0] == filepath.Separator {
 			return filepath.SkipDir
 		}
@@ -33,7 +52,7 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		}
 		target := metaPath[0 : len(metaPath)-len(ext)]
 
-		info, err := os.Stat(target)
+		info, err = os.Stat(target)
 		if os.IsNotExist(err) {
 			panic(fmt.Errorf("[LoadLocalMods] target '%s' of meta file '%s' not exists",
 				target, metaPath))
@@ -54,7 +73,6 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		regMod(cc, metaPath, target, info.IsDir(), cmdPath, abbrsSep, envPathSep)
 		return nil
 	})
-	return true
 }
 
 // TODO: mod's meta definition file (*.ticat) should have a formal manager
@@ -171,15 +189,6 @@ func regMod(
 			}
 		}
 	}
-}
-
-func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	env = env.GetLayer(core.EnvLayerDefault)
-	env.Set("sys.ext.exec.bash", "bash")
-	env.Set("sys.ext.exec.sh", "sh")
-	env.Set("sys.ext.exec.py", "python")
-	env.Set("sys.ext.exec.go", "go run")
-	return true
 }
 
 func fileExists(path string) bool {
