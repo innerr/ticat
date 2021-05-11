@@ -21,10 +21,13 @@ func main() {
 	// Any mod could get the specific string val from env when it's called
 	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
 	defEnv.Set("strs.meta-ext", SelfName)
+	defEnv.Set("strs.flow-ext", FlowExt)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)
+	defEnv.Set("strs.seq-sep", SequenceSep)
 	defEnv.Set("strs.env-path-sep", EnvPathSep)
 	defEnv.Set("strs.env-sys-path", EnvRuntimeSysPrefix)
 	defEnv.Set("strs.env-strs-path", EnvStrsPrefix)
+	defEnv.Set("strs.env-kv-sep", EnvKeyValSep)
 	defEnv.Set("strs.env-bracket-left", EnvBracketLeft)
 	defEnv.Set("strs.env-bracket-right", EnvBracketRight)
 	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)
@@ -73,7 +76,6 @@ func main() {
 		B.E.L.R:
 		B.E.L.L:
 		B.E.L.S:
-		B.M.L.L:
 		B.M.L.E:
 		B.M.L.F:
 		B.M.L.H:
@@ -114,4 +116,6 @@ const (
 	ProtoMark           string = "proto." + SelfName
 	ProtoEnvMark        string = ProtoMark + ".env"
 	ProtoSep            string = "\t"
+	ModsRepoExt         string = "." + SelfName
+	FlowExt             string = ".flow." + SelfName
 )

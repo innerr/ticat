@@ -59,6 +59,9 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		RegCmd(RemoveFlow,
 			"remove a saved flow").
 		AddArg("cmd-path", "", "path", "p", "P")
+	flow.AddSub("list-local", "list", "ls").
+		RegCmd(ListFlows,
+			"list local saved but unsynced (to any repo) flows")
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
@@ -173,10 +176,6 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 
 	mod := cmds.AddSub("mod", "mods", "m", "M")
 	modLoad := mod.AddSub("load", "l", "L")
-	modLoad.AddSub("local", "l", "L").
-		RegCmd(LoadLocalMods,
-			"load mods from local").
-		SetQuiet()
 	modLoad.AddSub("flows", "flows", "f", "F").
 		RegCmd(LoadLocalFlows,
 			"load flows from local")
