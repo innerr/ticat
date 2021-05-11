@@ -50,8 +50,8 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 //   1. those loaders will be loaded from 'bootstrap' string above
 //   2. put a string val with key 'bootstrap' to env could launch it as an extra bootstrap
 func LoadStdinEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
-	protoEnvMark := env.Get("strs.proto-env-mark").Raw
-	protoSep := env.Get("strs.proto-sep").Raw
+	protoEnvMark := env.GetRaw("strs.proto-env-mark")
+	protoSep := env.GetRaw("strs.proto-sep")
 	stdinEnv := genEnvFromStdin(protoEnvMark, protoSep)
 	if stdinEnv != nil {
 		env.GetLayer(core.EnvLayerSession).Merge(stdinEnv)
@@ -60,8 +60,8 @@ func LoadStdinEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 }
 
 func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
-	protoEnvMark := env.Get("strs.proto-env-mark").Raw
-	protoSep := env.Get("strs.proto-sep").Raw
+	protoEnvMark := env.GetRaw("strs.proto-env-mark")
+	protoSep := env.GetRaw("strs.proto-sep")
 	path := getEnvLocalFilePath(env)
 	file, err := os.Open(path)
 	if err != nil {
@@ -89,8 +89,8 @@ func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 }
 
 func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	protoEnvMark := env.Get("strs.proto-env-mark").Raw
-	protoSep := env.Get("strs.proto-sep").Raw
+	protoEnvMark := env.GetRaw("strs.proto-env-mark")
+	protoSep := env.GetRaw("strs.proto-sep")
 
 	path := getEnvLocalFilePath(env)
 	tmp := path + ".tmp"
@@ -133,8 +133,8 @@ func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func getEnvLocalFilePath(env *core.Env) string {
-	path := env.Get("sys.paths.data").Raw
-	file := env.Get("strs.env-file-name").Raw
+	path := env.GetRaw("sys.paths.data")
+	file := env.GetRaw("strs.env-file-name")
 	if len(path) == 0 || len(file) == 0 {
 		panic(fmt.Errorf("[getEnvLocalFilePath] can't find local data path"))
 	}

@@ -247,6 +247,10 @@ func getRelatedAddrList(infos []RepoInfo, target string) (related []RepoInfo, re
 }
 
 func normalizeGitAddr(addr string) string {
+	// TODO: move to env
+	if !strings.HasSuffix(strings.ToLower(addr), ".ticat") {
+		addr = addr + ".ticat"
+	}
 	if strings.HasPrefix(strings.ToLower(addr), "http") {
 		return addr
 	}

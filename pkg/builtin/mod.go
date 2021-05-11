@@ -22,10 +22,10 @@ func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	root := env.Get("sys.paths.mods").Raw
-	metaExt := "." + env.Get("strs.meta-ext").Raw
-	abbrsSep := env.Get("strs.abbrs-sep").Raw
-	envPathSep := env.Get("strs.env-path-sep").Raw
+	root := env.GetRaw("sys.paths.mods")
+	metaExt := "." + env.GetRaw("strs.meta-ext")
+	abbrsSep := env.GetRaw("strs.abbrs-sep")
+	envPathSep := env.GetRaw("strs.env-path-sep")
 	loadLocalMods(cc, root, metaExt, abbrsSep, envPathSep)
 	return true
 }

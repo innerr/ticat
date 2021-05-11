@@ -46,7 +46,7 @@ func SaveFlow(
 
 	w := bytes.NewBuffer(nil)
 	flow.RmLeadingCmds(1)
-	saveFlow(w, flow, cc.Cmds.Strs.PathSep)
+	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
 	data := w.String()
 	cc.Screen.Print(strings.Repeat("-", 80) + "\n")
 	cc.Screen.Print(data)
@@ -55,10 +55,10 @@ func SaveFlow(
 	cc.Screen.Print(fmt.Sprintf("   %s\n", filePath))
 
 	dirPath := filepath.Dir(filePath)
-	os.MkdirAll(dirPath, 0644)
+	os.MkdirAll(dirPath, os.ModePerm)
 
 	tmp := filePath + ".tmp"
-	err = ioutil.WriteFile(tmp, []byte(data), os.ModePerm)
+	err = ioutil.WriteFile(tmp, []byte(data), 0644)
 	if err != nil {
 		panic(fmt.Errorf("[SaveFlow] write flow file '%s' failed: %v", tmp, err))
 	}
@@ -74,7 +74,7 @@ func SaveFlow(
 }
 
 func LoadLocalFlows(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	root := env.Get("sys.paths.flows").Raw
+	root := env.GetRaw("sys.paths.flows")
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
@@ -107,7 +107,7 @@ func LoadLocalFlows(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func saveFlow(w io.Writer, flow *core.ParsedCmds, sep string) {
+func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.Env) {
 	for i, cmd := range flow.Cmds {
 		if len(flow.Cmds) > 1 {
 			if i == 0 {
@@ -125,7 +125,7 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, sep string) {
 
 		for j, seg := range cmd {
 			if len(cmd) > 1 && j != 0 && !lastSegHasNoCmd {
-				fmt.Fprint(w, sep)
+				fmt.Fprint(w, cmdPathSep)
 			}
 			fmt.Fprint(w, seg.Cmd.Name)
 
@@ -135,7 +135,7 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, sep string) {
 				path = append(path, seg.Cmd.Name)
 			}
 			lastSegHasNoCmd = (seg.Cmd.Cmd == nil)
-			cmdHasEnv = saveEnv(w, seg.Env, path, sep,
+			cmdHasEnv = saveEnv(w, seg.Env, path, cmdPathSep,
 				!cmdHasEnv && j == len(cmd)-1) || cmdHasEnv
 		}
 	}
@@ -146,7 +146,7 @@ func saveEnv(
 	w io.Writer,
 	env core.ParsedEnv,
 	prefixPath []string,
-	sep string,
+	cmdPathSep string,
 	useArgsFmt bool) bool {
 
 	if len(env) == 0 {
@@ -161,12 +161,12 @@ func saveEnv(
 		}
 	}
 
-	prefix := strings.Join(prefixPath, sep) + sep
+	prefix := strings.Join(prefixPath, cmdPathSep) + cmdPathSep
 
 	var kvs []string
 	for k, v := range env {
 		if strings.HasPrefix(k, prefix) && len(k) != len(prefix) {
-			k = strings.Join(v.MatchedPath[len(prefixPath):], sep)
+			k = strings.Join(v.MatchedPath[len(prefixPath):], cmdPathSep)
 		}
 		kvs = append(kvs, fmt.Sprintf("%v=%v", k, v.Val))
 	}
@@ -193,7 +193,7 @@ func getFlowCmdPath(
 		panic(fmt.Errorf("[%s] arg '%s' is empty", funcName, argName))
 	}
 
-	root := env.Get("sys.paths.flows").Raw
+	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
 		panic(fmt.Errorf("[%s] env 'sys.paths.flows' is empty", funcName))
 	}

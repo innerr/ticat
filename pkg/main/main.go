@@ -25,6 +25,8 @@ func main() {
 	defEnv.Set("strs.env-path-sep", EnvPathSep)
 	defEnv.Set("strs.env-sys-path", EnvRuntimeSysPrefix)
 	defEnv.Set("strs.env-strs-path", EnvStrsPrefix)
+	defEnv.Set("strs.env-bracket-left", EnvBracketLeft)
+	defEnv.Set("strs.env-bracket-right", EnvBracketRight)
 	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)
 	defEnv.Set("strs.proto-sep", ProtoSep)
 	defEnv.Set("strs.env-file-name", EnvFileName)
