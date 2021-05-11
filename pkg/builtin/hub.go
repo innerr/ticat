@@ -13,17 +13,14 @@ import (
 )
 
 func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	path := env.GetRaw("sys.paths.hub")
-	if len(path) == 0 {
-		panic(fmt.Errorf("[addRepoToHub] cant't get hub path"))
-	}
-	// TODO: move to env
-	const ReposInfoFileName = "repos.hub"
 	metaExt := env.GetRaw("strs.meta-ext")
 	flowExt := env.GetRaw("strs.flow-ext")
 	abbrsSep := env.GetRaw("strs.abbrs-sep")
 	envPathSep := env.GetRaw("strs.env-path-sep")
-	infos := readReposInfoFile(filepath.Join(path, ReposInfoFileName), true)
+	fieldSep := env.GetRaw("strs.proto-sep")
+
+	metaPath := getReposInfoPath(env, "LoadModsFromHub")
+	infos := readReposInfoFile(metaPath, true, fieldSep)
 	for _, info := range infos {
 		loadLocalMods(cc, info.Path, metaExt, flowExt, abbrsSep, envPathSep)
 	}
@@ -49,19 +46,17 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	path := env.GetRaw("sys.paths.hub")
-	if len(path) == 0 {
-		panic(fmt.Errorf("[addRepoToHub] cant't get hub path"))
-	}
-	// TODO: move to env
-	const ReposInfoFileName = "repos.hub"
-	infos := readReposInfoFile(filepath.Join(path, ReposInfoFileName), true)
+	repoExt := env.GetRaw("strs.mods-repo-ext")
+	fieldSep := env.GetRaw("strs.proto-sep")
+	metaPath := getReposInfoPath(env, "ListHub")
+	infos := readReposInfoFile(metaPath, true, fieldSep)
+
 	for _, info := range infos {
 		from := info.AddReason
 		if from == info.Addr {
 			from = "<manually added>"
 		}
-		abbr := gitAddrAbbr(info.Addr)
+		abbr := gitAddrAbbr(info.Addr, repoExt)
 		if len(abbr) != 0 {
 			cc.Screen.Print(fmt.Sprintf("[%s]\n", abbr))
 		} else {
@@ -77,22 +72,57 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func RemoveGitAddrFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	path := env.GetRaw("sys.paths.hub")
-	if len(path) == 0 {
-		panic(fmt.Errorf("[RemoveGitAddrFromHub] cant't get hub path"))
+func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	fieldSep := env.GetRaw("strs.proto-sep")
+	repoExt := env.GetRaw("strs.mods-repo-ext")
+
+	metaPath := getReposInfoPath(env, "RemoveAllFromHub")
+	infos := readReposInfoFile(metaPath, true, fieldSep)
+
+	for _, info := range infos {
+		osRemoveDir(info.Path)
+		cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", gitAddrAbbr(info.Addr, repoExt)))
+		cc.Screen.Print(fmt.Sprintf("    %s\n", info.Path))
 	}
-	// TODO: move to env
-	const ReposInfoFileName = "repos.hub"
-	infoPath := filepath.Join(path, ReposInfoFileName)
-	infos := readReposInfoFile(infoPath, true)
+
+	err := os.Remove(metaPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return true
+		}
+		panic(fmt.Errorf("[RemoveAllFromHub] remove '%s' failed: %v", metaPath, err))
+	}
+	return true
+}
+
+func RemoveGitAddrFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	fieldSep := env.GetRaw("strs.proto-sep")
+	repoExt := env.GetRaw("strs.mods-repo-ext")
+
+	metaPath := getReposInfoPath(env, "RemoveGitAddrFromHub")
+	infos := readReposInfoFile(metaPath, true, fieldSep)
 	addr := argv.GetRaw("git-address")
 	if len(addr) == 0 {
 		panic(fmt.Errorf("[RemoveGitAddrFromHub] cant't get target repo address from args"))
 	}
-	related, rest := getRelatedAddrList(infos, addr)
-	writeReposInfoFile(infoPath, rest)
-	cc.Screen.Print(fmt.Sprintf("[RemoveGitAddrFromHub] TODO: remove dir '%v'\n", related))
+
+	_, rest := extractAddrFromList(infos, addr)
+	for _, info := range rest {
+		path := strings.TrimSpace(info.Path)
+		if len(path) <= 1 {
+			panic(fmt.Errorf("[RemoveGitAddrFromHub] repo '%s', path '%v' looks not right",
+				info.Addr, info.Path))
+		}
+		err := os.RemoveAll(path)
+		if err != nil {
+			panic(fmt.Errorf("[RemoveFlow] remove repo dir '%s' failed: %v",
+				path, err))
+		}
+		cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", gitAddrAbbr(info.Addr, repoExt)))
+		cc.Screen.Print(fmt.Sprintf("    %s\n", path))
+	}
+
+	writeReposInfoFile(metaPath, rest, fieldSep)
 	return true
 }
 
@@ -126,7 +156,8 @@ func addRepoToHub(
 	argv core.ArgVals,
 	env *core.Env) (addrs []string, helpStrs []string) {
 
-	addr = normalizeGitAddr(addr)
+	repoExt := env.GetRaw("strs.mods-repo-ext")
+	addr = normalizeGitAddr(addr, repoExt)
 
 	if !isOsCmdExists("git") {
 		panic(fmt.Errorf("[addRepoToHub] cant't find 'git'"))
@@ -141,30 +172,39 @@ func addRepoToHub(
 		panic(fmt.Errorf("[addRepoToHub] create hub path '%s' failed: %v", path, err))
 	}
 
-	addrs, helpStrs = readRepoListFromGitRepos(path, addr)
-	var infos []RepoInfo
+	listFileName := env.GetRaw("strs.repos-file-name")
+	addrs, helpStrs = readRepoListFromGitRepos(path, addr, listFileName)
+
+	var infos []repoInfo
 	for i, addr := range addrs {
 		repoPath := getRepoPath(path, addr)
-		infos = append(infos, RepoInfo{addr, addr, repoPath, helpStrs[i]})
+		infos = append(infos, repoInfo{addr, addr, repoPath, helpStrs[i]})
 	}
-	// TODO: move to env
-	// TODO: write to <data>/repos.hub?
-	const ReposInfoFileName = "repos.hub"
-	writeReposInfoFile(filepath.Join(path, ReposInfoFileName), infos)
+	metaPath := getReposInfoPath(env, "addRepoToHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
+	writeReposInfoFile(metaPath, infos, fieldSep)
 	return
 }
 
-func readRepoListFromGitRepos(hubPath string, gitAddr string) (addrs []string, helpStrs []string) {
-	addrs, helpStrs = readRepoListFromGitRepo(hubPath, gitAddr)
+func readRepoListFromGitRepos(
+	hubPath string,
+	gitAddr string,
+	listFileName string) (addrs []string, helpStrs []string) {
+
+	addrs, helpStrs = readRepoListFromGitRepo(hubPath, gitAddr, listFileName)
 	for _, addr := range addrs {
-		subAddrs, subHelpStrs := readRepoListFromGitRepo(hubPath, addr)
+		subAddrs, subHelpStrs := readRepoListFromGitRepo(hubPath, addr, listFileName)
 		addrs = append(addrs, subAddrs...)
 		helpStrs = append(helpStrs, subHelpStrs...)
 	}
 	return
 }
 
-func readRepoListFromGitRepo(hubPath string, gitAddr string) (addrs []string, helpStrs []string) {
+func readRepoListFromGitRepo(
+	hubPath string,
+	gitAddr string,
+	listFileName string) (addrs []string, helpStrs []string) {
+
 	repoPath := getRepoPath(hubPath, gitAddr)
 	cmdStrs := []string{"git", "clone", gitAddr, repoPath}
 	cmd := exec.Command(cmdStrs[0], cmdStrs[1:]...)
@@ -174,14 +214,8 @@ func readRepoListFromGitRepo(hubPath string, gitAddr string) (addrs []string, he
 	if err != nil {
 		panic(fmt.Errorf("[readRepoListFromGitRepo] run '%v' failed: %v", cmdStrs, err))
 	}
-	// TODO: move to env
-	const listFileName = "README.md"
 	listFilePath := filepath.Join(repoPath, listFileName)
 	return readRepoListFromFile(listFilePath)
-}
-
-func getRepoPath(hubPath string, gitAddr string) string {
-	return filepath.Join(hubPath, filepath.Base(gitAddr))
 }
 
 func readRepoListFromFile(path string) (addrs []string, helpStrs []string) {
@@ -192,7 +226,8 @@ func readRepoListFromFile(path string) (addrs []string, helpStrs []string) {
 	}
 	list := strings.Split(string(data), "\n")
 	meetMark := false
-	// TODO: move to env
+
+	// TODO: move to specific package
 	const StartMark = "[ticat.hub]"
 	for _, line := range list {
 		if strings.HasPrefix(line, StartMark) {
@@ -224,22 +259,10 @@ func readRepoListFromFile(path string) (addrs []string, helpStrs []string) {
 	return
 }
 
-func getRelatedAddrList(infos []RepoInfo, target string) (related []RepoInfo, rest []RepoInfo) {
-	/* TODO
-	for _, info := range infos {
-		if info.AddedReason == target {
-			related = append(related, info)
-		} else {
-			rest = append(rest, info)
-		}
-	}
-	for _, rel := range related {
-		subRelated, subRest := getRelatedAddrList(rest, rel)
-	}
-	*/
+func extractAddrFromList(infos []repoInfo, target string) (extracted []repoInfo, rest []repoInfo) {
 	for _, info := range infos {
 		if info.Addr == target {
-			related = append(related, info)
+			extracted = append(extracted, info)
 		} else {
 			rest = append(rest, info)
 		}
@@ -247,10 +270,9 @@ func getRelatedAddrList(infos []RepoInfo, target string) (related []RepoInfo, re
 	return
 }
 
-func normalizeGitAddr(addr string) string {
-	// TODO: move to env
-	if !strings.HasSuffix(strings.ToLower(addr), ".ticat") {
-		addr = addr + ".ticat"
+func normalizeGitAddr(addr string, repoExt string) string {
+	if !strings.HasSuffix(strings.ToLower(addr), repoExt) {
+		addr = addr + repoExt
 	}
 	if strings.HasPrefix(strings.ToLower(addr), "http") {
 		return addr
@@ -261,7 +283,7 @@ func normalizeGitAddr(addr string) string {
 	return "git@github.com:" + addr
 }
 
-func gitAddrAbbr(addr string) (abbr string) {
+func gitAddrAbbr(addr string, repoExt string) (abbr string) {
 	// TODO: support other git platform
 	abbrExtractors := []func(string) string{
 		githubAddrAbbr,
@@ -272,8 +294,7 @@ func gitAddrAbbr(addr string) (abbr string) {
 			break
 		}
 	}
-	// TODO: config from env
-	abbr = strings.TrimRight(abbr, ".ticat")
+	abbr = strings.TrimRight(abbr, repoExt)
 	return
 }
 
@@ -294,14 +315,14 @@ func isOsCmdExists(cmd string) bool {
 	return err == nil && len(path) > 0
 }
 
-type RepoInfo struct {
+type repoInfo struct {
 	Addr      string
 	AddReason string
 	Path      string
 	HelpStr   string
 }
 
-func writeReposInfoFile(path string, infos []RepoInfo) {
+func writeReposInfoFile(path string, infos []repoInfo, sep string) {
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
@@ -309,8 +330,6 @@ func writeReposInfoFile(path string, infos []RepoInfo) {
 	}
 	defer file.Close()
 
-	// TODO: move to env
-	const sep = "\t"
 	for _, info := range infos {
 		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s\n",
 			info.Addr, sep, info.AddReason, sep, info.Path, sep, info.HelpStr)
@@ -327,7 +346,7 @@ func writeReposInfoFile(path string, infos []RepoInfo) {
 	}
 }
 
-func readReposInfoFile(path string, allowNotExist bool) (infos []RepoInfo) {
+func readReposInfoFile(path string, allowNotExist bool, sep string) (infos []repoInfo) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) && allowNotExist {
@@ -337,9 +356,6 @@ func readReposInfoFile(path string, allowNotExist bool) (infos []RepoInfo) {
 	}
 	defer file.Close()
 
-	// TODO: move to env
-	const sep = "\t"
-
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
@@ -348,7 +364,7 @@ func readReposInfoFile(path string, allowNotExist bool) (infos []RepoInfo) {
 		if len(fields) != 4 {
 			panic(fmt.Errorf("[readReposInfoFile] file '%s' line '%s' can't be parsed", path, line))
 		}
-		infos = append(infos, RepoInfo{
+		infos = append(infos, repoInfo{
 			fields[0],
 			fields[1],
 			fields[2],
@@ -356,4 +372,34 @@ func readReposInfoFile(path string, allowNotExist bool) (infos []RepoInfo) {
 		})
 	}
 	return
+}
+
+func getReposInfoPath(env *core.Env, funcName string) string {
+	path := env.GetRaw("sys.paths.hub")
+	if len(path) == 0 {
+		panic(fmt.Errorf("[addRepoToHub] cant't get hub path"))
+	}
+	reposInfoFileName := env.GetRaw("strs.hub-file-name")
+	if len(reposInfoFileName) == 0 {
+		panic(fmt.Errorf("[%s] cant't hub meta path", funcName))
+	}
+	return filepath.Join(path, reposInfoFileName)
+}
+
+func getRepoPath(hubPath string, gitAddr string) string {
+	return filepath.Join(hubPath, filepath.Base(gitAddr))
+}
+
+func osRemoveDir(path string) {
+	path = strings.TrimSpace(path)
+	if len(path) <= 1 {
+		panic(fmt.Errorf("[osRemoveDir] removing path '%v', looks not right", path))
+	}
+	err := os.RemoveAll(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return
+		}
+		panic(fmt.Errorf("[osRemoveDir] remove repo '%s' failed: %v", path, err))
+	}
 }

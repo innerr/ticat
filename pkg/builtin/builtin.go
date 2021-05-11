@@ -66,6 +66,9 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		RegCmd(LoadFlowsFromDir,
 			"load flows from local dir").
 		AddArg("path", "", "p", "P")
+	flow.AddSub("clear").
+		RegCmd(RemoveAllFlows,
+			"remove all flows saved in local")
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
@@ -125,6 +128,9 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 
 func RegisterHubCmds(cmds *core.CmdTree) {
 	hub := cmds.AddSub("hub", "h", "H")
+	hub.AddSub("clear").
+		RegCmd(RemoveAllFromHub,
+			"remove all repos from hub")
 	hub.AddSub("init").
 		RegCmd(AddGitDefaultToHub,
 			"add and pull basic hub-repo to local")

@@ -33,6 +33,9 @@ func main() {
 	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)
 	defEnv.Set("strs.proto-sep", ProtoSep)
 	defEnv.Set("strs.env-file-name", EnvFileName)
+	defEnv.Set("strs.hub-file-name", HubFileName)
+	defEnv.Set("strs.repos-file-name", ReposFileName)
+	defEnv.Set("strs.mods-repo-ext", ModsRepoExt)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -119,4 +122,6 @@ const (
 	ModsRepoExt         string = "." + SelfName
 	MetaExt             string = "." + SelfName
 	FlowExt             string = ".flow." + SelfName
+	HubFileName         string = "repos.hub"
+	ReposFileName       string = "README.md"
 )

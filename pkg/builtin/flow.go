@@ -24,8 +24,12 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		if path == root {
 			return nil
 		}
-		cmdPath := strings.TrimRight(filepath.Base(path), flowExt)
-		cc.Screen.Print(fmt.Sprintf("=> %s\n", cmdPath))
+		if !strings.HasSuffix(path, flowExt) {
+			return nil
+		}
+		cmdPath := getCmdPath(path, flowExt)
+		cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
+		cc.Screen.Print(fmt.Sprintf("    %s\n", path))
 		return nil
 	})
 	return true
@@ -42,9 +46,31 @@ func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		panic(fmt.Errorf("[RemoveFlow] remove flow file '%s' failed: %v",
 			filePath, err))
 	}
-	cc.Screen.Print(fmt.Sprintf("=> %s\n", cmdPath))
-	cc.Screen.Print(fmt.Sprintf("   %s\n", filePath))
-	cc.Screen.Print(fmt.Sprintf("   (removed)\n"))
+	cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", cmdPath))
+	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
+	return true
+}
+
+func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	flowExt := env.GetRaw("strs.flow-ext")
+	root := env.GetRaw("sys.paths.flows")
+	if len(root) == 0 {
+		panic(fmt.Errorf("[ListFlows] env 'sys.paths.flows' is empty"))
+	}
+
+	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+		if path != root && strings.HasSuffix(path, flowExt) {
+			err = os.Remove(path)
+			if err != nil {
+				panic(fmt.Errorf("[RemoveAllFlows] remove flow file '%s' failed: %v",
+					path, err))
+			}
+			cmdPath := getCmdPath(path, flowExt)
+			cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", cmdPath))
+			cc.Screen.Print(fmt.Sprintf("    %s\n", path))
+		}
+		return nil
+	})
 	return true
 }
 
@@ -69,8 +95,8 @@ func SaveFlow(
 	cc.Screen.Print(strings.Repeat("-", 80) + "\n")
 	cc.Screen.Print(data)
 	cc.Screen.Print(strings.Repeat("-", 80) + "\n")
-	cc.Screen.Print(fmt.Sprintf("=> %s\n", cmdPath))
-	cc.Screen.Print(fmt.Sprintf("   %s\n", filePath))
+	cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
+	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
 
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
@@ -140,7 +166,7 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env) bool {
 }
 
 func loadFlow(cc *core.Cli, root string, path string, flowExt string) {
-	cmdPath := strings.TrimRight(filepath.Base(path), flowExt)
+	cmdPath := getCmdPath(path, flowExt)
 	flow := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(cc.Cmds.Strs.PathSep))...)
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -289,4 +315,8 @@ func normalizeCmdPath(path string, sep string, alterSeps string) string {
 		}
 	}
 	return strings.Join(segs, sep)
+}
+
+func getCmdPath(path string, flowExt string) string {
+	return strings.TrimRight(filepath.Base(path), flowExt)
 }
