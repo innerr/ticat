@@ -41,16 +41,22 @@ func loadLocalMods(
 		root = root[:len(root)-1]
 	}
 
-	// TODO: return filepath.SkipDir to avoid non-sense scanning
-	filepath.Walk(root, func(metaPath string, info fs.FileInfo, err error) error {
-		if len(metaPath) > 0 && metaPath[0] == filepath.Separator {
-			return filepath.SkipDir
+	// TODO: return filepath.SkipDir to avoid some non-sense scanning
+	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+		if info != nil && info.IsDir() {
+			// Skip hidden file or dir
+			base := filepath.Base(path)
+			if len(base) > 0 && base[0] == '.' {
+				return filepath.SkipDir
+			}
+			return nil
 		}
-		ext := filepath.Ext(metaPath)
+		ext := filepath.Ext(path)
 		if ext != metaExt {
 			return nil
 		}
-		target := metaPath[0 : len(metaPath)-len(ext)]
+		target := path[0 : len(path)-len(ext)]
+		metaPath := path
 
 		info, err = os.Stat(target)
 		if os.IsNotExist(err) {
