@@ -5,6 +5,10 @@ import (
 	"strconv"
 )
 
+func (self Env) GetRaw(name string) string {
+	return self.Get(name).Raw
+}
+
 func (self Env) SetInt(name string, val int) {
 	self.Set(name, fmt.Sprintf("%d", val))
 }

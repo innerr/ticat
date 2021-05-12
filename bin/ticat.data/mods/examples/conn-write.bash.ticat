@@ -1,5 +1,0 @@
-help = "example: env-write dependency declaration"
-abbrs = "write|wrt"
-
-[env]
-examples.my-key|m|M|key|k|Key = write

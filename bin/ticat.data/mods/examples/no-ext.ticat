@@ -1,7 +1,0 @@
-help = "example: a mod without ext"
-abbrs = "ext"
-
-[args]
-arg_a|a = "default-A"
-arg_b|b = "default-B"
-arg_c|c = "default-C"

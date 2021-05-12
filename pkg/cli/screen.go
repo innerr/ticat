@@ -7,6 +7,7 @@ import (
 // TODO: stdin/stderr
 
 type Screen struct {
+	outN int
 }
 
 func NewScreen() *Screen {
@@ -15,4 +16,9 @@ func NewScreen() *Screen {
 
 func (self *Screen) Print(text string) {
 	fmt.Print(text)
+	self.outN += 1
+}
+
+func (self *Screen) OutputNum() int {
+	return self.outN
 }

@@ -20,14 +20,22 @@ func main() {
 
 	// Any mod could get the specific string val from env when it's called
 	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
-	defEnv.Set("strs.meta-ext", SelfName)
+	defEnv.Set("strs.meta-ext", MetaExt)
+	defEnv.Set("strs.flow-ext", FlowExt)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)
+	defEnv.Set("strs.seq-sep", SequenceSep)
 	defEnv.Set("strs.env-path-sep", EnvPathSep)
 	defEnv.Set("strs.env-sys-path", EnvRuntimeSysPrefix)
 	defEnv.Set("strs.env-strs-path", EnvStrsPrefix)
+	defEnv.Set("strs.env-kv-sep", EnvKeyValSep)
+	defEnv.Set("strs.env-bracket-left", EnvBracketLeft)
+	defEnv.Set("strs.env-bracket-right", EnvBracketRight)
 	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)
 	defEnv.Set("strs.proto-sep", ProtoSep)
 	defEnv.Set("strs.env-file-name", EnvFileName)
+	defEnv.Set("strs.hub-file-name", HubFileName)
+	defEnv.Set("strs.repos-file-name", ReposFileName)
+	defEnv.Set("strs.mods-repo-ext", ModsRepoExt)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -66,7 +74,15 @@ func main() {
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser)
 
-	bootstrap := "B.E.L.A:B.E.L.R:B.E.L.L:B.E.L.S:B.M.L.L:B.M.L.E:B.M.L.F"
+	bootstrap := `
+		B.E.L.A:
+		B.E.L.R:
+		B.E.L.L:
+		B.E.L.S:
+		B.M.L.E:
+		B.M.L.F:
+		B.M.L.H:
+	`
 
 	// TODO: handle error by types
 	defer func() {
@@ -103,4 +119,9 @@ const (
 	ProtoMark           string = "proto." + SelfName
 	ProtoEnvMark        string = ProtoMark + ".env"
 	ProtoSep            string = "\t"
+	ModsRepoExt         string = "." + SelfName
+	MetaExt             string = "." + SelfName
+	FlowExt             string = ".flow." + SelfName
+	HubFileName         string = "repos.hub"
+	ReposFileName       string = "README.md"
 )

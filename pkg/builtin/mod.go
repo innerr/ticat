@@ -12,23 +12,49 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	root := env.Get("sys.paths.mods").Raw
-	metaExt := "." + env.Get("strs.meta-ext").Raw
-	abbrsSep := env.Get("strs.abbrs-sep").Raw
-	envPathSep := env.Get("strs.env-path-sep").Raw
+func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	env = env.GetLayer(core.EnvLayerDefault)
+	env.Set("sys.ext.exec.bash", "bash")
+	env.Set("sys.ext.exec.sh", "sh")
+	env.Set("sys.ext.exec.py", "python")
+	env.Set("sys.ext.exec.go", "go run")
+	return true
+}
+
+func loadLocalMods(
+	cc *core.Cli,
+	root string,
+	metaExt string,
+	flowExt string,
+	abbrsSep string,
+	envPathSep string) {
 
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
-	filepath.Walk(root, func(metaPath string, _ fs.FileInfo, err error) error {
-		ext := filepath.Ext(metaPath)
+
+	// TODO: return filepath.SkipDir to avoid some non-sense scanning
+	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+		if info != nil && info.IsDir() {
+			// Skip hidden file or dir
+			base := filepath.Base(path)
+			if len(base) > 0 && base[0] == '.' {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if strings.HasSuffix(path, flowExt) {
+			loadFlow(cc, root, path, flowExt)
+			return nil
+		}
+		ext := filepath.Ext(path)
 		if ext != metaExt {
 			return nil
 		}
-		target := metaPath[0 : len(metaPath)-len(ext)]
+		target := path[0 : len(path)-len(ext)]
+		metaPath := path
 
-		info, err := os.Stat(target)
+		info, err = os.Stat(target)
 		if os.IsNotExist(err) {
 			panic(fmt.Errorf("[LoadLocalMods] target '%s' of meta file '%s' not exists",
 				target, metaPath))
@@ -49,7 +75,6 @@ func LoadLocalMods(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		regMod(cc, metaPath, target, info.IsDir(), cmdPath, abbrsSep, envPathSep)
 		return nil
 	})
-	return true
 }
 
 // TODO: mod's meta definition file (*.ticat) should have a formal manager
@@ -166,15 +191,6 @@ func regMod(
 			}
 		}
 	}
-}
-
-func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	env = env.GetLayer(core.EnvLayerDefault)
-	env.Set("sys.ext.exec.bash", "bash")
-	env.Set("sys.ext.exec.sh", "sh")
-	env.Set("sys.ext.exec.py", "python")
-	env.Set("sys.ext.exec.go", "go run")
-	return true
 }
 
 func fileExists(path string) bool {

@@ -1,7 +1,0 @@
-help = "example: pass args to a python mod"
-abbrs = "py"
-
-[args]
-arg_a|a = "default-A"
-arg_b|b = "default-B"
-arg_c|c = "default-C"

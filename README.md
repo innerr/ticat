@@ -1,27 +1,8 @@
 # ticat
-TiDB wizard
+Cli components platform
 
-## Target
-* Improve the experience and efficiency in non-production scenarios
-    * TiDB developing, integration testing, benchmark, POC, etc
-* More details: [why-ticat](./doc/why-ticat.md)
-
-## How ticat can achieve that?
-* Human friendly
-    * Organize job flow with (shell) commands
-    * All commands are highly compacted, support fuzzy input, hands on in no time
-* Scenario-centered
-    * Focus on get things done smoothly in a scenario
-* Feature-rich
-    * Large amount of modules
-        * Components can be easily written in any language
-        * ..or from any existing utility by wrapping it up
-    * Components' interacting form high-level features
-* Write once, run anywhere
-    * Save or edit flow easily
-    * Share modules and flows easily
-* An example: [autotune + benchmark](./doc/usage-draft/benchmark.md)
-* More details: [how-ticat-works](./doc/how-ticat-works.md)
+## Why and how
+TODO: here I have something to say, but not have the time yet
 
 ## Progess
 ```
@@ -30,6 +11,8 @@ TiDB wizard
 ****-      Full context search
 ****-      Full abbrs supporting. TODO: extra abbrs manage
 ****-      Env framework. TODO: save or load from a tag
+-----      Log and search
+-----      Command history and search
 ****-  Mod framework
 ****-      Connector framework
 ***--      Args supporting. TODO: free args
@@ -41,29 +24,26 @@ TiDB wizard
 *****          Directory (include repo supporting)
 ****-      Executor
 *****          Base executor
+-----          Middle re-enter
 -----          Intellegent
 -----          Mocking
 -----          Background running
 -----  Flow framework
-***--      Save and edit flow. TODO: execute
+***--      Save, edit and execute flow
 -----      Help and abbrs
 -----      Executing ad-hot help
 -----      Flatten in executing and desc
------  Hub framework
------      Mod and flow sharing
------      Authority control
------  Scenarios
------      Benchmark
------      Integration testing
------      (TBD)
------  Components
------      Tiup cluster operating
------      Ti.sh cluster operating
------      Cluster raw backup
------      Jitter detecting
------      Simple auto config tuning
------      Workloads: TPCC
------      Workloads: sysbench
------      Workloads: ycsb
------      (TBD)
+*****  Hub framework
+*****      Mod and flow sharing
+*****      Authority control (by git now)
+```
+
+Risks
+```
+* Mods-ticat interacting, now is stdin/stderr
+    - A mod can't easily read from tty
+    - Stderr is occupied
+    - How about ssh login?
+* The connector protocal is not stable now, need a best practice
+* Concurrent support?
 ```

@@ -89,9 +89,11 @@ func (self *Executor) executeCmd(
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
 
 	// The env modifications from input will be popped out after a command is executed
-	// (TODO) But if a mod modified the env, the modifications stay in session level
+	// But if a mod modified the env, the modifications stay in session level
 	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
+
+	ln := cc.Screen.OutputNum()
 
 	stackLines := display.PrintCmdStack(quiet, cc.Screen, cmd,
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
@@ -112,6 +114,11 @@ func (self *Executor) executeCmd(
 		resultLines := display.PrintCmdResult(quiet, cc.Screen, cmd,
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
+	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
+		last := flow.Cmds[len(flow.Cmds)-1]
+		if last.LastCmd() != nil && !last.LastCmd().IsQuiet() {
+			cc.Screen.Print("\n")
+		}
 	}
 	return
 }

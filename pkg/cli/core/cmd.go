@@ -189,6 +189,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 		EnvOutput(env, stdin, self.owner.Strs.ProtoEnvMark, self.owner.Strs.ProtoSep)
 	}()
 
+	// TODO: use named-pipe (mkfifo) instead of stderr?
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		printLine(fmt.Sprintf(errPrefix, err))

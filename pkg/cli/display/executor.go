@@ -189,7 +189,7 @@ func PrintCmdResult(
 	if currCmdIdx >= len(flow)-1 || !succeeded {
 		lines.Footer = time.Now().Format("01-02 15:04:05")
 	} else {
-		lines.Footer = "\n"
+		lines.Footer = ""
 	}
 	lines.FooterLen = len(lines.Footer)
 	return

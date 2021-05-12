@@ -1,5 +1,0 @@
-help = "example: env-may-read dependency declaration"
-abbrs = "mayread|mayr|mr"
-
-[env]
-examples.my-key|m|M|key|k|Key = may-read
