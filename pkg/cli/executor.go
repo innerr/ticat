@@ -115,7 +115,10 @@ func (self *Executor) executeCmd(
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
 	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
-		cc.Screen.Print("\n")
+		last := flow.Cmds[len(flow.Cmds)-1]
+		if last.LastCmd() != nil && !last.LastCmd().IsQuiet() {
+			cc.Screen.Print("\n")
+		}
 	}
 	return
 }

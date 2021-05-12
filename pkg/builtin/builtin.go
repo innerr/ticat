@@ -95,7 +95,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		RegCmd(RemoveEnvValAndSaveToLocal,
 			"remove specific env KV and save changes to local").
 		AddArg("key", "", "k", "K")
-	env.AddSub("reset-and-save", "reset").
+	env.AddSub("reset-and-save", "reset", "clear").
 		RegCmd(ResetLocalEnv,
 			"reset all local saved env KVs")
 }
@@ -135,7 +135,7 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 		RegCmd(AddGitDefaultToHub,
 			"add and pull basic hub-repo to local")
 	add := hub.AddSub("add-and-update", "add", "a", "A")
-	add.RegCmd(AddGitAddrToHub,
+	add.RegCmd(AddGitRepoToHub,
 		"add and pull a git address to hub").
 		AddArg("git-address", "", "git", "address", "addr")
 	add.AddSub("local-dir", "local", "l", "L").
@@ -145,19 +145,24 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 	hub.AddSub("list", "ls", "l", "L").
 		RegCmd(ListHub,
 			"list dir and repo info in hub")
-	hub.AddSub("remove", "rm", "delete", "del").
-		RegCmd(RemoveRepoFromHub,
-			"remove an added repo from hub").
-		AddArg("git-address", "", "git", "address", "addr")
+	purge := hub.AddSub("purge")
+	purge.RegCmd(PurgeInactiveRepoFromHub,
+		"remove an inactive repo from hub").
+		AddArg("find-str", "", "s", "S")
+	purge.AddSub("purge-all-inactive", "all", "inactive").
+		RegCmd(PurgeAllInactiveReposFromHub,
+			"remove all inactive repos from hub")
 	hub.AddSub("update", "u", "U").
 		RegCmd(UpdateHub,
 			"update all repos and mods defined in hub")
-	hub.AddSub("enable-git-address", "enable", "e", "E").
-		RegCmd(EnableAddrInHub,
-			"enable a git repo address in hub")
-	hub.AddSub("disable-git-address", "disable", "d", "D").
-		RegCmd(DisableAddrInHub,
-			"disable a git repo address in hub")
+	hub.AddSub("enable-repo", "enable", "ena", "en", "e", "E").
+		RegCmd(EnableRepoInHub,
+			"enable matched git repos in hub").
+		AddArg("find-str", "", "s", "S")
+	hub.AddSub("disable-repo", "disable", "dis", "d", "D").
+		RegCmd(DisableRepoInHub,
+			"disable matched git repos in hub").
+		AddArg("find-str", "", "s", "S")
 	hub.AddSub("move-to-dir", "move", "m", "M").
 		RegCmd(MoveSavedFlowsToLocalDir,
 			"move all saved flows to a local dir (could be a git repo)").
@@ -219,6 +224,8 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 }
 
 func RegisterDbgCmds(cmds *core.CmdTree) {
+	// This cmds are just for debug
+	return
 	cmds.AddSub("tty-read", "tty").
 		RegCmd(DbgReadFromTty,
 			"verify stdin and tty could work together")

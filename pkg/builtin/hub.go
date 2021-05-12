@@ -20,17 +20,20 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	fieldSep := env.GetRaw("strs.proto-sep")
 
 	metaPath := getReposInfoPath(env, "LoadModsFromHub")
-	infos := readReposInfoFile(metaPath, true, fieldSep)
+	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 	for _, info := range infos {
+		if info.OnOff != "on" {
+			continue
+		}
 		loadLocalMods(cc, info.Path, metaExt, flowExt, abbrsSep, envPathSep)
 	}
 	return true
 }
 
-func AddGitAddrToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	addr := argv.GetRaw("git-address")
 	if len(addr) == 0 {
-		panic(fmt.Errorf("[AddGitAddrToHub] cant't get hub address"))
+		panic(fmt.Errorf("[AddGitRepoToHub] cant't get hub address"))
 	}
 	addRepoToHub(addr, argv, cc.Screen, env)
 	return true
@@ -46,43 +49,41 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	repoExt := env.GetRaw("strs.mods-repo-ext")
 	fieldSep := env.GetRaw("strs.proto-sep")
 	metaPath := getReposInfoPath(env, "ListHub")
-	infos := readReposInfoFile(metaPath, true, fieldSep)
-
-	for _, info := range infos {
-		from := info.AddReason
-		if from == info.Addr {
-			from = "<manually added>"
-		}
-		abbr := gitAddrAbbr(info.Addr, repoExt)
-		if len(abbr) != 0 {
-			cc.Screen.Print(fmt.Sprintf("[%s]\n", abbr))
-		} else {
-			cc.Screen.Print(fmt.Sprintf("[%s]\n", info.Addr))
-		}
-		cc.Screen.Print(fmt.Sprintf("     '%s'\n", info.HelpStr))
-		if len(abbr) != 0 {
-			cc.Screen.Print(fmt.Sprintf("    - full: %s\n", info.Addr))
-		}
-		cc.Screen.Print(fmt.Sprintf("    - from: %s\n", from))
-		cc.Screen.Print(fmt.Sprintf("    - path: %s\n", info.Path))
-	}
+	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	listHub(cc.Screen, infos)
 	return true
+}
+
+func listHub(screen core.Screen, infos []repoInfo) {
+	for _, info := range infos {
+		name := addrDisplayName(info.Addr)
+		screen.Print(fmt.Sprintf("[%s]", name))
+		if info.OnOff != "on" {
+			screen.Print(" (" + info.OnOff + ")")
+		}
+		screen.Print("\n")
+		screen.Print(fmt.Sprintf("     '%s'\n", info.HelpStr))
+		if name != info.Addr {
+			screen.Print(fmt.Sprintf("    - full: %s\n", info.Addr))
+		}
+		screen.Print(fmt.Sprintf("    - from: %s\n", getDisplayReason(info)))
+		screen.Print(fmt.Sprintf("    - path: %s\n", info.Path))
+	}
 }
 
 func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	fieldSep := env.GetRaw("strs.proto-sep")
-	repoExt := env.GetRaw("strs.mods-repo-ext")
 
 	metaPath := getReposInfoPath(env, "RemoveAllFromHub")
-	infos := readReposInfoFile(metaPath, true, fieldSep)
+	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 
 	for _, info := range infos {
 		osRemoveDir(info.Path)
-		cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", gitAddrAbbr(info.Addr, repoExt)))
-		cc.Screen.Print(fmt.Sprintf("    %s\n", info.Path))
+		cc.Screen.Print(fmt.Sprintf("[%s]\n", addrDisplayName(info.Addr)))
+		printInfoProps(cc.Screen, info)
+		cc.Screen.Print("      (removed)\n")
 	}
 
 	err := os.Remove(metaPath)
@@ -95,44 +96,143 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func RemoveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func PurgeAllInactiveReposFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	purgeInactiveRepoFromHub("", cc, env)
+	return true
+}
+
+func PurgeInactiveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	findStr := argv.GetRaw("find-str")
+	if len(findStr) == 0 {
+		panic(fmt.Errorf("[PurgeInactiveRepoFromHub] cant't get target repo addr from args"))
+	}
+	purgeInactiveRepoFromHub(findStr, cc, env)
+	return true
+}
+
+func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env) {
 	fieldSep := env.GetRaw("strs.proto-sep")
-	repoExt := env.GetRaw("strs.mods-repo-ext")
 
-	metaPath := getReposInfoPath(env, "RemoveGitAddrFromHub")
-	infos := readReposInfoFile(metaPath, true, fieldSep)
-	addr := argv.GetRaw("git-address")
-	if len(addr) == 0 {
-		panic(fmt.Errorf("[RemoveRepoFromHub] cant't get target repo addr from args"))
+	metaPath := getReposInfoPath(env, "PurgeInactiveRepoFromHub")
+	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+
+	var extracted []repoInfo
+	var rest []repoInfo
+	for _, info := range infos {
+		if info.OnOff != "on" && (len(findStr) == 0 || strings.Index(info.Addr, findStr) >= 0) {
+			extracted = append(extracted, info)
+		} else {
+			rest = append(rest, info)
+		}
+	}
+	if len(extracted) == 0 {
+		panic(fmt.Errorf("[PurgeInactiveRepoFromHub] cant't find repo by string '%s'", findStr))
 	}
 
-	gitAddr := normalizeGitAddr(addr, repoExt)
-	info, rest := extractAddrFromList(infos, gitAddr)
-	if len(info.Path) == 0 {
-		panic(fmt.Errorf("[RemoveRepoFromHub] cant't find repo '%s', normalized: %s",
-			addr, gitAddr))
+	for _, info := range extracted {
+		osRemoveDir(info.Path)
+		cc.Screen.Print(fmt.Sprintf("[%s]\n", addrDisplayName(info.Addr)))
+		printInfoProps(cc.Screen, info)
+		cc.Screen.Print("      (purged)\n")
 	}
-	osRemoveDir(info.Path)
-
-	cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", gitAddrAbbr(info.Addr, repoExt)))
-	cc.Screen.Print(fmt.Sprintf("    %s\n", info.Path))
 
 	writeReposInfoFile(metaPath, rest, fieldSep)
-	return true
 }
 
 func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	cc.Screen.Print("TODO: UpdateHub\n")
+	metaPath := getReposInfoPath(env, "UpdateHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
+	listFileName := env.GetRaw("strs.repos-file-name")
+	repoExt := env.GetRaw("strs.mods-repo-ext")
+
+	path := env.GetRaw("sys.paths.hub")
+	if len(path) == 0 {
+		panic(fmt.Errorf("[UpdateHub] cant't get hub path"))
+	}
+
+	oldInfos, oldList := readReposInfoFile(metaPath, true, fieldSep)
+	finisheds := map[string]bool{}
+	for _, info := range oldInfos {
+		if info.OnOff != "on" {
+			finisheds[info.Addr] = true
+		}
+	}
+
+	var infos []repoInfo
+
+	for _, info := range oldInfos {
+		_, addrs, helpStrs := updateRepoAndSubRepos(
+			cc.Screen, finisheds, path, info.Addr, repoExt, listFileName)
+		for i, addr := range addrs {
+			if oldList[addr] {
+				continue
+			}
+			repoPath := getRepoPath(path, addr)
+			infos = append(infos, repoInfo{addr, info.Addr, repoPath, helpStrs[i], "on"})
+		}
+	}
+
+	infos = append(oldInfos, infos...)
+	if len(infos) != len(oldInfos) {
+		writeReposInfoFile(metaPath, infos, fieldSep)
+	}
 	return true
 }
 
-func EnableAddrInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	cc.Screen.Print("TODO: EnableAddrInHub\n")
+func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	fieldSep := env.GetRaw("strs.proto-sep")
+
+	metaPath := getReposInfoPath(env, "EnableRepoInHub")
+	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	findStr := argv.GetRaw("find-str")
+	if len(findStr) == 0 {
+		panic(fmt.Errorf("[EnableRepoInHub] cant't get target repo addr from args"))
+	}
+
+	extracted, rest := extractAddrFromList(infos, findStr)
+	if len(extracted) == 0 {
+		panic(fmt.Errorf("[EnableRepoInHub] cant't find repo by string '%s'", findStr))
+	}
+
+	for i, info := range extracted {
+		if info.OnOff == "on" {
+			continue
+		}
+		cc.Screen.Print(fmt.Sprintf("[%s] (enabled)\n", addrDisplayName(info.Addr)))
+		printInfoProps(cc.Screen, info)
+		info.OnOff = "on"
+		extracted[i] = info
+	}
+
+	writeReposInfoFile(metaPath, append(rest, extracted...), fieldSep)
 	return true
 }
 
-func DisableAddrInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	cc.Screen.Print("TODO: DisableAddrInHub\n")
+func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	fieldSep := env.GetRaw("strs.proto-sep")
+
+	metaPath := getReposInfoPath(env, "DisableRepoInHub")
+	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	findStr := argv.GetRaw("find-str")
+	if len(findStr) == 0 {
+		panic(fmt.Errorf("[DisableRepoInHub] cant't get target repo addr from args"))
+	}
+
+	extracted, rest := extractAddrFromList(infos, findStr)
+	if len(extracted) == 0 {
+		panic(fmt.Errorf("[DisableRepoInHub] cant't find repo by string '%s'", findStr))
+	}
+
+	for i, info := range extracted {
+		if info.OnOff == "on" {
+			cc.Screen.Print(fmt.Sprintf("[%s] (disabled)\n", addrDisplayName(info.Addr)))
+			cc.Screen.Print(fmt.Sprintf("    %s\n", info.Path))
+			info.OnOff = "disabled"
+			extracted[i] = info
+		}
+	}
+
+	writeReposInfoFile(metaPath, append(rest, extracted...), fieldSep)
 	return true
 }
 
@@ -152,8 +252,10 @@ func addRepoToHub(
 	screen core.Screen,
 	env *core.Env) (addrs []string, helpStrs []string) {
 
+	// A repo with this suffix should be a well controlled one, that we could assume some things
 	repoExt := env.GetRaw("strs.mods-repo-ext")
-	gitAddr = normalizeGitAddr(gitAddr, repoExt)
+
+	gitAddr = normalizeGitAddr(gitAddr)
 
 	if !isOsCmdExists("git") {
 		panic(fmt.Errorf("[addRepoToHub] cant't find 'git'"))
@@ -168,40 +270,62 @@ func addRepoToHub(
 		panic(fmt.Errorf("[addRepoToHub] create hub path '%s' failed: %v", path, err))
 	}
 
+	metaPath := getReposInfoPath(env, "addRepoToHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
+	oldInfos, oldList := readReposInfoFile(metaPath, true, fieldSep)
+	finisheds := map[string]bool{}
+	for i, info := range oldInfos {
+		if info.Addr == gitAddr {
+			info.OnOff = "on"
+			oldInfos[i] = info
+		}
+		if info.OnOff != "on" {
+			finisheds[info.Addr] = true
+		}
+	}
+
 	listFileName := env.GetRaw("strs.repos-file-name")
 	var topRepoHelpStr string
-	topRepoHelpStr, addrs, helpStrs = readRepoListFromGitRepos(
-		screen, path, gitAddr, repoExt, listFileName)
+	topRepoHelpStr, addrs, helpStrs = updateRepoAndSubRepos(
+		screen, finisheds, path, gitAddr, repoExt, listFileName)
 
 	addrs = append([]string{gitAddr}, addrs...)
 	helpStrs = append([]string{topRepoHelpStr}, helpStrs...)
 
 	var infos []repoInfo
 	for i, addr := range addrs {
+		if oldList[addr] {
+			continue
+		}
 		repoPath := getRepoPath(path, addr)
-		infos = append(infos, repoInfo{addr, gitAddr, repoPath, helpStrs[i]})
+		infos = append(infos, repoInfo{addr, gitAddr, repoPath, helpStrs[i], "on"})
 	}
-	metaPath := getReposInfoPath(env, "addRepoToHub")
-	fieldSep := env.GetRaw("strs.proto-sep")
+
+	infos = append(oldInfos, infos...)
 	writeReposInfoFile(metaPath, infos, fieldSep)
 	return
 }
 
-func readRepoListFromGitRepos(
+func updateRepoAndSubRepos(
 	screen core.Screen,
+	finisheds map[string]bool,
 	hubPath string,
 	gitAddr string,
 	repoExt string,
 	listFileName string) (topRepoHelpStr string, addrs []string, helpStrs []string) {
 
-	screen.Print(fmt.Sprintf("[%s] => git clone\n", gitAddrAbbr(gitAddr, repoExt)))
-	topRepoHelpStr, addrs, helpStrs = readRepoListFromGitRepo(
-		hubPath, gitAddr, listFileName)
+	if finisheds[gitAddr] {
+		return
+	}
+	topRepoHelpStr, addrs, helpStrs = updateRepoAndReadSubList(
+		screen, hubPath, gitAddr, listFileName)
+	finisheds[gitAddr] = true
 
 	for i, addr := range addrs {
-		subTopHelpStr, subAddrs, subHelpStrs := readRepoListFromGitRepos(
-			screen, hubPath, addr, repoExt, listFileName)
-		if len(subTopHelpStr) != 0 {
+		subTopHelpStr, subAddrs, subHelpStrs := updateRepoAndSubRepos(
+			screen, finisheds, hubPath, addr, repoExt, listFileName)
+		// If a repo has no help-str from hub-repo list, try to get the title from it's README
+		if len(helpStrs[i]) == 0 && len(subTopHelpStr) != 0 {
 			helpStrs[i] = subTopHelpStr
 		}
 		addrs = append(addrs, subAddrs...)
@@ -211,19 +335,35 @@ func readRepoListFromGitRepos(
 	return topRepoHelpStr, addrs, helpStrs
 }
 
-func readRepoListFromGitRepo(
+func updateRepoAndReadSubList(
+	screen core.Screen,
 	hubPath string,
 	gitAddr string,
 	listFileName string) (helpStr string, addrs []string, helpStrs []string) {
 
+	name := addrDisplayName(gitAddr)
 	repoPath := getRepoPath(hubPath, gitAddr)
-	cmdStrs := []string{"git", "clone", gitAddr, repoPath}
+	var cmdStrs []string
+
+	stat, err := os.Stat(repoPath)
+	if !os.IsNotExist(err) {
+		if !stat.IsDir() {
+			panic(fmt.Errorf("[updateRepoAndReadSubList] repo path '%v' exists but is not dir",
+				repoPath))
+		}
+		screen.Print(fmt.Sprintf("[%s] => git update\n", name))
+		cmdStrs = []string{"git", "-C", repoPath, "pull"}
+	} else {
+		screen.Print(fmt.Sprintf("[%s] => git clone\n", name))
+		cmdStrs = []string{"git", "clone", gitAddr, repoPath}
+	}
+
 	cmd := exec.Command(cmdStrs[0], cmdStrs[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
-		panic(fmt.Errorf("[readRepoListFromGitRepo] run '%v' failed: %v", cmdStrs, err))
+		panic(fmt.Errorf("[updateRepoAndReadSubList] run '%v' failed: %v", cmdStrs, err))
 	}
 	listFilePath := filepath.Join(repoPath, listFileName)
 	return readRepoListFromFile(listFilePath)
@@ -282,10 +422,13 @@ func readRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs
 	return
 }
 
-func extractAddrFromList(infos []repoInfo, target string) (extracted repoInfo, rest []repoInfo) {
+func extractAddrFromList(
+	infos []repoInfo,
+	findStr string) (extracted []repoInfo, rest []repoInfo) {
+
 	for _, info := range infos {
-		if info.Addr == target {
-			extracted = info
+		if strings.Index(info.Addr, findStr) >= 0 {
+			extracted = append(extracted, info)
 		} else {
 			rest = append(rest, info)
 		}
@@ -293,10 +436,7 @@ func extractAddrFromList(infos []repoInfo, target string) (extracted repoInfo, r
 	return
 }
 
-func normalizeGitAddr(addr string, repoExt string) string {
-	if !strings.HasSuffix(strings.ToLower(addr), repoExt) {
-		addr = addr + repoExt
-	}
+func normalizeGitAddr(addr string) string {
 	if strings.HasPrefix(strings.ToLower(addr), "http") {
 		return addr
 	}
@@ -306,7 +446,7 @@ func normalizeGitAddr(addr string, repoExt string) string {
 	return "git@github.com:" + addr
 }
 
-func gitAddrAbbr(addr string, repoExt string) (abbr string) {
+func gitAddrAbbr(addr string) (abbr string) {
 	// TODO: support other git platform
 	abbrExtractors := []func(string) string{
 		githubAddrAbbr,
@@ -317,8 +457,15 @@ func gitAddrAbbr(addr string, repoExt string) (abbr string) {
 			break
 		}
 	}
-	abbr = strings.TrimRight(abbr, repoExt)
 	return
+}
+
+func addrDisplayName(addr string) string {
+	abbr := gitAddrAbbr(addr)
+	if len(abbr) == 0 {
+		return addr
+	}
+	return abbr
 }
 
 func githubAddrAbbr(addr string) (abbr string) {
@@ -343,6 +490,7 @@ type repoInfo struct {
 	AddReason string
 	Path      string
 	HelpStr   string
+	OnOff     string
 }
 
 func writeReposInfoFile(path string, infos []repoInfo, sep string) {
@@ -354,8 +502,8 @@ func writeReposInfoFile(path string, infos []repoInfo, sep string) {
 	defer file.Close()
 
 	for _, info := range infos {
-		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s\n",
-			info.Addr, sep, info.AddReason, sep, info.Path, sep, info.HelpStr)
+		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s%s%s\n", info.Addr, sep,
+			info.AddReason, sep, info.Path, sep, info.HelpStr, sep, info.OnOff)
 		if err != nil {
 			panic(fmt.Errorf("[writeReposInfoFile] write file '%s' failed: %v", tmp, err))
 		}
@@ -369,7 +517,13 @@ func writeReposInfoFile(path string, infos []repoInfo, sep string) {
 	}
 }
 
-func readReposInfoFile(path string, allowNotExist bool, sep string) (infos []repoInfo) {
+func readReposInfoFile(
+	path string,
+	allowNotExist bool,
+	sep string) (infos []repoInfo, list map[string]bool) {
+
+	list = map[string]bool{}
+
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) && allowNotExist {
@@ -384,15 +538,19 @@ func readReposInfoFile(path string, allowNotExist bool, sep string) (infos []rep
 	for scanner.Scan() {
 		line := strings.Trim(scanner.Text(), "\n\r")
 		fields := strings.Split(line, sep)
-		if len(fields) != 4 {
-			panic(fmt.Errorf("[readReposInfoFile] file '%s' line '%s' can't be parsed", path, line))
+		if len(fields) != 5 {
+			panic(fmt.Errorf("[readReposInfoFile] file '%s' line '%s' can't be parsed",
+				path, line))
 		}
-		infos = append(infos, repoInfo{
+		info := repoInfo{
 			fields[0],
 			fields[1],
 			fields[2],
 			fields[3],
-		})
+			fields[4],
+		}
+		infos = append(infos, info)
+		list[info.Addr] = true
 	}
 	return
 }
@@ -411,6 +569,19 @@ func getReposInfoPath(env *core.Env, funcName string) string {
 
 func getRepoPath(hubPath string, gitAddr string) string {
 	return filepath.Join(hubPath, filepath.Base(gitAddr))
+}
+
+func printInfoProps(screen core.Screen, info repoInfo) {
+	screen.Print(fmt.Sprintf("     '%s'\n", info.HelpStr))
+	screen.Print(fmt.Sprintf("    - from: %s\n", getDisplayReason(info)))
+	screen.Print(fmt.Sprintf("    - path: %s\n", info.Path))
+}
+
+func getDisplayReason(info repoInfo) string {
+	if info.AddReason == info.Addr {
+		return "<manually-added>"
+	}
+	return info.AddReason
 }
 
 func osRemoveDir(path string) {
