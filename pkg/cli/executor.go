@@ -89,7 +89,7 @@ func (self *Executor) executeCmd(
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
 
 	// The env modifications from input will be popped out after a command is executed
-	// (TODO) But if a mod modified the env, the modifications stay in session level
+	// But if a mod modified the env, the modifications stay in session level
 	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
 

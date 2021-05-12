@@ -52,9 +52,9 @@ TiDB wizard
 -----      Help and abbrs
 -----      Executing ad-hot help
 -----      Flatten in executing and desc
------  Hub framework
------      Mod and flow sharing
------      Authority control
+*****  Hub framework
+*****      Mod and flow sharing
+*****      Authority control (by git now)
 -----  Scenarios
 -----      Benchmark
 -----      Integration testing

@@ -39,7 +39,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		RegCmd(DumpCmdTree,
 			"list builtin and loaded cmds").
 		AddArg("path", "", "p", "P")
-	mod.AddSub("list", "ls", "l", "flatten", "flat", "f", "F").
+	mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegCmd(DumpCmds,
 			"list builtin and loaded cmds").
 		AddArg("1st-str", "", "1", "find", "str", "s", "S").
@@ -142,14 +142,14 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 		RegCmd(AddLocalDirToHub,
 			"add a local dir (could be a git repo) to hub").
 		AddArg("path", "", "p", "P")
-	hub.AddSub("list", "ls", "l", "L").
+	hub.AddSub("list", "ls").
 		RegCmd(ListHub,
 			"list dir and repo info in hub")
-	purge := hub.AddSub("purge")
+	purge := hub.AddSub("purge", "p", "P")
 	purge.RegCmd(PurgeInactiveRepoFromHub,
 		"remove an inactive repo from hub").
 		AddArg("find-str", "", "s", "S")
-	purge.AddSub("purge-all-inactive", "all", "inactive").
+	purge.AddSub("purge-all-inactive", "all", "inactive", "a", "A").
 		RegCmd(PurgeAllInactiveReposFromHub,
 			"remove all inactive repos from hub")
 	hub.AddSub("update", "u", "U").
@@ -163,7 +163,7 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 		RegCmd(DisableRepoInHub,
 			"disable matched git repos in hub").
 		AddArg("find-str", "", "s", "S")
-	hub.AddSub("move-to-dir", "move", "m", "M").
+	hub.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
 		RegCmd(MoveSavedFlowsToLocalDir,
 			"move all saved flows to a local dir (could be a git repo)").
 		AddArg("path", "", "p", "P")
