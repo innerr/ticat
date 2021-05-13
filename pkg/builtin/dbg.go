@@ -9,6 +9,11 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func DbgEcho(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	cc.Screen.Print(fmt.Sprintf("echo msg: '%s'\n", argv.GetRaw("message")))
+	return true
+}
+
 func DbgReadFromTty(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	tty, err := tty.Open()
 	if err != nil {
