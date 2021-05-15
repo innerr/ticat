@@ -91,7 +91,7 @@ func main() {
 			os.Exit(-1)
 		}
 	}()
-	executor := cli.NewExecutor()
+	executor := cli.NewExecutor(SessionPipeName)
 	cc.Executor = executor
 	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
 	if !succeeded {
@@ -124,4 +124,5 @@ const (
 	FlowExt             string = ".flow." + SelfName
 	HubFileName         string = "repos.hub"
 	ReposFileName       string = "README.md"
+	SessionPipeName     string = "env"
 )

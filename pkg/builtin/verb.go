@@ -61,6 +61,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	if !env.SetBool("display.env.layer", true) {
 		volume -= 1
 	}
+	env.SetBool("display.executor.end", true)
 	env.SetInt("display.max-cmd-cnt", 10)
 	if volume <= 0 {
 		return true
@@ -133,6 +134,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	if env.SetBool("display.env.layer", false) {
 		volume -= 1
 	}
+	env.SetBool("display.executor.end", false)
 	env.SetInt("display.max-cmd-cnt", 9)
 	if volume <= 0 {
 		return true

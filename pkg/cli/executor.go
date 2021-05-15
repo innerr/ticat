@@ -2,7 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -12,16 +16,18 @@ import (
 type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds) bool
 
 type Executor struct {
-	funcs []ExecFunc
+	funcs   []ExecFunc
+	pipeName string
 }
 
-func NewExecutor() *Executor {
+func NewExecutor(pipeName string) *Executor {
 	return &Executor{
 		[]ExecFunc{
 			// TODO: implement and add functions: flowFlatten, mockModInject, stepByStepInject
 			filterEmptyCmdsAndReorderByPriority,
 			checkEnvOps,
 		},
+		pipeName,
 	}
 }
 
@@ -36,16 +42,16 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	return self.Execute(cc, false, input...)
 }
 
-func (self *Executor) Execute(cc *core.Cli, quiet bool, input ...string) bool {
+func (self *Executor) Execute(cc *core.Cli, bootstrap bool, input ...string) bool {
 	cc.GlobalEnv.PlusInt("sys.stack-depth", 1)
-	if !self.execute(cc, quiet, input...) {
+	if !self.execute(cc, bootstrap, input...) {
 		return false
 	}
 	cc.GlobalEnv.PlusInt("sys.stack-depth", -1)
 	return true
 }
 
-func (self *Executor) execute(cc *core.Cli, quiet bool, input ...string) bool {
+func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) bool {
 	if len(input) == 0 {
 		return true
 	}
@@ -56,12 +62,15 @@ func (self *Executor) execute(cc *core.Cli, quiet bool, input ...string) bool {
 			return false
 		}
 	}
-	return self.executeFlow(cc, quiet, flow, input)
+	if !bootstrap && !self.sessionInit(cc, flow) {
+		return false
+	}
+	return self.executeFlow(cc, bootstrap, flow, input)
 }
 
 func (self *Executor) executeFlow(
 	cc *core.Cli,
-	quiet bool,
+	bootstrap bool,
 	flow *core.ParsedCmds,
 	input []string) bool {
 
@@ -72,7 +81,7 @@ func (self *Executor) executeFlow(
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool
-		i, succeeded = self.executeCmd(cc, quiet, cmd, env, flow, i)
+		i, succeeded = self.executeCmd(cc, bootstrap, cmd, env, flow, i)
 		if !succeeded {
 			return false
 		}
@@ -82,7 +91,7 @@ func (self *Executor) executeFlow(
 
 func (self *Executor) executeCmd(
 	cc *core.Cli,
-	quiet bool,
+	bootstrap bool,
 	cmd core.ParsedCmd,
 	env *core.Env,
 	flow *core.ParsedCmds,
@@ -95,7 +104,7 @@ func (self *Executor) executeCmd(
 
 	ln := cc.Screen.OutputNum()
 
-	stackLines := display.PrintCmdStack(quiet, cc.Screen, cmd,
+	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 	if stackLines.Display {
 		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -111,7 +120,7 @@ func (self *Executor) executeCmd(
 	elapsed := time.Now().Sub(start)
 
 	if stackLines.Display {
-		resultLines := display.PrintCmdResult(quiet, cc.Screen, cmd,
+		resultLines := display.PrintCmdResult(bootstrap, cc.Screen, cmd,
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
 	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
@@ -157,6 +166,55 @@ func filterEmptyCmdsAndReorderByPriority(
 	if unfilteredGlobalSeqIdx >= 0 {
 		flow.GlobalSeqIdx = len(priorities) + unfilteredGlobalSeqIdx
 	}
+	return true
+}
+
+func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds) bool {
+	env := cc.GlobalEnv
+
+	if env.GetInt("sys.stack-depth") > 1 {
+		return true
+	}
+
+	sessionsRoot := env.GetRaw("sys.paths.sessions")
+	if len(sessionsRoot) == 0 {
+		cc.Screen.Print("[ERR] can't get sessions' root path\n")
+		return false
+	}
+
+	os.MkdirAll(sessionsRoot, os.ModePerm)
+	dirs, err := os.ReadDir(sessionsRoot)
+	if err != nil {
+		cc.Screen.Print(fmt.Sprintf("[ERR] can't read sessions' root path '%s'\n",
+			sessionsRoot))
+		return false
+	}
+
+	pid := fmt.Sprintf("%d", os.Getpid())
+
+	for _, dir := range dirs {
+		pid, err := strconv.Atoi(dir.Name())
+		// TODO: warning
+		if err != nil {
+			continue
+		}
+		err = syscall.Kill(pid, syscall.Signal(0))
+		if err != nil && err == syscall.ESRCH {
+			os.RemoveAll(filepath.Join(sessionsRoot, dir.Name()))
+		}
+	}
+
+	sessionPath := filepath.Join(sessionsRoot, pid)
+	err = os.MkdirAll(sessionPath, os.ModePerm)
+	if err != nil && !os.IsExist(err) {
+		cc.Screen.Print(fmt.Sprintf("[ERR] can't create session dir '%s'\n",
+			sessionPath))
+		return false
+	}
+
+	pipePath := filepath.Join(sessionPath, self.pipeName)
+	protoSep := env.GetRaw("strs.proto-sep")
+	core.SaveEnvToFile(env, pipePath, "", protoSep)
 	return true
 }
 

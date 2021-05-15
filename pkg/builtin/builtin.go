@@ -229,8 +229,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		RegCmd(DbgEcho,
 			"print message from argv").
 		AddArg("messsage", "", "msg", "m", "M")
-	return
-	cmds.AddSub("tty-read", "tty").
-		RegCmd(DbgReadFromTty,
-			"verify stdin and tty could work together")
+	cmds.AddSub("exec").
+		RegCmd(DbgExecBash,
+			"verify bash in os/exec")
 }

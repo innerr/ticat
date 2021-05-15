@@ -38,6 +38,7 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env.Set("sys.paths.data", data)
 	env.Set("sys.paths.hub", filepath.Join(data, "hub"))
 	env.Set("sys.paths.flows", filepath.Join(data, "flows"))
+	env.Set("sys.paths.sessions", filepath.Join(data, "sessions"))
 	return true
 }
 
@@ -90,26 +91,8 @@ func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	protoEnvMark := env.GetRaw("strs.proto-env-mark")
 	protoSep := env.GetRaw("strs.proto-sep")
-
 	path := getEnvLocalFilePath(env)
-	tmp := path + ".tmp"
-	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToLocal] open local env file '%s' failed: %v", tmp, err))
-	}
-	defer file.Close()
-
-	err = core.EnvOutput(env, file, protoEnvMark, protoSep)
-	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToLocal] write local env file '%s' failed: %v", tmp, err))
-	}
-	file.Close()
-
-	err = os.Rename(tmp, path)
-	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToLocal] rename env file '%s' to '%s' failed: %v",
-			tmp, path, err))
-	}
+	core.SaveEnvToFile(env, path, protoEnvMark, protoSep)
 	return true
 }
 
@@ -142,10 +125,11 @@ func getEnvLocalFilePath(env *core.Env) string {
 
 func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.executor", true)
+	env.SetBool("display.executor.end", false)
 	env.SetBool("display.bootstrap", false)
 	env.SetBool("display.one-cmd", false)
-	env.Set("display.style", "ascii")
-	env.SetBool("display.utf8", true)
+	env.Set("display.style", "utf8")
+	env.SetBool("display.utf8", false)
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.sys", false)
 	env.SetBool("display.env.layer", false)

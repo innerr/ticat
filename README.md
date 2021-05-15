@@ -8,6 +8,7 @@ TODO: here I have something to say, but not have the time yet
 ```
 ****-  Cli framework
 ***--      Command line parsing. TODO: char-escaping
+-----          Rewrite the shitty parser
 ****-      Full context search
 ****-      Full abbrs supporting. TODO: extra abbrs manage
 ****-      Env framework. TODO: save or load from a tag
@@ -45,5 +46,6 @@ Risks
     - Stderr is occupied
     - How about ssh login?
 * The connector protocal is not stable now, need a best practice
+    - May need: read|write-on-of(key1, key1)
 * Concurrent support?
 ```

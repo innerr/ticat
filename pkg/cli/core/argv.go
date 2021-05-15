@@ -24,7 +24,7 @@ func (self ArgVals) GetInt(name string) int {
 	if !ok {
 		panic(fmt.Errorf("[ArgVals.GetInt] arg '%s' not found", name))
 	}
-	intVal, err := strconv.ParseInt(val.Raw, 10, 64)
+	intVal, err := strconv.Atoi(val.Raw)
 	if err != nil {
 		panic(fmt.Errorf("[ArgVals.GetInt] arg '%s' = '%s' is not int: %v",
 			name, val.Raw, err))

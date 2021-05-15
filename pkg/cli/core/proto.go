@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -53,4 +54,25 @@ func EnvInput(env *Env, reader io.Reader, protoEnvMark string, protoSep string) 
 	}
 
 	return rest, nil
+}
+
+func SaveEnvToFile(env *Env, path string, protoEnvMark string, protoSep string) {
+	tmp := path + ".tmp"
+	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		panic(fmt.Errorf("[SaveEnvToFile] open env file '%s' failed: %v", tmp, err))
+	}
+	defer file.Close()
+
+	err = EnvOutput(env, file, protoEnvMark, protoSep)
+	if err != nil {
+		panic(fmt.Errorf("[SaveEnvToLocal] write env file '%s' failed: %v", tmp, err))
+	}
+	file.Close()
+
+	err = os.Rename(tmp, path)
+	if err != nil {
+		panic(fmt.Errorf("[SaveEnvToLocal] rename env file '%s' to '%s' failed: %v",
+			tmp, path, err))
+	}
 }
