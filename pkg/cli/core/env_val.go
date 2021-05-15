@@ -14,7 +14,7 @@ func (self Env) SetInt(name string, val int) {
 }
 
 func (self Env) GetInt(name string) int {
-	val, err := strconv.ParseInt(self.Get(name).Raw, 10, 64)
+	val, err := strconv.Atoi(self.Get(name).Raw)
 	if err != nil {
 		panic(fmt.Errorf("[EnvVal.GetInt] strconv failed: %v", err))
 	}

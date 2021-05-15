@@ -4,28 +4,22 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"sort"
 	"strings"
 )
 
-func EnvOutput(env *Env, writer io.Writer, protoEnvMark string, protoSep string) error {
-	if env.Parent() != nil {
-		EnvOutput(env.Parent(), writer, protoEnvMark, protoSep)
+func EnvOutput(env *Env, writer io.Writer, sep string) error {
+	flatten := env.Flatten(true, nil, false)
+	var keys []string
+	for k, _ := range flatten {
+		keys = append(keys, k)
 	}
 
-	protoPrefix := ""
-	if len(protoEnvMark) != 0 {
-		protoPrefix = protoEnvMark + protoSep
-	}
-
-	keys, vals := env.Pairs()
-	for i, k := range keys {
-		v := vals[i]
-		// TODO: "strs.proto-sep" can't be save, handle it better
-		if len(strings.TrimSpace(v.Raw)) == 0 {
-			continue
-		}
-		_, err := fmt.Fprintf(writer, "%s%s%s%s%s%s\n", protoPrefix,
-			k, protoSep, v.Raw, protoSep, env.LayerType())
+	sort.Strings(keys)
+	for _, k := range keys {
+		v := env.GetRaw(k)
+		_, err := fmt.Fprintf(writer, "%s%s%s\n", k, sep, v)
 		if err != nil {
 			return err
 		}
@@ -33,24 +27,61 @@ func EnvOutput(env *Env, writer io.Writer, protoEnvMark string, protoSep string)
 	return nil
 }
 
-func EnvInput(env *Env, reader io.Reader, protoEnvMark string, protoSep string) (rest []string, err error) {
+func EnvInput(env *Env, reader io.Reader, sep string) error {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
-		text := strings.Trim(scanner.Text(), "\n\r")
-		if !strings.HasPrefix(text, protoEnvMark) {
-			rest = append(rest, text)
-			continue
+		text := scanner.Text()
+		if strings.HasSuffix(text, "\n") {
+			text = text[0 : len(text)-1]
 		}
-		fields := strings.Split(text, protoSep)
-		if len(fields) != 3 && len(fields) != 4 {
-			rest = append(rest, text)
-			continue
+		i := strings.Index(text, sep)
+		if i < 0 {
+			return fmt.Errorf("[EnvInput] bad format line '%s'", text)
 		}
-		key := fields[1]
-		val := fields[2]
+		key := text[0:i]
+		val := text[i+1:]
 		env.Set(key, val)
 	}
 
-	return rest, nil
+	return nil
+}
+
+func SaveEnvToFile(env *Env, path string, sep string) {
+	tmp := path + ".tmp"
+	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		panic(fmt.Errorf("[SaveEnvToFile] open env file '%s' failed: %v", tmp, err))
+	}
+	defer file.Close()
+
+	err = EnvOutput(env, file, sep)
+	if err != nil {
+		panic(fmt.Errorf("[SaveEnvToLocal] write env file '%s' failed: %v", tmp, err))
+	}
+	file.Close()
+
+	err = os.Rename(tmp, path)
+	if err != nil {
+		panic(fmt.Errorf("[SaveEnvToLocal] rename env file '%s' to '%s' failed: %v",
+			tmp, path, err))
+	}
+}
+
+func LoadEnvFromFile(env *Env, path string, sep string) {
+	file, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return
+		}
+		panic(fmt.Errorf("[LoadEnvFromFile] open local env file '%s' failed: %v",
+			path, err))
+	}
+	defer file.Close()
+
+	err = EnvInput(env, file, sep)
+	if err != nil {
+		panic(fmt.Errorf("[LoadEnvFromFile] read local env file '%s' failed: %v",
+			path, err))
+	}
 }

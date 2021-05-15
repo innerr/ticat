@@ -9,6 +9,8 @@ type Parser struct {
 	cmdParser *CmdParser
 }
 
+// UPDATE: rewite this with goyacc
+//
 // A very simple implement of command line parsing, lack of char escaping
 //   * The command line argv list have extra tokenizing info
 //         - An example: a quoted string with space inside

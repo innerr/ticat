@@ -34,7 +34,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"desc the flow about to execute").
 		SetQuiet().
 		SetPriority()
-	mod := cmds.AddSub("cmds", "cmd", "mod", "mods", "m", "M", "c", "C")
+	mod := cmds.AddSub("cmds", "cmd", "mod", "mods", "m", "M")
 	mod.AddSub("tree", "t", "T").
 		RegCmd(DumpCmdTree,
 			"list builtin and loaded cmds").
@@ -180,10 +180,6 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 		RegCmd(LoadRuntimeEnv,
 			"setup runtime env KVs").
 		SetQuiet()
-	envLoad.AddSub("stdin", "s", "S").
-		RegCmd(LoadStdinEnv,
-			"load env KVs from stdin").
-		SetQuiet()
 	envLoad.AddSub("abbrs", "abbr", "a", "A").
 		RegCmd(LoadEnvAbbrs,
 			"setup runtime env abbrs").
@@ -225,8 +221,11 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 
 func RegisterDbgCmds(cmds *core.CmdTree) {
 	// This cmds are just for debug
-	return
-	cmds.AddSub("tty-read", "tty").
-		RegCmd(DbgReadFromTty,
-			"verify stdin and tty could work together")
+	cmds.AddSub("echo").
+		RegCmd(DbgEcho,
+			"print message from argv").
+		AddArg("messsage", "", "msg", "m", "M")
+	cmds.AddSub("exec").
+		RegCmd(DbgExecBash,
+			"verify bash in os/exec")
 }

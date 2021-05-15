@@ -7,9 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zieckey/goini"
-
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/proto/mod_meta"
 )
 
 func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
@@ -72,125 +71,9 @@ func loadLocalMods(
 			}
 		}
 
-		regMod(cc, metaPath, target, info.IsDir(), cmdPath, abbrsSep, envPathSep)
+		mod_meta.RegMod(cc, metaPath, target, info.IsDir(), cmdPath, abbrsSep, envPathSep)
 		return nil
 	})
-}
-
-// TODO: mod's meta definition file (*.ticat) should have a formal manager
-
-func regMod(
-	cc *core.Cli,
-	metaPath string,
-	path string,
-	isDir bool,
-	cmdPath string,
-	abbrsSep string,
-	envPathSep string) {
-
-	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
-
-	meta := goini.New()
-	meta.SetTrimQuotes(true)
-	err := meta.ParseFile(metaPath)
-	if err != nil {
-		panic(fmt.Errorf("[LoadLocalMods.regMod] parse mod's meta file failed: %v", err))
-	}
-
-	// 'cmd' should be a relative path base on this file
-	cmdLine, _ := meta.Get("cmd")
-	help, _ := meta.Get("help")
-	if len(help) == 0 && (!isDir || len(cmdLine) != 0) {
-		panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' has no help string in '%s'",
-			cmdPath, metaPath))
-	}
-
-	if len(cmdLine) != 0 {
-		path, err = filepath.Abs(filepath.Join(path, cmdLine))
-		if err != nil {
-			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' get abs path of '%s' failed",
-				cmdPath, path))
-		}
-		if !fileExists(path) {
-			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' point to a not existed file '%s'",
-				cmdPath, path))
-		}
-	}
-	var cmd *core.Cmd
-	if isDir {
-		cmd = mod.RegDirCmd(path, strings.TrimSpace(help))
-	} else {
-		cmd = mod.RegFileCmd(path, strings.TrimSpace(help))
-	}
-
-	abbrs, _ := meta.Get("abbrs")
-	if len(abbrs) != 0 {
-		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
-	}
-
-	args, ok := meta.GetKvmap("args")
-	if ok {
-		for names, defVal := range args {
-			nameAndAbbrs := strings.Split(names, abbrsSep)
-			name := strings.TrimSpace(nameAndAbbrs[0])
-			var argAbbrs []string
-			for _, abbr := range nameAndAbbrs[1:] {
-				argAbbrs = append(argAbbrs, strings.TrimSpace(abbr))
-			}
-			cmd.AddArg(name, defVal, argAbbrs...)
-		}
-	}
-
-	envOps, ok := meta.GetKvmap("env")
-	if ok {
-		for names, op := range envOps {
-			segs := strings.Split(names, envPathSep)
-			envAbbrs := cc.EnvAbbrs
-			var path []string
-			for _, seg := range segs {
-				var abbrs []string
-				for _, abbr := range strings.Split(seg, abbrsSep) {
-					abbrs = append(abbrs, strings.TrimSpace(abbr))
-				}
-				name := abbrs[0]
-				abbrs = abbrs[1:]
-				subEnvAbbrs := envAbbrs.GetOrAddSub(name)
-				if len(abbrs) > 0 {
-					envAbbrs.AddSubAbbrs(name, abbrs...)
-				}
-				envAbbrs = subEnvAbbrs
-				path = append(path, name)
-			}
-
-			key := strings.Join(path, envPathSep)
-			opFields := strings.Split(op, abbrsSep)
-			for _, it := range opFields {
-				field := strings.ToLower(it)
-				may := strings.Index(field, "may") >= 0 || strings.Index(field, "opt") >= 0
-				write := strings.Index(field, "w") >= 0
-				read := strings.Index(field, "rd") >= 0 ||
-					strings.Index(field, "read") >= 0 || field == "r"
-				if write && read {
-					panic(fmt.Errorf("[LoadLocalMods.regMod] "+
-						"parse env r|w definition failed: %v", it))
-				}
-				if write {
-					if may {
-						cmd.AddEnvOp(key, core.EnvOpTypeMayWrite)
-					} else {
-						cmd.AddEnvOp(key, core.EnvOpTypeWrite)
-					}
-				}
-				if read {
-					if may {
-						cmd.AddEnvOp(key, core.EnvOpTypeMayRead)
-					} else {
-						cmd.AddEnvOp(key, core.EnvOpTypeRead)
-					}
-				}
-			}
-		}
-	}
 }
 
 func fileExists(path string) bool {

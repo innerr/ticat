@@ -158,71 +158,31 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 		bin = "bash"
 	}
 
+	sep := cc.Cmds.Strs.ProtoSep
+
+	sessionPath := env.GetRaw("session")
+	if len(sessionPath) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session path not found in env"))
+	}
+	SaveEnvToFile(env, sessionPath, sep)
+
 	args = append(args, self.cmdLine)
+	args = append(args, env.GetRaw("session"))
 	for _, k := range self.args.Names() {
 		args = append(args, argv[k].Raw)
 	}
 	cmd := exec.Command(bin, args...)
 
-	errPrefix := "[ERR] execute file failed: %v\n"
-
-	osStdout := os.Stdout
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
-	defer func() {
-		os.Stdout = osStdout
-	}()
+	cmd.Stderr = os.Stderr
 
-	printLine := func(text string) {
-		cc.Screen.Print(text + "\n")
-	}
-
-	stdin, err := cmd.StdinPipe()
+	err := cmd.Run()
 	if err != nil {
-		printLine(fmt.Sprintf(errPrefix, err))
-		return false
-	}
-	defer stdin.Close()
-
-	// Input to bash
-	go func() {
-		defer stdin.Close()
-		EnvOutput(env, stdin, self.owner.Strs.ProtoEnvMark, self.owner.Strs.ProtoSep)
-	}()
-
-	// TODO: use named-pipe (mkfifo) instead of stderr?
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		printLine(fmt.Sprintf(errPrefix, err))
-		return false
-	}
-	defer stderr.Close()
-
-	// TODO: better stderr output
-	err = cmd.Start()
-	if err != nil {
-		printLine(fmt.Sprintf(errPrefix, err))
-		printLine("  - path: " + self.cmdLine)
-		for i, arg := range args[1:] {
-			printLine(fmt.Sprintf("  - arg:%d %s", i, arg))
-		}
-		return false
+		panic(fmt.Errorf("[Cmd.executeFile] exec '%s %s' failed: %v",
+			bin, strings.Join(args, " "), err))
 	}
 
-	// The output result from bash command's stderr
-	stderrLines, err := EnvInput(env.GetLayer(EnvLayerSession), stderr,
-		self.owner.Strs.ProtoEnvMark, self.owner.Strs.ProtoSep)
-
-	err = cmd.Wait()
-	if err != nil {
-		printLine(fmt.Sprintf(errPrefix, err))
-	}
-
-	if len(stderrLines) != 0 {
-		printLine("\n[stderr]")
-		for _, line := range stderrLines {
-			printLine("    " + line)
-		}
-	}
-
-	return err == nil
+	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
+	return true
 }

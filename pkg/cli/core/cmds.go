@@ -14,7 +14,7 @@ type CmdTreeStrs struct {
 	AbbrsSep         string
 	EnvValDelMark    string
 	EnvValDelAllMark string
-	ProtoEnvMark     string
+	EnvKeyValSep     string
 	ProtoSep         string
 }
 

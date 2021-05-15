@@ -149,7 +149,8 @@ func PrintCmdResult(
 	currCmdIdx int,
 	strs *core.CmdTreeStrs) (lines CmdResultLines) {
 
-	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
+	if isBootstrap && !env.GetBool("display.bootstrap") ||
+		!env.GetBool("display.executor") || !env.GetBool("display.executor.end") {
 		return
 	}
 	if checkPrintFilter(cmd, env) {

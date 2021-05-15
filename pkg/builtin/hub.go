@@ -1,7 +1,6 @@
 package builtin
 
 import (
-	"bufio"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -11,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	meta "github.com/pingcap/ticat/pkg/proto/hub_meta"
 )
 
 func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
@@ -18,10 +18,11 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	flowExt := env.GetRaw("strs.flow-ext")
 	abbrsSep := env.GetRaw("strs.abbrs-sep")
 	envPathSep := env.GetRaw("strs.env-path-sep")
-	fieldSep := env.GetRaw("strs.proto-sep")
 
 	metaPath := getReposInfoPath(env, "LoadModsFromHub")
-	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	fieldSep := env.GetRaw("strs.proto-sep")
+
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	for _, info := range infos {
 		if info.OnOff != "on" {
 			continue
@@ -50,14 +51,14 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	fieldSep := env.GetRaw("strs.proto-sep")
 	metaPath := getReposInfoPath(env, "ListHub")
-	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	fieldSep := env.GetRaw("strs.proto-sep")
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	listHub(cc.Screen, infos)
 	return true
 }
 
-func listHub(screen core.Screen, infos []repoInfo) {
+func listHub(screen core.Screen, infos []meta.RepoInfo) {
 	for _, info := range infos {
 		name := repoDisplayName(info)
 		screen.Print(fmt.Sprintf("[%s]", name))
@@ -75,10 +76,9 @@ func listHub(screen core.Screen, infos []repoInfo) {
 }
 
 func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	fieldSep := env.GetRaw("strs.proto-sep")
-
 	metaPath := getReposInfoPath(env, "RemoveAllFromHub")
-	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	fieldSep := env.GetRaw("strs.proto-sep")
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 
 	for _, info := range infos {
 		if len(info.Addr) != 0 {
@@ -114,13 +114,12 @@ func PurgeInactiveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bo
 }
 
 func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env) {
-	fieldSep := env.GetRaw("strs.proto-sep")
-
 	metaPath := getReposInfoPath(env, "PurgeInactiveRepoFromHub")
-	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	fieldSep := env.GetRaw("strs.proto-sep")
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 
-	var extracted []repoInfo
-	var rest []repoInfo
+	var extracted []meta.RepoInfo
+	var rest []meta.RepoInfo
 	for _, info := range infos {
 		if info.OnOff != "on" && (len(findStr) == 0 || strings.Index(info.Addr, findStr) >= 0) {
 			extracted = append(extracted, info)
@@ -141,12 +140,11 @@ func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env) {
 		cc.Screen.Print("      (purged)\n")
 	}
 
-	writeReposInfoFile(metaPath, rest, fieldSep)
+	meta.WriteReposInfoFile(metaPath, rest, fieldSep)
 }
 
 func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	metaPath := getReposInfoPath(env, "UpdateHub")
-	fieldSep := env.GetRaw("strs.proto-sep")
 	listFileName := env.GetRaw("strs.repos-file-name")
 	repoExt := env.GetRaw("strs.mods-repo-ext")
 
@@ -155,7 +153,8 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		panic(fmt.Errorf("[UpdateHub] cant't get hub path"))
 	}
 
-	oldInfos, oldList := readReposInfoFile(metaPath, true, fieldSep)
+	fieldSep := env.GetRaw("strs.proto-sep")
+	oldInfos, oldList := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	finisheds := map[string]bool{}
 	for _, info := range oldInfos {
 		if info.OnOff != "on" {
@@ -163,7 +162,7 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		}
 	}
 
-	var infos []repoInfo
+	var infos []meta.RepoInfo
 
 	for _, info := range oldInfos {
 		_, addrs, helpStrs := updateRepoAndSubRepos(
@@ -173,22 +172,21 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 				continue
 			}
 			repoPath := getRepoPath(path, addr)
-			infos = append(infos, repoInfo{addr, info.Addr, repoPath, helpStrs[i], "on"})
+			infos = append(infos, meta.RepoInfo{addr, info.Addr, repoPath, helpStrs[i], "on"})
 		}
 	}
 
 	infos = append(oldInfos, infos...)
 	if len(infos) != len(oldInfos) {
-		writeReposInfoFile(metaPath, infos, fieldSep)
+		meta.WriteReposInfoFile(metaPath, infos, fieldSep)
 	}
 	return true
 }
 
 func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	fieldSep := env.GetRaw("strs.proto-sep")
-
 	metaPath := getReposInfoPath(env, "EnableRepoInHub")
-	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	fieldSep := env.GetRaw("strs.proto-sep")
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	findStr := argv.GetRaw("find-str")
 	if len(findStr) == 0 {
 		panic(fmt.Errorf("[EnableRepoInHub] cant't get target repo addr from args"))
@@ -209,15 +207,14 @@ func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		extracted[i] = info
 	}
 
-	writeReposInfoFile(metaPath, append(rest, extracted...), fieldSep)
+	meta.WriteReposInfoFile(metaPath, append(rest, extracted...), fieldSep)
 	return true
 }
 
 func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	fieldSep := env.GetRaw("strs.proto-sep")
-
 	metaPath := getReposInfoPath(env, "DisableRepoInHub")
-	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	fieldSep := env.GetRaw("strs.proto-sep")
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	findStr := argv.GetRaw("find-str")
 	if len(findStr) == 0 {
 		panic(fmt.Errorf("[DisableRepoInHub] cant't get target repo addr from args"))
@@ -237,7 +234,7 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		}
 	}
 
-	writeReposInfoFile(metaPath, append(rest, extracted...), fieldSep)
+	meta.WriteReposInfoFile(metaPath, append(rest, extracted...), fieldSep)
 	return true
 }
 
@@ -262,11 +259,11 @@ func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bo
 		return true
 	}
 
-	fieldSep := env.GetRaw("strs.proto-sep")
 	metaPath := getReposInfoPath(env, "LoadModsFromHub")
-	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	fieldSep := env.GetRaw("strs.proto-sep")
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 
-	var locals []repoInfo
+	var locals []meta.RepoInfo
 	for _, info := range infos {
 		if len(info.Addr) != 0 {
 			continue
@@ -277,7 +274,7 @@ func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bo
 	}
 
 	if len(locals) > 1 {
-		var actives []repoInfo
+		var actives []meta.RepoInfo
 		for _, info := range locals {
 			if info.OnOff == "on" {
 				actives = append(actives, info)
@@ -358,7 +355,7 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 
 	metaPath := getReposInfoPath(env, "addRepoToHub")
 	fieldSep := env.GetRaw("strs.proto-sep")
-	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	found := false
 	for i, info := range infos {
 		if info.Path == path {
@@ -380,12 +377,12 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		listFileName := env.GetRaw("strs.repos-file-name")
 		listFilePath := filepath.Join(path, listFileName)
 		helpStr, _, _ := readRepoListFromFile(listFilePath)
-		info := repoInfo{"", "<local>", path, helpStr, "on"}
+		info := meta.RepoInfo{"", "<local>", path, helpStr, "on"}
 		infos = append(infos, info)
 		cc.Screen.Print(fmt.Sprintf("[%s]\n", repoDisplayName(info)))
 		printInfoProps(cc.Screen, info)
 	}
-	writeReposInfoFile(metaPath, infos, fieldSep)
+	meta.WriteReposInfoFile(metaPath, infos, fieldSep)
 
 	// TODO: load mods now?
 	return true
@@ -417,7 +414,7 @@ func addRepoToHub(
 
 	metaPath := getReposInfoPath(env, "addRepoToHub")
 	fieldSep := env.GetRaw("strs.proto-sep")
-	oldInfos, oldList := readReposInfoFile(metaPath, true, fieldSep)
+	oldInfos, oldList := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	finisheds := map[string]bool{}
 	for i, info := range oldInfos {
 		if info.Addr == gitAddr {
@@ -437,17 +434,17 @@ func addRepoToHub(
 	addrs = append([]string{gitAddr}, addrs...)
 	helpStrs = append([]string{topRepoHelpStr}, helpStrs...)
 
-	var infos []repoInfo
+	var infos []meta.RepoInfo
 	for i, addr := range addrs {
 		if oldList[addr] {
 			continue
 		}
 		repoPath := getRepoPath(path, addr)
-		infos = append(infos, repoInfo{addr, gitAddr, repoPath, helpStrs[i], "on"})
+		infos = append(infos, meta.RepoInfo{addr, gitAddr, repoPath, helpStrs[i], "on"})
 	}
 
 	infos = append(oldInfos, infos...)
-	writeReposInfoFile(metaPath, infos, fieldSep)
+	meta.WriteReposInfoFile(metaPath, infos, fieldSep)
 	return
 }
 
@@ -568,8 +565,8 @@ func readRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs
 }
 
 func extractAddrFromList(
-	infos []repoInfo,
-	findStr string) (extracted []repoInfo, rest []repoInfo) {
+	infos []meta.RepoInfo,
+	findStr string) (extracted []meta.RepoInfo, rest []meta.RepoInfo) {
 
 	for _, info := range infos {
 		findInStr := info.Addr
@@ -609,7 +606,7 @@ func gitAddrAbbr(addr string) (abbr string) {
 	return
 }
 
-func repoDisplayName(info repoInfo) string {
+func repoDisplayName(info meta.RepoInfo) string {
 	if len(info.Addr) == 0 {
 		return filepath.Base(info.Path)
 	}
@@ -641,76 +638,6 @@ func isOsCmdExists(cmd string) bool {
 	return err == nil && len(path) > 0
 }
 
-type repoInfo struct {
-	Addr      string
-	AddReason string
-	Path      string
-	HelpStr   string
-	OnOff     string
-}
-
-func writeReposInfoFile(path string, infos []repoInfo, sep string) {
-	tmp := path + ".tmp"
-	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		panic(fmt.Errorf("[writeReposInfoFile] open file '%s' failed: %v", tmp, err))
-	}
-	defer file.Close()
-
-	for _, info := range infos {
-		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s%s%s\n", info.Addr, sep,
-			info.AddReason, sep, info.Path, sep, info.HelpStr, sep, info.OnOff)
-		if err != nil {
-			panic(fmt.Errorf("[writeReposInfoFile] write file '%s' failed: %v", tmp, err))
-		}
-	}
-	file.Close()
-
-	err = os.Rename(tmp, path)
-	if err != nil {
-		panic(fmt.Errorf("[writeReposInfoFile] rename file '%s' to '%s' failed: %v",
-			tmp, path, err))
-	}
-}
-
-func readReposInfoFile(
-	path string,
-	allowNotExist bool,
-	sep string) (infos []repoInfo, list map[string]bool) {
-
-	list = map[string]bool{}
-
-	file, err := os.Open(path)
-	if err != nil {
-		if os.IsNotExist(err) && allowNotExist {
-			return
-		}
-		panic(fmt.Errorf("[readReposInfoFile] open file '%s' failed: %v", path, err))
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := strings.Trim(scanner.Text(), "\n\r")
-		fields := strings.Split(line, sep)
-		if len(fields) != 5 {
-			panic(fmt.Errorf("[readReposInfoFile] file '%s' line '%s' can't be parsed",
-				path, line))
-		}
-		info := repoInfo{
-			fields[0],
-			fields[1],
-			fields[2],
-			fields[3],
-			fields[4],
-		}
-		infos = append(infos, info)
-		list[info.Addr] = true
-	}
-	return
-}
-
 func getReposInfoPath(env *core.Env, funcName string) string {
 	path := env.GetRaw("sys.paths.hub")
 	if len(path) == 0 {
@@ -727,13 +654,13 @@ func getRepoPath(hubPath string, gitAddr string) string {
 	return filepath.Join(hubPath, filepath.Base(gitAddr))
 }
 
-func printInfoProps(screen core.Screen, info repoInfo) {
+func printInfoProps(screen core.Screen, info meta.RepoInfo) {
 	screen.Print(fmt.Sprintf("     '%s'\n", info.HelpStr))
 	screen.Print(fmt.Sprintf("    - from: %s\n", getDisplayReason(info)))
 	screen.Print(fmt.Sprintf("    - path: %s\n", info.Path))
 }
 
-func getDisplayReason(info repoInfo) string {
+func getDisplayReason(info meta.RepoInfo) string {
 	if info.AddReason == info.Addr {
 		return "<manually-added>"
 	}

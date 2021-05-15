@@ -102,6 +102,16 @@ func (self *Env) Set(name string, val string) (old EnvVal) {
 	return self.SetEx(name, val, false)
 }
 
+func (self *Env) SetIfEmpty(name string, val string) (old EnvVal) {
+	var exists bool
+	old, exists = self.GetEx(name)
+	if exists {
+		return
+	}
+	self.pairs[name] = EnvVal{val, false, nil}
+	return
+}
+
 func (self *Env) SetAsArg(name string, val string) (old EnvVal) {
 	return self.SetEx(name, val, true)
 }
