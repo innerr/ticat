@@ -33,7 +33,6 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path fail: %v", err))
 	}
 
-	env.SetIfEmpty("session", "")
 	env.Set("sys.paths.ticat", path)
 	data := path + ".data"
 	env.Set("sys.paths.data", data)

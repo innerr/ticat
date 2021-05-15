@@ -38,7 +38,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 		}
 	}
 
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "="})
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "=", "\t"})
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
@@ -123,7 +123,7 @@ func TestCmdParserParse(t *testing.T) {
 		}
 	}
 
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "="})
+	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "=", "\t"})
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 

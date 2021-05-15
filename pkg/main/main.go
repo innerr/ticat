@@ -45,6 +45,7 @@ func main() {
 		EnvValDelMark,
 		EnvValDelAllMark,
 		EnvKeyValSep,
+		ProtoSep,
 	})
 	builtin.RegisterCmds(tree)
 

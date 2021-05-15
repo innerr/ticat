@@ -16,18 +16,18 @@ import (
 type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds) bool
 
 type Executor struct {
-	funcs    []ExecFunc
-	pipeName string
+	funcs           []ExecFunc
+	sessionFileName string
 }
 
-func NewExecutor(pipeName string) *Executor {
+func NewExecutor(sessionFileName string) *Executor {
 	return &Executor{
 		[]ExecFunc{
 			// TODO: implement and add functions: flowFlatten, mockModInject, stepByStepInject
 			filterEmptyCmdsAndReorderByPriority,
 			checkEnvOps,
 		},
-		pipeName,
+		sessionFileName,
 	}
 }
 
@@ -171,8 +171,9 @@ func filterEmptyCmdsAndReorderByPriority(
 
 func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds) bool {
 	env := cc.GlobalEnv
-
-	if env.GetInt("sys.stack-depth") > 1 {
+	sessionPath := env.GetRaw("session")
+	if len(sessionPath) != 0 {
+		core.LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep)
 		return true
 	}
 
@@ -204,16 +205,16 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds) bool {
 		}
 	}
 
-	sessionPath := filepath.Join(sessionsRoot, pid)
-	err = os.MkdirAll(sessionPath, os.ModePerm)
+	sessionDir := filepath.Join(sessionsRoot, pid)
+	err = os.MkdirAll(sessionDir, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
 		cc.Screen.Print(fmt.Sprintf("[ERR] can't create session dir '%s'\n",
-			sessionPath))
+			sessionDir))
 		return false
 	}
 
-	pipePath := filepath.Join(sessionPath, self.pipeName)
-	core.SaveEnvToFile(env, pipePath, cc.Cmds.Strs.EnvKeyValSep)
+	sessionPath = filepath.Join(sessionDir, self.sessionFileName)
+	env.GetLayer(core.EnvLayerSession).Set("session", sessionPath)
 	return true
 }
 
