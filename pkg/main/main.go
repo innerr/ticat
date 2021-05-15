@@ -45,6 +45,7 @@ func main() {
 		EnvValDelMark,
 		EnvValDelAllMark,
 		EnvKeyValSep,
+		EnvPathSep,
 		ProtoSep,
 	})
 	builtin.RegisterCmds(tree)
@@ -76,8 +77,8 @@ func main() {
 	bootstrap := `
 		B.E.L.A:
 		B.E.L.R:
-		B.E.L.L:
 		B.M.L.E:
+		B.E.L.L:
 		B.M.L.F:
 		B.M.L.H:
 	`

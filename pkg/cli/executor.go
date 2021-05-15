@@ -226,7 +226,8 @@ func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds) bool {
 		if last == nil {
 			continue
 		}
-		result := checker.OnCallCmd(cmd, cc.Cmds.Strs.PathSep, last, true)
+		// TODO: the val of the key may be provided in flow
+		result := checker.OnCallCmd(cc.GlobalEnv, cmd, cc.Cmds.Strs.PathSep, last, true)
 		// TODO: tell user more details, auto-find the provider
 		for _, res := range result {
 			realPath := strings.Join(cmd.Path(), sep)

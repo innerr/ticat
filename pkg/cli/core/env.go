@@ -59,7 +59,7 @@ func (self *Env) GetLayer(ty EnvLayerType) *Env {
 	return self.parent.GetLayer(ty)
 }
 
-func (self Env) DeleteSelf(name string) {
+func (self Env) DeleteInSelfLayer(name string) {
 	delete(self.pairs, name)
 }
 

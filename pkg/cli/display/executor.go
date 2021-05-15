@@ -85,7 +85,12 @@ func PrintCmdStack(
 	printRealname := env.GetBool("display.mod.realname")
 
 	if printEnv {
-		filterPrefixs := []string{strings.Join(cmd.Path(), strs.PathSep) + strs.PathSep}
+		// TODO: 'session' 'strs' => config
+		filterPrefixs := []string{
+			"session",
+			"strs" + strs.EnvPathSep,
+			strings.Join(cmd.Path(), strs.PathSep) + strs.PathSep,
+		}
 		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, false, filterPrefixs, 4)
 		for _, line := range envLines {
 			line := "   " + line

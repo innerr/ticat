@@ -10,7 +10,12 @@ import (
 )
 
 func EnvOutput(env *Env, writer io.Writer, sep string) error {
-	flatten := env.Flatten(true, nil, false)
+	// TODO: config?
+	filtered := []string{
+		"session",
+		"strs.",
+	}
+	flatten := env.Flatten(true, filtered, false)
 	var keys []string
 	for k, _ := range flatten {
 		keys = append(keys, k)
@@ -37,7 +42,8 @@ func EnvInput(env *Env, reader io.Reader, sep string) error {
 		}
 		i := strings.Index(text, sep)
 		if i < 0 {
-			return fmt.Errorf("[EnvInput] bad format line '%s'", text)
+			return fmt.Errorf("[EnvInput] bad format line '%s', sep '%s'",
+				text, sep)
 		}
 		key := text[0:i]
 		val := text[i+1:]

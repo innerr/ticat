@@ -58,6 +58,7 @@ type EnvOpsCheckResult struct {
 }
 
 func (self EnvOpsChecker) OnCallCmd(
+	env *Env,
 	matched ParsedCmd,
 	pathSep string,
 	cmd *Cmd,
@@ -99,7 +100,7 @@ func (self EnvOpsChecker) OnCallCmd(
 				passCheck = !(res.ReadMayWrite || res.MayReadMayWrite ||
 					res.MayReadNotExist || res.ReadNotExist)
 			}
-			if !passCheck {
+			if !passCheck && len(env.GetRaw(res.Key)) == 0 {
 				result = append(result, res)
 			}
 		}

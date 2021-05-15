@@ -46,7 +46,8 @@ func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep)
-	env.GetLayer(core.EnvLayerPersisted).DeleteSelf("sys.stack-depth")
+	env.GetLayer(core.EnvLayerPersisted).DeleteInSelfLayer("sys.stack-depth")
+	env.GetLayer(core.EnvLayerPersisted).Deduplicate()
 	env.GetLayer(core.EnvLayerSession).Deduplicate()
 	return true
 }
