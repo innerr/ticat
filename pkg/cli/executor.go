@@ -16,7 +16,7 @@ import (
 type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds) bool
 
 type Executor struct {
-	funcs   []ExecFunc
+	funcs    []ExecFunc
 	pipeName string
 }
 
@@ -213,8 +213,7 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds) bool {
 	}
 
 	pipePath := filepath.Join(sessionPath, self.pipeName)
-	protoSep := env.GetRaw("strs.proto-sep")
-	core.SaveEnvToFile(env, pipePath, "", protoSep)
+	core.SaveEnvToFile(env, pipePath, cc.Cmds.Strs.EnvKeyValSep)
 	return true
 }
 

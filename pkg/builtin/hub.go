@@ -18,9 +18,10 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	flowExt := env.GetRaw("strs.flow-ext")
 	abbrsSep := env.GetRaw("strs.abbrs-sep")
 	envPathSep := env.GetRaw("strs.env-path-sep")
-	fieldSep := env.GetRaw("strs.proto-sep")
 
 	metaPath := getReposInfoPath(env, "LoadModsFromHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
+
 	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 	for _, info := range infos {
 		if info.OnOff != "on" {
@@ -50,8 +51,8 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	fieldSep := env.GetRaw("strs.proto-sep")
 	metaPath := getReposInfoPath(env, "ListHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 	listHub(cc.Screen, infos)
 	return true
@@ -75,9 +76,8 @@ func listHub(screen core.Screen, infos []repoInfo) {
 }
 
 func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	fieldSep := env.GetRaw("strs.proto-sep")
-
 	metaPath := getReposInfoPath(env, "RemoveAllFromHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 
 	for _, info := range infos {
@@ -114,9 +114,8 @@ func PurgeInactiveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bo
 }
 
 func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env) {
-	fieldSep := env.GetRaw("strs.proto-sep")
-
 	metaPath := getReposInfoPath(env, "PurgeInactiveRepoFromHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 
 	var extracted []repoInfo
@@ -146,7 +145,6 @@ func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env) {
 
 func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	metaPath := getReposInfoPath(env, "UpdateHub")
-	fieldSep := env.GetRaw("strs.proto-sep")
 	listFileName := env.GetRaw("strs.repos-file-name")
 	repoExt := env.GetRaw("strs.mods-repo-ext")
 
@@ -155,6 +153,7 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		panic(fmt.Errorf("[UpdateHub] cant't get hub path"))
 	}
 
+	fieldSep := env.GetRaw("strs.proto-sep")
 	oldInfos, oldList := readReposInfoFile(metaPath, true, fieldSep)
 	finisheds := map[string]bool{}
 	for _, info := range oldInfos {
@@ -185,9 +184,8 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	fieldSep := env.GetRaw("strs.proto-sep")
-
 	metaPath := getReposInfoPath(env, "EnableRepoInHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 	findStr := argv.GetRaw("find-str")
 	if len(findStr) == 0 {
@@ -214,9 +212,8 @@ func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	fieldSep := env.GetRaw("strs.proto-sep")
-
 	metaPath := getReposInfoPath(env, "DisableRepoInHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 	findStr := argv.GetRaw("find-str")
 	if len(findStr) == 0 {
@@ -262,8 +259,8 @@ func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bo
 		return true
 	}
 
-	fieldSep := env.GetRaw("strs.proto-sep")
 	metaPath := getReposInfoPath(env, "LoadModsFromHub")
+	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := readReposInfoFile(metaPath, true, fieldSep)
 
 	var locals []repoInfo

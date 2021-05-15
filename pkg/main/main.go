@@ -30,12 +30,11 @@ func main() {
 	defEnv.Set("strs.env-kv-sep", EnvKeyValSep)
 	defEnv.Set("strs.env-bracket-left", EnvBracketLeft)
 	defEnv.Set("strs.env-bracket-right", EnvBracketRight)
-	defEnv.Set("strs.proto-env-mark", ProtoEnvMark)
-	defEnv.Set("strs.proto-sep", ProtoSep)
 	defEnv.Set("strs.env-file-name", EnvFileName)
 	defEnv.Set("strs.hub-file-name", HubFileName)
 	defEnv.Set("strs.repos-file-name", ReposFileName)
 	defEnv.Set("strs.mods-repo-ext", ModsRepoExt)
+	defEnv.Set("strs.proto-sep", ProtoSep)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -45,8 +44,7 @@ func main() {
 		AbbrsSep,
 		EnvValDelMark,
 		EnvValDelAllMark,
-		ProtoEnvMark,
-		ProtoSep,
+		EnvKeyValSep,
 	})
 	builtin.RegisterCmds(tree)
 
@@ -78,7 +76,6 @@ func main() {
 		B.E.L.A:
 		B.E.L.R:
 		B.E.L.L:
-		B.E.L.S:
 		B.M.L.E:
 		B.M.L.F:
 		B.M.L.H:
@@ -116,8 +113,6 @@ const (
 	EnvRuntimeSysPrefix string = "sys"
 	EnvStrsPrefix       string = "strs"
 	EnvFileName         string = "bootstrap.env"
-	ProtoMark           string = "proto." + SelfName
-	ProtoEnvMark        string = ProtoMark + ".env"
 	ProtoSep            string = "\t"
 	ModsRepoExt         string = "." + SelfName
 	MetaExt             string = "." + SelfName

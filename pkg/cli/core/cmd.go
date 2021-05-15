@@ -186,7 +186,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 	// Input to bash
 	go func() {
 		defer stdin.Close()
-		EnvOutput(env, stdin, self.owner.Strs.ProtoEnvMark, self.owner.Strs.ProtoSep)
+		EnvOutput(env, stdin, self.owner.Strs.EnvKeyValSep)
 	}()
 
 	// TODO: use named-pipe (mkfifo) instead of stderr?
@@ -209,20 +209,13 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 	}
 
 	// The output result from bash command's stderr
-	stderrLines, err := EnvInput(env.GetLayer(EnvLayerSession), stderr,
-		self.owner.Strs.ProtoEnvMark, self.owner.Strs.ProtoSep)
-
+	err = EnvInput(env.GetLayer(EnvLayerSession), stderr, self.owner.Strs.EnvKeyValSep)
+	if err != nil {
+		printLine(fmt.Sprintf(errPrefix, err))
+	}
 	err = cmd.Wait()
 	if err != nil {
 		printLine(fmt.Sprintf(errPrefix, err))
 	}
-
-	if len(stderrLines) != 0 {
-		printLine("\n[stderr]")
-		for _, line := range stderrLines {
-			printLine("    " + line)
-		}
-	}
-
 	return err == nil
 }

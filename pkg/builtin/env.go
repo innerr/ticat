@@ -33,6 +33,7 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path fail: %v", err))
 	}
 
+	env.SetIfEmpty("session", "")
 	env.Set("sys.paths.ticat", path)
 	data := path + ".data"
 	env.Set("sys.paths.data", data)
@@ -42,6 +43,7 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	return true
 }
 
+/* TODO: remove
 // Interacting methods between ticat and mods:
 //   1. mod.stdin(as mod's input args) -> mod.stderr(as mods's return)
 //   2. (recursively) calling ticat inside a mod -> ticat.stdin(pass the env from mod to ticat)
@@ -50,49 +52,28 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 //   1. those loaders will be loaded from 'bootstrap' string above
 //   2. put a string val with key 'bootstrap' to env could launch it as an extra bootstrap
 func LoadStdinEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
-	protoEnvMark := env.GetRaw("strs.proto-env-mark")
-	protoSep := env.GetRaw("strs.proto-sep")
-	stdinEnv := genEnvFromStdin(protoEnvMark, protoSep)
+	kvSep := env.GetRaw("strs.env-kv-sep")
+	stdinEnv := genEnvFromStdin(kvSep)
 	if stdinEnv != nil {
 		env.GetLayer(core.EnvLayerSession).Merge(stdinEnv)
 	}
 	return true
 }
+*/
 
 func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
-	protoEnvMark := env.GetRaw("strs.proto-env-mark")
-	protoSep := env.GetRaw("strs.proto-sep")
+	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
-	file, err := os.Open(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return true
-		}
-		panic(fmt.Errorf("[LoadLocalEnv] open local env file '%s' failed: %v",
-			path, err))
-	}
-	defer file.Close()
-
-	rest, err := core.EnvInput(env.GetLayer(core.EnvLayerPersisted),
-		file, protoEnvMark, protoSep)
-	if err != nil {
-		panic(fmt.Errorf("[LoadLocalEnv] read local env file '%s' failed: %v",
-			path, err))
-	}
-	if len(rest) != 0 {
-		panic(fmt.Errorf("[LoadLocalEnv] env file '%s': lines cant' be parsed '%v'",
-			path, rest))
-	}
+	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep)
 	env.GetLayer(core.EnvLayerPersisted).DeleteSelf("sys.stack-depth")
 	env.GetLayer(core.EnvLayerSession).Deduplicate()
 	return true
 }
 
 func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	protoEnvMark := env.GetRaw("strs.proto-env-mark")
-	protoSep := env.GetRaw("strs.proto-sep")
+	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
-	core.SaveEnvToFile(env, path, protoEnvMark, protoSep)
+	core.SaveEnvToFile(env, path, kvSep)
 	return true
 }
 
@@ -141,7 +122,8 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetInt("display.max-cmd-cnt", 7)
 }
 
-func genEnvFromStdin(protoEnvMark string, protoSep string) *core.Env {
+/* TODO: remove
+func genEnvFromStdin(kvSep string) *core.Env {
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		panic(fmt.Errorf("[GenEnvFromStdin] get stdin stat failed %v", err))
@@ -150,7 +132,7 @@ func genEnvFromStdin(protoEnvMark string, protoSep string) *core.Env {
 		return nil
 	}
 	env := core.NewEnv()
-	rest, err := core.EnvInput(env, os.Stdin, protoEnvMark, protoSep)
+	rest, err := core.EnvInput(env, os.Stdin, kvSep)
 	if err != nil {
 		panic(fmt.Errorf("[GenEnvFromStdin] parse stdin failed %v", err))
 	}
@@ -159,3 +141,4 @@ func genEnvFromStdin(protoEnvMark string, protoSep string) *core.Env {
 	}
 	return env
 }
+*/
