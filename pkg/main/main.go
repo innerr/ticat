@@ -51,6 +51,10 @@ func main() {
 	})
 	builtin.RegisterCmds(tree)
 
+	// Extra abbrs definition
+	abbrs := core.NewEnvAbbrs(CmdRootDisplayName)
+	builtin.LoadEnvAbbrs(abbrs)
+
 	// A simple parser, should be insteaded in the future
 	seqParser := parser.NewSequenceParser(
 		SequenceSep,
@@ -73,10 +77,9 @@ func main() {
 	screen := cli.NewScreen()
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
-	cc := core.NewCli(globalEnv, screen, tree, cliParser)
+	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs)
 
 	bootstrap := `
-		B.E.L.A:
 		B.E.L.R:
 		B.M.L.E:
 		B.E.L.L:

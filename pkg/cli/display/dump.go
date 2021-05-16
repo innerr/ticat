@@ -99,7 +99,7 @@ func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 				continue
 			}
 		}
-		screen.Print(k + " = " + mayQuoteStr(v) + "\n")
+		screen.Print(k + " = " + MayQuoteStr(v) + "\n")
 	}
 }
 
@@ -109,16 +109,16 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 		line := k + " = "
 		if argv != nil {
 			v := argv[k].Raw
-			line += mayQuoteStr(v)
+			line += MayQuoteStr(v)
 			if printDef {
 				if defV != v {
-					line += " (def=" + mayQuoteStr(defV) + ")"
+					line += " (def=" + MayQuoteStr(defV) + ")"
 				} else {
 					line += " (=def)"
 				}
 			}
 		} else {
-			line += mayQuoteStr(defV)
+			line += MayQuoteStr(defV)
 		}
 		output = append(output, line)
 	}
@@ -229,7 +229,7 @@ func dumpCmd(
 			for _, name := range argNames {
 				val := args.DefVal(name)
 				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
-				prt(2, nameStr+" = "+mayQuoteStr(val))
+				prt(2, nameStr+" = "+MayQuoteStr(val))
 			}
 		}
 	}
@@ -302,7 +302,7 @@ func dumpEnvLayer(
 			}
 		}
 		if !filtered {
-			output = append(output, indent+"- "+k+" = "+mayQuoteStr(v.Raw))
+			output = append(output, indent+"- "+k+" = "+MayQuoteStr(v.Raw))
 		}
 	}
 	if env.Parent() != nil {
@@ -373,7 +373,7 @@ func GetCmdPath(cmd core.ParsedCmd, sep string, printRealname bool) string {
 	return strings.Join(path, sep)
 }
 
-func mayQuoteStr(origin string) string {
+func MayQuoteStr(origin string) string {
 	trimed := strings.TrimSpace(origin)
 	if len(trimed) == 0 || len(trimed) != len(origin) {
 		return "'" + origin + "'"

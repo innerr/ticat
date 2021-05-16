@@ -53,11 +53,17 @@ func RegMod(
 	}
 
 	abbrs := meta.Get("abbrs")
+	if len(abbrs) == 0 {
+		abbrs = meta.Get("abbr")
+	}
 	if len(abbrs) != 0 {
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
 
 	args := meta.GetSession("args")
+	if args == nil {
+		args = meta.GetSession("arg")
+	}
 	if args != nil {
 		for _, names := range args.Keys() {
 			defVal := args.Get(names)

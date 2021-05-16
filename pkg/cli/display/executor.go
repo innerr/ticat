@@ -91,6 +91,9 @@ func PrintCmdStack(
 			"strs" + strs.EnvPathSep,
 			strings.Join(cmd.Path(), strs.PathSep) + strs.PathSep,
 		}
+		if !env.GetBool("display.env.sys.paths") {
+			filterPrefixs = append(filterPrefixs, "sys.paths")
+		}
 		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, false, filterPrefixs, 4)
 		for _, line := range envLines {
 			line := "   " + line

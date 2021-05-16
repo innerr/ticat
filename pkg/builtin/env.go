@@ -19,11 +19,10 @@ func LoadDefaultEnv(env *core.Env) {
 	setToDefaultVerb(env)
 }
 
-func LoadEnvAbbrs(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	display := cc.EnvAbbrs.GetOrAddSub("display").AddAbbrs("dis", "disp")
+func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
+	display := abbrs.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
 	display.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
 	display.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
-	return true
 }
 
 func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
@@ -96,6 +95,7 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.utf8", false)
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.sys", false)
+	env.SetBool("display.env.sys.paths", false)
 	env.SetBool("display.env.layer", false)
 	env.SetBool("display.env.default", false)
 	env.SetBool("display.mod.quiet", false)

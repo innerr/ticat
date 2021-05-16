@@ -20,13 +20,13 @@ type Cli struct {
 	Executor  Executor
 }
 
-func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser) *Cli {
+func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs) *Cli {
 	return &Cli{
 		env,
 		screen,
 		cmds,
 		parser,
-		NewEnvAbbrs(cmds.Strs.RootDisplayName),
+		abbrs,
 		nil,
 	}
 }

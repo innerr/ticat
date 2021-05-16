@@ -180,10 +180,6 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 		RegCmd(LoadRuntimeEnv,
 			"setup runtime env KVs").
 		SetQuiet()
-	envLoad.AddSub("abbrs", "abbr", "a", "A").
-		RegCmd(LoadEnvAbbrs,
-			"setup runtime env abbrs").
-		SetQuiet()
 
 	mod := cmds.AddSub("mod", "mods", "m", "M")
 	modLoad := mod.AddSub("load", "l", "L")
