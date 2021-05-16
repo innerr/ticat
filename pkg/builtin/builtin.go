@@ -89,7 +89,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	env.AddSub("save", "persist", "s", "S").
 		RegCmd(SaveEnvToLocal,
-			"save session env changes to local (or to session, if it's not called by user)").
+			"save session env changes to local").
 		SetQuiet()
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
 		RegCmd(RemoveEnvValAndSaveToLocal,

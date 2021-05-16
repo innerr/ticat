@@ -91,9 +91,9 @@ func (self *Env) Deduplicate() {
 	if self.parent == nil {
 		return
 	}
-	for k, _ := range self.pairs {
-		_, ok := self.parent.GetEx(k)
-		if ok {
+	for k, v := range self.pairs {
+		old, ok := self.parent.GetEx(k)
+		if ok && old.Raw == v.Raw {
 			delete(self.pairs, k)
 		}
 	}

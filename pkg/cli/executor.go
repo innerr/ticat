@@ -70,13 +70,17 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 	}
 
 	if !bootstrap {
-		cc.GlobalEnv.PlusInt("sys.stack-depth", 1)
+		env.PlusInt("sys.stack-depth", 1)
 	}
 	if !self.executeFlow(cc, bootstrap, flow, env, input) {
 		return false
 	}
 	if !bootstrap {
-		cc.GlobalEnv.PlusInt("sys.stack-depth", -1)
+		env.PlusInt("sys.stack-depth", -1)
+	}
+
+	if !self.sessionFinish(cc, flow, env) {
+		return false
 	}
 	return true
 }
@@ -230,6 +234,17 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core
 	}
 
 	env.GetLayer(core.EnvLayerSession).Set("session", sessionDir)
+	return true
+}
+
+func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
+	sessionDir := env.GetRaw("session")
+	if len(sessionDir) == 0 {
+		return true
+	}
+	kvSep := env.GetRaw("strs.proto-sep")
+	path := filepath.Join(sessionDir, self.sessionFileName)
+	core.SaveEnvToFile(env, path, kvSep)
 	return true
 }
 

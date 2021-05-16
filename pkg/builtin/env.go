@@ -43,7 +43,7 @@ func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep)
@@ -54,17 +54,8 @@ func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 }
 
 func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	var kvSep string
-	var path string
-	sessionDir := env.GetRaw("session")
-	if len(sessionDir) != 0 {
-		kvSep = env.GetRaw("strs.proto-sep")
-		sessionFileName := env.GetRaw("strs.session-env-file")
-		path = filepath.Join(sessionDir, sessionFileName)
-	} else {
-		kvSep = env.GetRaw("strs.env-kv-sep")
-		path = getEnvLocalFilePath(env)
-	}
+	kvSep := env.GetRaw("strs.env-kv-sep")
+	path := getEnvLocalFilePath(env)
 	core.SaveEnvToFile(env, path, kvSep)
 	return true
 }
@@ -81,7 +72,7 @@ func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env) 
 func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	path := getEnvLocalFilePath(env)
 	err := os.Remove(path)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		panic(fmt.Errorf("[ResetLocalEnv] remove env file '%s' failed: %v", path, err))
 	}
 	return true
