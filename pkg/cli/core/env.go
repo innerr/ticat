@@ -12,6 +12,7 @@ const (
 	EnvLayerPersisted              = "persisted"
 	EnvLayerSession                = "session"
 	EnvLayerCmd                    = "command"
+	EnvLayerTmp                    = "temporary"
 )
 
 func EnvLayerName(ty EnvLayerType) string {

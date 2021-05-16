@@ -219,6 +219,11 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds) bool {
 }
 
 func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds) bool {
+	env := cc.GlobalEnv.NewLayer(core.EnvLayerTmp)
+	if flow.GlobalEnv != nil {
+		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+	}
+
 	checker := core.EnvOpsChecker{}
 	sep := cc.Cmds.Strs.PathSep
 	for _, cmd := range flow.Cmds {
@@ -226,8 +231,8 @@ func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds) bool {
 		if last == nil {
 			continue
 		}
-		// TODO: the val of the key may be provided in flow
-		result := checker.OnCallCmd(cc.GlobalEnv, cmd, cc.Cmds.Strs.PathSep, last, true)
+		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+		result := checker.OnCallCmd(cmdEnv, cmd, cc.Cmds.Strs.PathSep, last, true)
 		// TODO: tell user more details, auto-find the provider
 		for _, res := range result {
 			realPath := strings.Join(cmd.Path(), sep)
