@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool
@@ -54,8 +54,11 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 	}
 
 	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
-	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
 	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
+	if !bootstrap {
+		useEnvAbbrs(cc.EnvAbbrs, env, cc.Cmds.Strs.EnvPathSep)
+	}
+	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
 	if flow.GlobalEnv != nil {
 		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
 	}
@@ -125,8 +128,8 @@ func (self *Executor) executeCmd(
 	}
 
 	if stackLines.Display && env.GetBool("sys.step-by-step") {
-		cc.Screen.Print("[execute-confirm] press enter to run")
-		readFromStdin()
+		cc.Screen.Print("[confirm] press enter to run")
+		utils.UserConfirm()
 	}
 
 	last := cmd[len(cmd)-1].Cmd.Cmd
@@ -293,12 +296,11 @@ func useCmdsAbbrs(abbrs *core.EnvAbbrs, cmds *core.CmdTree) {
 	}
 }
 
-func readFromStdin() (line string) {
-	buf := bufio.NewReader(os.Stdin)
-	text, err := buf.ReadBytes('\n')
-	if err != nil {
-		panic(fmt.Errorf("[readFromStdin] read from stdin failed: %v", err))
+func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
+	for k, _ := range env.Flatten(true, nil, true) {
+		curr := abbrs
+		for _, seg := range strings.Split(k, sep) {
+			curr = curr.GetOrAddSub(seg)
+		}
 	}
-	line = string(text)
-	return
 }

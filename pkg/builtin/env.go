@@ -10,12 +10,17 @@ import (
 
 func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
-	env.SetBool("sys.step-by-step", false)
+
 	env.Set("sys.bootstrap", "")
+	env.SetInt("sys.stack-depth", 0)
+
+	env.SetBool("sys.step-by-step", false)
+	env.SetBool("sys.interact", true)
+
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "marsh")
+
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
-	env.SetInt("sys.stack-depth", 0)
 	setToDefaultVerb(env)
 }
 
@@ -23,6 +28,7 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	display := abbrs.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
 	display.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
 	display.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
+	display.GetOrAddSub("utf8").AddAbbrs("utf", "u", "U")
 }
 
 func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {

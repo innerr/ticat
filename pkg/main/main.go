@@ -20,6 +20,7 @@ func main() {
 
 	// Any mod could get the specific string val from env when it's called
 	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
+	defEnv.Set("strs.self-name", SelfName)
 	defEnv.Set("strs.meta-ext", MetaExt)
 	defEnv.Set("strs.flow-ext", FlowExt)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)

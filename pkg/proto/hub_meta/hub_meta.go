@@ -17,7 +17,7 @@ type RepoInfo struct {
 
 func WriteReposInfoFile(path string, infos []RepoInfo, sep string) {
 	tmp := path + ".tmp"
-	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		panic(fmt.Errorf("[WriteReposInfoFile] open file '%s' failed: %v", tmp, err))
 	}

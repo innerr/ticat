@@ -55,7 +55,7 @@ func EnvInput(env *Env, reader io.Reader, sep string) error {
 
 func SaveEnvToFile(env *Env, path string, sep string) {
 	tmp := path + ".tmp"
-	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToFile] open env file '%s' failed: %v", tmp, err))
 	}
