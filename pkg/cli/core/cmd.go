@@ -136,7 +136,7 @@ func (self *Cmd) EnvOps() EnvOps {
 }
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
-	return cc.Executor.Execute(cc, false, strings.Fields(self.cmdLine)...)
+	return cc.Executor.Execute(cc, strings.Fields(self.cmdLine)...)
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
@@ -160,14 +160,19 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	sep := cc.Cmds.Strs.ProtoSep
 
-	sessionPath := env.GetRaw("session")
-	if len(sessionPath) == 0 {
-		panic(fmt.Errorf("[Cmd.executeFile] session path not found in env"))
+	sessionDir := env.GetRaw("session")
+	if len(sessionDir) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session dir not found in env"))
 	}
+	sessionFileName := env.GetRaw("strs.session-env-file")
+	if len(sessionFileName) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session env file name not found in env"))
+	}
+	sessionPath := filepath.Join(sessionDir, sessionFileName)
 	SaveEnvToFile(env, sessionPath, sep)
 
 	args = append(args, self.cmdLine)
-	args = append(args, env.GetRaw("session"))
+	args = append(args, sessionDir)
 	for _, k := range self.args.Names() {
 		args = append(args, argv[k].Raw)
 	}

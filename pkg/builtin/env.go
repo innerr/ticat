@@ -10,6 +10,7 @@ import (
 
 func LoadDefaultEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerDefault)
+	env.SetBool("sys.step-by-step", false)
 	env.Set("sys.bootstrap", "")
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "marsh")
@@ -53,8 +54,17 @@ func LoadLocalEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 }
 
 func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	kvSep := env.GetRaw("strs.env-kv-sep")
-	path := getEnvLocalFilePath(env)
+	var kvSep string
+	var path string
+	sessionDir := env.GetRaw("session")
+	if len(sessionDir) != 0 {
+		kvSep = env.GetRaw("strs.proto-sep")
+		sessionFileName := env.GetRaw("strs.session-env-file")
+		path = filepath.Join(sessionDir, sessionFileName)
+	} else {
+		kvSep = env.GetRaw("strs.env-kv-sep")
+		path = getEnvLocalFilePath(env)
+	}
 	core.SaveEnvToFile(env, path, kvSep)
 	return true
 }

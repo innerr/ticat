@@ -10,7 +10,7 @@ import (
 )
 
 func EnvOutput(env *Env, writer io.Writer, sep string) error {
-	// TODO: config?
+	// TODO: move to config?
 	filtered := []string{
 		"session",
 		"strs.",

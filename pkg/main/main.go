@@ -31,6 +31,7 @@ func main() {
 	defEnv.Set("strs.env-bracket-left", EnvBracketLeft)
 	defEnv.Set("strs.env-bracket-right", EnvBracketRight)
 	defEnv.Set("strs.env-file-name", EnvFileName)
+	defEnv.Set("strs.session-env-file", SessionEnvFileName)
 	defEnv.Set("strs.hub-file-name", HubFileName)
 	defEnv.Set("strs.repos-file-name", ReposFileName)
 	defEnv.Set("strs.mods-repo-ext", ModsRepoExt)
@@ -90,7 +91,7 @@ func main() {
 			os.Exit(-1)
 		}
 	}()
-	executor := cli.NewExecutor(SessionPipeName)
+	executor := cli.NewExecutor(SessionEnvFileName)
 	cc.Executor = executor
 	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
 	if !succeeded {
@@ -121,5 +122,5 @@ const (
 	FlowExt             string = ".flow." + SelfName
 	HubFileName         string = "repos.hub"
 	ReposFileName       string = "README.md"
-	SessionPipeName     string = "env"
+	SessionEnvFileName  string = "env"
 )

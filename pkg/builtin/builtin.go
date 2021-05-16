@@ -89,7 +89,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	env.AddSub("save", "persist", "s", "S").
 		RegCmd(SaveEnvToLocal,
-			"save session env changes to local").
+			"save session env changes to local (or to session, if it's not called by user)").
 		SetQuiet()
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
 		RegCmd(RemoveEnvValAndSaveToLocal,
@@ -219,12 +219,23 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 		AddArg("duration", "1s", "dur", "d", "D")
 }
 
+// This cmds are for debug
 func RegisterDbgCmds(cmds *core.CmdTree) {
-	// This cmds are just for debug
 	cmds.AddSub("echo").
 		RegCmd(DbgEcho,
 			"print message from argv").
 		AddArg("messsage", "", "msg", "m", "M")
+
+	step := cmds.AddSub("step-by-step", "step", "s", "S")
+	step.AddSub("on", "yes", "y", "Y", "1").
+		RegCmd(DbgStepOn,
+			"enable step by step").
+		SetQuiet()
+	step.AddSub("off", "no", "n", "N", "0").
+		RegCmd(DbgStepOff,
+			"disable step by step").
+		SetQuiet()
+
 	cmds.AddSub("exec").
 		RegCmd(DbgExecBash,
 			"verify bash in os/exec")

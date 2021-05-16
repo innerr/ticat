@@ -31,7 +31,11 @@ func RegMod(
 	}
 
 	if len(cmdLine) != 0 {
-		path, err := filepath.Abs(filepath.Join(path, cmdLine))
+		if !isDir {
+			path = filepath.Dir(path)
+		}
+		var err error
+		path, err = filepath.Abs(filepath.Join(path, cmdLine))
 		if err != nil {
 			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' get abs path of '%s' failed",
 				cmdPath, path))

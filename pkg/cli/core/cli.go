@@ -8,7 +8,7 @@ type Screen interface {
 }
 
 type Executor interface {
-	Execute(cc *Cli, quiet bool, input ...string) bool
+	Execute(cc *Cli, input ...string) bool
 }
 
 type Cli struct {

@@ -24,3 +24,13 @@ func DbgExecBash(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	}
 	return true
 }
+
+func DbgStepOn(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	env.GetLayer(core.EnvLayerSession).SetBool("sys.step-by-step", true)
+	return true
+}
+
+func DbgStepOff(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	env.GetLayer(core.EnvLayerSession).SetBool("sys.step-by-step", false)
+	return true
+}
