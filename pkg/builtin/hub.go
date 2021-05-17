@@ -488,19 +488,24 @@ func updateRepoAndReadSubList(
 	var cmdStrs []string
 
 	stat, err := os.Stat(repoPath)
+	var pwd string
 	if !os.IsNotExist(err) {
 		if !stat.IsDir() {
 			panic(fmt.Errorf("[updateRepoAndReadSubList] repo path '%v' exists but is not dir",
 				repoPath))
 		}
 		screen.Print(fmt.Sprintf("[%s] => git update\n", name))
-		cmdStrs = []string{"git", "-C", repoPath, "pull"}
+		cmdStrs = []string{"git", "pull"}
+		pwd = repoPath
 	} else {
 		screen.Print(fmt.Sprintf("[%s] => git clone\n", name))
 		cmdStrs = []string{"git", "clone", gitAddr, repoPath}
 	}
 
 	cmd := exec.Command(cmdStrs[0], cmdStrs[1:]...)
+	if len(pwd) != 0 {
+		cmd.Dir = pwd
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()

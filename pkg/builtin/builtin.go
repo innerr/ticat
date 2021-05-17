@@ -83,7 +83,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 			"load flows from local dir").
 		AddArg("path", "", "p", "P")
 
-	flow.AddSub("clear").
+	flow.AddSub("clear", "reset").
 		RegCmd(RemoveAllFlows,
 			"remove all flows saved in local")
 }
@@ -155,7 +155,7 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 func RegisterHubCmds(cmds *core.CmdTree) {
 	hub := cmds.AddSub("hub", "h", "H")
 
-	hub.AddSub("clear").
+	hub.AddSub("clear", "reset").
 		RegCmd(RemoveAllFromHub,
 			"remove all repos from hub")
 
