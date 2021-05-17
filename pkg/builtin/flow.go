@@ -249,9 +249,9 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 				path = append(path, seg.Cmd.Name)
 			}
 			lastSegHasNoCmd = (seg.Cmd.Cmd == nil)
-			cmdHasEnv = saveEnv(w, seg.Env, path, envPathSep,
+			cmdHasEnv = cmdHasEnv || saveEnv(w, seg.Env, path, envPathSep,
 				bracketLeft, bracketRight, envKeyValSep,
-				!cmdHasEnv && j == len(cmd)-1) || cmdHasEnv
+				!cmdHasEnv && j == len(cmd)-1)
 		}
 	}
 	fmt.Fprintf(w, "\n")
@@ -286,7 +286,7 @@ func saveEnv(
 		if strings.HasPrefix(k, prefix) && len(k) != len(prefix) {
 			k = strings.Join(v.MatchedPath[len(prefixPath):], pathSep)
 		}
-		kvs = append(kvs, fmt.Sprintf("%v%s%v", k, envKeyValSep, v.Val))
+		kvs = append(kvs, fmt.Sprintf("%v%s%v", k, envKeyValSep, quoteIfHasSpace(v.Val)))
 	}
 
 	format := bracketLeft + "%s" + bracketRight
@@ -295,6 +295,21 @@ func saveEnv(
 	}
 	fmt.Fprintf(w, format, strings.Join(kvs, " "))
 	return true
+}
+
+func quoteIfHasSpace(str string) string {
+	if strings.IndexAny(str, " \t\r\n") < 0 {
+		return str
+	}
+	i := strings.Index(str, "\"")
+	if i < 0 {
+		return "\"" + str + "\""
+	}
+	i = strings.Index(str, "'")
+	if i < 0 {
+		return "'" + str + "'"
+	}
+	return str
 }
 
 func getFlowCmdPath(

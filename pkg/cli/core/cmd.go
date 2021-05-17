@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/mattn/go-shellwords"
 )
 
 type CmdType string
@@ -136,7 +138,12 @@ func (self *Cmd) EnvOps() EnvOps {
 }
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
-	return cc.Executor.Execute(cc, strings.Fields(self.cmdLine)...)
+	flow, err := shellwords.Parse(self.cmdLine)
+	if err != nil {
+		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
+			self.cmdLine, err))
+	}
+	return cc.Executor.Execute(cc, flow...)
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {

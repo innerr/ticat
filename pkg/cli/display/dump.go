@@ -9,6 +9,8 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+// TODO: recursively dump flow
+// TODO: show more details
 func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, indentSize int) {
 	if len(flow) == 0 {
 		return
@@ -208,8 +210,8 @@ func dumpCmd(
 				prt(1, "- cmd-type:")
 				prt(2, line)
 			}
-			if cic.Type() == core.CmdTypeFile || cic.Type() == core.CmdTypeDir ||
-				cic.Type() == core.CmdTypeFlow {
+			if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
+				cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
 				prt(1, "- executable:")
 				prt(2, cic.CmdLine())
 			}

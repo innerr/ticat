@@ -48,6 +48,7 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	env := disp.GetOrAddSub("env")
 	env.GetOrAddSub("sys").GetOrAddSub("paths").AddAbbrs("path")
 	env.GetOrAddSub("default").AddAbbrs("def")
+	env.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
 
 	mod := disp.GetOrAddSub("mod")
 	mod.GetOrAddSub("quiet").AddAbbrs("q", "Q")
@@ -98,12 +99,17 @@ func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
+// TODO: support abbrs for arg 'key'
 func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	key := argv.GetRaw("key")
 	if len(key) == 0 {
 		panic(fmt.Errorf("[RemoveEnvValAndSaveToLocal] arg 'key' is empty"))
 	}
 	env.DeleteEx(key, core.EnvLayerDefault)
+
+	kvSep := env.GetRaw("strs.env-kv-sep")
+	path := getEnvLocalFilePath(env)
+	core.SaveEnvToFile(env.GetLayer(core.EnvLayerSession), path, kvSep)
 	return true
 }
 
@@ -132,7 +138,7 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.bootstrap", false)
 	env.SetBool("display.one-cmd", false)
 	env.Set("display.style", "utf8")
-	env.SetBool("display.utf8", true)
+	env.SetBool("display.utf8", false)
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.sys", false)
 	env.SetBool("display.env.sys.paths", false)
@@ -140,7 +146,8 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.env.default", false)
 	env.SetBool("display.mod.quiet", false)
 	env.SetBool("display.mod.realname", true)
+	env.SetBool("display.env.display", false)
 
-	env.SetInt("display.width", 80)
+	env.SetInt("display.width", 110)
 	env.SetInt("display.max-cmd-cnt", 7)
 }

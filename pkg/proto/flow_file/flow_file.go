@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+// TODO: handle "'\"" in flow
+
 func LoadFlowFile(path string) (flow string, help string, abbrs string) {
 	file, err := os.Open(path)
 	if err != nil {
