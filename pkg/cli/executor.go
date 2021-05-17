@@ -269,7 +269,7 @@ func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 			if realPath != matchedPath {
 				shortFor = " (short for '" + realPath + "')"
 			}
-			cc.Screen.Print(fmt.Sprintf("[checkEnvOps] cmd '%s'%s reads '%s' but no one provide it\n",
+			cc.Screen.Print(fmt.Sprintf("[checkEnvOps] cmd '%s'%s reads '%s' but no provider\n",
 				matchedPath, shortFor, res.Key))
 		}
 		if len(result) != 0 {

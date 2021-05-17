@@ -140,6 +140,10 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
+	if len(self.cmdLine) == 0 {
+		return true
+	}
+
 	var bin string
 	var args []string
 	ext := filepath.Ext(self.cmdLine)

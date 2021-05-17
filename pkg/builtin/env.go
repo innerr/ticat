@@ -25,26 +25,59 @@ func LoadDefaultEnv(env *core.Env) {
 }
 
 func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
-	display := abbrs.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
-	display.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
-	display.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
-	display.GetOrAddSub("utf8").AddAbbrs("utf", "u", "U")
+	sys := abbrs.GetOrAddSub("sys")
+	sys.GetOrAddSub("bootstrap").AddAbbrs("boot")
+	sys.GetOrAddSub("stack-depth").AddAbbrs("stack")
+	sys.GetOrAddSub("interact").AddAbbrs("ir", "i", "I")
+	sys.GetOrAddSub("step-by-step").AddAbbrs("step")
+	sys.GetOrAddSub("version").AddAbbrs("ver")
+
+	hub := sys.GetOrAddSub("hub")
+	hub.GetOrAddSub("init-repo").AddAbbrs("repo")
+
+	disp := abbrs.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
+	disp.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
+	disp.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
+	disp.GetOrAddSub("utf8").AddAbbrs("utf", "u", "U")
+	disp.GetOrAddSub("executor").AddAbbrs("exe", "exec")
+	disp.GetOrAddSub("bootstrap").AddAbbrs("boot")
+	disp.GetOrAddSub("one-cmd").AddAbbrs("one", "1")
+	disp.GetOrAddSub("max-cmd-cnt").AddAbbrs("cmds")
+	disp.GetOrAddSub("env").AddAbbrs("e", "E")
+
+	env := disp.GetOrAddSub("env")
+	env.GetOrAddSub("sys").GetOrAddSub("paths").AddAbbrs("path")
+	env.GetOrAddSub("default").AddAbbrs("def")
+
+	mod := disp.GetOrAddSub("mod")
+	mod.GetOrAddSub("quiet").AddAbbrs("q", "Q")
+	mod.GetOrAddSub("realname").AddAbbrs("real", "r", "R")
 }
 
-func LoadRuntimeEnv(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	env = env.GetLayer(core.EnvLayerSession)
 
 	path, err := os.Executable()
 	if err != nil {
 		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path fail: %v", err))
 	}
+	data := path + ".data"
+
+	sys := cc.EnvAbbrs.GetOrAddSub("sys")
+	paths := sys.GetOrAddSub("paths").AddAbbrs("path", "p", "P")
+	env.Set("sys.paths.hub", filepath.Join(data, "hub"))
 
 	env.Set("sys.paths.ticat", path)
-	data := path + ".data"
+	paths.GetOrAddSub("ticat").AddAbbrs("cat")
+
 	env.Set("sys.paths.data", data)
-	env.Set("sys.paths.hub", filepath.Join(data, "hub"))
+	paths.GetOrAddSub("data").AddAbbrs("dat")
+
 	env.Set("sys.paths.flows", filepath.Join(data, "flows"))
+	paths.GetOrAddSub("flows").AddAbbrs("flow")
+
 	env.Set("sys.paths.sessions", filepath.Join(data, "sessions"))
+	paths.GetOrAddSub("sessions").AddAbbrs("session", "s", "S")
 	return true
 }
 
@@ -93,6 +126,7 @@ func getEnvLocalFilePath(env *core.Env) string {
 }
 
 func setToDefaultVerb(env *core.Env) {
+	env.SetBool("display.meow", false)
 	env.SetBool("display.executor", true)
 	env.SetBool("display.executor.end", false)
 	env.SetBool("display.bootstrap", false)
