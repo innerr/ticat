@@ -165,6 +165,9 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	var infos []meta.RepoInfo
 
 	for _, info := range oldInfos {
+		if len(info.Addr) == 0 {
+			continue
+		}
 		_, addrs, helpStrs := updateRepoAndSubRepos(
 			cc.Screen, finisheds, path, info.Addr, repoExt, listFileName)
 		for i, addr := range addrs {
@@ -488,19 +491,24 @@ func updateRepoAndReadSubList(
 	var cmdStrs []string
 
 	stat, err := os.Stat(repoPath)
+	var pwd string
 	if !os.IsNotExist(err) {
 		if !stat.IsDir() {
 			panic(fmt.Errorf("[updateRepoAndReadSubList] repo path '%v' exists but is not dir",
 				repoPath))
 		}
 		screen.Print(fmt.Sprintf("[%s] => git update\n", name))
-		cmdStrs = []string{"git", "-C", repoPath, "pull"}
+		cmdStrs = []string{"git", "pull"}
+		pwd = repoPath
 	} else {
 		screen.Print(fmt.Sprintf("[%s] => git clone\n", name))
 		cmdStrs = []string{"git", "clone", gitAddr, repoPath}
 	}
 
 	cmd := exec.Command(cmdStrs[0], cmdStrs[1:]...)
+	if len(pwd) != 0 {
+		cmd.Dir = pwd
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -552,7 +560,11 @@ func readRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs
 			if j < 0 {
 				continue
 			}
-			addrs = append(addrs, strings.TrimSpace(line[:j]))
+			addr := strings.TrimSpace(line[:j])
+			if len(addr) == 0 {
+				continue
+			}
+			addrs = append(addrs, addr)
 			line := line[j+1:]
 			k := strings.LastIndex(line, ":")
 			if k < 0 {

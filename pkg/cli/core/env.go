@@ -12,6 +12,7 @@ const (
 	EnvLayerPersisted              = "persisted"
 	EnvLayerSession                = "session"
 	EnvLayerCmd                    = "command"
+	EnvLayerTmp                    = "temporary"
 )
 
 func EnvLayerName(ty EnvLayerType) string {
@@ -59,7 +60,7 @@ func (self *Env) GetLayer(ty EnvLayerType) *Env {
 	return self.parent.GetLayer(ty)
 }
 
-func (self Env) DeleteSelf(name string) {
+func (self Env) DeleteInSelfLayer(name string) {
 	delete(self.pairs, name)
 }
 
@@ -90,9 +91,9 @@ func (self *Env) Deduplicate() {
 	if self.parent == nil {
 		return
 	}
-	for k, _ := range self.pairs {
-		_, ok := self.parent.GetEx(k)
-		if ok {
+	for k, v := range self.pairs {
+		old, ok := self.parent.GetEx(k)
+		if ok && old.Raw == v.Raw {
 			delete(self.pairs, k)
 		}
 	}

@@ -18,6 +18,8 @@ TODO: here I have something to say, but not have the time yet
 ****-      Connector framework
 ***--      Args supporting. TODO: free args
 ****-      Mod-ticat interacting
+-----      Dependencies checking
+-----      Mod definition: map env-val to arg
 *****      Support mod types:
 *****          Builtin
 *****          File by ext: python, golang
@@ -34,6 +36,10 @@ TODO: here I have something to say, but not have the time yet
 -----      Help and abbrs
 -----      Executing ad-hot help
 -----      Flatten in executing and desc
+-----      Combine mods' props
+-----          Args
+-----          Dependencies
+-----          Connectors
 *****  Hub framework
 *****      Mod and flow sharing
 *****      Authority control (by git now)

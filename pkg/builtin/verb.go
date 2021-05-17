@@ -29,6 +29,7 @@ func SetVerbMode(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	env.SetBool("display.mod.quiet", true)
 	env.SetBool("display.mod.realname", true)
 	env.SetInt("display.max-cmd-cnt", 9999)
+	env.SetBool("display.executor.end", true)
 	return true
 }
 

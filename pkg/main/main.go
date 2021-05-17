@@ -20,6 +20,7 @@ func main() {
 
 	// Any mod could get the specific string val from env when it's called
 	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
+	defEnv.Set("strs.self-name", SelfName)
 	defEnv.Set("strs.meta-ext", MetaExt)
 	defEnv.Set("strs.flow-ext", FlowExt)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)
@@ -31,6 +32,7 @@ func main() {
 	defEnv.Set("strs.env-bracket-left", EnvBracketLeft)
 	defEnv.Set("strs.env-bracket-right", EnvBracketRight)
 	defEnv.Set("strs.env-file-name", EnvFileName)
+	defEnv.Set("strs.session-env-file", SessionEnvFileName)
 	defEnv.Set("strs.hub-file-name", HubFileName)
 	defEnv.Set("strs.repos-file-name", ReposFileName)
 	defEnv.Set("strs.mods-repo-ext", ModsRepoExt)
@@ -45,9 +47,14 @@ func main() {
 		EnvValDelMark,
 		EnvValDelAllMark,
 		EnvKeyValSep,
+		EnvPathSep,
 		ProtoSep,
 	})
 	builtin.RegisterCmds(tree)
+
+	// Extra abbrs definition
+	abbrs := core.NewEnvAbbrs(CmdRootDisplayName)
+	builtin.LoadEnvAbbrs(abbrs)
 
 	// A simple parser, should be insteaded in the future
 	seqParser := parser.NewSequenceParser(
@@ -71,13 +78,12 @@ func main() {
 	screen := cli.NewScreen()
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
-	cc := core.NewCli(globalEnv, screen, tree, cliParser)
+	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs)
 
 	bootstrap := `
-		B.E.L.A:
 		B.E.L.R:
-		B.E.L.L:
 		B.M.L.E:
+		B.E.L.L:
 		B.M.L.F:
 		B.M.L.H:
 	`
@@ -89,7 +95,7 @@ func main() {
 			os.Exit(-1)
 		}
 	}()
-	executor := cli.NewExecutor(SessionPipeName)
+	executor := cli.NewExecutor(SessionEnvFileName)
 	cc.Executor = executor
 	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
 	if !succeeded {
@@ -120,5 +126,5 @@ const (
 	FlowExt             string = ".flow." + SelfName
 	HubFileName         string = "repos.hub"
 	ReposFileName       string = "README.md"
-	SessionPipeName     string = "env"
+	SessionEnvFileName  string = "env"
 )

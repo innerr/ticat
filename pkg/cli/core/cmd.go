@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/mattn/go-shellwords"
 )
 
 type CmdType string
@@ -136,10 +138,19 @@ func (self *Cmd) EnvOps() EnvOps {
 }
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
-	return cc.Executor.Execute(cc, false, strings.Fields(self.cmdLine)...)
+	flow, err := shellwords.Parse(self.cmdLine)
+	if err != nil {
+		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
+			self.cmdLine, err))
+	}
+	return cc.Executor.Execute(cc, flow...)
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
+	if len(self.cmdLine) == 0 {
+		return true
+	}
+
 	var bin string
 	var args []string
 	ext := filepath.Ext(self.cmdLine)
@@ -160,14 +171,19 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	sep := cc.Cmds.Strs.ProtoSep
 
-	sessionPath := env.GetRaw("session")
-	if len(sessionPath) == 0 {
-		panic(fmt.Errorf("[Cmd.executeFile] session path not found in env"))
+	sessionDir := env.GetRaw("session")
+	if len(sessionDir) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session dir not found in env"))
 	}
-	SaveEnvToFile(env, sessionPath, sep)
+	sessionFileName := env.GetRaw("strs.session-env-file")
+	if len(sessionFileName) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session env file name not found in env"))
+	}
+	sessionPath := filepath.Join(sessionDir, sessionFileName)
+	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
 
 	args = append(args, self.cmdLine)
-	args = append(args, env.GetRaw("session"))
+	args = append(args, sessionDir)
 	for _, k := range self.args.Names() {
 		args = append(args, argv[k].Raw)
 	}
@@ -179,10 +195,35 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	err := cmd.Run()
 	if err != nil {
-		panic(fmt.Errorf("[Cmd.executeFile] exec '%s %s' failed: %v",
-			bin, strings.Join(args, " "), err))
+		indent1 := strings.Repeat(" ", 4)
+		indent2 := strings.Repeat(" ", 8)
+		cc.Screen.Print(fmt.Sprintf("\n[%s] failed:\n", self.owner.DisplayPath()))
+		if len(self.args.Names()) != 0 {
+			cc.Screen.Print(fmt.Sprintf("%s- args:\n", indent1))
+			for _, k := range self.args.Names() {
+				cc.Screen.Print(fmt.Sprintf("%s%s = %s\n", indent2,
+					strings.Join(self.args.Abbrs(k), self.owner.Strs.AbbrsSep), mayQuoteStr(argv[k].Raw)))
+			}
+		}
+		cc.Screen.Print(fmt.Sprintf("%s- bin:  %s\n", indent1, bin))
+		cc.Screen.Print(fmt.Sprintf("%s- file: %s\n", indent1, self.cmdLine))
+		cc.Screen.Print(fmt.Sprintf("%s- env:  %s\n", indent1, sessionPath))
+		cc.Screen.Print(fmt.Sprintf("%s- err:  %s\n", indent1, err))
+		return false
 	}
 
 	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
 	return true
+}
+
+func mayQuoteStr(origin string) string {
+	trimed := strings.TrimSpace(origin)
+	if len(trimed) == 0 || len(trimed) != len(origin) {
+		return "'" + origin + "'"
+	}
+	fields := strings.Fields(origin)
+	if len(fields) != 1 {
+		return "'" + origin + "'"
+	}
+	return origin
 }

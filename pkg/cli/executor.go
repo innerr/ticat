@@ -11,9 +11,10 @@ import (
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
-type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds) bool
+type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool
 
 type Executor struct {
 	funcs           []ExecFunc
@@ -39,45 +40,61 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	if !self.execute(cc, true, bootstrap) {
 		return false
 	}
-	return self.Execute(cc, false, input...)
+	return self.execute(cc, false, input...)
 }
 
-func (self *Executor) Execute(cc *core.Cli, bootstrap bool, input ...string) bool {
-	cc.GlobalEnv.PlusInt("sys.stack-depth", 1)
-	if !self.execute(cc, bootstrap, input...) {
-		return false
-	}
-	cc.GlobalEnv.PlusInt("sys.stack-depth", -1)
-	return true
+// Implement core.Executor
+func (self *Executor) Execute(cc *core.Cli, input ...string) bool {
+	return self.execute(cc, false, input...)
 }
 
 func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) bool {
 	if len(input) == 0 {
 		return true
 	}
+
 	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
+	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
+	if !bootstrap {
+		useEnvAbbrs(cc.EnvAbbrs, env, cc.Cmds.Strs.EnvPathSep)
+	}
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
+	if flow.GlobalEnv != nil {
+		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+	}
 	for _, function := range self.funcs {
-		if !function(cc, flow) {
+		if !function(cc, flow, env) {
 			return false
 		}
 	}
-	if !bootstrap && !self.sessionInit(cc, flow) {
+
+	if !bootstrap && !self.sessionInit(cc, flow, env) {
 		return false
 	}
-	return self.executeFlow(cc, bootstrap, flow, input)
+
+	if !bootstrap {
+		env.PlusInt("sys.stack-depth", 1)
+	}
+	if !self.executeFlow(cc, bootstrap, flow, env, input) {
+		return false
+	}
+	if !bootstrap {
+		env.PlusInt("sys.stack-depth", -1)
+	}
+
+	if !self.sessionFinish(cc, flow, env) {
+		return false
+	}
+	return true
 }
 
 func (self *Executor) executeFlow(
 	cc *core.Cli,
 	bootstrap bool,
 	flow *core.ParsedCmds,
+	env *core.Env,
 	input []string) bool {
 
-	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
-	if flow.GlobalEnv != nil {
-		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
-	}
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool
@@ -110,6 +127,11 @@ func (self *Executor) executeCmd(
 		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
 	}
 
+	if stackLines.Display && env.GetBool("sys.step-by-step") {
+		cc.Screen.Print("[confirm] press enter to run")
+		utils.UserConfirm()
+	}
+
 	last := cmd[len(cmd)-1].Cmd.Cmd
 	start := time.Now()
 	if last != nil {
@@ -136,7 +158,8 @@ func (self *Executor) executeCmd(
 // 2. move priority cmds to the head
 func filterEmptyCmdsAndReorderByPriority(
 	cc *core.Cli,
-	flow *core.ParsedCmds) bool {
+	flow *core.ParsedCmds,
+	_ *core.Env) bool {
 
 	var unfiltered []core.ParsedCmd
 	unfilteredGlobalSeqIdx := -1
@@ -169,24 +192,24 @@ func filterEmptyCmdsAndReorderByPriority(
 	return true
 }
 
-func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds) bool {
-	env := cc.GlobalEnv
-	sessionPath := env.GetRaw("session")
-	if len(sessionPath) != 0 {
-		core.LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep)
+func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
+	sessionDir := env.GetRaw("session")
+	sessionPath := filepath.Join(sessionDir, self.sessionFileName)
+	if len(sessionDir) != 0 {
+		core.LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.ProtoSep)
 		return true
 	}
 
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
-		cc.Screen.Print("[ERR] can't get sessions' root path\n")
+		cc.Screen.Print("[sessionInit] can't get sessions' root path\n")
 		return false
 	}
 
 	os.MkdirAll(sessionsRoot, os.ModePerm)
 	dirs, err := os.ReadDir(sessionsRoot)
 	if err != nil {
-		cc.Screen.Print(fmt.Sprintf("[ERR] can't read sessions' root path '%s'\n",
+		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't read sessions' root path '%s'\n",
 			sessionsRoot))
 		return false
 	}
@@ -205,20 +228,30 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds) bool {
 		}
 	}
 
-	sessionDir := filepath.Join(sessionsRoot, pid)
+	sessionDir = filepath.Join(sessionsRoot, pid)
 	err = os.MkdirAll(sessionDir, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
-		cc.Screen.Print(fmt.Sprintf("[ERR] can't create session dir '%s'\n",
+		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create session dir '%s'\n",
 			sessionDir))
 		return false
 	}
 
-	sessionPath = filepath.Join(sessionDir, self.sessionFileName)
-	env.GetLayer(core.EnvLayerSession).Set("session", sessionPath)
+	env.GetLayer(core.EnvLayerSession).Set("session", sessionDir)
 	return true
 }
 
-func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds) bool {
+func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
+	sessionDir := env.GetRaw("session")
+	if len(sessionDir) == 0 {
+		return true
+	}
+	kvSep := env.GetRaw("strs.proto-sep")
+	path := filepath.Join(sessionDir, self.sessionFileName)
+	core.SaveEnvToFile(env, path, kvSep)
+	return true
+}
+
+func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	checker := core.EnvOpsChecker{}
 	sep := cc.Cmds.Strs.PathSep
 	for _, cmd := range flow.Cmds {
@@ -226,7 +259,8 @@ func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds) bool {
 		if last == nil {
 			continue
 		}
-		result := checker.OnCallCmd(cmd, cc.Cmds.Strs.PathSep, last, true)
+		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+		result := checker.OnCallCmd(cmdEnv, cmd, cc.Cmds.Strs.PathSep, last, true)
 		// TODO: tell user more details, auto-find the provider
 		for _, res := range result {
 			realPath := strings.Join(cmd.Path(), sep)
@@ -235,7 +269,7 @@ func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds) bool {
 			if realPath != matchedPath {
 				shortFor = " (short for '" + realPath + "')"
 			}
-			cc.Screen.Print(fmt.Sprintf("[ERR] cmd '%s'%s reads '%s' but no one provide it\n",
+			cc.Screen.Print(fmt.Sprintf("[checkEnvOps] cmd '%s'%s reads '%s' but no provider\n",
 				matchedPath, shortFor, res.Key))
 		}
 		if len(result) != 0 {
@@ -259,5 +293,14 @@ func useCmdsAbbrs(abbrs *core.EnvAbbrs, cmds *core.CmdTree) {
 		}
 		subTree := cmds.GetSub(subName)
 		useCmdsAbbrs(subEnv, subTree)
+	}
+}
+
+func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
+	for k, _ := range env.Flatten(true, nil, true) {
+		curr := abbrs
+		for _, seg := range strings.Split(k, sep) {
+			curr = curr.GetOrAddSub(seg)
+		}
 	}
 }

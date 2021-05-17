@@ -17,7 +17,7 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) {
 
 	meow := "   (=`ω´=)   "
 	const meowLen = 3 + 7 + 3
-	if !env.GetBool("display.utf8") {
+	if !env.GetBool("display.utf8") || !env.GetBool("display.meow") {
 		meow = rpt(" ", meowLen)
 	}
 

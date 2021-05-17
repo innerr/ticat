@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/proto/flow_file"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
@@ -85,7 +87,13 @@ func SaveFlow(
 
 	_, err := os.Stat(filePath)
 	if !os.IsNotExist(err) {
-		panic(fmt.Errorf("[SaveFlow] path '%s' exists", filePath))
+		if !env.GetBool("sys.interact") {
+			panic(fmt.Errorf("[SaveFlow] path '%s' exists", filePath))
+		} else {
+			cc.Screen.Print(fmt.Sprintf("[confirm] flow file of '%s' exists, "+
+				"press enter to overwrite\n", cmdPath))
+			utils.UserConfirm()
+		}
 	}
 
 	w := bytes.NewBuffer(nil)
@@ -115,6 +123,14 @@ func SaveFlow(
 
 	flow.Cmds = nil
 	return 0, true
+}
+
+func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	help := argv.GetRaw("help-str")
+	_, path := getFlowCmdPath(argv, cc, env, true, "cmd-path", "SetFlowHelpStr")
+	flowStr, _, abbrsStr := flow_file.LoadFlowFile(path)
+	flow_file.SaveFlowFile(path, flowStr, help, abbrsStr)
+	return true
 }
 
 func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
@@ -166,16 +182,33 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env) bool {
 }
 
 func loadFlow(cc *core.Cli, root string, path string, flowExt string) {
-	cmdPath := getCmdPath(path, flowExt)
-	flow := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(cc.Cmds.Strs.PathSep))...)
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		panic(fmt.Errorf("[loadFlow] read flow file '%s' failed: %v", path, err))
+	flowStr, help, abbrsStr := flow_file.LoadFlowFile(path)
+
+	pathSep := cc.Cmds.Strs.PathSep
+	abbrsSep := cc.Cmds.Strs.AbbrsSep
+	var abbrs [][]string
+	for _, abbrSeg := range strings.Split(abbrsStr, pathSep) {
+		abbrList := strings.Split(abbrSeg, abbrsSep)
+		abbrs = append(abbrs, abbrList)
 	}
-	cmds := strings.TrimSpace(string(data))
-	cmd := flow.RegFlowCmd(cmds, "(TODO: save/load help str of "+cmdPath+")")
-	// TODO: abbrs, help
-	_ = cmd
+
+	cmdPathStr := getCmdPath(path, flowExt)
+	cmdPath := strings.Split(cmdPathStr, pathSep)
+	flow := cc.Cmds
+	for i, cmd := range cmdPath {
+		flow = flow.GetOrAddSub(cmd)
+		if i < len(abbrs) {
+			flow.AddAbbrs(abbrs[i]...)
+		}
+	}
+
+	if len(help) == 0 {
+		selfName := cc.GlobalEnv.GetRaw("strs.self-name")
+		help = fmt.Sprintf("(to add help): %s flow.set-help-str %s <help-str>",
+			selfName, cmdPathStr)
+	}
+
+	flow.RegFlowCmd(flowStr, help)
 }
 
 func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.Env) {
@@ -216,9 +249,9 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 				path = append(path, seg.Cmd.Name)
 			}
 			lastSegHasNoCmd = (seg.Cmd.Cmd == nil)
-			cmdHasEnv = saveEnv(w, seg.Env, path, envPathSep,
+			cmdHasEnv = cmdHasEnv || saveEnv(w, seg.Env, path, envPathSep,
 				bracketLeft, bracketRight, envKeyValSep,
-				!cmdHasEnv && j == len(cmd)-1) || cmdHasEnv
+				!cmdHasEnv && j == len(cmd)-1)
 		}
 	}
 	fmt.Fprintf(w, "\n")
@@ -253,7 +286,7 @@ func saveEnv(
 		if strings.HasPrefix(k, prefix) && len(k) != len(prefix) {
 			k = strings.Join(v.MatchedPath[len(prefixPath):], pathSep)
 		}
-		kvs = append(kvs, fmt.Sprintf("%v%s%v", k, envKeyValSep, v.Val))
+		kvs = append(kvs, fmt.Sprintf("%v%s%v", k, envKeyValSep, quoteIfHasSpace(v.Val)))
 	}
 
 	format := bracketLeft + "%s" + bracketRight
@@ -262,6 +295,21 @@ func saveEnv(
 	}
 	fmt.Fprintf(w, format, strings.Join(kvs, " "))
 	return true
+}
+
+func quoteIfHasSpace(str string) string {
+	if strings.IndexAny(str, " \t\r\n") < 0 {
+		return str
+	}
+	i := strings.Index(str, "\"")
+	if i < 0 {
+		return "\"" + str + "\""
+	}
+	i = strings.Index(str, "'")
+	if i < 0 {
+		return "'" + str + "'"
+	}
+	return str
 }
 
 func getFlowCmdPath(
@@ -292,7 +340,11 @@ func getFlowCmdPath(
 
 	filePath = filepath.Join(root, cmdPath) + flowExt
 	if !expectExists && fileExists(filePath) {
-		panic(fmt.Errorf("[%s] flow '%s' file '%s' exists", funcName, cmdPath, filePath))
+		if !env.GetBool("sys.interact") {
+			panic(fmt.Errorf("[%s] flow '%s' file '%s' exists", funcName, cmdPath, filePath))
+		} else {
+			return
+		}
 	}
 	if expectExists && !fileExists(filePath) {
 		panic(fmt.Errorf("[%s] flow '%s' file '%s' not exists", funcName, cmdPath, filePath))

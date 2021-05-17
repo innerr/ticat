@@ -19,7 +19,7 @@ func Sleep(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 
 	dur, err := time.ParseDuration(durStr)
 	if err != nil {
-		fmt.Printf("[ERR] time string '%s' parse failed: %v\n", durStr, err)
+		fmt.Printf("[Sleep] time string '%s' parse failed: %v\n", durStr, err)
 		return false
 	}
 	time.Sleep(dur)

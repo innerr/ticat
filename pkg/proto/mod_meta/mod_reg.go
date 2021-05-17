@@ -31,7 +31,11 @@ func RegMod(
 	}
 
 	if len(cmdLine) != 0 {
-		path, err := filepath.Abs(filepath.Join(path, cmdLine))
+		if !isDir {
+			path = filepath.Dir(path)
+		}
+		var err error
+		path, err = filepath.Abs(filepath.Join(path, cmdLine))
 		if err != nil {
 			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' get abs path of '%s' failed",
 				cmdPath, path))
@@ -40,7 +44,10 @@ func RegMod(
 			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' point to a not existed file '%s'",
 				cmdPath, path))
 		}
+	} else if isDir {
+		path = ""
 	}
+
 	var cmd *core.Cmd
 	if isDir {
 		cmd = mod.RegDirCmd(path, strings.TrimSpace(help))
@@ -49,11 +56,17 @@ func RegMod(
 	}
 
 	abbrs := meta.Get("abbrs")
+	if len(abbrs) == 0 {
+		abbrs = meta.Get("abbr")
+	}
 	if len(abbrs) != 0 {
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
 
 	args := meta.GetSession("args")
+	if args == nil {
+		args = meta.GetSession("arg")
+	}
 	if args != nil {
 		for _, names := range args.Keys() {
 			defVal := args.Get(names)
