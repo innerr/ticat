@@ -165,6 +165,9 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	var infos []meta.RepoInfo
 
 	for _, info := range oldInfos {
+		if len(info.Addr) == 0 {
+			continue
+		}
 		_, addrs, helpStrs := updateRepoAndSubRepos(
 			cc.Screen, finisheds, path, info.Addr, repoExt, listFileName)
 		for i, addr := range addrs {
@@ -557,7 +560,11 @@ func readRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs
 			if j < 0 {
 				continue
 			}
-			addrs = append(addrs, strings.TrimSpace(line[:j]))
+			addr := strings.TrimSpace(line[:j])
+			if len(addr) == 0 {
+				continue
+			}
+			addrs = append(addrs, addr)
 			line := line[j+1:]
 			k := strings.LastIndex(line, ":")
 			if k < 0 {
