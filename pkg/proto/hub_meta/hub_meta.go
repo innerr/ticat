@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"path/filepath"
 )
 
 type RepoInfo struct {
@@ -16,6 +17,7 @@ type RepoInfo struct {
 }
 
 func WriteReposInfoFile(path string, infos []RepoInfo, sep string) {
+	os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
