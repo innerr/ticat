@@ -148,6 +148,6 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.mod.realname", true)
 	env.SetBool("display.env.display", false)
 
-	env.SetInt("display.width", 110)
+	env.SetInt("display.width", 80)
 	env.SetInt("display.max-cmd-cnt", 7)
 }

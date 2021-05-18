@@ -269,7 +269,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 	cmds.AddSub("echo").
 		RegCmd(DbgEcho,
 			"print message from argv").
-		AddArg("messsage", "", "msg", "m", "M")
+		AddArg("message", "", "msg", "m", "M")
 
 	step := cmds.AddSub("step-by-step", "step", "s", "S")
 

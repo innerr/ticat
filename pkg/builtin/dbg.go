@@ -9,7 +9,7 @@ import (
 )
 
 func DbgEcho(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	cc.Screen.Print(fmt.Sprintf("echo msg: '%s'\n", argv.GetRaw("message")))
+	cc.Screen.Print(fmt.Sprintf("echo msg: '%v'\n", argv.GetRaw("message")))
 	return true
 }
 

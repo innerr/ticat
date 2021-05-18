@@ -1,57 +1,171 @@
 # ticat
-Cli components platform
+A casual command line components platform
 
-## Why and how
-TODO: here I have something to say, but not have the time yet
-
-## Progess
+## Examples
+Build ticat:
+```bash
+$> git clone https://github.com/innerr/ticat
+$> cd ticat
+$> make
 ```
-****-  Cli framework
-***--      Command line parsing. TODO: char-escaping
------          Rewrite the shitty parser
-****-      Full context search
-****-      Full abbrs supporting. TODO: extra abbrs manage
-****-      Env framework. TODO: save or load from a tag
------      Log and search
------      Command history and search
-****-  Mod framework
-****-      Connector framework
-***--      Args supporting. TODO: free args
-****-      Mod-ticat interacting
------      Dependencies checking
------      Mod definition: map env-val to arg
-*****      Support mod types:
-*****          Builtin
-*****          File by ext: python, golang
-*****          Executable file
-*****          Directory (include repo supporting)
-****-      Executor
-*****          Base executor
------          Middle re-enter
------          Intellegent
------          Mocking
------          Background running
------  Flow framework
-***--      Save, edit and execute flow
------      Help and abbrs
------      Executing ad-hot help
------      Flatten in executing and desc
------      Combine mods' props
------          Args
------          Dependencies
------          Connectors
-*****  Hub framework
-*****      Mod and flow sharing
-*****      Authority control (by git now)
+Recommand to set `ticat/bin` to system `$PATH`, it's handy.
+
+### Run a command
+Run a simple command, it does not thing but print a message:
+```bash
+$> ticat dummy
+dummy cmd here
+```
+Pass arg(s) to a command, `sleep` will pause for `3s` then wake up:
+```bash
+$> ticat sleep 3s
+.zzZZ ... *\O/*
+```
+Defferent ways to pass arg(s) to a command:
+```bash
+$> ticat sleep duration=3s
+$> ticat sleep {duration=3s}
+```
+Use abbrs(or alias) to call a command:
+```bash
+$> ticat slp 3s
+$> ticat slp dur=3s
+$> ticat slp d=3s
 ```
 
-Risks
+### Run a command in the command-tree
+All commands are organized to a tree,
+the `sleep` and `dummy` commands are under the `root`,
+so we could call them directly.
+
+Another two commands does nothing:
+```bash
+$> ticat dummy.power
+power dummy cmd here
+$> ticat dummy.quiet
+quiet dummy cmd here
 ```
-* Mods-ticat interacting, now is stdin/stderr
-    - A mod can't easily read from tty
-    - Stderr is occupied
-    - How about ssh login?
-* The connector protocal is not stable now, need a best practice
-    - May need: read|write-on-of(key1, key1)
-* Concurrent support?
+Do notice that `dummy` `dummy.power` `dummy.quiet` are totally different commands,
+they are in the same command-branch just because users can find related commands easily in this way.
+
+Display a command's info:
+```bash
+$> ticat cmds.tree dbg.echo
+[echo]
+     'print message from argv'
+    - full-cmd:
+        dbg.echo
+    - args:
+        message|msg|m|M = ''
 ```
+From this we know that `dbg.echo` has an arg `message`, this arg has some abbrs: `msg` `m` `M`.
+
+Different ways to call the command:
+```bash
+$> ticat dbg.echo hello
+$> ticat dbg.echo "hello world"
+$> ticat dbg.echo msg=hello
+$> ticat dbg.echo m = hello
+$> ticat dbg.echo {M=hello}
+$> ticat dbg.echo {M = hello}
+```
+
+Browse the command tree:
+```bash
+$> ticat cmds.tree
+```
+The output result will be a lot, below is one of the command:
+```bash
+...
+    [hub|h|H]
+        [clear|reset]
+             'remove all repos from hub'
+            - full-cmd:
+                hub.clear
+            - full-abbrs:
+                hub|h|H.clear|reset
+...
+```
+From this we know a command `hub.clear`,
+the name `hub` has abbrs `h` `H`,
+and the `clear` has an alias `reset`,
+so `hub.clear` and `h.reset` are the same thing:
+
+We could also browse a specific branch:
+```bash
+$> ticat cmds.tree dbg
+...
+```
+
+Or view the tree in flatten mode (both are the same):
+```bash
+$> ticat cmds.flat
+$> ticat cmds.ls
+```
+
+The most useful is searching support:
+```bash
+$> ticat cmds.ls echo
+[echo]
+     'print message from argv'
+    - full-cmd:
+        dbg.echo
+    - args:
+        messsage|msg|m|M = ''
+```
+
+`help` or `find` can search anything, so apparently can use for finding commands:
+```bash
+$> ticat help echo
+$> ticat find echo
+```
+
+### Run command sequences
+Sequences are like unix-pipe, but use `:` instead of `|`:
+```bash
+$> ticat dummy : sleep 3s : dummy
++-------------------+
+| stack-level: [1]  |             05-18 18:51:47
++-------------------+----------------------------+
+| >> dummy                                       |
+|    sleep                                       |
+|        duration = 3s                           |
+|    dummy                                       |
++------------------------------------------------+
+dummy cmd here
++-------------------+
+| stack-level: [1]  |             05-18 18:51:47
++-------------------+----------------------------+
+|    dummy                                       |
+| >> sleep                                       |
+|        duration = 3s                           |
+|    dummy                                       |
++------------------------------------------------+
+.zzZZ ... *\O/*
++-------------------+
+| stack-level: [1]  |             05-18 18:51:50
++-------------------+----------------------------+
+|    dummy                                       |
+|    sleep                                       |
+|        duration = 3s                           |
+| >> dummy                                       |
++------------------------------------------------+
+dummy cmd here
+```
+The boxes indicate the running command by `>>`
+
+## Target
+* Human friendly
+    * Easy to understand: lots of features, but well-organized (commands, env, etc)
+    * Zero memorizing presure: good searching and full abbrs support
+* Rich features
+    * Easy to get lots of modules
+        * Components can be easily written in any language
+        * ..or from any existing utility by wrapping it up (in no time)
+    * Easy and powerful configuring
+        * Modules are automatically work together, by running on a shared env
+        * Anything can be configured by modifying the env
+    * Combine modules to flow
+* Easy to share context, or to run others'
+    * Use github repo-tree to distribute code
+    * Share modules and flows easily by adding a top-repo

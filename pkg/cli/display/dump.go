@@ -189,9 +189,10 @@ func dumpCmd(
 			}
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				prt(1, "- full-cmd:")
-				prt(2, cmd.DisplayPath())
+                full := cmd.DisplayPath()
+				prt(2, full)
 				abbrs := cmd.DisplayAbbrsPath()
-				if len(abbrs) != 0 {
+				if len(abbrs) != 0 && abbrs != full {
 					prt(1, "- full-abbrs:")
 					prt(2, abbrs)
 				}
