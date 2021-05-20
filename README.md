@@ -1,4 +1,4 @@
-# Ticat
+# ticat
 A casual command line components platform
 
 ## Goal: workflow automating in unix-pipe style
@@ -35,8 +35,8 @@ The intergration jobs become complicated to adapt the multi-dimension requiremen
            └──────────────────────────────┘
 ```
 
-### The cure
-The unix philosophy inspired us, `Simple parts that work together`, just like this:
+### The cure of complication: break down by orthogonal dimensions
+The unix philosophy inspired us, `Simple parts that work together`, like the unix-pipe:
 ```bash
 $> cat my.log | grep ERR | awk -F 'reason' '{print $2}'
 ```
@@ -162,10 +162,24 @@ then gradually use it to improve the whole system.
            └────────────────────────┘
 ```
 
-## All things we need to know
-* [The quick-start guide](./doc/quick-start.md)
-* [Examples: ticat usage](./doc/examples.md)
-* [Examples: write modules in different languages](https://github.com/innerr/examples.ticat)
-* [Ticat specifications](./doc/spec/spec.md)
-* [Zen: how we made our choices](./doc/zen/zen.md)
-* [A typical case: use TiDB easier](https://github.com/innerr/tidb.ticat)(WIP)
+## All things about **ticat**
+* [for mod dev] [The quick-start guide](./doc/quick-start.md)
+* [Examples: ticat usage](./doc/usage)
+    - [must see] [Basic: build, run commands](./doc/usage/basic.md)
+    - [must see] [Hub: get modules and flows from others](./doc/usage/hub.md)
+    - [must see] [Manipulate env key-values](./doc/usage/env.md)
+    - [highly recommended] [Flow: be a pro user](./doc/usage/flow.md)
+    - [for mod dev] [Things a module developer should know](./doc/usage/dev.md)
+* [for mod dev] [Examples: write modules in different languages](https://github.com/innerr/examples.ticat)
+* [for ticat/mod dev] [Ticat specifications](./doc/spec)
+    - [Hub: add/disable/enable/purge/add-local](./doc/spec/hub.md)
+    - [Command tree](./doc/spec/cmd.md)
+    - [Sequence](./doc/spec/seq.md)
+    - [Env: get/set/save/bootstrap](./doc/spec/env.md)
+    - [Abbrs: commands, env-keys, flows](./doc/spec/abbrs.md)
+    - [Flow: save/edit](./doc/spec/flow.md)
+    - [Module: env and args](./doc/spec/mod-interact.md)
+    - [Module: meta file](./doc/spec/mod-meta.md)
+* [for ticat dev] [Roadmap and progress](./doc/progress.md)
+* [chitchat] [Zen: how we made our choices](./doc/zen)
+* [chitchat] [A typical case: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (WIP)

@@ -253,5 +253,3 @@ to reduce memorizing pressure:
 The best thing is,
 we don't need to change anything to adapt ticat,
 we only need a few minutes to wrap an existed tool into a ticat module.
-
-:)

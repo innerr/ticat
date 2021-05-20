@@ -1,6 +1,6 @@
-# Usage
+# Basic usage of ticat: build, run commands
 
-## Examples
+### Build
 Build ticat:
 ```
 $> git clone https://github.com/innerr/ticat
@@ -152,5 +152,3 @@ dummy cmd here
 dummy cmd here
 ```
 The boxes indicate the running command by `>>`
-
-
