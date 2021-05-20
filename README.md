@@ -1,4 +1,4 @@
-# ticat
+# Ticat
 A casual command line components platform
 
 ## Goal: workflow automating, in unix-pipe style, without any developing cost
@@ -37,12 +37,12 @@ The intergration jobs become complicated to adapt the multi-dimension requiremen
 ```
 
 ### The cure
-The unix philosophy inspired us, **Simple parts that work together**, just like this:
+The unix philosophy inspired us, `Simple parts that work together`, just like this:
 ```bash
 $> cat my.log | grep ERR | awk -F 'reason' '{print $2}'
 ```
 
-### **ticat**: makes sure the parts can be easily built
+### **Ticat**: makes sure the parts can be easily built
 The ad-hot feature assembling give us the most flexable yet powerful controlling.  
 To apply this, in **ticat** we provide a very easy way to wrap any existed tools into components(alias: modules):
 ```
@@ -65,11 +65,11 @@ To apply this, in **ticat** we provide a very easy way to wrap any existed tools
  │  ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐          │
  │  │ A │ │ B │ │ C │ │ D │ │ E │ │ F │ │ G │          │
  │  └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘          │
- │                                       ticat Modules │
+ │                                       Ticat Modules │
  └─────────────────────────────────────────────────────┘
 ```
 
-### **ticat**: easily share the parts, and share the assembled workflows
+### **Ticat**: easily share the parts, and share the assembled workflows
 Sometimes the pipelined-command could be a bit long,  
 in **ticat** we could save the pipeline(alias: flow) in a heartbeat,  
 then we could use the saved one in other flow as a new command,  
@@ -89,7 +89,7 @@ and the most important, we could easily distribute the code so our workmate coul
  │           │                     │┼┼    ┌──────────────────┐  │
  │           └──────────────►      │┼┼────► X->G->Y->G->..   │  │
  │                                 │┼┼    └──────────────────┘  │
- │ ticat     ▲                                                  │
+ │ Ticat     ▲                                                  │
  └───────────┼────────────────────────────────┼─────────────────┘
              │ Assemble,                      │ Get and run
              │ Share                          │
@@ -110,10 +110,10 @@ so they are self-sufficient thus can be flexably assembled.
 
 A module need to register which keys it wants to read or write,
 **ticat** will check the independency.  
-**ticat** also provide a cli gramma for user to manipulate key-values in any time.
+**Ticat** also provide a cli gramma for user to manipulate key-values in any time.
 ```
  ┌─────────────────────────────┐
- │                       ticat │
+ │                       Ticat │
  │                             │
  │   ┌─────────────────────┐   │
  │   │ key1 = val1     Env │   │ Manipulate
@@ -126,7 +126,7 @@ A module need to register which keys it wants to read or write,
  │   │ A │ │ B │ │ C │ │ D │   │            │
  │   └─▲─┘ └─▲─┘ └─▲─┘ └─▲─┘   │            │
  │     │     │     │     │     │     ┌──────┴───────┐
- │   ┌─┴─────┴─────┴─────┴─┐   │     │ ticat Users  │
+ │   ┌─┴─────┴─────┴─────┴─┐   │     │ Ticat Users  │
  │   │ C->B->A->D          ◄─────────┤ (Developers) │
  │   └─────────────────────┘   │ Run └──────────────┘
  │                             │
@@ -137,7 +137,7 @@ A module need to register which keys it wants to read or write,
 Any existed tools can be wrapped into modules in a small cost,  
 so putting **ticat** into use is quick and easy.
 
-**ticat** does't intrude any framework we are using,  
+**Ticat** does't intrude any framework we are using,  
 can be appled to a small area at the beginning,  
 then gradually use it to improve the whole system.
 ```
@@ -149,7 +149,7 @@ then gradually use it to improve the whole system.
    ├────────┤ Operatings ◄───────┘   │ Developers │
    │        └────┬─┬─────┘           └──┬─────────┘
    │        ┌────┴─┴─────┐           ┌──┴─────────────────────┐
-   ├────────┤ Testing    ◄───────┬───┤ ticat: Full Automation │
+   ├────────┤ Testing    ◄───────┬───┤ Ticat: Full Automation │
    │        └──┬─┬─┬─────┘       │   ├────────────────────────┤
    │        ┌──┴─┴─┴─────┐       │   │┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼│
    └────────┤ Benchmark  ◄───────┤   │┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼│
