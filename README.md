@@ -8,7 +8,10 @@ Let's take a distributed system as example:
 ```
  ┌───────────────────────┐           ┌────────────┐
  │ A Distributed System  ◄───────────┤ Users      │
- └───────────────────────┘           └────────────┘
+ └───────────────▲───────┘           └────────────┘
+                 │                   ┌────────────┐
+                 └───────────────────┤ Developers │
+                                     └────────────┘
 ```
 
 During time, the system grows big, many peripheral tools are developed.
@@ -44,7 +47,7 @@ $> cat my.log | grep ERR | awk -F 'reason' '{print $2}'
 ### **Ticat**: makes sure the parts can be easily built
 The ad-hot feature assembling give us the most flexable yet powerful controlling.
 
-To apply this, in **ticat** we provide a very easy way to wrap any existed tools into components(alias: modules):
+To apply this, in **ticat** we provide a easy way to wrap any existed tools into components(alias: modules):
 ```
  ┌───────────────────────┐        ┌──────────────────┐
  │ Alloc Server Resource │        │ Jitter Detecting │
@@ -165,13 +168,13 @@ then gradually use it to improve the whole system.
 ## All things about **ticat**
 * [The quick-start guide](./doc/quick-start.md) (for mod dev)
 * [Examples: ticat usage](./doc/usage)
-    - [Basic: build, run commands](./doc/usage/basic.md) (must read)
+    - [Basic: build ticat, run commands](./doc/usage/basic.md) (must read)
     - [Hub: get modules and flows from others](./doc/usage/hub.md) (must read)
     - [Manipulate env key-values](./doc/usage/env.md) (must read)
     - [Flow: be a pro user](./doc/usage/flow.md) (highly recommended)
     - [Things a module developer should know](./doc/usage/dev.md) (for mod dev)
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat) (for mod dev)
-* [A typical case: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (WIP)
+* [A user story: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (WIP)
 
 ## Inside **ticat**
 * [Ticat specifications](./doc/spec)
