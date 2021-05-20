@@ -172,7 +172,7 @@ then gradually use it to improve the whole system.
     - [Things a module developer should know](./doc/usage/dev.md) (for mod dev)
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat) (for mod dev)
 
-Inside **ticat**
+## Inside **ticat**
 * [Ticat specifications](./doc/spec)
     - [Hub: add/disable/enable/purge/add-local](./doc/spec/hub.md)
     - [Command tree](./doc/spec/cmd.md)
