@@ -171,6 +171,7 @@ then gradually use it to improve the whole system.
     - [Flow: be a pro user](./doc/usage/flow.md) (highly recommended)
     - [Things a module developer should know](./doc/usage/dev.md) (for mod dev)
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat) (for mod dev)
+* [A typical case: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (WIP)
 
 ## Inside **ticat**
 * [Ticat specifications](./doc/spec)
@@ -184,5 +185,3 @@ then gradually use it to improve the whole system.
     - [Module: meta file](./doc/spec/mod-meta.md)
 * [Roadmap and progress](./doc/progress.md)
 * [Zen: how we made our choices](./doc/zen.md)
-
-* [A typical case: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (WIP)
