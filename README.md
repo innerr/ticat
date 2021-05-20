@@ -37,14 +37,14 @@ The intergration jobs become complicated to adapt the multi-dimension requiremen
 ```
 
 ### The cure
-The unix philosophy inspired us, `Simple parts that work together`, just like this:
+The unix philosophy inspired us, **Simple parts that work together**, just like this:
 ```bash
 $> cat my.log | grep ERR | awk -F 'reason' '{print $2}'
 ```
 
-### `ticat`: makes sure the parts can be easily built
+### **ticat**: makes sure the parts can be easily built
 The ad-hot feature assembling give us the most flexable yet powerful controlling.  
-To apply this, in `ticat` we provide a very easy way to wrap any existed tools into components(alias: modules):
+To apply this, in **ticat** we provide a very easy way to wrap any existed tools into components(alias: modules):
 ```
  ┌───────────────────────┐        ┌──────────────────┐
  │ Alloc Server Resource │        │ Jitter Detecting │
@@ -69,11 +69,11 @@ To apply this, in `ticat` we provide a very easy way to wrap any existed tools i
  └─────────────────────────────────────────────────────┘
 ```
 
-### `ticat`: easily share the parts, and share the assembled workflows
+### **ticat**: easily share the parts, and share the assembled workflows
 Sometimes the pipelined-command could be a bit long,  
-in `ticat` we could save the pipeline(alias: flow) in a heartbeat,  
-use the saved one in other pipeline as a new command,  
-and the most important, you could easily distribute the code so your workmate could get and run it in no time.
+in **ticat** we could save the pipeline(alias: flow) in a heartbeat,  
+then we could use the saved one in other flow as a new command,  
+and the most important, we could easily distribute the code so our workmate could get and run it in no time.
 ```
  ┌──────────────────────────────────────────────────────────────┐
  │         Modules                             Flows            │
@@ -99,18 +99,18 @@ and the most important, you could easily distribute the code so your workmate co
     └─────────────────┘                └──────────────────┘
 ```
 
-### How these parts could work together in `ticat`?
+### How these parts could work together in **ticat**?
 In a unix-pipeline,
 the up-stream command and the down-stream command shared an anonymous pipe,  
 the former is data provider and the latter is consumer.
 
-In `ticat` things are alike, modules run on a shared `env`, a key-value set.  
-Modules could get any info from `env`(mostly provide by up-stream),  
+In **ticat** things are alike, modules run on a shared **env**, a key-value set.  
+Modules could get any info from **env**(mostly provide by up-stream),  
 so they are self-sufficient thus can be flexably assembled.
 
-A module need to register which keys it want to read or write,  
-so `ticat` could check the independency is right.  
-`ticat` also provide a cli gramma to manipulate key-values in any time.
+A module need to register which keys it wants to read or write,
+**ticat** will check the independency.  
+**ticat** also provide a cli gramma for user to manipulate key-values in any time.
 ```
  ┌─────────────────────────────┐
  │                       ticat │
@@ -133,11 +133,11 @@ so `ticat` could check the independency is right.
  └─────────────────────────────┘
 ```
 
-### Practice `ticat` with zero cost
+### Practice **ticat** with zero cost
 Any existed tools can be wrapped into modules in a small cost,  
-so put `ticat` into use is quick and easy.
+so putting **ticat** into use is quick and easy.
 
-`ticat` does't intrude any framework we are using,  
+**ticat** does't intrude any framework we are using,  
 can be appled to a small area at the beginning,  
 then gradually use it to improve the whole system.
 ```
