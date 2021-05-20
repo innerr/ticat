@@ -171,15 +171,18 @@ then gradually use it to improve the whole system.
     - [Flow: be a pro user](./doc/usage/flow.md) (highly recommended)
     - [Things a module developer should know](./doc/usage/dev.md) (for mod dev)
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat) (for mod dev)
-* [Ticat specifications](./doc/spec) (for ticat/mod dev)
+
+Inside **ticat**
+* [Ticat specifications](./doc/spec)
     - [Hub: add/disable/enable/purge/add-local](./doc/spec/hub.md)
     - [Command tree](./doc/spec/cmd.md)
     - [Sequence](./doc/spec/seq.md)
-    - [Env: get/set/save/bootstrap](./doc/spec/env.md)
+    - [Env: get/set/save](./doc/spec/env.md)
     - [Abbrs: commands, env-keys, flows](./doc/spec/abbrs.md)
     - [Flow: save/edit](./doc/spec/flow.md)
     - [Module: env and args](./doc/spec/mod-interact.md)
     - [Module: meta file](./doc/spec/mod-meta.md)
-* [Roadmap and progress](./doc/progress.md) (for ticat dev)
-* [Zen: how we made our choices](./doc/zen)
+* [Roadmap and progress](./doc/progress.md)
+* [Zen: how we made our choices](./doc/zen.md)
+
 * [A typical case: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (WIP)

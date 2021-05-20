@@ -1,4 +1,4 @@
-# Spec: ticat command
+# Spec: command tree
 
 ```
 <root>
