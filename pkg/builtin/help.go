@@ -54,6 +54,6 @@ func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		return true
 	}
 	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
-	display.DumpCmds(cc, 4, true, "", findStrs...)
+	display.DumpCmds(cc, false, 4, true, "", findStrs...)
 	return true
 }

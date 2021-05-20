@@ -522,6 +522,9 @@ func updateRepoAndReadSubList(
 func readRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs []string) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return
+		}
 		panic(fmt.Errorf("[readRepoListFromFile] read list file '%v' failed: %v",
 			path, err))
 	}

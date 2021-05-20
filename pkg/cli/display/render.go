@@ -37,13 +37,23 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) {
 	pln(c.P4 + rpt(c.H, titleInner) + c.P8 + rpt(c.H, width-1-titleInner) + c.P3)
 
 	for i, line := range l.Env {
-		pln(c.V + " " + line + rpt(" ", width-1-l.EnvLen[i]) + c.V)
+		padWid := width-1-l.EnvLen[i]
+		if padWid >= 0 {
+			pln(c.V + " " + line + rpt(" ", padWid) + c.V)
+		} else {
+			pln(c.V + " " + line)
+		}
 	}
 	if len(l.Env) != 0 {
 		pln(c.P4 + rpt(c.H, width) + c.P6)
 	}
 	for i, line := range l.Flow {
-		pln(c.V + " " + line + rpt(" ", width-1-l.FlowLen[i]) + c.V)
+		padWid := width-1-l.FlowLen[i]
+		if padWid >= 0 {
+			pln(c.V + " " + line + rpt(" ", padWid) + c.V)
+		}else {
+			pln(c.V + " " + line)
+		}
 	}
 	pln(c.P7 + rpt(c.H, width) + c.P9)
 }

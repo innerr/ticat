@@ -12,7 +12,7 @@ type ArgVal struct {
 }
 
 func (self ArgVals) GetRaw(name string) (raw string) {
-	val, ok := self[name]
+    val, ok := self[name]
 	if !ok {
 		return
 	}

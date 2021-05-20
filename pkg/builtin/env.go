@@ -137,8 +137,8 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.executor.end", false)
 	env.SetBool("display.bootstrap", false)
 	env.SetBool("display.one-cmd", false)
-	env.Set("display.style", "utf8")
-	env.SetBool("display.utf8", false)
+	env.Set("display.style", "ascii")
+	env.SetBool("display.utf8", true)
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.sys", false)
 	env.SetBool("display.env.sys.paths", false)
@@ -148,6 +148,6 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.mod.realname", true)
 	env.SetBool("display.env.display", false)
 
-	env.SetInt("display.width", 110)
+	env.SetInt("display.width", 80)
 	env.SetInt("display.max-cmd-cnt", 7)
 }
