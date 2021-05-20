@@ -228,7 +228,7 @@ We are able to create lots of self-sufficient modules,
 present them to end-users in a `low code` style: command sequences.
 
 Systems become flexable with ticat:
-ad-hot feature assambling,
+ad-hot feature assembling,
 cut out unnecessary modules,
 use different provider in different hardware, etc.
 
