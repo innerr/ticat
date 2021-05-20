@@ -39,9 +39,13 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 
 	mod := cmds.AddSub("cmds", "cmd", "mod", "mods", "m", "M")
 
-	mod.AddSub("tree", "t", "T").
-		RegCmd(DumpCmdTree,
+	tree := mod.AddSub("tree", "t", "T")
+	tree.RegCmd(DumpCmdTree,
 			"list builtin and loaded cmds").
+		AddArg("path", "", "p", "P")
+	tree.AddSub("simple", "s", "S").
+		RegCmd(DumpCmdTreeSimple,
+		"list builtin and loaded cmds, only names").
 		AddArg("path", "", "p", "P")
 
 	mod.AddSub("list", "ls", "flatten", "flat", "f", "F").

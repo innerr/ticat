@@ -63,7 +63,14 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 	}
 }
 
-func DumpCmds(cc *core.Cli, indentSize int, flatten bool, path string, findStrs ...string) {
+func DumpCmds(
+	cc *core.Cli,
+	onlyNames bool,
+	indentSize int,
+	flatten bool,
+	path string,
+	findStrs ...string) {
+
 	cmds := cc.Cmds
 	if len(path) != 0 {
 		cmds = cmds.GetSub(strings.Split(path, cc.Cmds.Strs.PathSep)...)
@@ -71,7 +78,7 @@ func DumpCmds(cc *core.Cli, indentSize int, flatten bool, path string, findStrs 
 			panic(fmt.Errorf("[DumpCmds] can't find sub cmd tree by path '%s'", path))
 		}
 	}
-	dumpCmd(cc.Screen, cmds, indentSize, true, flatten, -cmds.Depth(), findStrs...)
+	dumpCmd(cc.Screen, cmds, onlyNames, indentSize, true, flatten, -cmds.Depth(), findStrs...)
 }
 
 // TODO: dump more info, eg: full path
@@ -154,6 +161,7 @@ func dumpEnvAbbrs(
 func dumpCmd(
 	screen core.Screen,
 	cmd *core.CmdTree,
+	onlyNames bool,
 	indentSize int,
 	recursive bool,
 	flatten bool,
@@ -184,10 +192,10 @@ func dumpCmd(
 
 		if !flatten || cic != nil {
 			prt(0, "["+name+"]")
-			if cic != nil {
+			if !onlyNames && cic != nil && len(cic.Help()) != 0 {
 				prt(1, " '"+cic.Help()+"'")
 			}
-			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
+			if !onlyNames && cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				prt(1, "- full-cmd:")
                 full := cmd.DisplayPath()
 				prt(2, full)
@@ -199,7 +207,7 @@ func dumpCmd(
 			}
 		}
 
-		if cic != nil {
+		if !onlyNames && cic != nil {
 			line := string(cic.Type())
 			if cic.IsQuiet() {
 				line += " (quiet)"
@@ -239,7 +247,8 @@ func dumpCmd(
 
 	if recursive {
 		for _, name := range cmd.SubNames() {
-			dumpCmd(screen, cmd.GetSub(name), indentSize, recursive, flatten, indentAdjust, findStrs...)
+			dumpCmd(screen, cmd.GetSub(name), onlyNames, indentSize,
+				recursive, flatten, indentAdjust, findStrs...)
 		}
 	}
 }
