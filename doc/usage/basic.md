@@ -152,3 +152,9 @@ dummy cmd here
 dummy cmd here
 ```
 The boxes indicate the running command by `>>`
+
+### Discribe a command sequence
+```bash
+$> ticat dummy : sleep 3s : dummy : desc
+(display the executing plan, not execute)
+```
