@@ -1,51 +1,56 @@
-# Spec: command tree
+# [Spec] Command tree
 
+## Execute a command
 ```
-<root>
-├── builtin
-│   ├── 
-│   └── cmd3
-├── LICENSE
-├── mysql
-│   ├── exec.bash
-│   ├── exec.bash.ticat
-│   ├── link
-│   │   ├── local.bash
-│   │   ├── local.bash.ticat
-│   │   ├── tidb.bash
-│   │   └── tidb.bash.ticat
-│   ├── link.ticat
-│   ├── login.bash
-│   └── login.bash.ticat
-├── mysql.ticat
-├── README.md
-├── spec-draft
-│   ├── backup.md
-│   └── status.md
-├── tidb
-│   ├── deploy.bash
-│   ├── deploy.bash.ticat
-│   ├── destroy.bash
-│   ├── destroy.bash.ticat
-│   ├── display.bash
-│   ├── display.bash.ticat
-│   ├── link
-│   │   ├── link.bash
-│   │   ├── topologies
-│   │   │   └── test.yaml
-│   │   ├── topology.bash
-│   │   └── topology.bash.ticat
-│   ├── link.ticat
-│   ├── new.bash
-│   ├── new.bash.ticat
-│   ├── playground.bash
-│   ├── playground.bash.ticat
-│   ├── set-confirm.bash
-│   ├── set-confirm.bash.ticat
-│   ├── start.bash
-│   ├── start.bash.ticat
-│   ├── stop.bash
-│   └── stop.bash.ticat
-└── tidb.ticat
+## Execute a command under <root>, with different ways to pass args
+$> ticat <command>
+## Examples:
+$> ticat dummy
+$> ticat sleep
 
+## Execute a command with path (not under <root>)
+$> ticat <command-path>
+## Path is composed by <segment> and "."
+$> ticat <command-segment>.<command-segment>.<command-segment>
+## Examples:
+$> ticat dummy.power
+$> ticat dummy.quiet
+
+## Execute a command with path, in different ways to pass args
+$> ticat <command> <arg-val-1> <arg-val-2>
+$> ticat <command> <arg-name-1>=<arg-val-1> <arg-name-2>=<arg-val-2>
+$> ticat <command> {<arg-name-1>=<arg-val-1> <arg-name-2>=<arg-val-2>}
+## Examples:
+$> ticat dbg.echo hello
+$> ticat dbg.echo msg=hello
+$> ticat dbg.echo {M=hello}
+## Quoting is useful
+$> ticat dbg.echo "hello world"
+## Spaces(\s\t) are allowed
+$> ticat dbg.echo m = hello
+$> ticat dbg.echo {M = hello}
+```
+
+## List commands
+```bash
+## Display all in tree format
+$> ticat cmds.tree
+## Display all in tree format, only names
+$> ticat cmds.tree.simple
+## Display all in list format
+$> ticat cmds.list
+```
+
+## Find commands
+```bash
+## Display a specific path of the command tree
+$> ticat cmds.tree <path>
+## Examples:
+$> ticat cmds.tree dbg
+$> ticat cmds.tree dbg.echo
+
+# Find commands with any info about "echo"
+$> ticat cmds.ls <find-str>
+$> ticat help <find-str>
+$> ticat find <find-str>
 ```
