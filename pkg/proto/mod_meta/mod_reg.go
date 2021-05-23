@@ -89,7 +89,12 @@ func RegMod(
 			var path []string
 			for _, seg := range segs {
 				var abbrs []string
-				for _, abbr := range strings.Split(seg, abbrsSep) {
+				// TODO: just use ":"
+				fields := strings.Split(seg, abbrsSep)
+				if len(fields) == 1 {
+					fields = strings.Split(seg, ":")
+				}
+				for _, abbr := range fields {
 					abbrs = append(abbrs, strings.TrimSpace(abbr))
 				}
 				name := abbrs[0]

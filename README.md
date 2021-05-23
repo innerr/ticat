@@ -33,7 +33,7 @@ The intergration jobs become complicated to adapt the multi-dimension requiremen
                │ │ │   ...       │
            ┌───┴─┴─┴─────────────▼────────┐
            │                              │
-           │  Intergration Tools          │
+           │  Intergration System/Tools   │
            │                              │
            └──────────────────────────────┘
 ```
@@ -166,24 +166,30 @@ then gradually use it to improve the whole system.
 ```
 
 ## All things about **ticat**
-* [The quick-start guide](./doc/quick-start.md) (for mod dev)
+* [Quick-start](./doc/quick-start.md) (for mod dev)
 * [Examples: ticat usage](./doc/usage)
     - [Basic: build ticat, run commands](./doc/usage/basic.md) (must read)
     - [Hub: get modules and flows from others](./doc/usage/hub.md) (must read)
     - [Manipulate env key-values](./doc/usage/env.md) (must read)
+    - [Abbreviation/alias: be a pro user](./doc/usage/abbr.md) (highly recommended)
     - [Flow: be a pro user](./doc/usage/flow.md) (highly recommended)
     - [Things a module developer should know](./doc/usage/dev.md) (for mod dev)
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat) (for mod dev)
-* [A user story: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (WIP)
+* [An user story: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)
 
 ## Inside **ticat**
 * [Ticat specifications](./doc/spec)
-    - [Hub: add/disable/enable/purge/add-local](./doc/spec/hub.md)
+    - (this is only ticat's spec, a repo provides modules and flows will have it's own spec)
+    - [Hub: list/add/disable/enable/purge](./doc/spec/hub.md)
+    - [Command sequence](./doc/spec/seq.md)
     - [Command tree](./doc/spec/cmd.md)
-    - [Sequence](./doc/spec/seq.md)
-    - [Env: get/set/save](./doc/spec/env.md)
-    - [Abbrs: commands, env-keys, flows](./doc/spec/abbrs.md)
-    - [Flow: save/edit](./doc/spec/flow.md)
+    - [Env: list/get/set/save](./doc/spec/env.md)
+    - [Abbrs of commands, env-keys and flows](./doc/spec/abbr.md)
+    - [Flow: list/save/edit](./doc/spec/flow.md)
+    - [Display control in executing](./doc/spec/display.md)
+    - [Help command](./doc/spec/help.md)
+    - [Ticat local store dir](./doc/spec/local-store.md)
+    - [Repo tree](./doc/spec/repo-tree.md)
     - [Module: env and args](./doc/spec/mod-interact.md)
     - [Module: meta file](./doc/spec/mod-meta.md)
 * [Roadmap and progress](./doc/progress.md)
