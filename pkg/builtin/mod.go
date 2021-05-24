@@ -26,7 +26,8 @@ func loadLocalMods(
 	metaExt string,
 	flowExt string,
 	abbrsSep string,
-	envPathSep string) {
+	envPathSep string,
+	source string) {
 
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
@@ -71,7 +72,7 @@ func loadLocalMods(
 			}
 		}
 
-		mod_meta.RegMod(cc, metaPath, target, info.IsDir(), cmdPath, abbrsSep, envPathSep)
+		mod_meta.RegMod(cc, metaPath, target, info.IsDir(), cmdPath, abbrsSep, envPathSep, source)
 		return nil
 	})
 }

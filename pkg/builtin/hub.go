@@ -27,7 +27,11 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		if info.OnOff != "on" {
 			continue
 		}
-		loadLocalMods(cc, info.Path, metaExt, flowExt, abbrsSep, envPathSep)
+		source := info.Addr
+		if len(source) == 0 {
+			source = info.Path
+		}
+		loadLocalMods(cc, info.Path, metaExt, flowExt, abbrsSep, envPathSep, source)
 	}
 	return true
 }
@@ -86,7 +90,11 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		}
 		cc.Screen.Print(fmt.Sprintf("[%s]\n", repoDisplayName(info)))
 		printInfoProps(cc.Screen, info)
-		cc.Screen.Print("      (removed)\n")
+		if len(info.Addr) != 0 {
+			cc.Screen.Print("      (removed)\n")
+		} else {
+			cc.Screen.Print("      (unlinked)\n")
+		}
 	}
 
 	err := os.Remove(metaPath)

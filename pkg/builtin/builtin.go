@@ -19,6 +19,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	cmds.AddSub("help", "?").
 		RegPowerCmd(GlobalHelp,
 			"get help").
+		SetQuiet().
 		SetPriority().
 		AddArg("1st-str", "", "1", "find", "str", "s", "S").
 		AddArg("2rd-str", "", "2").

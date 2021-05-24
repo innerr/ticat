@@ -16,7 +16,8 @@ func RegMod(
 	isDir bool,
 	cmdPath string,
 	abbrsSep string,
-	envPathSep string) {
+	envPathSep string,
+	source string) {
 
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
 
@@ -50,9 +51,9 @@ func RegMod(
 
 	var cmd *core.Cmd
 	if isDir {
-		cmd = mod.RegDirCmd(path, strings.TrimSpace(help))
+		cmd = mod.RegDirCmd(path, strings.TrimSpace(help)).SetSource(source)
 	} else {
-		cmd = mod.RegFileCmd(path, strings.TrimSpace(help))
+		cmd = mod.RegFileCmd(path, strings.TrimSpace(help)).SetSource(source)
 	}
 
 	abbrs := meta.Get("abbrs")

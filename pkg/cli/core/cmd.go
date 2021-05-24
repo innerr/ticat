@@ -35,31 +35,32 @@ type Cmd struct {
 	power    PowerCmd
 	cmdLine  string
 	envOps   EnvOps
+	source   string
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypeNormal, false, false,
-		newArgs(), cmd, nil, "", newEnvOps()}
+		newArgs(), cmd, nil, "", newEnvOps(), ""}
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypePower, false, false,
-		newArgs(), nil, cmd, "", newEnvOps()}
+		newArgs(), nil, cmd, "", newEnvOps(), ""}
 }
 
 func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFile, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps()}
+		newArgs(), nil, nil, cmd, newEnvOps(), ""}
 }
 
 func NewDirCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeDir, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps()}
+		newArgs(), nil, nil, cmd, newEnvOps(), ""}
 }
 
 func NewFlowCmd(owner *CmdTree, help string, flow string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFlow, false, false,
-		newArgs(), nil, nil, flow, newEnvOps()}
+		newArgs(), nil, nil, flow, newEnvOps(), ""}
 }
 
 func (self *Cmd) Execute(
@@ -95,6 +96,48 @@ func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
 	return self
 }
 
+func (self *Cmd) MatchFind(findStr string) bool {
+	if strings.Index(self.help, findStr) >= 0 {
+		return true
+	}
+	if strings.Index(self.cmdLine, findStr) >= 0 {
+		return true
+	}
+	if self.args.MatchFind(findStr) {
+		return true
+	}
+	if self.envOps.MatchFind(findStr) {
+		return true
+	}
+	if strings.Index(string(self.ty), findStr) >= 0 {
+		return true
+	}
+	if len(self.source) == 0 {
+		if strings.Index("builtin", findStr) >= 0 {
+			return true
+		}
+	} else {
+		if strings.Index(self.source, findStr) >= 0 {
+			return true
+		}
+	}
+	if self.quiet && strings.Index("quiet", findStr) >= 0 {
+		return true
+	}
+	if self.ty == CmdTypePower && strings.Index("power", findStr) >= 0 {
+		return true
+	}
+	if self.priority && strings.Index("priority", findStr) >= 0 {
+		return true
+	}
+	return false
+}
+
+func (self *Cmd) SetSource(s string) *Cmd {
+	self.source = s
+	return self
+}
+
 func (self *Cmd) SetQuiet() *Cmd {
 	self.quiet = true
 	return self
@@ -103,6 +146,10 @@ func (self *Cmd) SetQuiet() *Cmd {
 func (self *Cmd) SetPriority() *Cmd {
 	self.priority = true
 	return self
+}
+
+func (self *Cmd) Source() string {
+	return self.source
 }
 
 func (self *Cmd) Help() string {

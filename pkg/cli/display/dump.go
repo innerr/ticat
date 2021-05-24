@@ -3,57 +3,17 @@ package display
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
+
+	"github.com/mattn/go-shellwords"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-// TODO: recursively dump flow
-// TODO: show more details
+// TODO: clean code
+
 func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, indentSize int) {
-	if len(flow) == 0 {
-		return
-	}
-	cc.Screen.Print("[cmds:" + strconv.Itoa(len(flow)) + "]\n")
-
-	abbrsSep := cc.Cmds.Strs.AbbrsSep
-	indent1 := rpt(" ", indentSize)
-	indent2 := indent1 + indent1
-	indent3 := indent1 + indent2
-
-	for i, cmd := range flow {
-		line := indent1 + "[cmd:" + strconv.Itoa(i) + "] " + GetCmdPath(cmd, sep, true)
-		cc.Screen.Print(line + "\n")
-		cc.Screen.Print(indent2 + " '" + cmd.Help() + "'\n")
-
-		cic := cmd.LastCmd()
-		if cic != nil {
-			envOps := cic.EnvOps()
-			envOpKeys := envOps.EnvKeys()
-			if len(envOpKeys) != 0 {
-				cc.Screen.Print(indent2 + "- env-ops:\n")
-			}
-			for _, k := range envOpKeys {
-				cc.Screen.Print(indent3 + k + " = " +
-					dumpEnvOps(envOps.Ops(k), abbrsSep) + "\n")
-			}
-			if cic.Type() == core.CmdTypeFlow {
-				cc.Screen.Print(indent2 + "- " + cic.CmdLine() + "\n")
-			}
-		}
-
-		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
-		args := cmd.Args()
-		argv := cmdEnv.GetArgv(cmd.Path(), sep, args)
-		argLines := DumpArgs(&args, argv, true)
-		if len(argLines) != 0 {
-			cc.Screen.Print(indent2 + "- args:\n")
-		}
-		for _, line := range argLines {
-			cc.Screen.Print(indent3 + line + "\n")
-		}
-	}
+	dumpFlow(cc, env, flow, sep, indentSize, 0)
 }
 
 func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
@@ -224,6 +184,12 @@ func dumpCmd(
 				prt(1, "- executable:")
 				prt(2, cic.CmdLine())
 			}
+			prt(1, "- source:")
+			if len(cic.Source()) == 0 {
+				prt(2, "builtin")
+			} else {
+				prt(2, cic.Source())
+			}
 			envOps := cic.EnvOps()
 			envOpKeys := envOps.EnvKeys()
 			if len(envOpKeys) != 0 {
@@ -249,6 +215,118 @@ func dumpCmd(
 		for _, name := range cmd.SubNames() {
 			dumpCmd(screen, cmd.GetSub(name), onlyNames, indentSize,
 				recursive, flatten, indentAdjust, findStrs...)
+		}
+	}
+}
+
+func dumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, indentSize int, indentAdjust int) {
+	for _, cmd := range flow {
+		if len(cmd) != 0 {
+			dumpFlowCmd(cc, env, cmd, sep, indentSize, indentAdjust)
+		}
+	}
+}
+
+func dumpFlowCmd(
+	cc *core.Cli,
+	env *core.Env,
+	parsedCmd core.ParsedCmd,
+	sep string,
+	indentSize int,
+	indentAdjust int) {
+
+	cmd := parsedCmd[len(parsedCmd)-1].Cmd.Cmd
+	if cmd == nil {
+		return
+	}
+
+	abbrsSep := cmd.Strs.AbbrsSep
+
+	prt := func(indentLvl int, msg string) {
+		indentLvl += indentAdjust
+		padding := rpt(" ", indentSize*indentLvl)
+		cc.Screen.Print(padding + msg + "\n")
+	}
+
+	cic := cmd.Cmd()
+	if cic == nil {
+		return
+	}
+	name := GetCmdPath(parsedCmd, sep, true)
+	prt(0, "["+name+"]")
+	if cic != nil && len(cic.Help()) != 0 {
+		prt(1, " '"+cic.Help()+"'")
+	}
+
+	cmdEnv := parsedCmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+	args := parsedCmd.Args()
+	argv := cmdEnv.GetArgv(parsedCmd.Path(), sep, args)
+	argLines := DumpArgs(&args, argv, true)
+	if len(argLines) != 0 {
+		prt(1, "- args:")
+	}
+	for _, line := range argLines {
+		prt(2, line)
+	}
+
+	// TODO: missed kvs in GlobalEnv
+	cmdEnv = parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+	flatten := cmdEnv.Flatten(false, nil, true)
+	if len(flatten) != 0 {
+		prt(1, "- env-values:")
+		var keys []string
+		for k, _ := range flatten {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			prt(2, k+" = "+flatten[k])
+		}
+	}
+
+	envOps := cic.EnvOps()
+	envOpKeys := envOps.EnvKeys()
+	if len(envOpKeys) != 0 {
+		prt(1, "- env-ops: ")
+	}
+	for _, k := range envOpKeys {
+		prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), abbrsSep))
+	}
+
+	line := string(cic.Type())
+	if cic.IsQuiet() {
+		line += " (quiet)"
+	}
+	if cic.IsPriority() {
+		line += " (priority)"
+	}
+	if cic.Type() != core.CmdTypeNormal || cic.IsQuiet() {
+		if cic.Type() != core.CmdTypeFile && cic.Type() != core.CmdTypeDir &&
+			cic.Type() != core.CmdTypeFlow {
+			prt(1, "- cmd-type:")
+			prt(2, line)
+		}
+	}
+
+	if len(cic.Source()) != 0 {
+		prt(1, "- source:")
+		prt(2, cic.Source())
+	}
+
+	if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
+		cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
+		prt(1, "- executable:")
+		prt(2, cic.CmdLine())
+		if cic.Type() == core.CmdTypeFlow {
+			prt(2, "--->>>")
+			subFlowStrs, err := shellwords.Parse(cic.CmdLine())
+			if err != nil {
+				panic(fmt.Errorf("[dumpFlowCmd] parse '%s' failed: %v",
+					cic.CmdLine(), err))
+			}
+			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlowStrs...)
+			dumpFlow(cc, env, subFlow.Cmds, sep, indentSize, indentAdjust + 2)
+			prt(2, "<<<---")
 		}
 	}
 }

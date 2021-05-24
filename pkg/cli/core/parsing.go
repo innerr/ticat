@@ -116,11 +116,11 @@ type ParsedCmdSeg struct {
 }
 
 func (self ParsedCmdSeg) IsPowerCmd() bool {
-	return self.Cmd.Cmd != nil && self.Cmd.Cmd.IsPowerCmd()
+	return self.Cmd.Cmd != nil && self.Cmd.Cmd.Cmd() != nil && self.Cmd.Cmd.IsPowerCmd()
 }
 
 func (self ParsedCmdSeg) IsPriority() bool {
-	return self.Cmd.Cmd != nil && self.Cmd.Cmd.Cmd().IsPriority()
+	return self.Cmd.Cmd != nil && self.Cmd.Cmd.Cmd() != nil && self.Cmd.Cmd.Cmd().IsPriority()
 }
 
 func (self *ParsedCmdSeg) IsEmpty() bool {

@@ -166,7 +166,7 @@ then gradually use it to improve the whole system.
 ```
 
 ## All things about **ticat**
-* [Quick-start](./doc/quick-start.md) (for mod dev)
+* [Quick-start](./doc/quick-start-mod.md) (for mod dev)
 * [Examples: ticat usage](./doc/usage)
     - [Basic: build ticat, run commands](./doc/usage/basic.md) (must read)
     - [Hub: get modules and flows from others](./doc/usage/hub.md) (must read)
