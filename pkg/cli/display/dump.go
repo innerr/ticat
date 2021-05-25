@@ -5,8 +5,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mattn/go-shellwords"
-
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
@@ -133,6 +131,7 @@ func dumpCmd(
 	}
 
 	abbrsSep := cmd.Strs.AbbrsSep
+	envOpSep := " " + cmd.Strs.EnvOpSep + " "
 	indent := cmd.Depth() + indentAdjust
 
 	prt := func(indentLvl int, msg string) {
@@ -140,6 +139,7 @@ func dumpCmd(
 			indentLvl += indent
 		}
 		padding := rpt(" ", indentSize*indentLvl)
+		msg = autoPadNewLine(padding, msg)
 		screen.Print(padding + msg + "\n")
 	}
 
@@ -157,7 +157,7 @@ func dumpCmd(
 			}
 			if !onlyNames && cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				prt(1, "- full-cmd:")
-                full := cmd.DisplayPath()
+				full := cmd.DisplayPath()
 				prt(2, full)
 				abbrs := cmd.DisplayAbbrsPath()
 				if len(abbrs) != 0 && abbrs != full {
@@ -196,7 +196,7 @@ func dumpCmd(
 				prt(1, "- env-ops: ")
 			}
 			for _, k := range envOpKeys {
-				prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), abbrsSep))
+				prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
 			}
 			args := cic.Args()
 			argNames := args.Names()
@@ -240,11 +240,12 @@ func dumpFlowCmd(
 		return
 	}
 
-	abbrsSep := cmd.Strs.AbbrsSep
+	envOpSep := " " + cmd.Strs.EnvOpSep + " "
 
 	prt := func(indentLvl int, msg string) {
 		indentLvl += indentAdjust
 		padding := rpt(" ", indentSize*indentLvl)
+		msg = autoPadNewLine(padding, msg)
 		cc.Screen.Print(padding + msg + "\n")
 	}
 
@@ -290,7 +291,7 @@ func dumpFlowCmd(
 		prt(1, "- env-ops: ")
 	}
 	for _, k := range envOpKeys {
-		prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), abbrsSep))
+		prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
 	}
 
 	line := string(cic.Type())
@@ -319,13 +320,8 @@ func dumpFlowCmd(
 		prt(2, cic.CmdLine())
 		if cic.Type() == core.CmdTypeFlow {
 			prt(2, "--->>>")
-			subFlowStrs, err := shellwords.Parse(cic.CmdLine())
-			if err != nil {
-				panic(fmt.Errorf("[dumpFlowCmd] parse '%s' failed: %v",
-					cic.CmdLine(), err))
-			}
-			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlowStrs...)
-			dumpFlow(cc, env, subFlow.Cmds, sep, indentSize, indentAdjust + 2)
+			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
+			dumpFlow(cc, env, subFlow.Cmds, sep, indentSize, indentAdjust+2)
 			prt(2, "<<<---")
 		}
 	}
@@ -473,4 +469,11 @@ func MayQuoteStr(origin string) string {
 		return "'" + origin + "'"
 	}
 	return origin
+}
+
+func autoPadNewLine(padding string, msg string) string {
+	msgNoPad := strings.TrimLeft(msg, "\t '\"")
+	hiddenPad := rpt(" ", len(msg)-len(msgNoPad))
+	msg = strings.ReplaceAll(msg, "\n", "\n"+padding+hiddenPad)
+	return msg
 }

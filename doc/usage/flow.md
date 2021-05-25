@@ -12,3 +12,5 @@ $> ticat x
 ```
 
 ## Display
+
+## Best practice: no env definition in flow

@@ -184,12 +184,17 @@ func (self *Cmd) EnvOps() EnvOps {
 	return self.envOps
 }
 
-func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
+func (self *Cmd) Flow() []string {
 	flow, err := shellwords.Parse(self.cmdLine)
 	if err != nil {
 		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
 			self.cmdLine, err))
 	}
+	return flow
+}
+
+func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
+	flow := self.Flow()
 	return cc.Executor.Execute(cc, flow...)
 }
 

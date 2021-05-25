@@ -24,6 +24,7 @@ func main() {
 	defEnv.Set("strs.meta-ext", MetaExt)
 	defEnv.Set("strs.flow-ext", FlowExt)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)
+	defEnv.Set("strs.env-op-sep", EnvOpSep)
 	defEnv.Set("strs.seq-sep", SequenceSep)
 	defEnv.Set("strs.env-path-sep", EnvPathSep)
 	defEnv.Set("strs.env-sys-path", EnvRuntimeSysPrefix)
@@ -44,6 +45,7 @@ func main() {
 		CmdPathSep,
 		CmdPathAlterSeps,
 		AbbrsSep,
+		EnvOpSep,
 		EnvValDelMark,
 		EnvValDelAllMark,
 		EnvKeyValSep,
@@ -108,6 +110,7 @@ const (
 	CmdRootDisplayName  string = "<root>"
 	Spaces              string = "\t\n\r "
 	AbbrsSep            string = "|"
+	EnvOpSep            string = ":"
 	SequenceSep         string = ":"
 	CmdPathSep          string = "."
 	CmdPathAlterSeps    string = "./"

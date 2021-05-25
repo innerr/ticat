@@ -23,24 +23,19 @@ Recommand to set `ticat/bin` to system `$PATH`, it's handy.
 We want to do a benchmark for the system,
 others already wrote some tools, so we just donwload them by:
 ```bash
-$> ticat hub.add innerr/basic.demo.ticat
-```
-
-Find the bench tool:
-```bash
-$> ticat cmds.ls bench
+$> ticat hub.add innerr/quick-start-usage.ticat
 ```
 
 Say we have a debuging single node cluster running, the access port is 4000.
 Run benchmark by:
 ```bash
-$> ticat {cluster.host=4000} : bench.load : bench.run
+$> ticat {cluster.port=4000} : bench.load : bench.run
 ```
 
 Save the port config, then run again:
 **ticat** support lots of abbrs and alias, here we use abbrs "ben" for "bench"
 ```bash
-$> ticat {cluster.host=4000} env.save
+$> ticat {cluster.port=4000} env.save
 $> ticat ben.load : ben.run
 ```
 
@@ -64,19 +59,29 @@ $> ticat ben.scale 10 : ben.load : ben.run
 We are now trying to improve performance,
 so re-build and run benchmark after code modifications by:
 ```bash
-$> ticat cluster.build : cluster.restart : ben.scale 10 : ben.load : ben.run
+$> ticat local.build : cluster.local port=4000 : cluster.restart : ben.scale 10 : ben.load : ben.run
 ```
 
 We need to do this many times, so save it as a flow:
 ```bash
 ## Save the commands to "bb"
-$> ticat local.build : cluster.restart : ben.scale 10 : ben.load : ben.run : flow.save bb
+$> ticat local.build : cluster.local port=4000 : cluster.restart : ben.load : ben.run
 
 ## Run flow "bb" every time we edited the code, to see the performance improvement
 (edit code)
-$> ticat bb
+$> ticat ben.scale 10 : bb
+
+## Save a new flow "b10"
+$> ticat ben.scale 10 : bb : flow.save b10
+
 (edit code)
-$> ticat bb
+$> ticat b10
+
+## Close step-by-step:
+$> ticat dbg.step.off : env.save
+
+## Show what "b10" will execute:
+$> ticat b10 : help
 ```
 
 ## Run a formal benchmark
@@ -105,7 +110,7 @@ So we fetch this workload and test it:
 $> ticat hub.add innerr/workload-x.demo.ticat
 
 ## Start local cluster and save info to env
-$> ticat cluster.link.local port=4000 : cluster.start : env.save
+$> ticat cluster.local port=4000 : cluster.start : env.save
 
 ## Run benchmark and detect jitter
 $> ticat ben.x.scale 10 : ben.x.load : ben.x.run dur=10s : ben.scanner.jitter

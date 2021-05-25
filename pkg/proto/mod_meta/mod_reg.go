@@ -27,7 +27,7 @@ func RegMod(
 	cmdLine := meta.Get("cmd")
 	help := meta.Get("help")
 	if len(help) == 0 && (!isDir || len(cmdLine) != 0) {
-		panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' has no help string in '%s'",
+		panic(fmt.Errorf("[regMod] cmd '%s' has no help string in '%s'",
 			cmdPath, metaPath))
 	}
 
@@ -38,11 +38,11 @@ func RegMod(
 		var err error
 		path, err = filepath.Abs(filepath.Join(path, cmdLine))
 		if err != nil {
-			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' get abs path of '%s' failed",
+			panic(fmt.Errorf("[regMod] cmd '%s' get abs path of '%s' failed",
 				cmdPath, path))
 		}
 		if !fileExists(path) {
-			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' point to a not existed file '%s'",
+			panic(fmt.Errorf("[regMod] cmd '%s' point to a not existed file '%s'",
 				cmdPath, path))
 		}
 	} else if isDir {
@@ -110,6 +110,10 @@ func RegMod(
 
 			key := strings.Join(path, envPathSep)
 			opFields := strings.Split(op, abbrsSep)
+			// TODO: change all "|" to ":" in envOps
+			if len(opFields) == 1 {
+				opFields = strings.Split(op, ":")
+			}
 			for _, it := range opFields {
 				field := strings.ToLower(it)
 				may := strings.Index(field, "may") >= 0 || strings.Index(field, "opt") >= 0

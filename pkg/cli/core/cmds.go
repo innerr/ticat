@@ -12,6 +12,7 @@ type CmdTreeStrs struct {
 	PathSep          string
 	PathAlterSeps    string
 	AbbrsSep         string
+	EnvOpSep         string
 	EnvValDelMark    string
 	EnvValDelAllMark string
 	EnvKeyValSep     string

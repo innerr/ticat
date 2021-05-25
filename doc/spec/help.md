@@ -41,3 +41,5 @@ $> ticat help <find-str> <find-str> ...
 
 ## Other usages: TODO
 ```
+
+## Use tag for search

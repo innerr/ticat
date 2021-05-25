@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"strings"
 )
 
 type ModMeta struct {
@@ -48,11 +49,52 @@ func (self *ModMeta) parse(data []byte, lineSep, kvSep string) {
 	session := NewSession()
 	self.sections[sectionName] = session
 
+	var multiLineKey string
+	var multiLineValue []string
+
+	tryAppendMultiLine := func(line string) bool {
+		if len(multiLineKey) == 0 {
+			return false
+		}
+		multiLineFinish := false
+		if line[len(line)-1] == '\\' {
+			line = line[:len(line)-1]
+		} else {
+			multiLineFinish = true
+		}
+		multiLineValue = append(multiLineValue, strings.TrimSpace(line))
+		if multiLineFinish {
+			session.Set(multiLineKey, strings.Join(multiLineValue, "\n"))
+			multiLineKey = ""
+			multiLineValue = nil
+		}
+		return true
+	}
+
+	checkMultiLineStart := func(k string, v string) bool {
+		if len(v) == 0 {
+			return false
+		}
+		if v[len(v)-1] != '\\' {
+			return false
+		}
+		v = strings.TrimSpace(v[:len(v)-1])
+		multiLineKey = k
+		if len(v) != 0 {
+			multiLineValue = append(multiLineValue, v)
+		}
+		return true
+	}
+
+	// TODO: convert to string too many times
 	lines := bytes.Split(data, []byte(lineSep))
 	for _, line := range lines {
 		line = bytes.TrimSpace(line)
 		size := len(line)
 		if size == 0 {
+			continue
+		}
+		if tryAppendMultiLine(string(line)) {
 			continue
 		}
 		if line[0] == ';' || line[0] == '#' {
@@ -72,6 +114,9 @@ func (self *ModMeta) parse(data []byte, lineSep, kvSep string) {
 
 		k := bytes.TrimSpace(line[0:pos])
 		v := bytes.TrimSpace(line[pos+len(kvSep):])
+		if checkMultiLineStart(string(k), string(v)) {
+			continue
+		}
 		v = bytes.Trim(v, "'\"")
 		session.Set(string(k), string(v))
 	}

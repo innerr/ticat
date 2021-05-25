@@ -16,7 +16,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
-	cmds.AddSub("help", "?").
+	cmds.AddSub("help", "hp", "?", "h", "H").
 		RegPowerCmd(GlobalHelp,
 			"get help").
 		SetQuiet().
@@ -42,11 +42,11 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 
 	tree := mod.AddSub("tree", "t", "T")
 	tree.RegCmd(DumpCmdTree,
-			"list builtin and loaded cmds").
+		"list builtin and loaded cmds").
 		AddArg("path", "", "p", "P")
 	tree.AddSub("simple", "s", "S").
 		RegCmd(DumpCmdTreeSimple,
-		"list builtin and loaded cmds, only names").
+			"list builtin and loaded cmds, only names").
 		AddArg("path", "", "p", "P")
 
 	mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
@@ -158,7 +158,7 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 }
 
 func RegisterHubCmds(cmds *core.CmdTree) {
-	hub := cmds.AddSub("hub", "h", "H")
+	hub := cmds.AddSub("hub")
 
 	hub.AddSub("clear", "reset").
 		RegCmd(RemoveAllFromHub,
@@ -181,7 +181,10 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 
 	hub.AddSub("list", "ls").
 		RegCmd(ListHub,
-			"list dir and repo info in hub")
+			"list dir and repo info in hub").
+		AddArg("1st-str", "", "1", "find", "str", "s", "S").
+		AddArg("2rd-str", "", "2").
+		AddArg("3th-str", "", "3")
 
 	purge := hub.AddSub("purge", "p", "P")
 	purge.RegCmd(PurgeInactiveRepoFromHub,

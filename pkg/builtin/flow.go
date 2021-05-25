@@ -203,11 +203,11 @@ func loadFlow(cc *core.Cli, root string, path string, flowExt string) {
 	}
 
 	/*
-	if len(help) == 0 {
-		selfName := cc.GlobalEnv.GetRaw("strs.self-name")
-		help = fmt.Sprintf("(to add help): %s flow.set-help-str %s <help-str>",
-			selfName, cmdPathStr)
-	}
+		if len(help) == 0 {
+			selfName := cc.GlobalEnv.GetRaw("strs.self-name")
+			help = fmt.Sprintf("(to add help): %s flow.set-help-str %s <help-str>",
+				selfName, cmdPathStr)
+		}
 	*/
 
 	flow.RegFlowCmd(flowStr, help)
