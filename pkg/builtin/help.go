@@ -18,8 +18,13 @@ func GlobalHelp(
 		return 0, ok
 	}
 
-	if len(flow.Cmds) > 1 {
+	if len(flow.Cmds) > 2 {
 		return DumpFlow(argv, cc, env, flow, currCmdIdx)
+	} else if len(flow.Cmds) == 2 {
+		display.DumpCmds(cc, false, 4, false,
+			flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false))
+		flow.Cmds = nil
+		return 0, true
 	}
 
 	pln := func(text string) {
