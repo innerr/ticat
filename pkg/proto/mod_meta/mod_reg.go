@@ -16,7 +16,8 @@ func RegMod(
 	isDir bool,
 	cmdPath string,
 	abbrsSep string,
-	envPathSep string) {
+	envPathSep string,
+	source string) {
 
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
 
@@ -26,7 +27,7 @@ func RegMod(
 	cmdLine := meta.Get("cmd")
 	help := meta.Get("help")
 	if len(help) == 0 && (!isDir || len(cmdLine) != 0) {
-		panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' has no help string in '%s'",
+		panic(fmt.Errorf("[regMod] cmd '%s' has no help string in '%s'",
 			cmdPath, metaPath))
 	}
 
@@ -37,11 +38,11 @@ func RegMod(
 		var err error
 		path, err = filepath.Abs(filepath.Join(path, cmdLine))
 		if err != nil {
-			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' get abs path of '%s' failed",
+			panic(fmt.Errorf("[regMod] cmd '%s' get abs path of '%s' failed",
 				cmdPath, path))
 		}
 		if !fileExists(path) {
-			panic(fmt.Errorf("[LoadLocalMods.regMod] cmd '%s' point to a not existed file '%s'",
+			panic(fmt.Errorf("[regMod] cmd '%s' point to a not existed file '%s'",
 				cmdPath, path))
 		}
 	} else if isDir {
@@ -50,9 +51,9 @@ func RegMod(
 
 	var cmd *core.Cmd
 	if isDir {
-		cmd = mod.RegDirCmd(path, strings.TrimSpace(help))
+		cmd = mod.RegDirCmd(path, strings.TrimSpace(help)).SetSource(source)
 	} else {
-		cmd = mod.RegFileCmd(path, strings.TrimSpace(help))
+		cmd = mod.RegFileCmd(path, strings.TrimSpace(help)).SetSource(source)
 	}
 
 	abbrs := meta.Get("abbrs")
@@ -77,6 +78,17 @@ func RegMod(
 				argAbbrs = append(argAbbrs, strings.TrimSpace(abbr))
 			}
 			cmd.AddArg(name, defVal, argAbbrs...)
+		}
+	}
+
+	deps := meta.GetSession("deps")
+	if deps == nil {
+		deps = meta.GetSession("dep")
+	}
+	if deps != nil {
+		for _, dep := range deps.Keys() {
+			reason := deps.Get(dep)
+			cmd.AddDepend(dep, reason)
 		}
 	}
 
@@ -109,6 +121,10 @@ func RegMod(
 
 			key := strings.Join(path, envPathSep)
 			opFields := strings.Split(op, abbrsSep)
+			// TODO: change all "|" to ":" in envOps
+			if len(opFields) == 1 {
+				opFields = strings.Split(op, ":")
+			}
 			for _, it := range opFields {
 				field := strings.ToLower(it)
 				may := strings.Index(field, "may") >= 0 || strings.Index(field, "opt") >= 0

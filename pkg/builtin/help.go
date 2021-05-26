@@ -14,11 +14,16 @@ func GlobalHelp(
 
 	if len(argv.GetRaw("1st-str")) != 0 {
 		ok := FindAny(argv, cc, env)
+		flow.Cmds = nil
 		return 0, ok
 	}
 
-	if len(flow.Cmds) > 1 {
-		display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
+	if len(flow.Cmds) > 2 {
+		return DumpFlow(argv, cc, env, flow, currCmdIdx)
+	} else if len(flow.Cmds) == 2 {
+		display.DumpCmds(cc, false, 4, false,
+			flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false))
+		flow.Cmds = nil
 		return 0, true
 	}
 

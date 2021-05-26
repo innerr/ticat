@@ -27,7 +27,11 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		if info.OnOff != "on" {
 			continue
 		}
-		loadLocalMods(cc, info.Path, metaExt, flowExt, abbrsSep, envPathSep)
+		source := info.Addr
+		if len(source) == 0 {
+			source = info.Path
+		}
+		loadLocalMods(cc, info.Path, metaExt, flowExt, abbrsSep, envPathSep, source)
 	}
 	return true
 }
@@ -53,13 +57,26 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	metaPath := getReposInfoPath(env, "ListHub")
 	fieldSep := env.GetRaw("strs.proto-sep")
+	findStrs := getFindStrsFromArgv(argv)
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-	listHub(cc.Screen, infos)
+	listHub(cc.Screen, infos, findStrs...)
 	return true
 }
 
-func listHub(screen core.Screen, infos []meta.RepoInfo) {
+func listHub(screen core.Screen, infos []meta.RepoInfo, filterStrs ...string) {
 	for _, info := range infos {
+		if len(filterStrs) != 0 {
+			filtered := false
+			for _, filterStr := range filterStrs {
+				if !matchFindRepoInfo(info, filterStr) {
+					filtered = true
+					break
+				}
+			}
+			if filtered {
+				continue
+			}
+		}
 		name := repoDisplayName(info)
 		screen.Print(fmt.Sprintf("[%s]", name))
 		if info.OnOff != "on" {
@@ -86,7 +103,11 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		}
 		cc.Screen.Print(fmt.Sprintf("[%s]\n", repoDisplayName(info)))
 		printInfoProps(cc.Screen, info)
-		cc.Screen.Print("      (removed)\n")
+		if len(info.Addr) != 0 {
+			cc.Screen.Print("      (removed)\n")
+		} else {
+			cc.Screen.Print("      (unlinked)\n")
+		}
 	}
 
 	err := os.Remove(metaPath)
@@ -694,4 +715,31 @@ func osRemoveDir(path string) {
 		}
 		panic(fmt.Errorf("[osRemoveDir] remove repo '%s' failed: %v", path, err))
 	}
+}
+
+func matchFindRepoInfo(info meta.RepoInfo, findStr string) bool {
+	if len(findStr) == 0 {
+		return true
+	}
+	if strings.Index(info.Addr, findStr) >= 0 {
+		return true
+	}
+	if strings.Index(info.Path, findStr) >= 0 {
+		return true
+	}
+	if strings.Index(getDisplayReason(info), findStr) >= 0 {
+		return true
+	}
+	if strings.Index(info.HelpStr, findStr) >= 0 {
+		return true
+	}
+	if strings.Index(info.OnOff, findStr) >= 0 {
+		return true
+	}
+
+	// TODO: better place for string "local"
+	if len(info.Addr) == 0 && strings.Index("local", findStr) >= 0 {
+		return true
+	}
+	return false
 }

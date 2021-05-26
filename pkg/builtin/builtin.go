@@ -16,20 +16,17 @@ func RegisterCmds(cmds *core.CmdTree) {
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
-	cmds.AddSub("help", "?").
+	help := cmds.AddSub("help", "hp", "?", "h", "H").
 		RegPowerCmd(GlobalHelp,
 			"get help").
-		SetPriority().
-		AddArg("1st-str", "", "1", "find", "str", "s", "S").
-		AddArg("2rd-str", "", "2").
-		AddArg("3th-str", "", "3")
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(help)
 
-	cmds.AddSub("search", "find", "fnd", "s", "S").
+	find := cmds.AddSub("search", "find", "fnd", "s", "S").
 		RegCmd(FindAny,
-			"find anything with given string").
-		AddArg("1st-str", "", "1", "find", "str", "s", "S").
-		AddArg("2rd-str", "", "2").
-		AddArg("3th-str", "", "3")
+			"find anything with given string")
+	addFindStrArgs(find)
 
 	cmds.AddSub("desc", "d", "D").
 		RegPowerCmd(DumpFlow,
@@ -41,19 +38,17 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 
 	tree := mod.AddSub("tree", "t", "T")
 	tree.RegCmd(DumpCmdTree,
-			"list builtin and loaded cmds").
+		"list builtin and loaded cmds").
 		AddArg("path", "", "p", "P")
 	tree.AddSub("simple", "s", "S").
 		RegCmd(DumpCmdTreeSimple,
-		"list builtin and loaded cmds, only names").
+			"list builtin and loaded cmds, only names").
 		AddArg("path", "", "p", "P")
 
-	mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
+	modList := mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegCmd(DumpCmds,
-			"list builtin and loaded cmds").
-		AddArg("1st-str", "", "1", "find", "str", "s", "S").
-		AddArg("2rd-str", "", "2").
-		AddArg("3th-str", "", "3")
+			"list builtin and loaded cmds")
+	addFindStrArgs(modList)
 }
 
 func RegisterFlowCmds(cmds *core.CmdTree) {
@@ -104,12 +99,10 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		RegCmd(DumpEnvAbbrs,
 			"list env tree and abbrs")
 
-	env.AddSub("list", "ls", "flatten", "flat", "f", "F").
+	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegCmd(DumpEnvFlattenVals,
-			"list env values in flatten format").
-		AddArg("1st-str", "", "1", "find", "str", "s", "S").
-		AddArg("2rd-str", "", "2").
-		AddArg("3th-str", "", "3")
+			"list env values in flatten format")
+	addFindStrArgs(envList)
 
 	env.AddSub("save", "persist", "s", "S").
 		RegCmd(SaveEnvToLocal,
@@ -157,7 +150,7 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 }
 
 func RegisterHubCmds(cmds *core.CmdTree) {
-	hub := cmds.AddSub("hub", "h", "H")
+	hub := cmds.AddSub("hub")
 
 	hub.AddSub("clear", "reset").
 		RegCmd(RemoveAllFromHub,
@@ -178,9 +171,10 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 			"add a local dir (could be a git repo) to hub").
 		AddArg("path", "", "p", "P")
 
-	hub.AddSub("list", "ls").
+	hubList := hub.AddSub("list", "ls").
 		RegCmd(ListHub,
 			"list dir and repo info in hub")
+	addFindStrArgs(hubList)
 
 	purge := hub.AddSub("purge", "p", "P")
 	purge.RegCmd(PurgeInactiveRepoFromHub,
@@ -290,4 +284,13 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 	cmds.AddSub("exec").
 		RegCmd(DbgExecBash,
 			"verify bash in os/exec")
+}
+
+func addFindStrArgs(cmd *core.Cmd) {
+	cmd.AddArg("1st-str", "", "1", "find", "str", "s", "S").
+		AddArg("2nd-str", "", "2").
+		AddArg("3rh-str", "", "3").
+		AddArg("4th-str", "", "4").
+		AddArg("5th-str", "", "5").
+		AddArg("6th-str", "", "6")
 }

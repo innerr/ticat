@@ -27,6 +27,8 @@ If the values are quoted, the "'\"" will be removed.
 Key "abbrs" and "abbr" are equal.
 If "cmd" is not provided, a empty command will be registered.
 
+Multi-line value is supported with "\\"(single \) as line breaker.
+
 A dir without meta file "dir-path.ticat" will not be searched,
 so modules inside it will not be registered.
 

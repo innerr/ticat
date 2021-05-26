@@ -33,6 +33,11 @@ func (self EnvOps) MatchFind(findStr string) bool {
 		if strings.Index(name, findStr) >= 0 {
 			return true
 		}
+		for _, op := range self.Ops(name) {
+			if strings.Index(EnvOpStr(op), findStr) >= 0 {
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -49,6 +54,8 @@ func (self EnvOps) Ops(name string) []uint {
 type EnvOpsChecker map[string]envOpsCheckerKeyInfo
 
 type EnvOpsCheckResult struct {
+	Cmd                *CmdTree
+	CmdDisplayPath     string
 	Key                string
 	MayWriteCmdsBefore []MayWriteCmd
 	ReadMayWrite       bool
@@ -62,7 +69,8 @@ func (self EnvOpsChecker) OnCallCmd(
 	matched ParsedCmd,
 	pathSep string,
 	cmd *Cmd,
-	ignoreMaybe bool) (result []EnvOpsCheckResult) {
+	ignoreMaybe bool,
+	displayPath string) (result []EnvOpsCheckResult) {
 
 	ops := cmd.EnvOps()
 	for _, key := range ops.EnvKeys() {
@@ -76,6 +84,8 @@ func (self EnvOpsChecker) OnCallCmd(
 			self[key] = before
 
 			var res EnvOpsCheckResult
+			res.CmdDisplayPath = displayPath
+			res.Cmd = cmd.Owner()
 			res.Key = key
 			if (before.val&EnvOpTypeWrite) == 0 &&
 				(before.val&EnvOpTypeMayWrite) == 0 {
@@ -114,6 +124,53 @@ type envOpsCheckerKeyInfo struct {
 }
 
 type MayWriteCmd struct {
-	matched ParsedCmd
-	cmd     *Cmd
+	Matched ParsedCmd
+	Cmd     *Cmd
+}
+
+func CheckEnvOps(
+	cc *Cli,
+	flow *ParsedCmds,
+	env *Env,
+	checker *EnvOpsChecker,
+	ignoreMaybe bool,
+	result *[]EnvOpsCheckResult) {
+
+	if len(flow.Cmds) == 0 {
+		return
+	}
+
+	sep := cc.Cmds.Strs.PathSep
+
+	for _, cmd := range flow.Cmds {
+		last := cmd.LastCmd()
+		if last == nil {
+			continue
+		}
+		displayPath := cmd.DisplayPath(sep, true)
+		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, ignoreMaybe, displayPath)
+
+		*result = append(*result, res...)
+
+		if last.Type() == CmdTypeFlow {
+			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, last.Flow()...)
+			CheckEnvOps(cc, subFlow, env, checker, ignoreMaybe, result)
+		}
+	}
+}
+
+func EnvOpStr(op uint) (str string) {
+	switch op {
+	case EnvOpTypeWrite:
+		str = "write"
+	case EnvOpTypeMayWrite:
+		str = "may-write"
+	case EnvOpTypeRead:
+		str = "read"
+	case EnvOpTypeMayRead:
+		str = "may-read"
+	default:
+	}
+	return
 }

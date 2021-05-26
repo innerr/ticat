@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pingcap/ticat/pkg/builtin"
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 	"github.com/pingcap/ticat/pkg/utils"
@@ -26,7 +27,7 @@ func NewExecutor(sessionFileName string) *Executor {
 		[]ExecFunc{
 			// TODO: implement and add functions: flowFlatten, mockModInject, stepByStepInject
 			filterEmptyCmdsAndReorderByPriority,
-			checkEnvOps,
+			verifyEnvOps,
 		},
 		sessionFileName,
 	}
@@ -251,32 +252,37 @@ func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *co
 	return true
 }
 
-func checkEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
-	checker := core.EnvOpsChecker{}
-	sep := cc.Cmds.Strs.PathSep
-	for _, cmd := range flow.Cmds {
-		last := cmd.LastCmd()
-		if last == nil {
-			continue
-		}
-		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
-		result := checker.OnCallCmd(cmdEnv, cmd, cc.Cmds.Strs.PathSep, last, true)
-		// TODO: tell user more details, auto-find the provider
-		for _, res := range result {
-			realPath := strings.Join(cmd.Path(), sep)
-			matchedPath := strings.Join(cmd.MatchedPath(), sep)
-			var shortFor string
-			if realPath != matchedPath {
-				shortFor = " (short for '" + realPath + "')"
-			}
-			cc.Screen.Print(fmt.Sprintf("[checkEnvOps] cmd '%s'%s reads '%s' but no provider\n",
-				matchedPath, shortFor, res.Key))
-		}
-		if len(result) != 0 {
-			return false
+func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
+	last := flow.Cmds[0].LastCmd()
+	allows := []interface{}{
+		builtin.SaveFlow,
+		builtin.DumpFlow,
+		builtin.GlobalHelp,
+	}
+	for _, allow := range allows {
+		if last.IsTheSameFunc(allow) {
+			return true
 		}
 	}
-	return true
+	return false
+}
+
+func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
+	if len(flow.Cmds) == 0 {
+		return true
+	}
+	allowFail := allowCheckEnvOpsFail(flow)
+	if allowFail {
+		return true
+	}
+	checker := &core.EnvOpsChecker{}
+	result := []core.EnvOpsCheckResult{}
+	core.CheckEnvOps(cc, flow, env, checker, true, &result)
+	if len(result) == 0 {
+		return true
+	}
+	display.DumpEnvOpsCheckResult(cc.Screen, env, result, cc.Cmds.Strs.PathSep)
+	return false
 }
 
 func useCmdsAbbrs(abbrs *core.EnvAbbrs, cmds *core.CmdTree) {

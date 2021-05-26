@@ -12,6 +12,7 @@ type CmdTreeStrs struct {
 	PathSep          string
 	PathAlterSeps    string
 	AbbrsSep         string
+	EnvOpSep         string
 	EnvValDelMark    string
 	EnvValDelAllMark string
 	EnvKeyValSep     string
@@ -188,27 +189,14 @@ func (self *CmdTree) matchFind(findStr string) bool {
 	if strings.Index(self.name, findStr) >= 0 {
 		return true
 	}
-	if self.cmd != nil {
-		if strings.Index(self.cmd.Help(), findStr) >= 0 {
-			return true
-		}
-		if strings.Index(self.cmd.CmdLine(), findStr) >= 0 {
-			return true
-		}
+	if self.cmd != nil && self.cmd.MatchFind(findStr) {
+		return true
 	}
 	if self.parent != nil {
 		for _, abbr := range self.parent.SubAbbrs(self.name) {
 			if strings.Index(abbr, findStr) >= 0 {
 				return true
 			}
-		}
-	}
-	if self.cmd != nil {
-		if self.cmd.Args().MatchFind(findStr) {
-			return true
-		}
-		if self.cmd.EnvOps().MatchFind(findStr) {
-			return true
 		}
 	}
 	return false

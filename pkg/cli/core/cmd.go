@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/mattn/go-shellwords"
@@ -35,31 +36,33 @@ type Cmd struct {
 	power    PowerCmd
 	cmdLine  string
 	envOps   EnvOps
+	source   string
+	depends  []Depend
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypeNormal, false, false,
-		newArgs(), cmd, nil, "", newEnvOps()}
+		newArgs(), cmd, nil, "", newEnvOps(), "", nil}
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypePower, false, false,
-		newArgs(), nil, cmd, "", newEnvOps()}
+		newArgs(), nil, cmd, "", newEnvOps(), "", nil}
 }
 
 func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFile, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps()}
+		newArgs(), nil, nil, cmd, newEnvOps(), "", nil}
 }
 
 func NewDirCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeDir, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps()}
+		newArgs(), nil, nil, cmd, newEnvOps(), "", nil}
 }
 
 func NewFlowCmd(owner *CmdTree, help string, flow string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFlow, false, false,
-		newArgs(), nil, nil, flow, newEnvOps()}
+		newArgs(), nil, nil, flow, newEnvOps(), "", nil}
 }
 
 func (self *Cmd) Execute(
@@ -95,6 +98,65 @@ func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
 	return self
 }
 
+func (self *Cmd) MatchFind(findStr string) bool {
+	if strings.Index(self.help, findStr) >= 0 {
+		return true
+	}
+	if strings.Index(self.cmdLine, findStr) >= 0 {
+		return true
+	}
+	if self.args.MatchFind(findStr) {
+		return true
+	}
+	if self.envOps.MatchFind(findStr) {
+		return true
+	}
+	if strings.Index(string(self.ty), findStr) >= 0 {
+		return true
+	}
+	for _, dep := range self.depends {
+		if strings.Index(dep.OsCmd, findStr) >= 0 {
+			return true
+		}
+		if strings.Index(dep.Reason, findStr) >= 0 {
+			return true
+		}
+	}
+	if len(self.source) == 0 {
+		if strings.Index("builtin", findStr) >= 0 {
+			return true
+		}
+	} else {
+		if strings.Index(self.source, findStr) >= 0 {
+			return true
+		}
+	}
+	if self.quiet && strings.Index("quiet", findStr) >= 0 {
+		return true
+	}
+	if self.ty == CmdTypePower && strings.Index("power", findStr) >= 0 {
+		return true
+	}
+	if self.priority && strings.Index("priority", findStr) >= 0 {
+		return true
+	}
+	return false
+}
+
+func (self *Cmd) SetSource(s string) *Cmd {
+	self.source = s
+	return self
+}
+
+func (self *Cmd) AddDepend(dep string, reason string) *Cmd {
+	self.depends = append(self.depends, Depend{dep, reason})
+	return self
+}
+
+func (self *Cmd) GetDepends() []Depend {
+	return self.depends
+}
+
 func (self *Cmd) SetQuiet() *Cmd {
 	self.quiet = true
 	return self
@@ -103,6 +165,14 @@ func (self *Cmd) SetQuiet() *Cmd {
 func (self *Cmd) SetPriority() *Cmd {
 	self.priority = true
 	return self
+}
+
+func (self *Cmd) Owner() *CmdTree {
+	return self.owner
+}
+
+func (self *Cmd) Source() string {
+	return self.source
 }
 
 func (self *Cmd) Help() string {
@@ -137,12 +207,34 @@ func (self *Cmd) EnvOps() EnvOps {
 	return self.envOps
 }
 
-func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
+func (self *Cmd) Flow() []string {
 	flow, err := shellwords.Parse(self.cmdLine)
 	if err != nil {
 		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
 			self.cmdLine, err))
 	}
+	return flow
+}
+
+func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
+	fr1 := reflect.ValueOf(fun)
+	if self.power != nil {
+		fr2 := reflect.ValueOf(self.power)
+		if fr1.Pointer() == fr2.Pointer() {
+			return true
+		}
+	}
+	if self.normal != nil {
+		fr2 := reflect.ValueOf(self.normal)
+		if fr1.Pointer() == fr2.Pointer() {
+			return true
+		}
+	}
+	return false
+}
+
+func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
+	flow := self.Flow()
 	return cc.Executor.Execute(cc, flow...)
 }
 
@@ -226,4 +318,9 @@ func mayQuoteStr(origin string) string {
 		return "'" + origin + "'"
 	}
 	return origin
+}
+
+type Depend struct {
+	OsCmd  string
+	Reason string
 }

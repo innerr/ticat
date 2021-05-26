@@ -193,7 +193,7 @@ $> ticat mod-w : mod-r
 ...
 ```
 
-We already prepared the code above in a [repo](https://github.com/innerr/quick-start.ticat),
+We already prepared the code above in a [repo](https://github.com/innerr/quick-start-mod.ticat),
 You may need to disable yours to avoid name-conflicting:
 ```
 $> ticat hub.disable mymods
@@ -201,7 +201,7 @@ $> ticat hub.disable mymods
 
 Then fetch and run the demo:
 ```
-$> ticat hub.add innerr/quict-start.ticat
+$> ticat hub.add innerr/quict-start-mod.ticat
 $> ticat mod-w : mod-r
 ...
 ```

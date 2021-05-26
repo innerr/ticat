@@ -38,7 +38,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 		}
 	}
 
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "=", ".", "\t"})
+	root := newCmdTree()
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
@@ -123,7 +123,7 @@ func TestCmdParserParse(t *testing.T) {
 		}
 	}
 
-	root := core.NewCmdTree(&core.CmdTreeStrs{"<root>", ".", ".", "|", "-", "--", "=", ".", "\t"})
+	root := newCmdTree()
 	l2 := root.AddSub("X")
 	l2.AddSub("21", "twenty-one")
 
@@ -178,4 +178,9 @@ func TestCmdParserParse(t *testing.T) {
 	test([]string{"X / {a=V} 21"}, core.ParsedCmd{seg("X", "X.a"), seg("21")})
 	test([]string{"{a=V}{b=V}X{c=V}21{d=V}{e=V}"},
 		core.ParsedCmd{seg("", "a", "b"), seg("X", "X.c"), seg("21", "X.21.d", "X.21.e")})
+}
+
+func newCmdTree() *core.CmdTree {
+	return core.NewCmdTree(
+		&core.CmdTreeStrs{"<root>", ".", ".", "|", ":", "-", "--", "=", ".", "\t"})
 }

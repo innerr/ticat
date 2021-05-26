@@ -118,7 +118,7 @@ func PrintCmdStack(
 			} else {
 				line += "   "
 			}
-			line += GetCmdPath(cmd, strs.PathSep, printRealname)
+			line += cmd.DisplayPath(strs.PathSep, printRealname)
 		}
 		lines.Flow = append(lines.Flow, line)
 		lines.FlowLen = append(lines.FlowLen, len(line))
@@ -195,7 +195,7 @@ func PrintCmdResult(
 	}
 	lines.ResLen = 2
 
-	lines.Cmd = GetCmdPath(cmd, strs.PathSep, env.GetBool("display.mod.realname"))
+	lines.Cmd = cmd.DisplayPath(strs.PathSep, env.GetBool("display.mod.realname"))
 	lines.CmdLen = len(lines.Cmd)
 
 	if currCmdIdx >= len(flow)-1 || !succeeded {
