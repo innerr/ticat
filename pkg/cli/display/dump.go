@@ -11,7 +11,9 @@ import (
 // TODO: clean code
 
 func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, indentSize int) {
+	cc.Screen.Print("--->>>\n")
 	dumpFlow(cc, env, flow, sep, indentSize, 0)
+	cc.Screen.Print("<<<---\n")
 }
 
 func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
@@ -119,7 +121,7 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 	if len(risks.result) != 0 && len(fatals.result) == 0 {
 		for _, it := range risks.result {
 			screen.Print("\n")
-			prt0("<RISK>  '" + it.Key + "'")
+			prt0("<risk>  '" + it.Key + "'")
 			if it.MayReadNotExist || it.MayReadMayWrite {
 				prti("- may-read by:", 7)
 			} else if it.ReadMayWrite {
