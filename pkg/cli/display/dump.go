@@ -92,11 +92,12 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 	return
 }
 
-func DumpEnvOpsCheckResult(screen core.Screen, result []core.EnvOpsCheckResult, sep string) {
+func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvOpsCheckResult, sep string) {
 	if len(result) == 0 {
 		return
 	}
-	screen.Print("--------<unsatisfied env read>--------\n")
+	//printSepTitle(screen, env, "unsatisfied env read")
+	screen.Print("-------=<unsatisfied env read>=-------\n")
 
 	fatals := newEnvOpsCheckResultAgg()
 	risks := newEnvOpsCheckResultAgg()
@@ -235,6 +236,34 @@ func dumpCmd(
 		}
 
 		if !onlyNames && cic != nil {
+			args := cic.Args()
+			argNames := args.Names()
+			if len(argNames) != 0 {
+				prt(1, "- args:")
+			}
+			for _, name := range argNames {
+				val := args.DefVal(name)
+				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
+				prt(2, nameStr+" = "+MayQuoteStr(val))
+			}
+
+			envOps := cic.EnvOps()
+			envOpKeys := envOps.EnvKeys()
+			if len(envOpKeys) != 0 {
+				prt(1, "- env-ops:")
+			}
+			for _, k := range envOpKeys {
+				prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
+			}
+
+			deps := cic.GetDepends()
+			if len(deps) != 0 {
+				prt(1, "- deps:")
+			}
+			for _, dep := range deps {
+				prt(2, dep.OsCmd+" = '"+dep.Reason+"'")
+			}
+
 			if cic.Type() != core.CmdTypeFlow && (cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {
 				line := string(cic.Type())
 				if cic.IsQuiet() {
@@ -246,15 +275,7 @@ func dumpCmd(
 				prt(1, "- cmd-type:")
 				prt(2, line)
 			}
-			if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
-				cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
-				if cic.Type() == core.CmdTypeFlow {
-					prt(1, "- flow:")
-				} else {
-					prt(1, "- executable:")
-				}
-				prt(2, cic.CmdLine())
-			}
+
 			if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
 				prt(1, "- source:")
 				if len(cic.Source()) == 0 {
@@ -263,23 +284,15 @@ func dumpCmd(
 					prt(2, cic.Source())
 				}
 			}
-			envOps := cic.EnvOps()
-			envOpKeys := envOps.EnvKeys()
-			if len(envOpKeys) != 0 {
-				prt(1, "- env-ops:")
-			}
-			for _, k := range envOpKeys {
-				prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
-			}
-			args := cic.Args()
-			argNames := args.Names()
-			if len(argNames) != 0 {
-				prt(1, "- args:")
-			}
-			for _, name := range argNames {
-				val := args.DefVal(name)
-				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
-				prt(2, nameStr+" = "+MayQuoteStr(val))
+
+			if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
+				cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
+				if cic.Type() == core.CmdTypeFlow {
+					prt(1, "- flow:")
+				} else {
+					prt(1, "- executable:")
+				}
+				prt(2, cic.CmdLine())
 			}
 		}
 	}
@@ -570,5 +583,61 @@ func (self *envOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
 			// Discard res.MayWriteCmdsBefore, it's not important
 			self.result[idx] = old
 		}
+	}
+}
+
+func printSepTitle(screen core.Screen, env *core.Env, msg string) {
+	width := env.GetInt("display.width") - 3
+	screen.Print(rpt("-", width-len(msg)) + "<[" + msg + "]\n")
+}
+
+type DependInfo struct {
+	Reason string
+	Cmd    core.ParsedCmd
+}
+type Depends map[string]map[*core.Cmd]DependInfo
+
+func DumpDepends(cc *core.Cli, env *core.Env, flow []core.ParsedCmd) {
+	deps := Depends{}
+	collectDepends(cc, flow, deps)
+	if len(deps) == 0 {
+		return
+	}
+
+	sep := env.Get("strs.cmd-path-sep").Raw
+
+	cc.Screen.Print("\n")
+	//printSepTitle(cc.Screen, env, "")
+	cc.Screen.Print("-------=<depended os commands>=-------\n")
+
+	for osCmd, cmds := range deps {
+		cc.Screen.Print(fmt.Sprintf("\n[%s]\n", osCmd))
+		for _, info := range cmds {
+			cc.Screen.Print(fmt.Sprintf("        '%s'\n", info.Reason))
+			cc.Screen.Print(fmt.Sprintf("            [%s]\n", info.Cmd.DisplayPath(sep, true)))
+		}
+	}
+}
+
+func collectDepends(cc *core.Cli, flow []core.ParsedCmd, res Depends) {
+	for _, it := range flow {
+		cic := it.LastCmd()
+		if cic == nil {
+			continue
+		}
+		deps := cic.GetDepends()
+		for _, dep := range deps {
+			cmds, ok := res[dep.OsCmd]
+			if ok {
+				cmds[cic] = DependInfo{dep.Reason, it}
+			} else {
+				res[dep.OsCmd] = map[*core.Cmd]DependInfo{cic: DependInfo{dep.Reason, it}}
+			}
+		}
+		if cic.Type() != core.CmdTypeFlow {
+			continue
+		}
+		subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
+		collectDepends(cc, subFlow.Cmds, res)
 	}
 }

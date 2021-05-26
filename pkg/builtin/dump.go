@@ -12,7 +12,9 @@ func DumpFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
+	cmds := flow.Cmds[currCmdIdx+1:]
+	display.DumpFlow(cc, env, cmds, cc.Cmds.Strs.PathSep, 4)
+	display.DumpDepends(cc, env, cmds)
 
 	checker := &core.EnvOpsChecker{}
 	result := []core.EnvOpsCheckResult{}
@@ -20,7 +22,7 @@ func DumpFlow(
 
 	if len(result) != 0 {
 		cc.Screen.Print("\n")
-		display.DumpEnvOpsCheckResult(cc.Screen, result, cc.Cmds.Strs.PathSep)
+		display.DumpEnvOpsCheckResult(cc.Screen, env, result, cc.Cmds.Strs.PathSep)
 	}
 
 	flow.Cmds = nil

@@ -81,6 +81,17 @@ func RegMod(
 		}
 	}
 
+	deps := meta.GetSession("deps")
+	if deps == nil {
+		deps = meta.GetSession("dep")
+	}
+	if deps != nil {
+		for _, dep := range deps.Keys() {
+			reason := deps.Get(dep)
+			cmd.AddDepend(dep, reason)
+		}
+	}
+
 	envOps := meta.GetSession("env")
 	if envOps != nil {
 		for _, names := range envOps.Keys() {

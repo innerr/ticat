@@ -37,31 +37,32 @@ type Cmd struct {
 	cmdLine  string
 	envOps   EnvOps
 	source   string
+	depends  []Depend
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypeNormal, false, false,
-		newArgs(), cmd, nil, "", newEnvOps(), ""}
+		newArgs(), cmd, nil, "", newEnvOps(), "", nil}
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypePower, false, false,
-		newArgs(), nil, cmd, "", newEnvOps(), ""}
+		newArgs(), nil, cmd, "", newEnvOps(), "", nil}
 }
 
 func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFile, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps(), ""}
+		newArgs(), nil, nil, cmd, newEnvOps(), "", nil}
 }
 
 func NewDirCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeDir, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps(), ""}
+		newArgs(), nil, nil, cmd, newEnvOps(), "", nil}
 }
 
 func NewFlowCmd(owner *CmdTree, help string, flow string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFlow, false, false,
-		newArgs(), nil, nil, flow, newEnvOps(), ""}
+		newArgs(), nil, nil, flow, newEnvOps(), "", nil}
 }
 
 func (self *Cmd) Execute(
@@ -113,6 +114,14 @@ func (self *Cmd) MatchFind(findStr string) bool {
 	if strings.Index(string(self.ty), findStr) >= 0 {
 		return true
 	}
+	for _, dep := range self.depends {
+		if strings.Index(dep.OsCmd, findStr) >= 0 {
+			return true
+		}
+		if strings.Index(dep.Reason, findStr) >= 0 {
+			return true
+		}
+	}
 	if len(self.source) == 0 {
 		if strings.Index("builtin", findStr) >= 0 {
 			return true
@@ -137,6 +146,15 @@ func (self *Cmd) MatchFind(findStr string) bool {
 func (self *Cmd) SetSource(s string) *Cmd {
 	self.source = s
 	return self
+}
+
+func (self *Cmd) AddDepend(dep string, reason string) *Cmd {
+	self.depends = append(self.depends, Depend{dep, reason})
+	return self
+}
+
+func (self *Cmd) GetDepends() []Depend {
+	return self.depends
 }
 
 func (self *Cmd) SetQuiet() *Cmd {
@@ -300,4 +318,9 @@ func mayQuoteStr(origin string) string {
 		return "'" + origin + "'"
 	}
 	return origin
+}
+
+type Depend struct {
+	OsCmd  string
+	Reason string
 }
