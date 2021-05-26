@@ -8,7 +8,7 @@
 ****-      Full context search
 ****-      Full abbrs supporting. TODO: extra abbrs manage
 ****-      Env framework. TODO: save or load from a tag
------      Log and search
+***--      Log and search
 -----      Command history and search
 ****-  Mod framework
 ****-      Connector framework
@@ -29,13 +29,13 @@
 -----          Background running
 -----  Flow framework
 ***--      Save, edit and execute flow
------      Help and abbrs
------      Executing ad-hot help
+***--      Help and abbrs
+**---      Executing ad-hot help
 -----      Flatten in executing and desc
 -----      Combine mods' props
 -----          Args
 -----          Dependencies
------          Connectors
+****-          Connectors
 *****  Hub framework
 *****      Mod and flow sharing
 *****      Authority control (by git now)
@@ -43,11 +43,8 @@
 
 ## Risks
 ```
-* Mods-ticat interacting, now is stdin/stderr
-    - A mod can't easily read from tty
-    - Stderr is occupied
-    - How about ssh login?
 * The connector protocal is not stable now, need a best practice
-    - May need: read|write-on-of(key1, key1)
+    - May need: write-one-on-of(key1, key1)
 * Concurrent support?
+* Command path or abbrs confliction
 ```

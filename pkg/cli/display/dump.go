@@ -79,9 +79,9 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 			line += MayQuoteStr(v)
 			if printDef {
 				if defV != v {
-					line += " (def=" + MayQuoteStr(defV) + ")"
+					line += "(def=" + MayQuoteStr(defV) + ")"
 				} else {
-					line += " (=def)"
+					line += "(=def)"
 				}
 			}
 		} else {
@@ -90,6 +90,73 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 		output = append(output, line)
 	}
 	return
+}
+
+func DumpEnvOpsCheckResult(screen core.Screen, result []core.EnvOpsCheckResult, sep string) {
+	if len(result) == 0 {
+		return
+	}
+	screen.Print("--------<unsatisfied env read>--------\n")
+
+	fatals := newEnvOpsCheckResultAgg()
+	risks := newEnvOpsCheckResultAgg()
+	for _, it := range result {
+		if it.ReadNotExist {
+			fatals.Append(it)
+		} else {
+			risks.Append(it)
+		}
+	}
+
+	prt0 := func(msg string) {
+		screen.Print(msg + "\n")
+	}
+	prti := func(msg string, indent int) {
+		screen.Print(strings.Repeat(" ", indent) + msg + "\n")
+	}
+
+	if len(risks.result) != 0 && len(fatals.result) == 0 {
+		for _, it := range risks.result {
+			screen.Print("\n")
+			prt0("<RISK>  '" + it.Key + "'")
+			if it.MayReadNotExist || it.MayReadMayWrite {
+				prti("- may-read by:", 7)
+			} else if it.ReadMayWrite {
+				prti("- read by:", 7)
+			}
+			for _, cmd := range it.Cmds {
+				prti("["+cmd+"]", 12)
+			}
+			if len(it.MayWriteCmdsBefore) != 0 && (it.ReadMayWrite || it.MayReadMayWrite) {
+				prti("- but may not provided by:", 7)
+				for _, cmd := range it.MayWriteCmdsBefore {
+					prti("["+cmd.Matched.DisplayPath(sep, true)+"]", 12)
+				}
+			} else {
+				if it.MayReadNotExist {
+					prti("- but not provided", 7)
+				} else {
+					prti("- but may not provided", 7)
+				}
+			}
+		}
+	}
+
+	if len(fatals.result) != 0 {
+		for _, it := range fatals.result {
+			screen.Print("\n")
+			prt0("<FATAL> '" + it.Key + "'")
+			prti("- read by:", 7)
+			for _, cmd := range it.Cmds {
+				prti("["+cmd+"]", 12)
+			}
+			prti("- but not provided", 7)
+		}
+
+		// User should know how to search commands, so no need to display the hint
+		// screen.Print("\n<HINT>   to find key provider:\n")
+		// prti("- ticat cmds.ls <key> write <other-find-str> <more-find-str> ..", 7)
+	}
 }
 
 func dumpEnvAbbrs(
@@ -168,32 +235,38 @@ func dumpCmd(
 		}
 
 		if !onlyNames && cic != nil {
-			line := string(cic.Type())
-			if cic.IsQuiet() {
-				line += " (quiet)"
-			}
-			if cic.IsPriority() {
-				line += " (priority)"
-			}
-			if cic.Type() != core.CmdTypeNormal || cic.IsQuiet() {
+			if cic.Type() != core.CmdTypeFlow && (cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {
+				line := string(cic.Type())
+				if cic.IsQuiet() {
+					line += " (quiet)"
+				}
+				if cic.IsPriority() {
+					line += " (priority)"
+				}
 				prt(1, "- cmd-type:")
 				prt(2, line)
 			}
 			if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
 				cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
-				prt(1, "- executable:")
+				if cic.Type() == core.CmdTypeFlow {
+					prt(1, "- flow:")
+				} else {
+					prt(1, "- executable:")
+				}
 				prt(2, cic.CmdLine())
 			}
-			prt(1, "- source:")
-			if len(cic.Source()) == 0 {
-				prt(2, "builtin")
-			} else {
-				prt(2, cic.Source())
+			if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
+				prt(1, "- source:")
+				if len(cic.Source()) == 0 {
+					prt(2, "builtin")
+				} else {
+					prt(2, cic.Source())
+				}
 			}
 			envOps := cic.EnvOps()
 			envOpKeys := envOps.EnvKeys()
 			if len(envOpKeys) != 0 {
-				prt(1, "- env-ops: ")
+				prt(1, "- env-ops:")
 			}
 			for _, k := range envOpKeys {
 				prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
@@ -253,7 +326,7 @@ func dumpFlowCmd(
 	if cic == nil {
 		return
 	}
-	name := GetCmdPath(parsedCmd, sep, true)
+	name := parsedCmd.DisplayPath(sep, true)
 	prt(0, "["+name+"]")
 	if cic != nil && len(cic.Help()) != 0 {
 		prt(1, " '"+cic.Help()+"'")
@@ -288,7 +361,7 @@ func dumpFlowCmd(
 	envOps := cic.EnvOps()
 	envOpKeys := envOps.EnvKeys()
 	if len(envOpKeys) != 0 {
-		prt(1, "- env-ops: ")
+		prt(1, "- env-ops:")
 	}
 	for _, k := range envOpKeys {
 		prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
@@ -309,14 +382,18 @@ func dumpFlowCmd(
 		}
 	}
 
-	if len(cic.Source()) != 0 {
+	if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
 		prt(1, "- source:")
 		prt(2, cic.Source())
 	}
 
 	if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
 		cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
-		prt(1, "- executable:")
+		if cic.Type() == core.CmdTypeFlow {
+			prt(1, "- flow:")
+		} else {
+			prt(1, "- executable:")
+		}
 		prt(2, cic.CmdLine())
 		if cic.Type() == core.CmdTypeFlow {
 			prt(2, "--->>>")
@@ -403,7 +480,7 @@ func dumpEnvLayer(
 func dumpEnvOps(ops []uint, sep string) (str string) {
 	var strs []string
 	for _, op := range ops {
-		strs = append(strs, dumpEnvOp(op))
+		strs = append(strs, core.EnvOpStr(op))
 	}
 	return strings.Join(strs, sep)
 }
@@ -429,36 +506,6 @@ func envDisplayKey(key string, val *core.ParsedEnvVal, sep string) string {
 	return strings.Join(strs, sep)
 }
 
-func dumpEnvOp(op uint) (str string) {
-	switch op {
-	case core.EnvOpTypeWrite:
-		str = "write"
-	case core.EnvOpTypeMayWrite:
-		str = "may-write"
-	case core.EnvOpTypeRead:
-		str = "read"
-	case core.EnvOpTypeMayRead:
-		str = "may-read"
-	default:
-	}
-	return
-}
-
-func GetCmdPath(cmd core.ParsedCmd, sep string, printRealname bool) string {
-	var path []string
-	for _, seg := range cmd {
-		if seg.Cmd.Cmd != nil {
-			name := seg.Cmd.Name
-			realname := seg.Cmd.Cmd.Name()
-			if printRealname && name != realname {
-				name += "(=" + realname + ")"
-			}
-			path = append(path, name)
-		}
-	}
-	return strings.Join(path, sep)
-}
-
 func MayQuoteStr(origin string) string {
 	trimed := strings.TrimSpace(origin)
 	if len(trimed) == 0 || len(trimed) != len(origin) {
@@ -476,4 +523,52 @@ func autoPadNewLine(padding string, msg string) string {
 	hiddenPad := rpt(" ", len(msg)-len(msgNoPad))
 	msg = strings.ReplaceAll(msg, "\n", "\n"+padding+hiddenPad)
 	return msg
+}
+
+type envOpsCheckResult struct {
+	Cmds               []string
+	Key                string
+	MayWriteCmdsBefore []core.MayWriteCmd
+	ReadMayWrite       bool
+	MayReadMayWrite    bool
+	MayReadNotExist    bool
+	ReadNotExist       bool
+	CmdMap             map[string]bool
+}
+
+type envOpsCheckResultAgg struct {
+	result []envOpsCheckResult
+	revIdx map[string]int
+}
+
+func newEnvOpsCheckResultAgg() *envOpsCheckResultAgg {
+	return &envOpsCheckResultAgg{nil, map[string]int{}}
+}
+
+func (self *envOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
+	hashKey := fmt.Sprintf("%s_%v_%v_%v_%v", res.Key, res.ReadMayWrite,
+		res.MayReadMayWrite, res.MayReadNotExist, res.ReadNotExist)
+	idx, ok := self.revIdx[hashKey]
+	if !ok {
+		idx = len(self.result)
+		self.result = append(self.result, envOpsCheckResult{
+			[]string{res.CmdDisplayPath},
+			res.Key,
+			res.MayWriteCmdsBefore,
+			res.ReadMayWrite,
+			res.MayReadMayWrite,
+			res.MayReadNotExist,
+			res.ReadNotExist,
+			map[string]bool{res.CmdDisplayPath: true},
+		})
+		self.revIdx[hashKey] = idx
+	} else {
+		old := self.result[idx]
+		if !old.CmdMap[res.CmdDisplayPath] {
+			old.Cmds = append(old.Cmds, res.CmdDisplayPath)
+			old.CmdMap[res.CmdDisplayPath] = true
+			// Discard res.MayWriteCmdsBefore, it's not important
+			self.result[idx] = old
+		}
+	}
 }

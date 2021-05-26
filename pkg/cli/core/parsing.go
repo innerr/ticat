@@ -72,6 +72,21 @@ func (self ParsedCmd) LastCmd() (cmd *Cmd) {
 	return last.Cmd()
 }
 
+func (self ParsedCmd) DisplayPath(sep string, displayRealname bool) string {
+	var path []string
+	for _, seg := range self {
+		if seg.Cmd.Cmd != nil {
+			name := seg.Cmd.Name
+			realname := seg.Cmd.Cmd.Name()
+			if displayRealname && name != realname {
+				name += "(=" + realname + ")"
+			}
+			path = append(path, name)
+		}
+	}
+	return strings.Join(path, sep)
+}
+
 func (self ParsedCmd) TotallyEmpty() bool {
 	for _, seg := range self {
 		cmd := seg.Cmd.Cmd

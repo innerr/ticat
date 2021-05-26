@@ -44,7 +44,7 @@ func loadLocalMods(
 			return nil
 		}
 		if strings.HasSuffix(path, flowExt) {
-			loadFlow(cc, root, path, flowExt)
+			loadFlow(cc, root, path, flowExt, source)
 			return nil
 		}
 		ext := filepath.Ext(path)

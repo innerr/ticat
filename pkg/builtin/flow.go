@@ -96,13 +96,15 @@ func SaveFlow(
 		}
 	}
 
+	width := env.GetInt("display.width")
+
 	w := bytes.NewBuffer(nil)
 	flow.RmLeadingCmds(1)
 	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
 	data := w.String()
-	cc.Screen.Print(strings.Repeat("-", 80) + "\n")
+	cc.Screen.Print(strings.Repeat("-", width) + "\n")
 	cc.Screen.Print(data)
-	cc.Screen.Print(strings.Repeat("-", 80) + "\n")
+	cc.Screen.Print(strings.Repeat("-", width) + "\n")
 	cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
 	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
 
@@ -138,17 +140,17 @@ func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if len(root) == 0 {
 		panic(fmt.Errorf("[LoadFlows] env 'sys.paths.flows' is empty"))
 	}
-	loadFlowsFromDir(root, cc, env)
+	loadFlowsFromDir(root, cc, env, root)
 	return true
 }
 
 func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	root := argv.GetRaw("path")
-	loadFlowsFromDir(root, cc, env)
+	loadFlowsFromDir(root, cc, env, root)
 	return true
 }
 
-func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env) bool {
+func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) bool {
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
@@ -175,13 +177,13 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env) bool {
 		if !strings.HasSuffix(path, flowExt) {
 			return nil
 		}
-		loadFlow(cc, root, path, flowExt)
+		loadFlow(cc, root, path, flowExt, source)
 		return nil
 	})
 	return true
 }
 
-func loadFlow(cc *core.Cli, root string, path string, flowExt string) {
+func loadFlow(cc *core.Cli, root string, path string, flowExt string, source string) {
 	flowStr, help, abbrsStr := flow_file.LoadFlowFile(path)
 
 	pathSep := cc.Cmds.Strs.PathSep
@@ -202,15 +204,7 @@ func loadFlow(cc *core.Cli, root string, path string, flowExt string) {
 		}
 	}
 
-	/*
-		if len(help) == 0 {
-			selfName := cc.GlobalEnv.GetRaw("strs.self-name")
-			help = fmt.Sprintf("(to add help): %s flow.set-help-str %s <help-str>",
-				selfName, cmdPathStr)
-		}
-	*/
-
-	flow.RegFlowCmd(flowStr, help)
+	flow.RegFlowCmd(flowStr, help).SetSource(source)
 }
 
 func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.Env) {

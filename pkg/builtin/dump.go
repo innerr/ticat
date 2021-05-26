@@ -13,6 +13,16 @@ func DumpFlow(
 	currCmdIdx int) (int, bool) {
 
 	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4)
+
+	checker := &core.EnvOpsChecker{}
+	result := []core.EnvOpsCheckResult{}
+	core.CheckEnvOps(cc, flow, env, checker, false, &result)
+
+	if len(result) != 0 {
+		cc.Screen.Print("\n")
+		display.DumpEnvOpsCheckResult(cc.Screen, result, cc.Cmds.Strs.PathSep)
+	}
+
 	flow.Cmds = nil
 	return 0, true
 }
@@ -48,17 +58,19 @@ func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
-	str1 := argv.GetRaw("1st-str")
-	if len(str1) != 0 {
-		findStrs = append(findStrs, str1)
+	names := []string{
+		"1st-str",
+		"2nd-str",
+		"3rd-str",
+		"4th-str",
+		"5th-str",
+		"6th-str",
 	}
-	str2 := argv.GetRaw("2rd-str")
-	if len(str2) != 0 {
-		findStrs = append(findStrs, str2)
-	}
-	str3 := argv.GetRaw("3th-str")
-	if len(str3) != 0 {
-		findStrs = append(findStrs, str3)
+	for _, name := range names {
+		val := argv.GetRaw(name)
+		if len(val) != 0 {
+			findStrs = append(findStrs, val)
+		}
 	}
 	return
 }

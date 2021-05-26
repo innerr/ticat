@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/mattn/go-shellwords"
@@ -148,6 +149,10 @@ func (self *Cmd) SetPriority() *Cmd {
 	return self
 }
 
+func (self *Cmd) Owner() *CmdTree {
+	return self.owner
+}
+
 func (self *Cmd) Source() string {
 	return self.source
 }
@@ -191,6 +196,23 @@ func (self *Cmd) Flow() []string {
 			self.cmdLine, err))
 	}
 	return flow
+}
+
+func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
+	fr1 := reflect.ValueOf(fun)
+	if self.power != nil {
+		fr2 := reflect.ValueOf(self.power)
+		if fr1.Pointer() == fr2.Pointer() {
+			return true
+		}
+	}
+	if self.normal != nil {
+		fr2 := reflect.ValueOf(self.normal)
+		if fr1.Pointer() == fr2.Pointer() {
+			return true
+		}
+	}
+	return false
 }
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
