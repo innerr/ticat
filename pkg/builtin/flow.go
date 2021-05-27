@@ -22,6 +22,8 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		panic(fmt.Errorf("[ListFlows] env 'sys.paths.flows' is empty"))
 	}
 
+	findStrs := getFindStrsFromArgv(argv)
+
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if path == root {
 			return nil
@@ -29,9 +31,39 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		if !strings.HasSuffix(path, flowExt) {
 			return nil
 		}
+
 		cmdPath := getCmdPath(path, flowExt)
+		flowStr, help, abbrsStr := flow_file.LoadFlowFile(path)
+
+		matched := true
+		for _, findStr := range findStrs {
+			if len(findStr) == 0 {
+				continue
+			}
+			if strings.Index(cmdPath, findStr) < 0 &&
+				strings.Index(help, findStr) < 0 &&
+				strings.Index(abbrsStr, findStr) < 0 &&
+				strings.Index(flowStr, findStr) < 0 {
+				matched = false
+				break
+			}
+		}
+		if !matched {
+			return nil
+		}
+
 		cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
-		cc.Screen.Print(fmt.Sprintf("    %s\n", path))
+		if len(help) != 0 {
+			cc.Screen.Print(fmt.Sprintf("      '%s'\n", help))
+		}
+		if len(abbrsStr) != 0 {
+			cc.Screen.Print("    - abbrs:\n")
+			cc.Screen.Print(fmt.Sprintf("        %s\n", abbrsStr))
+		}
+		cc.Screen.Print("    - flow:\n")
+		cc.Screen.Print(fmt.Sprintf("        %s\n", flowStr))
+		cc.Screen.Print("    - executable:\n")
+		cc.Screen.Print(fmt.Sprintf("        %s\n", path))
 		return nil
 	})
 	return true
@@ -184,6 +216,24 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 }
 
 func loadFlow(cc *core.Cli, root string, path string, flowExt string, source string) {
+	var cmdPathStr string
+	defer func() {
+		// TODO: configurable display
+		if err := recover(); err != nil {
+			cc.Screen.Error("======================================\n\n")
+			cc.Screen.Error("[ERR] flow loading failed:\n")
+			if len(cmdPathStr) != 0 {
+				cc.Screen.Error("    - cmd:\n")
+				cc.Screen.Error(fmt.Sprintf("        %s\n", cmdPathStr))
+			}
+			cc.Screen.Error("    - source:\n")
+			cc.Screen.Error(fmt.Sprintf("        %s\n", source))
+			cc.Screen.Error("    - error:\n")
+			cc.Screen.Error(fmt.Sprintf("        %s\n", err.(error).Error()))
+			cc.Screen.Error("\n======================================\n\n")
+		}
+	}()
+
 	flowStr, help, abbrsStr := flow_file.LoadFlowFile(path)
 
 	pathSep := cc.Cmds.Strs.PathSep
@@ -194,7 +244,7 @@ func loadFlow(cc *core.Cli, root string, path string, flowExt string, source str
 		abbrs = append(abbrs, abbrList)
 	}
 
-	cmdPathStr := getCmdPath(path, flowExt)
+	cmdPathStr = getCmdPath(path, flowExt)
 	cmdPath := strings.Split(cmdPathStr, pathSep)
 	flow := cc.Cmds
 	for i, cmd := range cmdPath {

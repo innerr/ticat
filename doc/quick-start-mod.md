@@ -46,7 +46,7 @@ It's a little bit like unix-pipe `|`, but different:
 
 ## Create a module
 In a empty dir (say the path is `mymods`), create a bash script `mod-1.bash`:
-```bash
+```
 # skip the first special arg
 shift
 
@@ -71,12 +71,12 @@ The `args` section defines the arg-names and default values.
 Done! you just wrote a ticat module.
 
 Add dir `mymods` to ticat so it could find the module:
-```bash
+```
 $> ticat hub.add.local path=mymods
 ```
 
 Let's run it:
-```bash
+```
 $> ticat mod-1
 Got: name=John, age=unkown
 $> ticat mod-1 age=35
@@ -87,7 +87,7 @@ Got: name=Alex, age=6
 
 ## Create more modules and put them working together
 Create a new module `mod-w.bash` in the same dir:
-```bash
+```
 # get env file path from the first special arg
 env=$1/env
 shift
@@ -184,11 +184,11 @@ When we run `mod-r` without `mod-w`, there will be an error.
 Push the dir `mymods` to github as a repo,
 let's say your github id is `aCoolName`,
 tell your mates to add your repo:
-```bash
+```
 $> ticat hub.add aCoolName/mymods
 ```
 Then they could use the modules you just wrote:
-```bash
+```
 $> ticat mod-w : mod-r
 ...
 ```

@@ -126,11 +126,7 @@ func (self *Executor) executeCmd(
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 	if stackLines.Display {
 		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
-	}
-
-	if stackLines.Display && env.GetBool("sys.step-by-step") {
-		cc.Screen.Print("[confirm] press enter to run")
-		utils.UserConfirm()
+		tryDelayAndStepByStep(cc, env)
 	}
 
 	last := cmd[len(cmd)-1].Cmd.Cmd
@@ -256,8 +252,13 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	last := flow.Cmds[0].LastCmd()
 	allows := []interface{}{
 		builtin.SaveFlow,
-		builtin.DumpFlow,
 		builtin.GlobalHelp,
+		builtin.DumpFlowAll,
+		builtin.DumpFlowAllSimple,
+		builtin.DumpFlow,
+		builtin.DumpFlowSimple,
+		builtin.DumpFlowDepends,
+		builtin.DumpFlowEnvOpsCheckResult,
 	}
 	for _, allow := range allows {
 		if last.IsTheSameFunc(allow) {
@@ -308,5 +309,20 @@ func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
 		for _, seg := range strings.Split(k, sep) {
 			curr = curr.GetOrAddSub(seg)
 		}
+	}
+}
+
+func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) {
+	delaySec := env.GetInt("sys.execute-delay-sec")
+	if delaySec > 0 {
+		for i := 0; i < delaySec; i++ {
+			time.Sleep(time.Second)
+			cc.Screen.Print(".")
+		}
+		cc.Screen.Print("\n")
+	}
+	if env.GetBool("sys.step-by-step") {
+		cc.Screen.Print("[confirm] press enter to run")
+		utils.UserConfirm()
 	}
 }

@@ -14,8 +14,7 @@
 ****-      Connector framework
 ***--      Args supporting. TODO: free args
 ****-      Mod-ticat interacting
------      Dependencies checking
------      Mod definition: map env-val to arg
+***--      Dependencies checking
 *****      Support mod types:
 *****          Builtin
 *****          File by ext: python, golang

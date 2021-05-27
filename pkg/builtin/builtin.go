@@ -4,6 +4,8 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+// TODO: register the env kvs these commands will modify
+
 func RegisterCmds(cmds *core.CmdTree) {
 	RegisterExecutorCmds(cmds)
 	RegisterEnvCmds(cmds)
@@ -28,9 +30,34 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"find anything with given string")
 	addFindStrArgs(find)
 
-	cmds.AddSub("desc", "d", "D").
-		RegPowerCmd(DumpFlow,
+	desc := cmds.AddSub("desc", "d", "D").
+		RegPowerCmd(DumpFlowAll,
 			"desc the flow about to execute").
+		SetQuiet().
+		SetPriority()
+	desc.AddSub("lite", "simple", "sim", "s", "S").
+		RegPowerCmd(DumpFlowAllSimple,
+			"desc the flow about to execute in lite style").
+		SetQuiet().
+		SetPriority()
+	descFlow := desc.AddSub("flow", "f", "F").
+		RegPowerCmd(DumpFlow,
+			"desc the flow execution").
+		SetQuiet().
+		SetPriority()
+	descFlow.AddSub("lite", "simple", "sim", "s", "S").
+		RegPowerCmd(DumpFlowSimple,
+			"desc the flow execution in lite style").
+		SetQuiet().
+		SetPriority()
+	desc.AddSub("dependencies", "depends", "depend", "dep", "d", "D").
+		RegPowerCmd(DumpFlowDepends,
+			"list the depended os-commands of the flow").
+		SetQuiet().
+		SetPriority()
+	desc.AddSub("env-ops-check", "env-ops", "env-op", "env", "ops", "op", "e", "E").
+		RegPowerCmd(DumpFlowEnvOpsCheckResult,
+			"desc the env-ops check result of the flow").
 		SetQuiet().
 		SetPriority()
 
@@ -40,7 +67,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	tree.RegCmd(DumpCmdTree,
 		"list builtin and loaded cmds").
 		AddArg("path", "", "p", "P")
-	tree.AddSub("simple", "s", "S").
+	tree.AddSub("lite", "simple", "sim", "s", "S").
 		RegCmd(DumpCmdTreeSimple,
 			"list builtin and loaded cmds, only names").
 		AddArg("path", "", "p", "P")
@@ -73,9 +100,10 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 			"remove a saved flow").
 		AddArg("cmd-path", "", "path", "p", "P")
 
-	flow.AddSub("list-local", "list", "ls").
+	flowList := flow.AddSub("list-local", "list", "ls").
 		RegCmd(ListFlows,
-			"list local saved but unsynced (to any repo) flows")
+			"list local saved but unlinked (to any repo) flows")
+	addFindStrArgs(flowList)
 
 	flow.AddSub("load", "l", "L").
 		RegCmd(LoadFlowsFromDir,
@@ -270,16 +298,20 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		AddArg("message", "", "msg", "m", "M")
 
 	step := cmds.AddSub("step-by-step", "step", "s", "S")
-
 	step.AddSub("on", "yes", "y", "Y", "1").
 		RegCmd(DbgStepOn,
 			"enable step by step").
 		SetQuiet()
-
 	step.AddSub("off", "no", "n", "N", "0").
 		RegCmd(DbgStepOff,
 			"disable step by step").
 		SetQuiet()
+
+	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
+		RegCmd(DbgDelayExecute,
+			"wait for a while before executing a cmd").
+		SetQuiet().
+		AddArg("seconds", "5", "second", "sec", "s", "S")
 
 	cmds.AddSub("exec").
 		RegCmd(DbgExecBash,
