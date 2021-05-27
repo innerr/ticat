@@ -2,11 +2,11 @@
 
 ## Ticat will load modules from hub, aka, local dirs
 We could add local dir to **ticat** by:
-```bash
+```
 $> ticat hub.add.local path=<dir-path>
 ```
 Or add a git repo, **ticat** will do "git clone" to local dir:
-```bash
+```
 $> ticat hub.add.local path=<dir-path>
 ```
 
@@ -58,7 +58,7 @@ The `[dep]` section defines what os-command will be called in the command's code
 The `[args]` section defines the command's args with order.
 Abbrs definition are allowed, seperate them with "|".
 
-The `[env]` section defines witch keys will read or write in the command's code.
+The `[env]` section defines which keys will read or write in the command's code.
 "env-op" value could be: "read", "write", "may-read", "may-write".
 The sequence of "env-op" could be one or more value with orders, seperated by ":".
 Abbrs definition are also allowed in every path segment of the keys.
@@ -100,7 +100,7 @@ What will happend:
 * "tidb" will be registered, because of "tidb.ticat"
 
 Usage:
-```bash
+```
 ## This will do nothing
 $> ticat tidb
 ## This will do nothing either, we use abbr to call "tidb"

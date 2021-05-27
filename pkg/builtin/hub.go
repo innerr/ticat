@@ -164,6 +164,7 @@ func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env) {
 	meta.WriteReposInfoFile(metaPath, rest, fieldSep)
 }
 
+// TODO: support partly update, not all
 func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	metaPath := getReposInfoPath(env, "UpdateHub")
 	listFileName := env.GetRaw("strs.repos-file-name")

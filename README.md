@@ -235,7 +235,7 @@ An env key-value being read before write will cause a `FATAL` error,
     - `ticat cmds.tree hub`: manage the git repo list we added.
         - `ticat hub.init`: add default repo
         - `ticat hub.add <repo-addr>`
-    - `ticat cmds.tree cmds`: manage all commands we could call. abbr: `c.t`
+    - `ticat cmds.tree cmds`: manage all commands we could call. abbr: `c`
         - `ticat cmd <command>`: show info of only this command, no sub tree.
         - `ticat cmds.tree.simple <command>`: short and clean display in tree form. abbr: `c.t.s`
         - `ticat cmds.list.simple <command>`: short and clean display in list. abbr: `c.l.s`
@@ -253,6 +253,7 @@ An env key-value being read before write will cause a `FATAL` error,
 * [Usage examples](./doc/usage)
     - [Basic: build, run commands](./doc/usage/basic.md)
     - [Hub: get modules and flows from others](./doc/usage/hub.md)
+    - [Use commands](./doc/usage/cmds.md)
     - [Manipulate env key-values](./doc/usage/env.md)
     - [Use flows](./doc/usage/flow.md)
     - [Use abbrs/alias](./doc/usage/abbr.md)
@@ -266,7 +267,7 @@ An env key-value being read before write will cause a `FATAL` error,
     - (this is only **ticat**'s spec, a repo provides modules and flows will have it's own spec)
     - [Hub: list/add/disable/enable/purge](./doc/spec/hub.md)
     - [Command sequence](./doc/spec/seq.md)
-    - [Command tree](./doc/spec/cmd.md)
+    - [Command tree](./doc/spec/cmds.md)
     - [Env: list/get/set/save](./doc/spec/env.md)
     - [Abbrs of commands, env-keys and flows](./doc/spec/abbr.md)
     - [Flow: list/save/edit](./doc/spec/flow.md)

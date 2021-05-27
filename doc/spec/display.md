@@ -90,7 +90,7 @@ $> ticat q : dummy : dummy
 ```
 
 The commands under "verb"(alias: v) is convenient to ajust the amount:
-```bash
+```
 $> ticat verb.increase : dummy : dummy
 $> ticat v.+ : dummy : dummy
 $> ticat v.+ 2 : dummy : dummy

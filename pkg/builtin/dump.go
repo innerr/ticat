@@ -141,7 +141,8 @@ func DumpCmdTreeSimple(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 }
 
 func DumpCmdListSimple(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, true, 4, true, true, argv.GetRaw("path"))
+	display.DumpCmds(cc, true, 4, true, true, argv.GetRaw("path"),
+		getFindStrsFromArgv(argv)...)
 	return true
 }
 

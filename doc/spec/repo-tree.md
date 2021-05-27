@@ -2,7 +2,7 @@
 
 ## A git repo in ticat
 Any repo could added to **ticat** by:
-```bash
+```
 $> ticat hub.add <repo-address>
 ```
 

@@ -20,11 +20,7 @@ Pass arg(s) to a command, `sleep` will pause for `3s` then wake up:
 $> ticat sleep 3s
 .zzZZ ... *\O/*
 ```
-Defferent ways to pass arg(s) to a command:
-```
-$> ticat sleep duration=3s
-$> ticat sleep {duration=3s}
-```
+
 Use abbrs(or alias) to call a command:
 ```
 $> ticat slp 3s
@@ -154,7 +150,16 @@ dummy cmd here
 The boxes indicate the running command by `>>`
 
 ### Discribe a command sequence
-```bash
+```
 $> ticat dummy : sleep 3s : dummy : desc
-(display the executing plan, not execute)
+--->>>
+[dummy]
+     'dummy cmd for testing'
+[sleep]
+     'sleep for specific duration'
+    - args:
+        duration = 3s(def=1s)
+[dummy]
+     'dummy cmd for testing'
+<<<---
 ```
