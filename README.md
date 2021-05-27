@@ -229,7 +229,7 @@ An env key-value being read before write will cause a `FATAL` error,
 ## Cheat sheet
 * Use `:` to concate commands into sequence, will be execute one by one
 * Use `{key=value}` to modify env key-values
-* Abbreviations display like `real-name|abbr-name|abbr-name`
+* Abbrs are for reducing memorization, they display in the form of `real-name|abbr-name`
 * Use `ticat find <str> <str> ..` to locate the command we needed, the amount will be huge.
 * `ticat cmds.tree <command>` shows a command sub-tree. the sub-trees below are important:
     - `ticat cmds.tree hub`: manage the git repo list we added.
@@ -247,13 +247,13 @@ An env key-value being read before write will cause a `FATAL` error,
         - `desc.simple`: give a lite description. abbr: `d.s`
 
 
-## All we need to know
+## User manual
 * [Usage examples](./doc/usage)
     - [Basic: build, run commands](./doc/usage/basic.md)
     - [Hub: get modules and flows from others](./doc/usage/hub.md)
     - [Manipulate env key-values](./doc/usage/env.md)
     - [Use flows](./doc/usage/flow.md)
-    - [Use abbreviations / alias](./doc/usage/abbr.md)
+    - [Use abbrs/alias](./doc/usage/abbr.md)
 
 
 ## Module developing zone
@@ -261,6 +261,7 @@ An env key-value being read before write will cause a `FATAL` error,
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat)
 * [How modules work together (with graphics)](./doc/concept-graphics.md)
 * [Specifications](./doc/spec)
+    - (this is only **ticat**'s spec, a repo provides modules and flows will have it's own spec)
     - [Hub: list/add/disable/enable/purge](./doc/spec/hub.md)
     - [Command sequence](./doc/spec/seq.md)
     - [Command tree](./doc/spec/cmd.md)
@@ -273,7 +274,6 @@ An env key-value being read before write will cause a `FATAL` error,
     - [Repo tree](./doc/spec/repo-tree.md)
     - [Module: env and args](./doc/spec/mod-interact.md)
     - [Module: meta file](./doc/spec/mod-meta.md)
-    - (this is only **ticat**'s spec, a repo provides modules and flows will have it's own spec)
 
 
 ## Inside **ticat**
