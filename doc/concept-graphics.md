@@ -1,9 +1,7 @@
-# ticat
-A casual command line components platform
+# Ticat: workflow automating in unix-pipe style
 
-## Goal: workflow automating in unix-pipe style
 
-### The problem: workflow are complicated with multi-demension requirements
+## The problem: workflow are complicated with multi-demension requirements
 Let's take a distributed system as example:
 ```
  ┌───────────────────────┐           ┌────────────┐
@@ -13,6 +11,7 @@ Let's take a distributed system as example:
                  └───────────────────┤ Developers │
                                      └────────────┘
 ```
+
 
 During time, the system grows big, many peripheral tools are developed.
 The intergration jobs become complicated to adapt the multi-dimension requirements.
@@ -38,14 +37,17 @@ The intergration jobs become complicated to adapt the multi-dimension requiremen
            └──────────────────────────────┘
 ```
 
-### The cure of complication: break down by orthogonal dimensions
+
+## The cure of complication: break down by orthogonal dimensions
 The unix philosophy inspired us, `Simple parts that work together`, like the unix-pipe:
-```bash
+```
 $> cat my.log | grep ERR | awk -F 'reason' '{print $2}'
 ```
 
-### **Ticat**: makes sure the parts can be easily built
+
+## **Ticat**: makes sure the parts can be easily built
 The ad-hot feature assembling give us the most flexable yet powerful controlling.
+
 
 To apply this, in **ticat** we provide a easy way to wrap any existed tools into components(alias: modules):
 ```
@@ -72,10 +74,12 @@ To apply this, in **ticat** we provide a easy way to wrap any existed tools into
  └─────────────────────────────────────────────────────┘
 ```
 
-### **Ticat**: easily share the parts, and share the assembled workflows
+
+## **Ticat**: easily share the parts, and share the assembled workflows
 Sometimes the pipelined-command could be long,
 in **ticat** we could save the pipeline(alias: flow) in a heartbeat,
 then the saved one could be used in other flow as a new command.
+
 
 And the most important, we could easily distribute the code so our workmate could get and run it in no time.
 ```
@@ -103,7 +107,8 @@ And the most important, we could easily distribute the code so our workmate coul
     └─────────────────┘                └──────────────────┘
 ```
 
-### How these parts could work together in **ticat**?
+
+## How these parts could work together in **ticat**?
 In a unix-pipeline,
 the up-stream command and the down-stream command shared an anonymous pipe,
 the former is data provider and the latter is consumer.
@@ -138,7 +143,8 @@ A module need to register which keys it wants to read or write,
  └─────────────────────────────┘
 ```
 
-### Practice **ticat** with zero cost
+
+## Practice **ticat** with zero cost
 Any existed tools can be wrapped into modules in a small cost,
 so putting **ticat** into use is quick and easy.
 
@@ -164,4 +170,3 @@ then gradually use it to improve the whole system.
            │  Intergration Tools    │
            └────────────────────────┘
 ```
-

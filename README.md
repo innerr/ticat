@@ -6,12 +6,12 @@ Workflow automating in unix-pipe style
 
 ## Quick start
 Suppose we are working for a distributed system,
-Let's run a demo to see how **ticat** works.
+let's run a demo to see how **ticat** works.
 Type and execute the commands we memtioned below.
 
 
 ## Build
-Build **ticat**: (`golang` is needed)
+(`golang` is needed)
 ```
 $> git clone https://github.com/innerr/ticat
 $> cd ticat
@@ -29,7 +29,7 @@ $> ticat hub.add innerr/quick-start-usage.ticat
 ```
 
 
-Find out what we got by search the repo name.
+Find out what we got by search the repo's name.
 `@ready` is a conventional tag use for ready-to-go commands:
 ```
 $> ticat find quick-start-usage @ready
@@ -61,7 +61,7 @@ Try again:
 ```
 $> ticat {cluster.port=4000} bench
 ```
-Succeeded, we ran a benchmark with a small dataset(scale=1):
+Succeeded, we ran a benchmark with a small dataset (scale=1):
 ```
 ┌───────────────────┐
 │ stack-level: [2]  │             05-27 21:20:29
@@ -90,33 +90,21 @@ benchmark on 127.0.0.1:4000 finish
 ```
 
 
-We could save the port config:
+We could save the port value to env:
 ```
 $> ticat {cluster.port=4000} env.save
 ```
-So we don't need to provide it every time:
+So we don't need to type it down every time:
 ```
 $> ticat bench
 ```
 
-
-Turn on step-by-step, it will ask for confirming on each step:
+Run benchmark with a larger dataset,
+use step-by-step, it will ask for confirming on each step:
+(both could save as default by `env.save`)
 ```
-$> ticat dbg.step.on : bench
+$> ticat {bench.scale=10} dbg.step.on : bench
 ```
-(we could save this as default by `env.save`, if we like)
-
-
-Run benchmark with a larger dataset:
-```
-$> ticat {bench.scale=10} bench
-```
-Or set large dataset as default:
-```
-$> ticat {bench.scale=10} e.s
-```
-Here we use the short name `e` for `env`,
-`s` for `save`, thus `e.s` is equal to `env.save`.
 
 
 ## Assamble pieces to powerful flows
@@ -133,23 +121,23 @@ It do "build" and "restart" before bench based on the comment,
 useful for develeping.
 
 
-The default data-scale is "1", we use "4" here.
-And we add a jitter detecting scanning step after benchmark,
-this command also have `@ready` tag, the author want us to found it.
+The default data scale is 1, we use 4 for a test.
+We add a jitter detecting step after benchmark,
+this command also have the `@ready` tag so we found it.
 ```
 $> ticat {bench.scale=4} dev.bench : cluster.jitter-scan
 ```
 
 
-This command sequence runs perfectly,
+This command sequence runs perfectly.
 But it's annoying to type all those every time.
+
 So we save it to a `flow` with name `xx`:
 ```
 $> ticat {bench.scale=4} dev.bench : cluster.jitter-scan : flow.save xx
 ```
-Using it in coding is fun:
+Using it in coding is convenient:
 ```
-...
 (code editing)
 $> ticat xx
 (code editing)
@@ -162,7 +150,7 @@ We could use step-by-step to confirm every step,
 ```
 $> ticat dbg.step.on : xx
 ```
-and we could observe what will happen in the executing info box:
+and we could observe what will happen in the info box:
 ```
 ...
 ┌───────────────────┐
@@ -183,14 +171,14 @@ and we could observe what will happen in the executing info box:
 ...
 ```
 From the box we could see it's about to restart cluster,
-the upper box has the current env key-values.
+the upper part has the current env key-values.
 
 
-We have the info during running,
+We have the info during running.
 But sometimes it's nice to have a preflight check,
 command `desc` is what we need.
-The desc result of "xx" will be long,
-so let's checkout "bench":
+The desc result of `xx` will be long,
+so let's checkout `bench`:
 ```
 $> ticat bench : desc
 ```
@@ -225,8 +213,8 @@ each one may read or write from the env.
 
 
 Beside the flow description, there is a check result about env read/write.
-An env key-value being read before write will cause a "<FATAL>" error,
-"<risk>" is normally find.
+An env key-value being read before write will cause a `FATAL` error,
+`risk` is normally fine.
 ```
 -------=<unsatisfied env read>=-------
 
@@ -238,26 +226,34 @@ An env key-value being read before write will cause a "<FATAL>" error,
 ```
 
 
-## It's not complicated
-* use `:` to concate commands into sequence, will be execute one by one
-* use `{key=value}` to modify env key-values
-* lots of abbreviation, they display like `real-name|abbr-name|abbr-name`
-* command amount will be huge, use `ticat find <str> <str> ..` to locate the command we needed.
-* command `ticat cmds.tree <command>` shows a command sub-tree, the sub-trees below are worth to memorize:
-    - `ticat cmds.tree hub`: manage the git repo list we added. we all start with `hub.add` or `hub.init`.
-    - `ticat cmds.tree cmds`: manage all commands we could call.
-    - `ticat cmds.tree flow`: manage saved flows, `flow.save` is greate.
-    - `ticat cmds.tree env`: manage env key-values, we use `env.save` just now.
-    - `ticat cmds.tree desc`: we already use `desc`, `desc.simple` will give a lite description.
+## Cheat sheet
+* Use `:` to concate commands into sequence, will be execute one by one
+* Use `{key=value}` to modify env key-values
+* Abbreviations display like `real-name|abbr-name|abbr-name`
+* Use `ticat find <str> <str> ..` to locate the command we needed, the amount will be huge.
+* `ticat cmds.tree <command>` shows a command sub-tree. the sub-trees below are important:
+    - `ticat cmds.tree hub`: manage the git repo list we added.
+        - `ticat hub.init`: add default repo
+        - `ticat hub.add <repo-addr>`
+    - `ticat cmds.tree cmds`: manage all commands we could call. abbr: `m.t`
+        - `ticat cmds.tree.simple <command>`: short and clean display. abbr: `m.t.s`
+    - `ticat cmds.tree flow`: manage saved flows.
+        - `flow.save`: save flows, call flows like normal commands. abbr: `f.s`
+    - `ticat cmds.tree env`: manage env key-values.
+        - `env.save`: save any env modifications. abbr: `e.s`
+        - `env.ls`: list all key-values.
+    - `ticat cmds.tree desc`:
+        - `desc`: full info.
+        - `desc.simple`: give a lite description. abbr: `d.s`
 
 
-## All things we need to know as users
-* [Examples of how to use](./doc/usage)
+## All we need to know
+* [Usage examples](./doc/usage)
     - [Basic: build, run commands](./doc/usage/basic.md)
     - [Hub: get modules and flows from others](./doc/usage/hub.md)
     - [Manipulate env key-values](./doc/usage/env.md)
-    - [Abbreviation/alias: be a pro user](./doc/usage/abbr.md)
-    - [Flow: be a pro user](./doc/usage/flow.md)
+    - [Use flows](./doc/usage/flow.md)
+    - [Use abbreviations / alias](./doc/usage/abbr.md)
 
 
 ## Module developing zone
@@ -265,7 +261,6 @@ An env key-value being read before write will cause a "<FATAL>" error,
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat)
 * [How modules work together (with graphics)](./doc/concept-graphics.md)
 * [Specifications](./doc/spec)
-    - (this is only **ticat**'s spec, a repo provides modules and flows will have it's own spec)
     - [Hub: list/add/disable/enable/purge](./doc/spec/hub.md)
     - [Command sequence](./doc/spec/seq.md)
     - [Command tree](./doc/spec/cmd.md)
@@ -278,9 +273,10 @@ An env key-value being read before write will cause a "<FATAL>" error,
     - [Repo tree](./doc/spec/repo-tree.md)
     - [Module: env and args](./doc/spec/mod-interact.md)
     - [Module: meta file](./doc/spec/mod-meta.md)
+    - (this is only **ticat**'s spec, a repo provides modules and flows will have it's own spec)
 
 
 ## Inside **ticat**
 * [Roadmap and progress](./doc/progress.md)
-* [Zen: how we made our choices](./doc/zen.md)
+* [Zen: how the choices are made](./doc/zen.md)
 * [An user story: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)
