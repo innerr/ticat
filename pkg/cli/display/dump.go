@@ -38,6 +38,7 @@ func DumpCmds(
 	onlyNames bool,
 	indentSize int,
 	flatten bool,
+	recursive bool,
 	path string,
 	findStrs ...string) {
 
@@ -48,7 +49,8 @@ func DumpCmds(
 			panic(fmt.Errorf("[DumpCmds] can't find sub cmd tree by path '%s'", path))
 		}
 	}
-	dumpCmd(cc.Screen, cmds, onlyNames, indentSize, true, flatten, -cmds.Depth(), findStrs...)
+	dumpCmd(cc.Screen, cmds, onlyNames, indentSize,
+		recursive, flatten, -cmds.Depth(), findStrs...)
 }
 
 // TODO: dump more info, eg: full path
@@ -235,7 +237,8 @@ func dumpCmd(
 			if !onlyNames && cic != nil && len(cic.Help()) != 0 {
 				prt(1, " '"+cic.Help()+"'")
 			}
-			if !onlyNames && cmd.Parent() != nil && cmd.Parent().Parent() != nil {
+			if (!onlyNames || flatten) &&
+				cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				prt(1, "- full-cmd:")
 				full := cmd.DisplayPath()
 				prt(2, full)

@@ -16,7 +16,7 @@ func GlobalHelp(
 		return DumpFlow(argv, cc, env, flow, currCmdIdx)
 	} else if len(flow.Cmds) == 2 {
 		cmdPath := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
-		display.DumpCmds(cc, false, 4, true, cmdPath, getFindStrsFromArgv(argv)...)
+		display.DumpCmds(cc, false, 4, true, true, cmdPath, getFindStrsFromArgv(argv)...)
 		flow.Cmds = nil
 		return 0, true
 	}
@@ -59,6 +59,6 @@ func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 		return true
 	}
 	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
-	display.DumpCmds(cc, false, 4, true, "", findStrs...)
+	display.DumpCmds(cc, false, 4, true, true, "", findStrs...)
 	return true
 }

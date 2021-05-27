@@ -61,7 +61,10 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	mod := cmds.AddSub("cmds", "cmd", "mod", "mods", "m", "M")
+	mod := cmds.AddSub("cmds", "cmd", "c", "C")
+	mod.RegCmd(DumpCmdNoRecursive,
+		"display cmd info, no sub tree").
+		AddArg("path", "", "p", "P")
 
 	tree := mod.AddSub("tree", "t", "T")
 	tree.RegCmd(DumpCmdTree,
@@ -72,10 +75,15 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"list builtin and loaded cmds, only names").
 		AddArg("path", "", "p", "P")
 
-	modList := mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
+	list := mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegCmd(DumpCmds,
 			"list builtin and loaded cmds")
-	addFindStrArgs(modList)
+	addFindStrArgs(list)
+
+	listSimple := list.AddSub("lite", "simple", "sim", "s", "S").
+		RegCmd(DumpCmdListSimple,
+			"list builtin and loaded cmds, only names")
+	addFindStrArgs(listSimple)
 }
 
 func RegisterFlowCmds(cmds *core.CmdTree) {

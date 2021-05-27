@@ -138,9 +138,9 @@ $> ticat {bench.scale=4} dev.bench : cluster.jitter-scan : flow.save xx
 ```
 Using it in coding is convenient:
 ```
-(code editing)
+  (code editing)
 $> ticat xx
-(code editing)
+  (code editing)
 $> ticat xx
 ...
 ```
@@ -235,8 +235,10 @@ An env key-value being read before write will cause a `FATAL` error,
     - `ticat cmds.tree hub`: manage the git repo list we added.
         - `ticat hub.init`: add default repo
         - `ticat hub.add <repo-addr>`
-    - `ticat cmds.tree cmds`: manage all commands we could call. abbr: `m.t`
-        - `ticat cmds.tree.simple <command>`: short and clean display. abbr: `m.t.s`
+    - `ticat cmds.tree cmds`: manage all commands we could call. abbr: `c.t`
+        - `ticat cmd <command>`: show info of only this command, no sub tree.
+        - `ticat cmds.tree.simple <command>`: short and clean display in tree form. abbr: `c.t.s`
+        - `ticat cmds.list.simple <command>`: short and clean display in list. abbr: `c.l.s`
     - `ticat cmds.tree flow`: manage saved flows.
         - `flow.save`: save flows, call flows like normal commands. abbr: `f.s`
     - `ticat cmds.tree env`: manage env key-values.
