@@ -15,6 +15,7 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.stack-depth", 0)
 
 	env.SetBool("sys.step-by-step", false)
+	env.SetInt("sys.execute-delay-sec", 0)
 	env.SetBool("sys.interact", true)
 
 	env.Set("sys.version", "1.0.0")
@@ -30,6 +31,7 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	sys.GetOrAddSub("stack-depth").AddAbbrs("stack")
 	sys.GetOrAddSub("interact").AddAbbrs("ir", "i", "I")
 	sys.GetOrAddSub("step-by-step").AddAbbrs("step")
+	sys.GetOrAddSub("delay-execute").AddAbbrs("delay")
 	sys.GetOrAddSub("version").AddAbbrs("ver")
 
 	hub := sys.GetOrAddSub("hub")

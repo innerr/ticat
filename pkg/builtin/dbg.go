@@ -34,3 +34,8 @@ func DbgStepOff(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	env.GetLayer(core.EnvLayerSession).SetBool("sys.step-by-step", false)
 	return true
 }
+
+func DbgDelayExecute(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec", argv.GetInt("seconds"))
+	return true
+}

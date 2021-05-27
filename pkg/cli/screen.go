@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 )
 
 // TODO: stdin/stderr
@@ -17,6 +18,10 @@ func NewScreen() *Screen {
 func (self *Screen) Print(text string) {
 	fmt.Print(text)
 	self.outN += 1
+}
+
+func (self *Screen) Error(text string) {
+	fmt.Fprint(os.Stderr, text)
 }
 
 func (self *Screen) OutputNum() int {

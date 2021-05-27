@@ -10,9 +10,19 @@ import (
 
 // TODO: clean code
 
-func DumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, indentSize int) {
+func DumpFlow(
+	cc *core.Cli,
+	env *core.Env,
+	flow []core.ParsedCmd,
+	sep string,
+	indentSize int,
+	simple bool) {
+
+	if len(flow) == 0 {
+		return
+	}
 	cc.Screen.Print("--->>>\n")
-	dumpFlow(cc, env, flow, sep, indentSize, 0)
+	dumpFlow(cc, env, flow, sep, indentSize, simple, 0)
 	cc.Screen.Print("<<<---\n")
 }
 
@@ -98,8 +108,8 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 	if len(result) == 0 {
 		return
 	}
-	//printSepTitle(screen, env, "unsatisfied env read")
-	screen.Print("-------=<unsatisfied env read>=-------\n")
+	//PrintSepTitle(screen, env, "unsatisfied env read")
+	PrintDisplayBlockSep(screen, "unsatisfied env read")
 
 	fatals := newEnvOpsCheckResultAgg()
 	risks := newEnvOpsCheckResultAgg()
@@ -307,10 +317,18 @@ func dumpCmd(
 	}
 }
 
-func dumpFlow(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, sep string, indentSize int, indentAdjust int) {
+func dumpFlow(
+	cc *core.Cli,
+	env *core.Env,
+	flow []core.ParsedCmd,
+	sep string,
+	indentSize int,
+	simple bool,
+	indentAdjust int) {
+
 	for _, cmd := range flow {
 		if len(cmd) != 0 {
-			dumpFlowCmd(cc, env, cmd, sep, indentSize, indentAdjust)
+			dumpFlowCmd(cc, env, cmd, sep, indentSize, simple, indentAdjust)
 		}
 	}
 }
@@ -321,6 +339,7 @@ func dumpFlowCmd(
 	parsedCmd core.ParsedCmd,
 	sep string,
 	indentSize int,
+	simple bool,
 	indentAdjust int) {
 
 	cmd := parsedCmd[len(parsedCmd)-1].Cmd.Cmd
@@ -382,38 +401,41 @@ func dumpFlowCmd(
 		prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
 	}
 
-	line := string(cic.Type())
-	if cic.IsQuiet() {
-		line += " (quiet)"
-	}
-	if cic.IsPriority() {
-		line += " (priority)"
-	}
-	if cic.Type() != core.CmdTypeNormal || cic.IsQuiet() {
-		if cic.Type() != core.CmdTypeFile && cic.Type() != core.CmdTypeDir &&
-			cic.Type() != core.CmdTypeFlow {
-			prt(1, "- cmd-type:")
-			prt(2, line)
+	if !simple {
+		line := string(cic.Type())
+		if cic.IsQuiet() {
+			line += " (quiet)"
 		}
-	}
+		if cic.IsPriority() {
+			line += " (priority)"
+		}
+		if cic.Type() != core.CmdTypeNormal || cic.IsQuiet() {
+			if cic.Type() != core.CmdTypeFile && cic.Type() != core.CmdTypeDir &&
+				cic.Type() != core.CmdTypeFlow {
+				prt(1, "- cmd-type:")
+				prt(2, line)
+			}
+		}
 
-	if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
-		prt(1, "- source:")
-		prt(2, cic.Source())
+		if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
+			prt(1, "- source:")
+			prt(2, cic.Source())
+		}
 	}
 
 	if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
 		cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
 		if cic.Type() == core.CmdTypeFlow {
 			prt(1, "- flow:")
-		} else {
+			prt(2, cic.CmdLine())
+		} else if !simple {
 			prt(1, "- executable:")
+			prt(2, cic.CmdLine())
 		}
-		prt(2, cic.CmdLine())
 		if cic.Type() == core.CmdTypeFlow {
 			prt(2, "--->>>")
 			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
-			dumpFlow(cc, env, subFlow.Cmds, sep, indentSize, indentAdjust+2)
+			dumpFlow(cc, env, subFlow.Cmds, sep, indentSize, simple, indentAdjust+2)
 			prt(2, "<<<---")
 		}
 	}
@@ -588,29 +610,21 @@ func (self *envOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
 	}
 }
 
-func printSepTitle(screen core.Screen, env *core.Env, msg string) {
-	width := env.GetInt("display.width") - 3
-	screen.Print(rpt("-", width-len(msg)) + "<[" + msg + "]\n")
-}
-
 type DependInfo struct {
 	Reason string
 	Cmd    core.ParsedCmd
 }
 type Depends map[string]map[*core.Cmd]DependInfo
 
-func DumpDepends(cc *core.Cli, env *core.Env, flow []core.ParsedCmd) {
-	deps := Depends{}
-	collectDepends(cc, flow, deps)
+func DumpDepends(cc *core.Cli, env *core.Env, deps Depends) {
 	if len(deps) == 0 {
 		return
 	}
 
 	sep := env.Get("strs.cmd-path-sep").Raw
 
-	cc.Screen.Print("\n")
-	//printSepTitle(cc.Screen, env, "")
-	cc.Screen.Print("-------=<depended os commands>=-------\n")
+	//PrintSepTitle(cc.Screen, env, "")
+	PrintDisplayBlockSep(cc.Screen, "depended os commands")
 
 	for osCmd, cmds := range deps {
 		cc.Screen.Print(fmt.Sprintf("\n[%s]\n", osCmd))
@@ -621,7 +635,7 @@ func DumpDepends(cc *core.Cli, env *core.Env, flow []core.ParsedCmd) {
 	}
 }
 
-func collectDepends(cc *core.Cli, flow []core.ParsedCmd, res Depends) {
+func CollectDepends(cc *core.Cli, flow []core.ParsedCmd, res Depends) {
 	for _, it := range flow {
 		cic := it.LastCmd()
 		if cic == nil {
@@ -640,6 +654,6 @@ func collectDepends(cc *core.Cli, flow []core.ParsedCmd, res Depends) {
 			continue
 		}
 		subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
-		collectDepends(cc, subFlow.Cmds, res)
+		CollectDepends(cc, subFlow.Cmds, res)
 	}
 }

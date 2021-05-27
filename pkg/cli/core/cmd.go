@@ -143,6 +143,10 @@ func (self *Cmd) MatchFind(findStr string) bool {
 	return false
 }
 
+func (self *Cmd) AddSub(name string, abbrs ...string) *CmdTree {
+	return self.owner.AddSub(name, abbrs...)
+}
+
 func (self *Cmd) SetSource(s string) *Cmd {
 	self.source = s
 	return self
