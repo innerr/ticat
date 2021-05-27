@@ -1,185 +1,271 @@
 # ticat
 A casual command line components platform
 
-## Goal: workflow automating in unix-pipe style
+Workflow automating in unix-pipe style
 
-### The problem: workflow are complicated with multi-demension requirements
-Let's take a distributed system as example:
-```
- ┌───────────────────────┐           ┌────────────┐
- │ A Distributed System  ◄───────────┤ Users      │
- └───────────────▲───────┘           └────────────┘
-                 │                   ┌────────────┐
-                 └───────────────────┤ Developers │
-                                     └────────────┘
-```
 
-During time, the system grows big, many peripheral tools are developed.
-The intergration jobs become complicated to adapt the multi-dimension requirements.
+## Quick start
+Suppose we are working for a distributed system,
+Let's run a demo to see how **ticat** works.
+Type and execute the commands we memtioned below.
+
+
+## Build
+Build **ticat**: (`golang` is needed)
 ```
- ┌───────────────────────┐           ┌────────────┐
- │ The Core System       ◄───────┬───┤ Users      │
- └─┬─────────────────────┘       │   └────────────┘
-   │                   ...       │
-   │        ┌────────────┐       │
-   ├────────┤ Operatings ◄───────┘
-   │        └────┬─┬─────┘
-   │        ┌────┴─┴─────┐           ┌────────────┐
-   ├────────┤ Testing    ◄───────┬───┤ Developers │
-   │        └──┬─┬─┬─────┘       │   └────────────┘
-   │        ┌──┴─┴─┴─────┐       │
-   └────────┤ Benchmark  ◄───────┤
-            └──┬─┬─┬─────┘       │
-               │ │ │   ...       │
-           ┌───┴─┴─┴─────────────▼────────┐
-           │                              │
-           │  Intergration System/Tools   │
-           │                              │
-           └──────────────────────────────┘
+$> git clone https://github.com/innerr/ticat
+$> cd ticat
+$> make
+```
+Recommend to set `ticat/bin` to system `$PATH`, it's handy.
+
+
+## Run jobs shared by others
+We want to do a benchmark for the demo distributed system,
+our workmates already wrote a bench tool and push to git server,
+it's easy to fetch it:
+```
+$> ticat hub.add innerr/quick-start-usage.ticat
 ```
 
-### The cure of complication: break down by orthogonal dimensions
-The unix philosophy inspired us, `Simple parts that work together`, like the unix-pipe:
-```bash
-$> cat my.log | grep ERR | awk -F 'reason' '{print $2}'
+
+Find out what we got by search the repo name.
+`@ready` is a conventional tag use for ready-to-go commands:
+```
+$> ticat find quick-start-usage @ready
+[bench|ben]
+...
+```
+From the search we know the command `bench`(has a alias `ben`).
+
+
+Say we have a single node cluster running, the access port is 4000.
+Try to run benchmark by:
+```
+$> ticat bench
 ```
 
-### **Ticat**: makes sure the parts can be easily built
-The ad-hot feature assembling give us the most flexable yet powerful controlling.
-
-To apply this, in **ticat** we provide a easy way to wrap any existed tools into components(alias: modules):
+Got an error, we should provide the cluster port:
 ```
- ┌───────────────────────┐        ┌──────────────────┐
- │ Alloc Server Resource │        │ Jitter Detecting │
- └────────────────┬──────┘        └───────┬──────────┘
-                  │                       │
- ┌─────────────┐  │             ┌─────────┴────────────┐
- │ Auto Config │  │             │ Benchmark Workload X │
- └──────────┬──┘ ┌┴──────────┐  └───┬─────┬────────────┘
-            │    │ Auto Tune │      │     │
- ┌──────────┴─┐  └┬─────┬────┘      │     │
- │ Deployment │   │     │           │     │
- └────┬─────┬─┘   │     │   ┌───────┴─────┴────────┐
-      │     │     │     │   │ Benchmark Workload Y │
-      │     │     │     │   └─┬─────┬──────────────┘
-      │     │     │     │     │     │     │
- ┌────┼─────┼─────┼─────┼─────┼─────┼─────┼────────────┐
- │    │     │     │     │     │     │     │            │
- │  ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐          │
- │  │ A │ │ B │ │ C │ │ D │ │ E │ │ F │ │ G │          │
- │  └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘          │
- │                                       Ticat Modules │
- └─────────────────────────────────────────────────────┘
+-------=<unsatisfied env read>=-------
+
+<FATAL> 'cluster.port'
+       - read by:
+            [bench.load]
+            [bench.run]
+       - but not provided
 ```
 
-### **Ticat**: easily share the parts, and share the assembled workflows
-Sometimes the pipelined-command could be long,
-in **ticat** we could save the pipeline(alias: flow) in a heartbeat,
-then the saved one could be used in other flow as a new command.
 
-And the most important, we could easily distribute the code so our workmate could get and run it in no time.
+Try again:
 ```
- ┌──────────────────────────────────────────────────────────────┐
- │         Modules                             Flows            │
- │  ┌───┐ ┌───┐ ┌───┐ ┌───┐        │┼┼    ┌──────────────────┐  │
- │  │ A │ │ B │ │ C │ │ D │        │┼┼────► C->B->A->D       │  │
- │  └───┘ └───┘ └───┘ └───┘        │┼┼    └──────────────────┘  │
- │  ┌───┐ ┌───┐ ┌───┐              │┼┼    ┌──────────────────┐  │
- │  │ E │ │ F │ │ G │  ...         │┼┼────► C->B->A->D->X->G │  │
- │  └───┘ └───┘ └───┘              │┼┼    └──────────────────┘  │
- │                                 │┼┼    ┌──────────────────┐  │
- │ │┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼│       │┼┼────► C->B->A->F       │  │
- │ └─────────┼─────────────┘       │┼┼    └──────────────────┘  │
- │           │                     │┼┼    ┌──────────────────┐  │
- │           └──────────────►      │┼┼────► X->G->Y->G->..   │  │
- │                                 │┼┼    └──────────────────┘  │
- │ Ticat     ▲                                                  │
- └───────────┼────────────────────────────────┼─────────────────┘
-             │ Assemble,                      │ Get and run
-             │ Share                          │
-             │                       ┌────────▼─────────┐
-    ┌────────┴────────┐              │ Other Developers ├─┐
-    │ Some Developers │              └─┬────────────────┘ │
-    └─────────────────┘                └──────────────────┘
+$> ticat {cluster.port=4000} bench
 ```
-
-### How these parts could work together in **ticat**?
-In a unix-pipeline,
-the up-stream command and the down-stream command shared an anonymous pipe,
-the former is data provider and the latter is consumer.
-
-In **ticat** things are alike, modules run on a shared **env**, a key-value set.
-
-Modules could get any info from **env**(mostly provide by up-stream),
-so they are self-sufficient thus can be flexably assembled.
-
-A module need to register which keys it wants to read or write,
-**ticat** will check the independency.
-**Ticat** also provide a cli gramma for user to manipulate key-values in any time.
+Succeeded, we ran a benchmark with a small dataset(scale=1):
 ```
- ┌─────────────────────────────┐
- │                       Ticat │
- │                             │
- │   ┌─────────────────────┐   │
- │   │ key1 = val1     Env │   │ Manipulate
- │   │ key2 = val2         ◄────────────────┐
- │   │ ...                 │   │            │
- │   │                     │   │            │
- │   └─▲─────▲─────▲─────▲─┘   │            │
- │     │     │     │     │     │            │
- │   ┌─▼─┐ ┌─▼─┐ ┌─▼─┐ ┌─▼─┐   │            │
- │   │ A │ │ B │ │ C │ │ D │   │            │
- │   └─▲─┘ └─▲─┘ └─▲─┘ └─▲─┘   │            │
- │     │     │     │     │     │     ┌──────┴───────┐
- │   ┌─┴─────┴─────┴─────┴─┐   │     │ Ticat Users  │
- │   │ C->B->A->D          ◄─────────┤ (Developers) │
- │   └─────────────────────┘   │ Run └──────────────┘
- │                             │
- └─────────────────────────────┘
+┌───────────────────┐
+│ stack-level: [2]  │             05-27 21:20:29
+├───────────────────┴────────────────────────────┐
+│    cluster.port = 4000                         │
+├────────────────────────────────────────────────┤
+│ >> bench.load                                  │
+│    bench.run                                   │
+└────────────────────────────────────────────────┘
+data loading to 127.0.0.1:4000 begin, scale=1
+...
+data loading to 127.0.0.1:4000 finish
+┌───────────────────┐
+│ stack-level: [2]  │             05-27 21:20:30
+├───────────────────┴────────────────────────────┐
+│    bench.scale = 1                             │
+│    cluster.host = 127.0.0.1                    │
+│    cluster.port = 4000                         │
+├────────────────────────────────────────────────┤
+│    bench.load                                  │
+│ >> bench.run                                   │
+└────────────────────────────────────────────────┘
+benchmark on 127.0.0.1:4000 begin, scale=1
+...
+benchmark on 127.0.0.1:4000 finish
 ```
 
-### Practice **ticat** with zero cost
-Any existed tools can be wrapped into modules in a small cost,
-so putting **ticat** into use is quick and easy.
 
-**Ticat** does't intrude any framework we are using,
-can be appled to a small area at the beginning,
-then gradually use it to improve the whole system.
+We could save the port config:
 ```
- ┌───────────────────────┐           ┌────────────┐
- │ Cluster Core System   ◄───────┬───┤ Users      │
- └─┬─────────────────────┘       │   └────────────┘
-   │                   ...       │
-   │        ┌────────────┐       │   ┌────────────┐
-   ├────────┤ Operatings ◄───────┘   │ Developers │
-   │        └────┬─┬─────┘           └──┬─────────┘
-   │        ┌────┴─┴─────┐           ┌──┴─────────────────────┐
-   ├────────┤ Testing    ◄───────┬───┤ Ticat: Full Automation │
-   │        └──┬─┬─┬─────┘       │   ├────────────────────────┤
-   │        ┌──┴─┴─┴─────┐       │   │┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼│
-   └────────┤ Benchmark  ◄───────┤   │┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼│
-            └──┬─┬─┬─────┘       │   │┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼┼│
-               │ │ │   ...       │   └────────────────────────┘
-           ┌───┴─┴─┴─────────────▼──┐
-           │  Intergration Tools    │
-           └────────────────────────┘
+$> ticat {cluster.port=4000} env.save
+```
+So we don't need to provide it every time:
+```
+$> ticat bench
 ```
 
-## All things about **ticat**
-* [Quick-start](./doc/quick-start-mod.md) (for mod dev)
-* [Examples: ticat usage](./doc/usage)
-    - [Basic: build ticat, run commands](./doc/usage/basic.md) (must read)
-    - [Hub: get modules and flows from others](./doc/usage/hub.md) (must read)
-    - [Manipulate env key-values](./doc/usage/env.md) (must read)
-    - [Abbreviation/alias: be a pro user](./doc/usage/abbr.md) (highly recommended)
-    - [Flow: be a pro user](./doc/usage/flow.md) (highly recommended)
-    - [Things a module developer should know](./doc/usage/dev.md) (for mod dev)
-* [Examples: write modules in different languages](https://github.com/innerr/examples.ticat) (for mod dev)
-* [An user story: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)
 
-## Inside **ticat**
-* [Ticat specifications](./doc/spec)
-    - (this is only ticat's spec, a repo provides modules and flows will have it's own spec)
+Turn on step-by-step, it will ask for confirming on each step:
+```
+$> ticat dbg.step.on : bench
+```
+(we could save this as default by `env.save`, if we like)
+
+
+Run benchmark with a larger dataset:
+```
+$> ticat {bench.scale=10} bench
+```
+Or set large dataset as default:
+```
+$> ticat {bench.scale=10} e.s
+```
+Here we use the short name `e` for `env`,
+`s` for `save`, thus `e.s` is equal to `env.save`.
+
+
+## Assamble pieces to powerful flows
+There is another command `dev.bench` in the previous search result:
+```
+...
+[bench]
+     'build binary in pwd, then restart cluster and do benchmark. @ready'
+    - full-cmd:
+        dev.bench
+...
+```
+It do "build" and "restart" before bench based on the comment,
+useful for develeping.
+
+
+The default data-scale is "1", we use "4" here.
+And we add a jitter detecting scanning step after benchmark,
+this command also have `@ready` tag, the author want us to found it.
+```
+$> ticat {bench.scale=4} dev.bench : cluster.jitter-scan
+```
+
+
+This command sequence runs perfectly,
+But it's annoying to type all those every time.
+So we save it to a `flow` with name `xx`:
+```
+$> ticat {bench.scale=4} dev.bench : cluster.jitter-scan : flow.save xx
+```
+Using it in coding is fun:
+```
+...
+(code editing)
+$> ticat xx
+(code editing)
+$> ticat xx
+...
+```
+
+
+We could use step-by-step to confirm every step,
+```
+$> ticat dbg.step.on : xx
+```
+and we could observe what will happen in the executing info box:
+```
+...
+┌───────────────────┐
+│ stack-level: [2]  │             05-27 23:32:07
+├───────────────────┴────────────────────────────┐
+│    bench.scale = 3                             │
+│    cluster.host = 127.0.0.1                    │
+│    cluster.port = 4000                         │
+├────────────────────────────────────────────────┤
+│    local.build                                 │
+│    cluster.local                               │
+│        port = ''                               │
+│        host = 127.0.0.1                        │
+│ >> cluster.restart                             │
+│    ben(=bench).load                            │
+│    ben(=bench).run                             │
+└────────────────────────────────────────────────┘
+...
+```
+From the box we could see it's about to restart cluster,
+the upper box has the current env key-values.
+
+
+We have the info during running,
+But sometimes it's nice to have a preflight check,
+command `desc` is what we need.
+The desc result of "xx" will be long,
+so let's checkout "bench":
+```
+$> ticat bench : desc
+```
+
+The output will be a full description of the execution:
+```
+--->>>
+[bench]
+     'pretend to do bench'
+    - flow:
+        bench.load : bench.run
+        --->>>
+        [bench.load]
+             'pretend to load data'
+            - env-ops:
+                cluster.host = may-read : write
+                cluster.port = read
+                bench.scale = may-read : write
+        [bench.run]
+             'pretend to run bench'
+            - env-ops:
+                cluster.host = may-read
+                cluster.port = read
+                bench.scale = may-read
+                bench.begin = write
+                bench.end = write
+        <<<---
+<<<---
+```
+From the description, we know how modules are executed one by one,
+each one may read or write from the env.
+
+
+Beside the flow description, there is a check result about env read/write.
+An env key-value being read before write will cause a "<FATAL>" error,
+"<risk>" is normally find.
+```
+-------=<unsatisfied env read>=-------
+
+<risk>  'bench.scale'
+       - may-read by:
+            [cluster.restart]
+            [bench.load]
+       - but not provided
+```
+
+
+## It's not complicated
+* use `:` to concate commands into sequence, will be execute one by one
+* use `{key=value}` to modify env key-values
+* lots of abbreviation, they display like `real-name|abbr-name|abbr-name`
+* command amount will be huge, use `ticat find <str> <str> ..` to locate the command we needed.
+* command `ticat cmds.tree <command>` shows a command sub-tree, the sub-trees below are worth to memorize:
+    - `ticat cmds.tree hub`: manage the git repo list we added. we all start with `hub.add` or `hub.init`.
+    - `ticat cmds.tree cmds`: manage all commands we could call.
+    - `ticat cmds.tree flow`: manage saved flows, `flow.save` is greate.
+    - `ticat cmds.tree env`: manage env key-values, we use `env.save` just now.
+    - `ticat cmds.tree desc`: we already use `desc`, `desc.simple` will give a lite description.
+
+
+## All things we need to know as users
+* [Examples of how to use](./doc/usage)
+    - [Basic: build, run commands](./doc/usage/basic.md)
+    - [Hub: get modules and flows from others](./doc/usage/hub.md)
+    - [Manipulate env key-values](./doc/usage/env.md)
+    - [Abbreviation/alias: be a pro user](./doc/usage/abbr.md)
+    - [Flow: be a pro user](./doc/usage/flow.md)
+
+
+## Module developing zone
+* [Quick-start](./doc/quick-start-mod.md)
+* [Examples: write modules in different languages](https://github.com/innerr/examples.ticat)
+* [How modules work together (with graphics)](./doc/concept-graphics.md)
+* [Specifications](./doc/spec)
+    - (this is only **ticat**'s spec, a repo provides modules and flows will have it's own spec)
     - [Hub: list/add/disable/enable/purge](./doc/spec/hub.md)
     - [Command sequence](./doc/spec/seq.md)
     - [Command tree](./doc/spec/cmd.md)
@@ -188,9 +274,13 @@ then gradually use it to improve the whole system.
     - [Flow: list/save/edit](./doc/spec/flow.md)
     - [Display control in executing](./doc/spec/display.md)
     - [Help command](./doc/spec/help.md)
-    - [Ticat local store dir](./doc/spec/local-store.md)
+    - [Local store dir](./doc/spec/local-store.md)
     - [Repo tree](./doc/spec/repo-tree.md)
     - [Module: env and args](./doc/spec/mod-interact.md)
     - [Module: meta file](./doc/spec/mod-meta.md)
+
+
+## Inside **ticat**
 * [Roadmap and progress](./doc/progress.md)
 * [Zen: how we made our choices](./doc/zen.md)
+* [An user story: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)

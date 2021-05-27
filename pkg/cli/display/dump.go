@@ -289,7 +289,7 @@ func dumpCmd(
 			}
 
 			if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
-				prt(1, "- source:")
+				prt(1, "- from:")
 				if len(cic.Source()) == 0 {
 					prt(2, "builtin")
 				} else {
@@ -418,7 +418,7 @@ func dumpFlowCmd(
 		}
 
 		if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
-			prt(1, "- source:")
+			prt(1, "- from:")
 			prt(2, cic.Source())
 		}
 	}
