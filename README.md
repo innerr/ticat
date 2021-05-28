@@ -6,7 +6,8 @@ Workflow automating in unix-pipe style
 ## Quick start
 Suppose we are working for a distributed system,
 let's run a demo to see how **ticat** works.
-Type and execute the commands we memtioned below.
+
+Recommend to type and execute the commands during reading.
 
 ## Build
 `golang` is needed:
@@ -21,8 +22,9 @@ Recommend to set `ticat/bin` to system `$PATH`, it's handy.
 
 ### Add repo to **ticat**
 
-We want to do a benchmark for the demo distributed system,
-our workmates already wrote a bench tool and push to git server,
+We want to do a benchmark for the demo distributed system.
+
+Someone already wrote a bench tool and push to git server,
 it's easy to fetch it:
 ```
 $> ticat hub.add innerr/quick-start-usage.ticat
@@ -32,9 +34,10 @@ $> ticat hub.add innerr/quick-start-usage.ticat
 
 `+` and `-` are important commands to find and display infos, they have the same usage.
 
-The difference is `-` only shows brief messages, and `+` shows rich infos.
+The difference is `-` shows brief messages, and `+` shows rich infos.
 
-Now use `+` as search command to find out what we got by search the repo's name,
+Now use `+` as search command to find out what we got by search the repo's name.
+
 `@ready` is a conventional tag use for "ready-to-go" commands:
 ```
 $> ticat + @ready quick-start
@@ -47,7 +50,7 @@ From the search we know the command `bench`.
 
 The usage of **ticat** has similar style with unix pipe, but use `:` instead of `|`.
 
-Concate `bench` and `-` with `:`, it shows the info of command `bench`:
+Concate "bench" and "-" with ":", it shows the info of command `bench`:
 ```
 $> ticat bench:-
 --->>>
@@ -63,16 +66,18 @@ $> ticat bench:-
 ```
 `+` could do the same job, we chose `-` for a clean view.
 
-### Try to run benchmark
+### Run the shared bench tool we received
 
-Looks like `bench` is what we need.
+Looks like `bench` is what we need to run benchmarks.
+
 Say we have a single node cluster running, the access port is 4000.
-Try to run benchmark by:
+
+Try to bench by:
 ```
 $> ticat bench
 ```
 
-Got an error, we should provide the cluster port:
+Got an error:
 ```
 -------=<unsatisfied env read>=-------
 
@@ -83,7 +88,7 @@ Got an error, we should provide the cluster port:
        - but not provided
 ```
 
-Try again:
+We should provide the cluster port, try again:
 ```
 $> ticat {cluster.port=4000} bench
 ```
@@ -133,7 +138,7 @@ $> ticat {bench.scale=10} dbg.step.on : bench
 ```
 These changes could all persist to env by `env.save`.
 
-## Assamble pieces to powerful flows
+## Assamble pieces to flows
 
 ### Call another command
 
@@ -146,10 +151,10 @@ There is another command `dev.bench` in the previous search result:
         dev.bench
 ...
 ```
-It does "build" and "restart" before bench based on the help string,
+It does "build" and "restart" before bench according to the help string,
 useful for develeping.
 
-The default data scale is 1, we use 4 for a test.
+The default data scale is "1", we use "4" for a test.
 
 Bisides that, we add a jitter detecting step after benchmark,
 this command also have the `@ready` tag so we found it.
@@ -160,6 +165,7 @@ $> ticat {bench.scale=4} dev.bench : bench.jitter-scan
 ### Save commands to a flow for convenient
 
 This command sequence runs perfectly.
+
 But it's annoying to type all those every time.
 
 So we save it to a `flow` with the name `xx`:
@@ -204,14 +210,16 @@ and we could observe what will happen in the info box:
 As en example, in the box it's about to restart cluster,
 the upper part has the current env key-values.
 
-## Dig inside the command we got
-It's a flow provided by repo author, just like `xx` we saved.
+## Dig inside the commands we got
+The commands we got are flows provided by repo author, just like `xx` we saved.
 
-### Understand the flow: executing modules one by one
+### Understand flow: executing modules one by one
 
-Sometimes it's nice to have a preflight check,
-appending a command `+` or `-` to the sequence can get the answers,
-let's check out the flow `xx` we just saved:
+Sometimes it's nice to have a preflight check.
+
+Appending a command `+` or `-` to the sequence can get the answers.
+
+Let's check out the flow `xx` we just saved:
 ```
 $> ticat xx:-
 --->>>
@@ -237,7 +245,7 @@ $> ticat xx:-
 <<<---
 ```
 
-### Understand the env: modules read/write a shared key-value set
+### Env: a shared key-value set
 
 The `+` result of `xx` is a bit long, here is the detail about command `bench`:
 ```
@@ -275,6 +283,7 @@ each one may read or write from the env.
 ### The env read/write report from `+`
 
 Beside the flow description, there is a check result about env read/write.
+
 An env key-value being read before write will cause a `FATAL` error,
 `risk` is normally fine.
 ```
@@ -290,15 +299,17 @@ An env key-value being read before write will cause a `FATAL` error,
 ### Customize features by re-assemble pieces
 
 Now we know what's in the "ready-to-go" commands,
-we are able to do customizations,
-let's remove the `bench.load` step from `dev.bench`,
+we are able to do customizations.
+
+Let's remove the `bench.load` step from `dev.bench`,
 to make it faster when on coding:
 ```
 $> ticat local.build : cluster.local : cluster.restart : ben.run : flow.save dev.bench.no-reload
 ```
 
 We just saved a flow without data scale config,
-it's a good practice seperating "process-logic" and "config".
+it's a good practice seperating "process-logic" from "config".
+
 We then save a new flow with data scale to get a handy command:
 ```
 $> ticat {bench.scale=4} dev.bench.no-reload : flow.save z
