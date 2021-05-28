@@ -35,19 +35,14 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"desc the flow about to execute").
 		SetQuiet().
 		SetPriority()
-	desc.AddSub("lite", "simple", "sim", "s", "S").
+	desc.AddSub("simple", "sim", "s", "S").
 		RegPowerCmd(DumpFlowAllSimple,
 			"desc the flow about to execute in lite style").
 		SetQuiet().
 		SetPriority()
-	descFlow := desc.AddSub("flow", "f", "F").
-		RegPowerCmd(DumpFlow,
-			"desc the flow execution").
-		SetQuiet().
-		SetPriority()
-	descFlow.AddSub("lite", "simple", "sim", "s", "S").
-		RegPowerCmd(DumpFlowSimple,
-			"desc the flow execution in lite style").
+	desc.AddSub("skeleton", "sk", "sl", "st", "-").
+		RegPowerCmd(DumpFlowSkeleton,
+			"desc the flow about to execute, skeleton only").
 		SetQuiet().
 		SetPriority()
 	desc.AddSub("dependencies", "depends", "depend", "dep", "d", "D").
@@ -61,28 +56,39 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	mod := cmds.AddSub("cmds", "cmd", "c", "C")
-	mod.RegCmd(DumpCmdNoRecursive,
-		"display cmd info, no sub tree").
-		AddArg("path", "", "p", "P")
+	descFlow := desc.AddSub("flow", "f", "F").
+		RegPowerCmd(DumpFlow,
+			"desc the flow execution").
+		SetQuiet().
+		SetPriority()
+	descFlow.AddSub("simple", "sim", "s", "S").
+		RegPowerCmd(DumpFlowSimple,
+			"desc the flow execution in lite style").
+		SetQuiet().
+		SetPriority()
 
-	tree := mod.AddSub("tree", "t", "T")
+	mods := cmds.AddSub("cmds", "cmd", "c", "C")
+	mods.RegCmd(DumpCmdNoRecursive,
+		"display cmd info, no sub tree").
+		AddArg("cmd-path", "", "path", "p", "P")
+
+	tree := mods.AddSub("tree", "t", "T")
 	tree.RegCmd(DumpCmdTree,
 		"list builtin and loaded cmds").
-		AddArg("path", "", "p", "P")
-	tree.AddSub("lite", "simple", "sim", "s", "S").
-		RegCmd(DumpCmdTreeSimple,
-			"list builtin and loaded cmds, only names").
-		AddArg("path", "", "p", "P")
+		AddArg("cmd-path", "", "path", "p", "P")
+	tree.AddSub("skeleton", "sk", "sl", "st", "-").
+		RegCmd(DumpCmdTreeSkeleton,
+			"list builtin and loaded cmds, skeleton only").
+		AddArg("cmd-path", "", "path", "p", "P")
 
-	list := mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
+	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegCmd(DumpCmds,
 			"list builtin and loaded cmds")
 	addFindStrArgs(list)
 
-	listSimple := list.AddSub("lite", "simple", "sim", "s", "S").
+	listSimple := list.AddSub("simple", "sim", "s", "S").
 		RegCmd(DumpCmdListSimple,
-			"list builtin and loaded cmds, only names")
+			"list builtin and loaded cmds in lite style")
 	addFindStrArgs(listSimple)
 }
 

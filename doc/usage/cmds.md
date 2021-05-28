@@ -4,8 +4,39 @@ The amount of commands will be huge,
 `cmds` is a toolset for us to find what we need.
 
 
+## Check out single command's info
+`c` is short for `cmds`, will display the info for a command
+```
+$> ticat cmds dbg.eccho
+[echo]
+     'print message from argv'
+    - full-cmd:
+        dbg.echo
+    - args:
+        message|msg|m|M = ''
+
+$> ticat c disc
+[desc|d|D]
+     'desc the flow about to execute'
+    - cmd-type:
+        power (quiet) (priority)
+
+$> ticat c cmds
+[cmds|cmd|c|C]
+     'display cmd info, no sub tree'
+    - args:
+        cmd-path|path|p|P = ''
+
+$> ticat c c
+[cmds|cmd|c|C]
+     'display cmd info, no sub tree'
+    - args:
+        cmd-path|path|p|P = ''
+```
+
+
 ## Flat(list) mode are mostly for searching
-Display in flat mode, `flat` `ls` and `f` are equal:
+Display all commands in flat mode, `flat` `ls` and `f` are equal:
 ```
 $> ticat cmds.ls
 $> ticat cmds.flat
@@ -111,24 +142,7 @@ $> ticat c.f.s mysql
 ```
 
 
-## Non-flat mode
-The command `cmds` itself could display all info about a command:
-```
-$> ticat cmds desc
-[desc|d|D]
-     'desc the flow about to execute'
-    - cmd-type:
-        power (quiet) (priority)
-```
-`cmds` is used very frequently, it has a short name `c`.
-```
-$> ticat c cmds
-[cmds|cmd|c|C]
-     'display cmd info, no sub tree'
-    - args:
-        path|p|P = ''
-```
-
+## Tree mode
 The command `cmds.tree`(c.t) will display the command's info and it's sub-tree's:
 ```
 $> ticat c.t desc

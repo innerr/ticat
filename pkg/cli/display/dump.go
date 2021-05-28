@@ -16,13 +16,18 @@ func DumpFlow(
 	flow []core.ParsedCmd,
 	sep string,
 	indentSize int,
-	simple bool) {
+	simple bool,
+	skeleton bool) {
+
+	if skeleton {
+		simple = true
+	}
 
 	if len(flow) == 0 {
 		return
 	}
 	cc.Screen.Print("--->>>\n")
-	dumpFlow(cc, env, flow, sep, indentSize, simple, 0)
+	dumpFlow(cc, env, flow, sep, indentSize, simple, skeleton, 0)
 	cc.Screen.Print("<<<---\n")
 }
 
@@ -35,7 +40,7 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 
 func DumpCmds(
 	cc *core.Cli,
-	onlyNames bool,
+	skeleton bool,
 	indentSize int,
 	flatten bool,
 	recursive bool,
@@ -49,7 +54,7 @@ func DumpCmds(
 			panic(fmt.Errorf("[DumpCmds] can't find sub cmd tree by path '%s'", path))
 		}
 	}
-	dumpCmd(cc.Screen, cmds, onlyNames, indentSize,
+	dumpCmd(cc.Screen, cmds, skeleton, indentSize,
 		recursive, flatten, -cmds.Depth(), findStrs...)
 }
 
@@ -201,7 +206,7 @@ func dumpEnvAbbrs(
 func dumpCmd(
 	screen core.Screen,
 	cmd *core.CmdTree,
-	onlyNames bool,
+	skeleton bool,
 	indentSize int,
 	recursive bool,
 	flatten bool,
@@ -234,10 +239,10 @@ func dumpCmd(
 
 		if !flatten || cic != nil {
 			prt(0, "["+name+"]")
-			if !onlyNames && cic != nil && len(cic.Help()) != 0 {
+			if !skeleton && cic != nil && len(cic.Help()) != 0 {
 				prt(1, " '"+cic.Help()+"'")
 			}
-			if (!onlyNames || flatten) &&
+			if (!skeleton || flatten) &&
 				cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				prt(1, "- full-cmd:")
 				full := cmd.DisplayPath()
@@ -250,7 +255,7 @@ func dumpCmd(
 			}
 		}
 
-		if !onlyNames && cic != nil {
+		if !skeleton && cic != nil {
 			args := cic.Args()
 			argNames := args.Names()
 			if len(argNames) != 0 {
@@ -314,7 +319,7 @@ func dumpCmd(
 
 	if recursive {
 		for _, name := range cmd.SubNames() {
-			dumpCmd(screen, cmd.GetSub(name), onlyNames, indentSize,
+			dumpCmd(screen, cmd.GetSub(name), skeleton, indentSize,
 				recursive, flatten, indentAdjust, findStrs...)
 		}
 	}
@@ -327,11 +332,13 @@ func dumpFlow(
 	sep string,
 	indentSize int,
 	simple bool,
+	skeleton bool,
 	indentAdjust int) {
 
 	for _, cmd := range flow {
 		if len(cmd) != 0 {
-			dumpFlowCmd(cc, env, cmd, sep, indentSize, simple, indentAdjust)
+			dumpFlowCmd(cc, env, cmd, sep, indentSize,
+				simple, skeleton, indentAdjust)
 		}
 	}
 }
@@ -343,6 +350,7 @@ func dumpFlowCmd(
 	sep string,
 	indentSize int,
 	simple bool,
+	skeleton bool,
 	indentAdjust int) {
 
 	cmd := parsedCmd[len(parsedCmd)-1].Cmd.Cmd
@@ -363,48 +371,59 @@ func dumpFlowCmd(
 	if cic == nil {
 		return
 	}
-	name := parsedCmd.DisplayPath(sep, true)
+	var name string
+	if !skeleton {
+		name = parsedCmd.DisplayPath(sep, true)
+	} else {
+		name = strings.Join(parsedCmd.Path(), sep)
+	}
 	prt(0, "["+name+"]")
 	if cic != nil && len(cic.Help()) != 0 {
 		prt(1, " '"+cic.Help()+"'")
 	}
 
 	cmdEnv := parsedCmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
-	args := parsedCmd.Args()
-	argv := cmdEnv.GetArgv(parsedCmd.Path(), sep, args)
-	argLines := DumpArgs(&args, argv, true)
-	if len(argLines) != 0 {
-		prt(1, "- args:")
-	}
-	for _, line := range argLines {
-		prt(2, line)
-	}
-
-	// TODO: missed kvs in GlobalEnv
-	cmdEnv = parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
-	flatten := cmdEnv.Flatten(false, nil, true)
-	if len(flatten) != 0 {
-		prt(1, "- env-values:")
-		var keys []string
-		for k, _ := range flatten {
-			keys = append(keys, k)
+	if !skeleton {
+		args := parsedCmd.Args()
+		argv := cmdEnv.GetArgv(parsedCmd.Path(), sep, args)
+		argLines := DumpArgs(&args, argv, true)
+		if len(argLines) != 0 {
+			prt(1, "- args:")
 		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			prt(2, k+" = "+flatten[k])
+		for _, line := range argLines {
+			prt(2, line)
 		}
 	}
 
-	envOps := cic.EnvOps()
-	envOpKeys := envOps.EnvKeys()
-	if len(envOpKeys) != 0 {
-		prt(1, "- env-ops:")
-	}
-	for _, k := range envOpKeys {
-		prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
+	if !skeleton {
+		// TODO: missed kvs in GlobalEnv
+		cmdEnv = parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+		flatten := cmdEnv.Flatten(false, nil, true)
+		if len(flatten) != 0 {
+			prt(1, "- env-values:")
+			var keys []string
+			for k, _ := range flatten {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				prt(2, k+" = "+flatten[k])
+			}
+		}
 	}
 
-	if !simple {
+	if !skeleton {
+		envOps := cic.EnvOps()
+		envOpKeys := envOps.EnvKeys()
+		if len(envOpKeys) != 0 {
+			prt(1, "- env-ops:")
+		}
+		for _, k := range envOpKeys {
+			prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
+		}
+	}
+
+	if !simple && !skeleton {
 		line := string(cic.Type())
 		if cic.IsQuiet() {
 			line += " (quiet)"
@@ -428,17 +447,17 @@ func dumpFlowCmd(
 
 	if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
 		cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
-		if cic.Type() == core.CmdTypeFlow {
+		if cic.Type() == core.CmdTypeFlow && !skeleton {
 			prt(1, "- flow:")
 			prt(2, cic.CmdLine())
-		} else if !simple {
+		} else if !simple && !skeleton {
 			prt(1, "- executable:")
 			prt(2, cic.CmdLine())
 		}
 		if cic.Type() == core.CmdTypeFlow {
 			prt(2, "--->>>")
 			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
-			dumpFlow(cc, env, subFlow.Cmds, sep, indentSize, simple, indentAdjust+2)
+			dumpFlow(cc, env, subFlow.Cmds, sep, indentSize, simple, skeleton, indentAdjust+2)
 			prt(2, "<<<---")
 		}
 	}

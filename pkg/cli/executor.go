@@ -258,6 +258,7 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 		builtin.DumpFlow,
 		builtin.DumpFlowSimple,
 		builtin.DumpFlowDepends,
+		builtin.DumpFlowSkeleton,
 		builtin.DumpFlowEnvOpsCheckResult,
 	}
 	for _, allow := range allows {
