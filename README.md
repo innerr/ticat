@@ -9,7 +9,7 @@ let's run a demo to see how **ticat** works.
 Type and execute the commands we memtioned below.
 
 ## Build
-(`golang` is needed)
+`golang` is needed:
 ```
 $> git clone https://github.com/innerr/ticat
 $> cd ticat
@@ -28,27 +28,26 @@ it's easy to fetch it:
 $> ticat hub.add innerr/quick-start-usage.ticat
 ```
 
-### The basic usage about `:`, `+` and `-`
+### The basic usage about ":", "+" and "-"
 
 `+` and `-` are important commands to find and display infos, they have the same usage.
+
 The difference is `-` only shows brief messages, and `+` shows rich infos.
-Apparently `-` will be used more often.
 
-
-Use `+` as search command to find out what we got by search the repo's name.
-`@ready` is a conventional tag use for ready-to-go commands:
+Now use `+` as search command to find out what we got by search the repo's name,
+`@ready` is a conventional tag use for "ready-to-go" commands:
 ```
 $> ticat + @ready quick-start
+...
 [bench|ben]
      'pretend to do bench. @ready'
 ...
 ```
-From the search we know the command `bench`(has a alias `ben`).
+From the search we know the command `bench`.
 
 The usage of **ticat** has similar style with unix pipe, but use `:` instead of `|`.
 
-Concat `bench` and `-` with `:`, it shows the info of command `bench`:
-(`+` could do the same job, we choose `-` for a clean view)
+Concate `bench` and `-` with `:`, it shows the info of command `bench`:
 ```
 $> ticat bench:-
 --->>>
@@ -62,6 +61,7 @@ $> ticat bench:-
         <<<---
 <<<---
 ```
+`+` could do the same job, we chose `-` for a clean view.
 
 ### Try to run benchmark
 
@@ -115,7 +115,7 @@ benchmark on 127.0.0.1:4000 begin, scale=1
 benchmark on 127.0.0.1:4000 finish
 ```
 
-# Run it easier by manipulating env key-values
+# Manipulate env key-values
 
 We could save the port value to env:
 ```
@@ -126,12 +126,12 @@ So we don't need to type it down every time:
 $> ticat bench
 ```
 
-Run benchmark with a larger dataset,
-here we use step-by-step, it will ask for confirming on each step:
-(both could persist to env by `env.save`)
+Now run a larger dataset,
+here we turn on "step-by-step", it will ask for confirming on each step:
 ```
 $> ticat {bench.scale=10} dbg.step.on : bench
 ```
+These changes could all persist to env by `env.save`.
 
 ## Assamble pieces to powerful flows
 
@@ -146,11 +146,12 @@ There is another command `dev.bench` in the previous search result:
         dev.bench
 ...
 ```
-It do "build" and "restart" before bench based on the comment,
+It does "build" and "restart" before bench based on the help string,
 useful for develeping.
 
 The default data scale is 1, we use 4 for a test.
-We add a jitter detecting step after benchmark,
+
+Bisides that, we add a jitter detecting step after benchmark,
 this command also have the `@ready` tag so we found it.
 ```
 $> ticat {bench.scale=4} dev.bench : bench.jitter-scan
@@ -161,7 +162,7 @@ $> ticat {bench.scale=4} dev.bench : bench.jitter-scan
 This command sequence runs perfectly.
 But it's annoying to type all those every time.
 
-So we save it to a `flow` with name `xx`:
+So we save it to a `flow` with the name `xx`:
 ```
 $> ticat {bench.scale=4} dev.bench : cluster.jitter-scan : flow.save xx
 ```
@@ -176,7 +177,7 @@ $> ticat xx
 
 ### Take a good look at the env key-values
 
-We could use step-by-step to confirm every step,
+We could use "step-by-step" to confirm every step,
 ```
 $> ticat dbg.step.on : xx
 ```
@@ -200,15 +201,16 @@ and we could observe what will happen in the info box:
 └────────────────────────────────────────────────┘
 ...
 ```
-From the box we could see it's about to restart cluster,
+As en example, in the box it's about to restart cluster,
 the upper part has the current env key-values.
 
-### Dig inside the command we got, it's a flow provided by repo author
+## Dig inside the command we got
+It's a flow provided by repo author, just like `xx` we saved.
 
 ### Understand the flow: executing modules one by one
 
 Sometimes it's nice to have a preflight check,
-appending a command `+` or `-` to the sequence we got answers,
+appending a command `+` or `-` to the sequence can get the answers,
 let's check out the flow `xx` we just saved:
 ```
 $> ticat xx:-
@@ -237,7 +239,7 @@ $> ticat xx:-
 
 ### Understand the env: modules read/write a shared key-value set
 
-The `+` result of `xx` is a bit long, here is `bench`'s:
+The `+` result of `xx` is a bit long, here is the detail about command `bench`:
 ```
 $> ticat bench:+
 ```
@@ -302,8 +304,10 @@ We then save a new flow with data scale to get a handy command:
 $> ticat {bench.scale=4} dev.bench.no-reload : flow.save z
 ```
 
-More fun:
+Use it:
 ```
+  (code editing)
+$> ticat z
   (code editing)
 $> ticat z
 ...
@@ -312,12 +316,13 @@ $> ticat z
 ### Share our flows
 
 Each flow is a small file, move it to a local dir, then push it to git server.
-Then the repo address with friends then they can use it in **ticat**.
 
-Don't forget to write the help string and add some tags to it,
-so other users can tell what it's use for.
+Share the repo address with friends, then they can use it in **ticat**.
 
-For more details, checkout the "Module developing zone" bellow.
+It's nice to write help string and add some tags to it,
+in that other users can tell what it's use for.
+
+For more details, checkout the "Module developing zone" below.
 
 Writing new modules also easy and quick,
 it only take some minutes to wrap a existing tool into a **ticat** module.
@@ -377,10 +382,10 @@ $> ticat cmds:+ tree
 ```
 
 ## Cheat sheet
-* Use `:` to concate commands into sequence, will be execute one by one
+* Use `:` to concate commands, will be executed one by one
 * Use `{key=value}` to modify env key-values
 * (With `:`) append `+` or `-`  to any command(s) we want to investigate
-* Search commands:
+* Search commands by:
     - `ticat + <str> <str> ..`
     - `ticat <command> :+ <str> <str> ..`
 * Frequently-used commands:
