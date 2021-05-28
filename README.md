@@ -3,12 +3,10 @@ A casual command line components platform
 
 Workflow automating in unix-pipe style
 
-
 ## Quick start
 Suppose we are working for a distributed system,
 let's run a demo to see how **ticat** works.
 Type and execute the commands we memtioned below.
-
 
 ## Build
 (`golang` is needed)
@@ -19,8 +17,10 @@ $> make
 ```
 Recommend to set `ticat/bin` to system `$PATH`, it's handy.
 
-
 ## Run jobs shared by others
+
+### Add repo to **ticat**
+
 We want to do a benchmark for the demo distributed system,
 our workmates already wrote a bench tool and push to git server,
 it's easy to fetch it:
@@ -28,17 +28,44 @@ it's easy to fetch it:
 $> ticat hub.add innerr/quick-start-usage.ticat
 ```
 
+### The basic usage about `:`, `+` and `-`
 
-Find out what we got by search the repo's name.
+`+` and `-` are important commands to find and display infos, they have the same usage.
+The difference is `-` only shows brief messages, and `+` shows rich infos.
+Apparently `-` will be used more often.
+
+
+Use `+` as search command to find out what we got by search the repo's name.
 `@ready` is a conventional tag use for ready-to-go commands:
 ```
-$> ticat find quick-start-usage @ready
+$> ticat + @ready quick-start
 [bench|ben]
+     'pretend to do bench. @ready'
 ...
 ```
 From the search we know the command `bench`(has a alias `ben`).
 
+The usage of **ticat** has similar style with unix pipe, but use `:` instead of `|`.
 
+Concat `bench` and `-` with `:`, it shows the info of command `bench`:
+(`+` could do the same job, we choose `-` for a clean view)
+```
+$> ticat bench:-
+--->>>
+[bench]
+     'pretend to do bench. @ready'
+        --->>>
+        [bench.load]
+             'pretend to load data'
+        [bench.run]
+             'pretend to run bench'
+        <<<---
+<<<---
+```
+
+### Try to run benchmark
+
+Looks like `bench` is what we need.
 Say we have a single node cluster running, the access port is 4000.
 Try to run benchmark by:
 ```
@@ -55,7 +82,6 @@ Got an error, we should provide the cluster port:
             [bench.run]
        - but not provided
 ```
-
 
 Try again:
 ```
@@ -89,6 +115,7 @@ benchmark on 127.0.0.1:4000 begin, scale=1
 benchmark on 127.0.0.1:4000 finish
 ```
 
+# Run it easier by manipulating env key-values
 
 We could save the port value to env:
 ```
@@ -100,14 +127,16 @@ $> ticat bench
 ```
 
 Run benchmark with a larger dataset,
-use step-by-step, it will ask for confirming on each step:
-(both could save as default by `env.save`)
+here we use step-by-step, it will ask for confirming on each step:
+(both could persist to env by `env.save`)
 ```
 $> ticat {bench.scale=10} dbg.step.on : bench
 ```
 
-
 ## Assamble pieces to powerful flows
+
+### Call another command
+
 There is another command `dev.bench` in the previous search result:
 ```
 ...
@@ -120,14 +149,14 @@ There is another command `dev.bench` in the previous search result:
 It do "build" and "restart" before bench based on the comment,
 useful for develeping.
 
-
 The default data scale is 1, we use 4 for a test.
 We add a jitter detecting step after benchmark,
 this command also have the `@ready` tag so we found it.
 ```
-$> ticat {bench.scale=4} dev.bench : cluster.jitter-scan
+$> ticat {bench.scale=4} dev.bench : bench.jitter-scan
 ```
 
+### Save commands to a flow for convenient
 
 This command sequence runs perfectly.
 But it's annoying to type all those every time.
@@ -145,6 +174,7 @@ $> ticat xx
 ...
 ```
 
+### Take a good look at the env key-values
 
 We could use step-by-step to confirm every step,
 ```
@@ -173,14 +203,43 @@ and we could observe what will happen in the info box:
 From the box we could see it's about to restart cluster,
 the upper part has the current env key-values.
 
+### Dig inside the command we got, it's a flow provided by repo author
 
-We have the info during running.
-But sometimes it's nice to have a preflight check,
-command `desc` is what we need.
-The desc result of `xx` will be long,
-so let's checkout `bench`:
+### Understand the flow: executing modules one by one
+
+Sometimes it's nice to have a preflight check,
+appending a command `+` or `-` to the sequence we got answers,
+let's check out the flow `xx` we just saved:
 ```
-$> ticat bench : desc
+$> ticat xx:-
+--->>>
+[xx]
+        --->>>
+        [dev.bench]
+             'build binary in pwd, then restart cluster and do benchmark. @ready'
+                --->>>
+                [local.build]
+                     'pretend to build demo cluster's server binary'
+                [cluster.local]
+                     'set local cluster as active cluster to env'
+                [cluster.restart]
+                     'pretend to run bench'
+                [bench.load]
+                     'pretend to load data'
+                [bench.run]
+                     'pretend to run bench'
+                <<<---
+        [bench.jitter-scan]
+             'pretend to scan jitter @ready'
+        <<<---
+<<<---
+```
+
+### Understand the env: modules read/write a shared key-value set
+
+The `+` result of `xx` is a bit long, here is `bench`'s:
+```
+$> ticat bench:+
 ```
 
 The output will be a full description of the execution:
@@ -211,6 +270,7 @@ The output will be a full description of the execution:
 From the description, we know how modules are executed one by one,
 each one may read or write from the env.
 
+### The env read/write report from `+`
 
 Beside the flow description, there is a check result about env read/write.
 An env key-value being read before write will cause a `FATAL` error,
@@ -225,29 +285,109 @@ An env key-value being read before write will cause a `FATAL` error,
        - but not provided
 ```
 
+### Customize features by re-assemble pieces
+
+Now we know what's in the "ready-to-go" commands,
+we are able to do customizations,
+let's remove the `bench.load` step from `dev.bench`,
+to make it faster when on coding:
+```
+$> ticat local.build : cluster.local : cluster.restart : ben.run : flow.save dev.bench.no-reload
+```
+
+We just saved a flow without data scale config,
+it's a good practice seperating "process-logic" and "config".
+We then save a new flow with data scale to get a handy command:
+```
+$> ticat {bench.scale=4} dev.bench.no-reload : flow.save z
+```
+
+More fun:
+```
+  (code editing)
+$> ticat z
+...
+```
+
+### Share our flows
+
+Each flow is a small file, move it to a local dir, then push it to git server.
+Then the repo address with friends then they can use it in **ticat**.
+
+Don't forget to write the help string and add some tags to it,
+so other users can tell what it's use for.
+
+For more details, checkout the "Module developing zone" bellow.
+
+Writing new modules also easy and quick,
+it only take some minutes to wrap a existing tool into a **ticat** module.
+Check out the [quick-start-for-module-developing](./doc/quick-start-mod.md).
+
+## Important command branchs
+
+### The builtin commands
+
+A branch is a set of commands like `env` `env.tree` `env.flat`,
+they share a same path branch.
+
+These builtin branchs are important:
+* `hub`: manage the git repo list we added. abbr `h`.
+* `env`: manage env. abbr `e`.
+* `flow`: manage saved flows. abbr `f`.
+* `cmds`: manage all callable commands(modules and flows). abbr `c`.
+
+Use `+` `-` to navigate them, here are some usage examples.
+
+Overview branch `cmds`:
+```
+$> ticat cmds:-
+[cmds|cmd|c|C]
+    [tree|t|T]
+        [simple|sim|skeleton|sk|sl|st|s|S|-]
+    [list|ls|flatten|flat|f|F|~]
+        [simple|sim|s|S|-]
+```
+
+Search "tree"(could be any string) in the branch:
+```
+$> ticat cmds:- tree
+[cmds|cmd|c|C]
+[tree|t|T]
+    - full-cmd:
+        cmds.tree
+    - full-abbrs:
+        cmds|cmd|c|C.tree|t|T
+```
+
+Use `+` instead of `-` to get more detail:
+```
+$> ticat cmds:+ tree
+[cmds|cmd|c|C]
+     'display cmd info, no sub tree'
+    - args:
+        cmd-path|path|p|P = ''
+[tree|t|T]
+     'list builtin and loaded cmds'
+    - full-cmd:
+        cmds.tree
+    - full-abbrs:
+        cmds|cmd|c|C.tree|t|T
+    - args:
+        cmd-path|path|p|P = ''
+```
 
 ## Cheat sheet
 * Use `:` to concate commands into sequence, will be execute one by one
 * Use `{key=value}` to modify env key-values
-* Abbrs are for reducing memorization, they display in the form of `real-name|abbr-name`
-* Use `ticat find <str> <str> ..` to locate the command we needed, the amount will be huge.
-* `ticat cmds.tree <command>` shows a command sub-tree. the sub-trees below are important:
-    - `ticat cmds.tree hub`: manage the git repo list we added.
-        - `ticat hub.init`: add default repo
-        - `ticat hub.add <repo-addr>`
-    - `ticat cmds.tree cmds`: manage all commands we could call. abbr: `c`
-        - `ticat cmd <command>`: show info of only this command, no sub tree.
-        - `ticat cmds.tree.simple <command>`: short and clean display in tree form. abbr: `c.t.s`
-        - `ticat cmds.list.simple <command>`: short and clean display in list. abbr: `c.l.s`
-    - `ticat cmds.tree flow`: manage saved flows.
-        - `flow.save`: save flows, call flows like normal commands. abbr: `f.s`
-    - `ticat cmds.tree env`: manage env key-values.
-        - `env.save`: save any env modifications. abbr: `e.s`
-        - `env.ls`: list all key-values.
-    - `ticat cmds.tree desc`:
-        - `desc`: full info.
-        - `desc.simple`: give a lite description. abbr: `d.s`
-
+* (With `:`) append `+` or `-`  to any command(s) we want to investigate
+* Search commands:
+    - `ticat + <str> <str> ..`
+    - `ticat <command> :+ <str> <str> ..`
+* Frequently-used commands:
+    - `hub.add <repo-addr>`, abbr `h.+`
+    - `flow.save`, abbr `f.+`
+    - `env.save`, abbr `e.+`
+* Lots of abbrs like `[bench|ben]` in search result, use them to save typing time
 
 ## User manual
 * [Usage examples](./doc/usage)
@@ -257,7 +397,6 @@ An env key-value being read before write will cause a `FATAL` error,
     - [Manipulate env key-values](./doc/usage/env.md)
     - [Use flows](./doc/usage/flow.md)
     - [Use abbrs/alias](./doc/usage/abbr.md)
-
 
 ## Module developing zone
 * [Quick-start](./doc/quick-start-mod.md)
@@ -277,7 +416,6 @@ An env key-value being read before write will cause a `FATAL` error,
     - [Repo tree](./doc/spec/repo-tree.md)
     - [Module: env and args](./doc/spec/mod-interact.md)
     - [Module: meta file](./doc/spec/mod-meta.md)
-
 
 ## Inside **ticat**
 * [Roadmap and progress](./doc/progress.md)

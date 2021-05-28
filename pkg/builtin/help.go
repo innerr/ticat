@@ -25,13 +25,9 @@ func GlobalHelp(
 			display.DumpCmds(cc, false, 4, true, true, cmdPathStr, findStrs...)
 			return clearFlow(flow)
 		}
-
-		if len(flow.Cmds) > 2 {
-			return DumpFlow(argv, cc, env, flow, currCmdIdx)
-		}
-
-		if cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
-			return DumpFlow(argv, cc, env, flow, currCmdIdx)
+		if len(flow.Cmds) > 2 ||
+			cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
+			return DumpFlowAll(argv, cc, env, flow, currCmdIdx)
 		}
 		if cmd.HasSub() && cmd.Cmd() == nil {
 			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
@@ -71,12 +67,8 @@ func GlobalSkeleton(
 			display.DumpCmds(cc, true, 4, true, true, cmdPathStr, findStrs...)
 			return clearFlow(flow)
 		}
-
-		if len(flow.Cmds) > 2 {
-			return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
-		}
-
-		if cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
+		if len(flow.Cmds) > 2 ||
+			cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
 			return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
 		}
 		if cmd.HasSub() {

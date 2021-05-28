@@ -76,7 +76,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 
 	mods := cmds.AddSub("cmds", "cmd", "c", "C")
 	mods.RegCmd(DumpCmdNoRecursive,
-		"display cmd info, no sub tree").
+		"display cmd info, sub tree cmds will not show").
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	tree := mods.AddSub("tree", "t", "T")
