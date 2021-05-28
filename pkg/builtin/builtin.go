@@ -359,20 +359,17 @@ func addFindStrArgs(cmd *core.Cmd) {
 		AddArg("6th-str", "")
 }
 
-const GlobalHelpHelpStr = `display rich info base on:
-* if not in a sequence has args, do search: "find <str> <str> ..."
-* if in a sequence with:
-   * more than 1 commands, do "desc" to show the detail execution.
-   * only 1 other command and:
-      * has no args, do "cmds" to show the command info.
-      * has args, do "desc.list.simple <str> <str>" to find commands under this command.
-* show global help if not in a sequence and without args.`
+const LessMoreHelpStr = `
+* if in a sequence having
+    * more than 1 other commands: show the sequence execution.
+    * only 1 other command and
+        * has no args and the other command is
+            * a flow: show the flow execution.
+            * not a flow: show the command or the branch info.
+        * has args: find commands under the branch of the other command.
+* if not in a sequence and
+    * has args: do global search.
+    * has no args: show global help.`
 
-const SkeletonHelpStr = `display essential info base on:
-* if not in a sequence has args, do search: "find <str> <str> ..."
-* if in a sequence
-   * with more than 1 commands, do "desc.skeleton" to show the brief execution.
-   * with only 1 other command and this command:
-       * is not flow, do "cmds.tree.skeleton" to show the commands under this command.
-       * is flow, do "desc.skeleton".
-* show global help if not in a sequence and without args.`
+const GlobalHelpHelpStr = "display rich info base on:" + LessMoreHelpStr
+const SkeletonHelpStr = "display brief info base on:" + LessMoreHelpStr
