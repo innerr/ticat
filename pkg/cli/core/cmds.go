@@ -130,6 +130,10 @@ func (self *CmdTree) GetOrAddSub(path ...string) *CmdTree {
 	return self.getSub(true, path...)
 }
 
+func (self *CmdTree) HasSub() bool {
+	return len(self.subs) != 0
+}
+
 func (self *CmdTree) GetSub(path ...string) *CmdTree {
 	return self.getSub(false, path...)
 }

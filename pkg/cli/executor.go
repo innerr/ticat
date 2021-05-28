@@ -253,6 +253,7 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	allows := []interface{}{
 		builtin.SaveFlow,
 		builtin.GlobalHelp,
+		builtin.GlobalSkeleton,
 		builtin.DumpFlowAll,
 		builtin.DumpFlowAllSimple,
 		builtin.DumpFlow,

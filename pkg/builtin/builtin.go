@@ -18,12 +18,18 @@ func RegisterCmds(cmds *core.CmdTree) {
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
-	help := cmds.AddSub("help", "hp", "?", "h", "H").
+	help := cmds.AddSub("help", "?", "+").
 		RegPowerCmd(GlobalHelp,
-			"get help").
+			GlobalHelpHelpStr).
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(help)
+
+	cmds.AddSub("skeleton", "-").
+		RegPowerCmd(GlobalSkeleton,
+			SkeletonHelpStr).
+		SetQuiet().
+		SetPriority()
 
 	find := cmds.AddSub("search", "find", "fnd", "s", "S").
 		RegCmd(FindAny,
@@ -192,7 +198,7 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 }
 
 func RegisterHubCmds(cmds *core.CmdTree) {
-	hub := cmds.AddSub("hub")
+	hub := cmds.AddSub("hub", "h", "H")
 
 	hub.AddSub("clear", "reset").
 		RegCmd(RemoveAllFromHub,
@@ -340,3 +346,20 @@ func addFindStrArgs(cmd *core.Cmd) {
 		AddArg("5th-str", "", "5").
 		AddArg("6th-str", "", "6")
 }
+
+const GlobalHelpHelpStr = `display info base on:
+* if not in a sequence has args, do search: "find <str> <str> ..."
+* if in a sequence with:
+   * more than 1 commands, do "desc" to show the detail execution.
+   * only 1 other command and:
+      * has no args, do "cmds" to show the command info.
+      * has args, do "desc.list.simple <str> <str>" to find commands under this command.
+* show global help if not in a sequence and without args.`
+
+const SkeletonHelpStr = `display info base on:
+* if in a sequence
+   * with more than 1 commands, do "desc.skeleton" to show the brief execution.
+   * with only 1 other command and this command:
+       * is not flow, do "cmds.tree.skeleton" to show the commands under this command.
+       * is flow, do "desc.skeleton".
+* if not in a sequence, do nothing.`

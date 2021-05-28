@@ -1,6 +1,8 @@
 package builtin
 
 import (
+	"strings"
+
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
@@ -16,7 +18,12 @@ func GlobalHelp(
 		return DumpFlow(argv, cc, env, flow, currCmdIdx)
 	} else if len(flow.Cmds) == 2 {
 		cmdPath := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
-		display.DumpCmds(cc, false, 4, true, true, cmdPath, getFindStrsFromArgv(argv)...)
+		findStrs := getFindStrsFromArgv(argv)
+		if len(findStrs) != 0 {
+			display.DumpCmds(cc, false, 4, true, true, cmdPath, findStrs...)
+		} else {
+			display.DumpCmds(cc, false, 4, false, false, cmdPath)
+		}
 		flow.Cmds = nil
 		return 0, true
 	}
@@ -48,6 +55,36 @@ func GlobalHelp(
 	pln("    use abbrs in cmd:              - ticat exam.go arg1 arg2")
 	pln("    use abbrs in env KVs setting:  - ticat {disp.w=120} : cmd1 : cmd2")
 	pln("                                   - ticat {disp.w=120} : e.s")
+
+	flow.Cmds = nil
+	return 0, true
+}
+
+func GlobalSkeleton(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	if len(flow.Cmds) > 2 {
+		return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
+	} else if len(flow.Cmds) == 2 {
+		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
+		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
+		if cmd != nil {
+			if cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
+				return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
+			}
+			if cmd.HasSub() {
+				display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
+			} else {
+				display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
+			}
+		}
+		flow.Cmds = nil
+		return 0, true
+	}
 
 	flow.Cmds = nil
 	return 0, true
