@@ -17,12 +17,20 @@ func GlobalHelp(
 	if len(flow.Cmds) > 2 {
 		return DumpFlow(argv, cc, env, flow, currCmdIdx)
 	} else if len(flow.Cmds) == 2 {
-		cmdPath := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
-		findStrs := getFindStrsFromArgv(argv)
-		if len(findStrs) != 0 {
-			display.DumpCmds(cc, false, 4, true, true, cmdPath, findStrs...)
+		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
+		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
+		if cmd != nil && cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
+			return DumpFlow(argv, cc, env, flow, currCmdIdx)
+		}
+		if cmd != nil && cmd.HasSub() && cmd.Cmd() == nil {
+			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
 		} else {
-			display.DumpCmds(cc, false, 4, false, false, cmdPath)
+			findStrs := getFindStrsFromArgv(argv)
+			if len(findStrs) != 0 {
+				display.DumpCmds(cc, false, 4, true, true, cmdPathStr, findStrs...)
+			} else {
+				display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
+			}
 		}
 		flow.Cmds = nil
 		return 0, true
