@@ -12,7 +12,8 @@ func DumpFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4, false)
+	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:],
+		cc.Cmds.Strs.PathSep, 4, false, false)
 	flow.Cmds = nil
 	return 0, true
 }
@@ -24,7 +25,21 @@ func DumpFlowSimple(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], cc.Cmds.Strs.PathSep, 4, true)
+	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:],
+		cc.Cmds.Strs.PathSep, 4, true, false)
+	flow.Cmds = nil
+	return 0, true
+}
+
+func DumpFlowSkeleton(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:],
+		cc.Cmds.Strs.PathSep, 4, true, true)
 	flow.Cmds = nil
 	return 0, true
 }
@@ -97,7 +112,7 @@ func dumpFlowAll(
 	simple bool) (int, bool) {
 
 	cmds := flow.Cmds[currCmdIdx+1:]
-	display.DumpFlow(cc, env, cmds, cc.Cmds.Strs.PathSep, 4, simple)
+	display.DumpFlow(cc, env, cmds, cc.Cmds.Strs.PathSep, 4, simple, false)
 
 	deps := display.Depends{}
 	display.CollectDepends(cc, flow.Cmds[currCmdIdx+1:], deps)
@@ -125,18 +140,29 @@ func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func DumpCmdTree(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, false, 4, false, argv.GetRaw("path"))
+func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	display.DumpCmds(cc, false, 4, false, false, argv.GetRaw("cmd-path"))
 	return true
 }
 
-func DumpCmdTreeSimple(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, true, 4, false, argv.GetRaw("path"))
+func DumpCmdTree(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, false, 4, false, true, argv.GetRaw("cmd-path"))
+	return true
+}
+
+func DumpCmdTreeSkeleton(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, true, 4, false, true, argv.GetRaw("cmd-path"))
+	return true
+}
+
+func DumpCmdListSimple(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+	display.DumpCmds(cc, true, 4, true, true, argv.GetRaw("cmd-path"),
+		getFindStrsFromArgv(argv)...)
 	return true
 }
 
 func DumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, false, 4, true, "", getFindStrsFromArgv(argv)...)
+	display.DumpCmds(cc, false, 4, true, true, "", getFindStrsFromArgv(argv)...)
 	return true
 }
 

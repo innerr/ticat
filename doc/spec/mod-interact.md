@@ -21,7 +21,7 @@ so it's easy to call other modules.
 We need to notify ticat it's in a same session,
 so all the modules could use the same env.
 That's how we should do to call other modules inside a module:
-```bash
+```
 $> ticat {session=<arg-1>} <any-ticat-command>
 $> ticat {session=<arg-1>} : <command-1> : <command-2>
 ```

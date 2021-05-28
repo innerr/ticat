@@ -18,12 +18,19 @@ func RegisterCmds(cmds *core.CmdTree) {
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
-	help := cmds.AddSub("help", "hp", "?", "h", "H").
+	more := cmds.AddSub("more", "+").
 		RegPowerCmd(GlobalHelp,
-			"get help").
+			GlobalHelpHelpStr).
 		SetQuiet().
 		SetPriority()
-	addFindStrArgs(help)
+	addFindStrArgs(more)
+
+	less := cmds.AddSub("less", "-").
+		RegPowerCmd(GlobalSkeleton,
+			SkeletonHelpStr).
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(less)
 
 	find := cmds.AddSub("search", "find", "fnd", "s", "S").
 		RegCmd(FindAny,
@@ -35,19 +42,14 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"desc the flow about to execute").
 		SetQuiet().
 		SetPriority()
-	desc.AddSub("lite", "simple", "sim", "s", "S").
+	desc.AddSub("simple", "sim", "s", "S").
 		RegPowerCmd(DumpFlowAllSimple,
 			"desc the flow about to execute in lite style").
 		SetQuiet().
 		SetPriority()
-	descFlow := desc.AddSub("flow", "f", "F").
-		RegPowerCmd(DumpFlow,
-			"desc the flow execution").
-		SetQuiet().
-		SetPriority()
-	descFlow.AddSub("lite", "simple", "sim", "s", "S").
-		RegPowerCmd(DumpFlowSimple,
-			"desc the flow execution in lite style").
+	desc.AddSub("skeleton", "sk", "sl", "st", "-").
+		RegPowerCmd(DumpFlowSkeleton,
+			"desc the flow about to execute, skeleton only").
 		SetQuiet().
 		SetPriority()
 	desc.AddSub("dependencies", "depends", "depend", "dep", "d", "D").
@@ -61,27 +63,50 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	mod := cmds.AddSub("cmds", "cmd", "mod", "mods", "m", "M")
+	descFlow := desc.AddSub("flow", "f", "F").
+		RegPowerCmd(DumpFlow,
+			"desc the flow execution").
+		SetQuiet().
+		SetPriority()
+	descFlow.AddSub("simple", "sim", "s", "S", "-").
+		RegPowerCmd(DumpFlowSimple,
+			"desc the flow execution in lite style").
+		SetQuiet().
+		SetPriority()
 
-	tree := mod.AddSub("tree", "t", "T")
+	mods := cmds.AddSub("cmds", "cmd", "c", "C")
+	mods.RegCmd(DumpCmdNoRecursive,
+		"display cmd info, sub tree cmds will not show").
+		AddArg("cmd-path", "", "path", "p", "P")
+
+	tree := mods.AddSub("tree", "t", "T")
 	tree.RegCmd(DumpCmdTree,
 		"list builtin and loaded cmds").
-		AddArg("path", "", "p", "P")
-	tree.AddSub("lite", "simple", "sim", "s", "S").
-		RegCmd(DumpCmdTreeSimple,
-			"list builtin and loaded cmds, only names").
-		AddArg("path", "", "p", "P")
+		AddArg("cmd-path", "", "path", "p", "P")
+	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
+		RegCmd(DumpCmdTreeSkeleton,
+			"list builtin and loaded cmds, skeleton only").
+		AddArg("cmd-path", "", "path", "p", "P")
 
-	modList := mod.AddSub("list", "ls", "flatten", "flat", "f", "F").
+	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
 		RegCmd(DumpCmds,
 			"list builtin and loaded cmds")
-	addFindStrArgs(modList)
+	addFindStrArgs(list)
+
+	listSimple := list.AddSub("simple", "sim", "s", "S", "-").
+		RegCmd(DumpCmdListSimple,
+			"list builtin and loaded cmds in lite style")
+	addFindStrArgs(listSimple)
 }
 
 func RegisterFlowCmds(cmds *core.CmdTree) {
-	flow := cmds.AddSub("flow", "fl", "f", "F")
+	listFlowsHelpStr := "list local saved but unlinked (to any repo) flows"
+	flow := cmds.AddSub("flow", "fl", "f", "F").
+		RegCmd(ListFlows,
+			listFlowsHelpStr)
+	addFindStrArgs(flow)
 
-	flow.AddSub("save", "persist", "s", "S").
+	flow.AddSub("save", "persist", "s", "S", "+").
 		RegPowerCmd(SaveFlow,
 			"save current cmds as a flow").
 		SetQuiet().
@@ -95,14 +120,14 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P").
 		AddArg("help-str", "", "help", "h", "H")
 
-	flow.AddSub("remove", "rm", "delete", "del").
+	flow.AddSub("remove", "rm", "delete", "del", "-").
 		RegCmd(RemoveFlow,
 			"remove a saved flow").
 		AddArg("cmd-path", "", "path", "p", "P")
 
-	flowList := flow.AddSub("list-local", "list", "ls").
+	flowList := flow.AddSub("list-local", "list", "ls", "~").
 		RegCmd(ListFlows,
-			"list local saved but unlinked (to any repo) flows")
+			listFlowsHelpStr)
 	addFindStrArgs(flowList)
 
 	flow.AddSub("load", "l", "L").
@@ -110,13 +135,17 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 			"load flows from local dir").
 		AddArg("path", "", "p", "P")
 
-	flow.AddSub("clear", "reset").
+	flow.AddSub("clear", "reset", "--").
 		RegCmd(RemoveAllFlows,
 			"remove all flows saved in local")
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
-	env := cmds.AddSub("env", "e", "E")
+	envListHelpStr := "list env values in flatten format"
+	env := cmds.AddSub("env", "e", "E").
+		RegCmd(DumpEnvFlattenVals,
+			envListHelpStr)
+	addFindStrArgs(env)
 
 	env.AddSub("tree", "t", "T").
 		RegCmd(DumpEnv,
@@ -127,22 +156,22 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		RegCmd(DumpEnvAbbrs,
 			"list env tree and abbrs")
 
-	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F").
+	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
 		RegCmd(DumpEnvFlattenVals,
-			"list env values in flatten format")
+			envListHelpStr)
 	addFindStrArgs(envList)
 
-	env.AddSub("save", "persist", "s", "S").
+	env.AddSub("save", "persist", "s", "S", "+").
 		RegCmd(SaveEnvToLocal,
 			"save session env changes to local").
 		SetQuiet()
 
-	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
+	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
 		RegCmd(RemoveEnvValAndSaveToLocal,
 			"remove specific env KV and save changes to local").
 		AddArg("key", "", "k", "K")
 
-	env.AddSub("reset-and-save", "reset", "clear").
+	env.AddSub("reset-and-save", "reset", "clear", "--").
 		RegCmd(ResetLocalEnv,
 			"reset all local saved env KVs")
 }
@@ -178,18 +207,21 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 }
 
 func RegisterHubCmds(cmds *core.CmdTree) {
-	hub := cmds.AddSub("hub")
+	listHubHelpStr := "list dir and repo info in hub"
+	hub := cmds.AddSub("hub", "h", "H").
+		RegCmd(ListHub,
+			listHubHelpStr)
+	addFindStrArgs(hub)
 
-	hub.AddSub("clear", "reset").
+	hub.AddSub("clear", "reset", "--").
 		RegCmd(RemoveAllFromHub,
 			"remove all repos from hub")
 
-	hub.AddSub("init").
+	hub.AddSub("init", "++").
 		RegCmd(AddGitDefaultToHub,
 			"add and pull basic hub-repo to local")
 
-	add := hub.AddSub("add-and-update", "add", "a", "A")
-
+	add := hub.AddSub("add-and-update", "add", "a", "A", "+")
 	add.RegCmd(AddGitRepoToHub,
 		"add and pull a git address to hub").
 		AddArg("git-address", "", "git", "address", "addr")
@@ -199,20 +231,20 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 			"add a local dir (could be a git repo) to hub").
 		AddArg("path", "", "p", "P")
 
-	hubList := hub.AddSub("list", "ls").
+	hubList := hub.AddSub("list", "ls", "~").
 		RegCmd(ListHub,
-			"list dir and repo info in hub")
+			listHubHelpStr)
 	addFindStrArgs(hubList)
 
-	purge := hub.AddSub("purge", "p", "P")
+	purge := hub.AddSub("purge", "p", "P", "-")
 	purge.RegCmd(PurgeInactiveRepoFromHub,
 		"remove an inactive repo from hub").
 		AddArg("find-str", "", "s", "S")
-	purge.AddSub("purge-all-inactive", "all", "inactive", "a", "A").
+	purge.AddSub("purge-all-inactive", "all", "inactive", "a", "A", "-").
 		RegCmd(PurgeAllInactiveReposFromHub,
 			"remove all inactive repos from hub")
 
-	hub.AddSub("update", "u", "U").
+	hub.AddSub("update-all", "update", "u", "U").
 		RegCmd(UpdateHub,
 			"update all repos and mods defined in hub")
 
@@ -298,11 +330,11 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		AddArg("message", "", "msg", "m", "M")
 
 	step := cmds.AddSub("step-by-step", "step", "s", "S")
-	step.AddSub("on", "yes", "y", "Y", "1").
+	step.AddSub("on", "yes", "y", "Y", "1", "+").
 		RegCmd(DbgStepOn,
 			"enable step by step").
 		SetQuiet()
-	step.AddSub("off", "no", "n", "N", "0").
+	step.AddSub("off", "no", "n", "N", "0", "-").
 		RegCmd(DbgStepOff,
 			"disable step by step").
 		SetQuiet()
@@ -319,10 +351,25 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 }
 
 func addFindStrArgs(cmd *core.Cmd) {
-	cmd.AddArg("1st-str", "", "1", "find", "str", "s", "S").
-		AddArg("2nd-str", "", "2").
-		AddArg("3rh-str", "", "3").
-		AddArg("4th-str", "", "4").
-		AddArg("5th-str", "", "5").
-		AddArg("6th-str", "", "6")
+	cmd.AddArg("1st-str", "", "find-str").
+		AddArg("2nd-str", "").
+		AddArg("3rh-str", "").
+		AddArg("4th-str", "").
+		AddArg("5th-str", "").
+		AddArg("6th-str", "")
 }
+
+const LessMoreHelpStr = `
+* if in a sequence having
+    * more than 1 other commands: show the sequence execution.
+    * only 1 other command and
+        * has no args and the other command is
+            * a flow: show the flow execution.
+            * not a flow: show the command or the branch info.
+        * has args: find commands under the branch of the other command.
+* if not in a sequence and
+    * has args: do global search.
+    * has no args: show global help.`
+
+const GlobalHelpHelpStr = "display rich info base on:" + LessMoreHelpStr
+const SkeletonHelpStr = "display brief info base on:" + LessMoreHelpStr

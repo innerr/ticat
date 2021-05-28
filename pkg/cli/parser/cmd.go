@@ -152,7 +152,7 @@ func (self *CmdParser) parse(
 				continue
 			} else {
 				self.err("parse", matchedCmdPath, "unknow input '"+
-					strings.Join(input, " ")+"', shoud be sub cmd")
+					strings.Join(input, " ")+"', should be sub cmd")
 			}
 		} else {
 			// Try to parse cmd args
@@ -161,8 +161,14 @@ func (self *CmdParser) parse(
 				parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
 			}
 			if len(input) != 0 {
+				var errStr string
+				if cmdHasArgs(curr) {
+					errStr = "args parse failed"
+				} else {
+					errStr = "looks like args, but curr cmd has no args"
+				}
 				self.err("parse", matchedCmdPath, "unknow input '"+
-					strings.Join(input, " ")+"', should be args")
+					strings.Join(input, " ")+"', "+errStr)
 			}
 			break
 		}
@@ -191,4 +197,12 @@ type parsedSeg struct {
 	Type parsedSegType
 	// Val should be 'ParsedEnv' or 'MatchedCmd'
 	Val interface{}
+}
+
+func cmdHasArgs(cmd *core.CmdTree) bool {
+	if cmd == nil || cmd.Cmd() == nil {
+		return false
+	}
+	args := cmd.Args()
+	return len(args.Names()) != 0
 }

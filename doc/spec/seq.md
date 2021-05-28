@@ -4,7 +4,7 @@
 A command sequence will execute commands one by one,
 the latter one won't start untill the previous one finishes.
 Commands in a sequence are seperated by ":".
-```bash
+```
 $> ticat <command> : <command> : <command>
 ## Example:
 $> ticat dummy : sleep 1s : echo hello
@@ -14,7 +14,7 @@ $> ticat dummy:sleep 1s:echo hello
 ```
 
 ## Display what will happen without execute a sequence
-```bash
+```
 $> ticat <command> : <command> : <command> : desc
 ## Exmaples:
 $> ticat dummy : desc
@@ -23,7 +23,7 @@ $> ticat dummy : sleep 1s : echo hello : desc
 
 ## Execute a sequence step by step
 The env key "sys.step-by-step" enable or disable the step-by-step feature:
-```bash
+```
 $> ticat {sys.step-by-step = true} <command> : <command> : <command>
 $> ticat {sys.step-by-step = on} <command> : <command> : <command>
 $> ticat {sys.step = on} <command> : <command> : <command>
@@ -33,7 +33,7 @@ $> ticat <command-1> : {sys.step = on} <command-2> : <command-3>
 ```
 
 A set of builtin commands could changes this env key for better usage:
-```bash
+```
 ## Find these two commands:
 $> ticat m.ls step
 [on|yes|y|Y|1]
@@ -63,7 +63,7 @@ $> ticat dbg.step.on : env.save
 ```
 
 ## The "desc" command
-```bash
+```
 $> ticat <command> : <command> : <command> : desc
 
 ## Exmaples:
@@ -74,7 +74,7 @@ $> ticat dummy : sleep 1s : echo hello : desc
 ## Power/priority commands
 Some commands have "power" flag, these type of command can changes the sequence.
 Use "cmds.list <path>" or "cmds.tree <path>" can check a command's type.
-```bash
+```
 ## Example:
 $> ticat cmds.tree dummy.power
 [power|p|P]
@@ -108,7 +108,7 @@ $> ticat desc [: <command> : <command> : <command>]
 ```
 
 Other power commmands:
-```bash
+```
 $> ticat cmds.tree help
 [help|?]
      'get help'
@@ -121,7 +121,7 @@ $> ticat cmds.tree help
 ```
 
 When have more than one priority commands in a sequence:
-```bash
+```
 ## User input
 $> ticat <command-1> : <command-2> : <priority-command-a> : <priority-command-b>
 ## Actual execute order:

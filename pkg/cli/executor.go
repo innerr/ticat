@@ -153,10 +153,13 @@ func (self *Executor) executeCmd(
 
 // 1. remove the cmds only have cmd-level env definication but have no executable
 // 2. move priority cmds to the head
+// TODO: sort commands by priority-value, not just a bool flag, so '+' '-' can have the top priority
 func filterEmptyCmdsAndReorderByPriority(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
 	_ *core.Env) bool {
+
+	notFilterEmpty := doNotFilterEmptyCmds(flow)
 
 	var unfiltered []core.ParsedCmd
 	unfilteredGlobalSeqIdx := -1
@@ -165,6 +168,12 @@ func filterEmptyCmdsAndReorderByPriority(
 
 	for i, cmd := range flow.Cmds {
 		if cmd.TotallyEmpty() {
+			if notFilterEmpty {
+				unfiltered = append(unfiltered, cmd)
+				if i == flow.GlobalSeqIdx {
+					unfilteredGlobalSeqIdx = len(unfiltered) - 1
+				}
+			}
 			continue
 		}
 		if cmd.IsPriority() {
@@ -251,14 +260,34 @@ func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *co
 func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	last := flow.Cmds[0].LastCmd()
 	allows := []interface{}{
+		builtin.DumpCmdNoRecursive,
 		builtin.SaveFlow,
 		builtin.GlobalHelp,
+		builtin.GlobalSkeleton,
 		builtin.DumpFlowAll,
 		builtin.DumpFlowAllSimple,
 		builtin.DumpFlow,
 		builtin.DumpFlowSimple,
 		builtin.DumpFlowDepends,
+		builtin.DumpFlowSkeleton,
 		builtin.DumpFlowEnvOpsCheckResult,
+	}
+	for _, allow := range allows {
+		if last.IsTheSameFunc(allow) {
+			return true
+		}
+	}
+	return false
+}
+
+func doNotFilterEmptyCmds(flow *core.ParsedCmds) bool {
+	last := flow.Cmds[len(flow.Cmds)-1].LastCmd()
+	if last == nil {
+		return false
+	}
+	allows := []interface{}{
+		builtin.GlobalHelp,
+		builtin.GlobalSkeleton,
 	}
 	for _, allow := range allows {
 		if last.IsTheSameFunc(allow) {

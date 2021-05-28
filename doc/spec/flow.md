@@ -1,7 +1,7 @@
 # [Spec] Flow save/edit
 
 ## Save sequecen to a flow / use a saved flow
-```bash
+```
 ## Save
 $> ticat <command-1> : <command-2> : flow.save <command-save-path>
 ## Call
@@ -15,13 +15,13 @@ $> ticat sleep 1s : dummy.2 : echo hello
 
 ## List all manually saved flows
 The flows from repos added by "hub.add" or "hub.add.local" will be not listed:
-```bash
+```
 $> ticat flow.list
 $> ticat f.ls
 ```
 
 ## Add more info to the saved flow
-```bash
+```
 ## Add help
 $> ticat flow.help <command-saved-path>
 ## Examples:
@@ -43,7 +43,7 @@ The format is:
 * the lines without "#" is the sequence, if there are more than one line, they will concate into one when being executed.
 
 ## Flow commands overview
-```bash
+```
 ## "m.t.s" is "cmds.tree.simple"
 $> ticat m.t.s flow
 [flow|fl|f|F]

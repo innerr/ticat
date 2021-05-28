@@ -1,7 +1,7 @@
 # [Spec] Help
 
 ## The helping commands (commands provide info)
-```bash
+```
 ## Sequence info
 $> ticat <command> : <command> : desc
 
@@ -32,7 +32,7 @@ $> ticat find <find-str> <find-str> ...
 We can see there are a lot info and lots of helping commands.
 we plan to use "help" for anything it cound, so that end-users don't need to memorize all those commands.
 (TODO: implement)
-```bash
+```
 ## Global help, tips for how to use ticat
 $> ticat help
 

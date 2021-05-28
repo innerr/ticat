@@ -1,8 +1,8 @@
 # [Spec] Hub: list/add/add-local/disable/enable/purge
 
 ## List dirs in hub
-Hub is a set of local local dirs witch **ticat** knows
-```bash
+Hub is a set of local local dirs which **ticat** knows
+```
 $> ticat hub.list
 $> ticat hub.list <find-str>
 ## Example:
@@ -10,7 +10,7 @@ $> ticat hub.list examples
 ```
 
 ## Add/update git addresses
-```bash
+```
 ## Add(link) git address
 $> ticat hub.add <github-id/repo-name>
 $> ticat hub.add <git-full-address>
@@ -25,14 +25,14 @@ $> ticat hub.init
 ```
 
 ## Add local dirs
-```bash
+```
 $> ticat hub.add.local path=<dir>
 ## Example:
 $> ticat hub.add.local path=./mymods
 ```
 
 ## Disable repos or dirs, the modules in disabled repos or dirs can't be loaded
-```bash
+```
 $> ticat hub.disable <find-str>
 $> ticat hub.enable <find-str>
 ```
@@ -41,7 +41,7 @@ $> ticat hub.enable <find-str>
 Purge will delete all content of linked repos,
 but only remove meta info from **ticat** for local dirs.
 Only disabled ones can be purged
-```bash
+```
 $> ticat hub.purge <find-str>
 $> ticat hub.purge.all
 ```

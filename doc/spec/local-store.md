@@ -6,7 +6,7 @@ the default value is the **ticat** binary path plus suffix ".data".
 
 Users can pass new dir to **ticat** to modify the store dir:
 (TODO: implement)
-```bash
+```
 $> ticat {sys.paths.data=./mydir} : ...
 ```
 

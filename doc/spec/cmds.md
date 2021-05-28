@@ -32,7 +32,7 @@ $> ticat dbg.echo {M = hello}
 ```
 
 ## List commands
-```bash
+```
 ## Display all in tree format
 $> ticat cmds.tree
 ## Display all in tree format, only names
@@ -42,7 +42,7 @@ $> ticat cmds.list
 ```
 
 ## Find commands
-```bash
+```
 ## Display a specific path of the command tree
 $> ticat cmds.tree <path>
 ## Examples:
