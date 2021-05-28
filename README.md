@@ -30,7 +30,7 @@ it's easy to fetch it:
 $> ticat hub.add innerr/quick-start-usage.ticat
 ```
 
-### The basic usage about ":", "+" and "-"
+### The basic usage about ":" "+" and "-"
 
 `+` and `-` are important commands to find and display infos, they have the same usage.
 
