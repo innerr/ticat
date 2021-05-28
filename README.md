@@ -174,6 +174,7 @@ $> ticat {bench.scale=4} dev.bench : cluster.jitter-scan : flow.save xx
 ```
 Using it in coding is convenient:
 ```
+...
   (code editing)
 $> ticat xx
   (code editing)
@@ -291,7 +292,6 @@ An env key-value being read before write will cause a `FATAL` error,
 
 <risk>  'bench.scale'
        - may-read by:
-            [cluster.restart]
             [bench.load]
        - but not provided
 ```
@@ -317,6 +317,7 @@ $> ticat {bench.scale=4} dev.bench.no-reload : flow.save z
 
 Use it:
 ```
+...
   (code editing)
 $> ticat z
   (code editing)
