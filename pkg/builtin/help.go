@@ -14,34 +14,102 @@ func GlobalHelp(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	if len(flow.Cmds) > 2 {
-		return DumpFlow(argv, cc, env, flow, currCmdIdx)
-	} else if len(flow.Cmds) == 2 {
+	if len(flow.Cmds) >= 2 {
 		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
 		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
-		if cmd != nil && cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
+		if cmd == nil {
+			return clearFlow(flow)
+		}
+		findStrs := getFindStrsFromArgv(argv)
+		if len(findStrs) != 0 {
+			display.DumpCmds(cc, false, 4, true, true, cmdPathStr, findStrs...)
+			return clearFlow(flow)
+		}
+
+		if len(flow.Cmds) > 2 {
 			return DumpFlow(argv, cc, env, flow, currCmdIdx)
 		}
-		if cmd != nil && cmd.HasSub() && cmd.Cmd() == nil {
+
+		if cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
+			return DumpFlow(argv, cc, env, flow, currCmdIdx)
+		}
+		if cmd.HasSub() && cmd.Cmd() == nil {
 			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
 		} else {
-			findStrs := getFindStrsFromArgv(argv)
-			if len(findStrs) != 0 {
-				display.DumpCmds(cc, false, 4, true, true, cmdPathStr, findStrs...)
-			} else {
-				display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
-			}
+			display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
 		}
-		flow.Cmds = nil
-		return 0, true
+		return clearFlow(flow)
 	}
 
 	if len(argv.GetRaw("1st-str")) != 0 {
-		ok := FindAny(argv, cc, env)
-		flow.Cmds = nil
-		return 0, ok
+		findStrs := getFindStrsFromArgv(argv)
+		if len(findStrs) != 0 {
+			display.DumpCmds(cc, false, 4, true, true, "", findStrs...)
+		}
+		return clearFlow(flow)
 	}
 
+	printGlobalHelp(cc)
+	return clearFlow(flow)
+}
+
+func GlobalSkeleton(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	if len(flow.Cmds) >= 2 {
+		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
+		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
+		if cmd == nil {
+			return clearFlow(flow)
+		}
+		findStrs := getFindStrsFromArgv(argv)
+		if len(findStrs) != 0 {
+			display.DumpCmds(cc, true, 4, true, true, cmdPathStr, findStrs...)
+			return clearFlow(flow)
+		}
+
+		if len(flow.Cmds) > 2 {
+			return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
+		}
+
+		if cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
+			return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
+		}
+		if cmd.HasSub() {
+			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
+		} else {
+			display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
+		}
+		return clearFlow(flow)
+	}
+
+	if len(argv.GetRaw("1st-str")) != 0 {
+		findStrs := getFindStrsFromArgv(argv)
+		if len(findStrs) != 0 {
+			display.DumpCmds(cc, true, 4, true, true, "", findStrs...)
+		}
+		return clearFlow(flow)
+	}
+
+	printGlobalHelp(cc)
+	return clearFlow(flow)
+}
+
+func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	findStrs := getFindStrsFromArgv(argv)
+	if len(findStrs) == 0 {
+		return true
+	}
+	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
+	display.DumpCmds(cc, false, 4, true, true, "", findStrs...)
+	return true
+}
+
+func printGlobalHelp(cc *core.Cli) {
 	pln := func(text string) {
 		cc.Screen.Print(text + "\n")
 	}
@@ -63,47 +131,9 @@ func GlobalHelp(
 	pln("    use abbrs in cmd:              - ticat exam.go arg1 arg2")
 	pln("    use abbrs in env KVs setting:  - ticat {disp.w=120} : cmd1 : cmd2")
 	pln("                                   - ticat {disp.w=120} : e.s")
-
-	flow.Cmds = nil
-	return 0, true
 }
 
-func GlobalSkeleton(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	if len(flow.Cmds) > 2 {
-		return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
-	} else if len(flow.Cmds) == 2 {
-		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
-		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
-		if cmd != nil {
-			if cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
-				return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
-			}
-			if cmd.HasSub() {
-				display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
-			} else {
-				display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
-			}
-		}
-		flow.Cmds = nil
-		return 0, true
-	}
-
+func clearFlow(flow *core.ParsedCmds) (int, bool) {
 	flow.Cmds = nil
 	return 0, true
-}
-
-func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	findStrs := getFindStrsFromArgv(argv)
-	if len(findStrs) == 0 {
-		return true
-	}
-	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
-	display.DumpCmds(cc, false, 4, true, true, "", findStrs...)
-	return true
 }

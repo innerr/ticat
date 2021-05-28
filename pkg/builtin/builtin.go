@@ -18,18 +18,19 @@ func RegisterCmds(cmds *core.CmdTree) {
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
-	help := cmds.AddSub("help", "?", "+").
+	more := cmds.AddSub("more", "+").
 		RegPowerCmd(GlobalHelp,
 			GlobalHelpHelpStr).
 		SetQuiet().
 		SetPriority()
-	addFindStrArgs(help)
+	addFindStrArgs(more)
 
-	cmds.AddSub("skeleton", "-").
+	less := cmds.AddSub("less", "-").
 		RegPowerCmd(GlobalSkeleton,
 			SkeletonHelpStr).
 		SetQuiet().
 		SetPriority()
+	addFindStrArgs(less)
 
 	find := cmds.AddSub("search", "find", "fnd", "s", "S").
 		RegCmd(FindAny,
@@ -82,7 +83,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	tree.RegCmd(DumpCmdTree,
 		"list builtin and loaded cmds").
 		AddArg("cmd-path", "", "path", "p", "P")
-	tree.AddSub("skeleton", "sk", "sl", "st", "-").
+	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
 		RegCmd(DumpCmdTreeSkeleton,
 			"list builtin and loaded cmds, skeleton only").
 		AddArg("cmd-path", "", "path", "p", "P")
@@ -358,7 +359,7 @@ func addFindStrArgs(cmd *core.Cmd) {
 		AddArg("6th-str", "")
 }
 
-const GlobalHelpHelpStr = `display info base on:
+const GlobalHelpHelpStr = `display rich info base on:
 * if not in a sequence has args, do search: "find <str> <str> ..."
 * if in a sequence with:
    * more than 1 commands, do "desc" to show the detail execution.
@@ -367,10 +368,11 @@ const GlobalHelpHelpStr = `display info base on:
       * has args, do "desc.list.simple <str> <str>" to find commands under this command.
 * show global help if not in a sequence and without args.`
 
-const SkeletonHelpStr = `display info base on:
+const SkeletonHelpStr = `display essential info base on:
+* if not in a sequence has args, do search: "find <str> <str> ..."
 * if in a sequence
    * with more than 1 commands, do "desc.skeleton" to show the brief execution.
    * with only 1 other command and this command:
        * is not flow, do "cmds.tree.skeleton" to show the commands under this command.
        * is flow, do "desc.skeleton".
-* if not in a sequence, do nothing.`
+* show global help if not in a sequence and without args.`
