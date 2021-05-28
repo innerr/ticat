@@ -140,9 +140,22 @@ func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.DumpCmds(cc, false, 4, false, false, argv.GetRaw("cmd-path"))
-	return true
+func DumpCmdNoRecursive(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmdPath := argv.GetRaw("cmd-path")
+	if len(cmdPath) == 0 && len(flow.Cmds) == 2 {
+		cmdPath = flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
+	}
+	if len(cmdPath) != 0 {
+		display.DumpCmds(cc, false, 4, false, false, cmdPath)
+	}
+	flow.Cmds = nil
+	return 0, true
 }
 
 func DumpCmdTree(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {

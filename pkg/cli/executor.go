@@ -260,6 +260,7 @@ func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *co
 func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	last := flow.Cmds[0].LastCmd()
 	allows := []interface{}{
+		builtin.DumpCmdNoRecursive,
 		builtin.SaveFlow,
 		builtin.GlobalHelp,
 		builtin.GlobalSkeleton,
