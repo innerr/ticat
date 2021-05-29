@@ -248,7 +248,7 @@ So ticat put on a lot works on this,
 to reduce memorizing pressure:
 * use tree to organize info: commands, env, repos, etc
 * full search supporting: commands, env, connecting-points, etc
-* abbrs/alias supporting, eg, a command `mods` will have an alias `mod`
+* abbrs/aliases supporting, eg, a command `mods` will have an alias `mod`
 
 The best thing is,
 we don't need to change anything to adapt ticat,
