@@ -25,12 +25,12 @@ Recommend to set `ticat/bin` to system `$PATH`, it's handy.
 We want to do a benchmark for the demo distributed system.
 
 Someone already wrote a bench tool and push to git server,
-it's easy to fetch it:
+it's easy to fetch it by command `hub.add`:
 ```
 $> ticat hub.add innerr/quick-start-usage.ticat
 ```
 
-### The basic usage about ":" "+" and "-"
+### Find out what we got from the repo
 
 `+` and `-` are important commands to find and display infos, they have the same usage.
 
@@ -38,15 +38,17 @@ The difference is `-` shows brief messages, and `+` shows rich infos.
 
 Now use `+` as search command to find out what we got by search the repo's name.
 
-`@ready` is a conventional tag use for "ready-to-go" commands:
+We also add `@ready` to the searching strings,
+it is a conventional tag use for "ready-to-go"(out-of-the-box) commands:
 ```
 $> ticat + @ready quick-start
-...
-[bench|ben]
+[bench]
      'pretend to do bench. @ready'
 ...
 ```
-From the search we know the command `bench`.
+From the search result we found the command `bench`.
+
+### Find out what command `bench` do
 
 The usage of **ticat** has similar style with unix pipe, but use `:` instead of `|`.
 
@@ -248,7 +250,8 @@ $> ticat xx:-
 
 ### Env: a shared key-value set
 
-The `+` result of `xx` is a bit long, here is the detail about command `bench`:
+We investigate `bench` with `+`:
+(the `+` result of `xx` is a bit long, so we use it on `bench`)
 ```
 $> ticat bench:+
 ```
@@ -304,7 +307,7 @@ we are able to do customizations.
 Let's remove the `bench.load` step from `dev.bench`,
 to make it faster when on coding:
 ```
-$> ticat local.build : cluster.local : cluster.restart : ben.run : flow.save dev.bench.no-reload
+$> ticat local.build : cluster.local : cluster.restart : bench.run : flow.save dev.bench.no-reload
 ```
 
 We just saved a flow without data scale config,
@@ -355,25 +358,47 @@ These builtin branchs are important:
 
 Use `+` `-` to navigate them, here are some usage examples.
 
-Overview branch `cmds`:
+Overview of branch `cmds`:
 ```
 $> ticat cmds:-
-[cmds|cmd|c|C]
-    [tree|t|T]
-        [simple|sim|skeleton|sk|sl|st|s|S|-]
-    [list|ls|flatten|flat|f|F|~]
-        [simple|sim|s|S|-]
+[cmds]
+     'display cmd info, sub tree cmds will not show'
+    [tree]
+         'list builtin and loaded cmds'
+        [simple]
+             'list builtin and loaded cmds, skeleton only'
+    [list]
+         'list builtin and loaded cmds'
+        [simple]
+             'list builtin and loaded cmds in lite style'
 ```
 
-Search "tree"(could be any string) in the branch:
+Overview of branch `env`:
+```
+[0:19] 0 ~ $ ticat env:-
+[env]
+     'list env values in flatten format'
+    [tree]
+         'list all env layers and KVs in tree format'
+    [abbrs]
+         'list env tree and abbrs'
+    [list]
+         'list env values in flatten format'
+    [save]
+         'save session env changes to local'
+    [remove-and-save]
+         'remove specific env KV and save changes to local'
+    [reset-and-save]
+         'reset all local saved env KVs'
+```
+
+Search "tree"(could be any string) in the branch `cmds`:
 ```
 $> ticat cmds:- tree
-[cmds|cmd|c|C]
-[tree|t|T]
-    - full-cmd:
-        cmds.tree
-    - full-abbrs:
-        cmds|cmd|c|C.tree|t|T
+[cmds]
+     'display cmd info, sub tree cmds will not show'
+[cmds.tree]
+     'list builtin and loaded cmds'
 ```
 
 Use `+` instead of `-` to get more detail:

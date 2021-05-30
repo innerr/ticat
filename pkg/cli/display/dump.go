@@ -47,6 +47,10 @@ func DumpCmds(
 	path string,
 	findStrs ...string) {
 
+	if len(path) == 0 && !recursive {
+		return
+	}
+
 	cmds := cc.Cmds
 	if len(path) != 0 {
 		cmds = cmds.GetSub(strings.Split(path, cc.Cmds.Strs.PathSep)...)
@@ -232,25 +236,37 @@ func dumpCmd(
 
 	if cmd.Parent() == nil || cmd.MatchFind(findStrs...) {
 		cic := cmd.Cmd()
-		name := strings.Join(cmd.Abbrs(), abbrsSep)
+		var name string
+		if !skeleton {
+			name = strings.Join(cmd.Abbrs(), abbrsSep)
+		} else {
+			if !flatten {
+				name = cmd.DisplayName()
+			} else {
+				name = cmd.DisplayPath()
+			}
+		}
 		if len(name) == 0 {
 			name = cmd.DisplayName()
 		}
 
 		if !flatten || cic != nil {
 			prt(0, "["+name+"]")
-			if !skeleton && cic != nil && len(cic.Help()) != 0 {
+			if cic != nil && len(cic.Help()) != 0 {
 				prt(1, " '"+cic.Help()+"'")
 			}
-			if (!skeleton || flatten) &&
-				cmd.Parent() != nil && cmd.Parent().Parent() != nil {
-				prt(1, "- full-cmd:")
+			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				full := cmd.DisplayPath()
-				prt(2, full)
-				abbrs := cmd.DisplayAbbrsPath()
-				if len(abbrs) != 0 && abbrs != full {
-					prt(1, "- full-abbrs:")
-					prt(2, abbrs)
+				if (!skeleton) {
+					prt(1, "- full-cmd:")
+					prt(2, full)
+				}
+				if !skeleton {
+					abbrs := cmd.DisplayAbbrsPath()
+					if len(abbrs) != 0 && abbrs != full {
+						prt(1, "- full-abbrs:")
+						prt(2, abbrs)
+					}
 				}
 			}
 		}

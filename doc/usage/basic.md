@@ -1,7 +1,7 @@
 # Basic usage of ticat: build, run commands
 
 ### Build
-Build ticat:
+`golang` is needed to build ticat:
 ```
 $> git clone https://github.com/innerr/ticat
 $> cd ticat
@@ -21,12 +21,14 @@ $> ticat sleep 3s
 .zzZZ ... *\O/*
 ```
 
-Use abbrs(or alias) to call a command:
+Use abbrs(or aliases) to call a command:
 ```
 $> ticat slp 3s
 $> ticat slp dur=3s
 $> ticat slp d=3s
 ```
+
+### The commands with '.'
 
 ### Run a command in the command-tree
 All commands are organized to a tree,
