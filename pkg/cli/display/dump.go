@@ -257,7 +257,7 @@ func dumpCmd(
 			}
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				full := cmd.DisplayPath()
-				if (!skeleton) {
+				if !skeleton {
 					prt(1, "- full-cmd:")
 					prt(2, full)
 				}

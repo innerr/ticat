@@ -1,25 +1,15 @@
 # Zen: the choices we made
 
-## Ad-hot assembling: small parts work together
-* Control
-## Seperate `logic` and `config`
+## Why ticat, why we need a new platform, is that anything the existing ones can't do?
 
-## Why should people use ticat?
+It's overdetermined to list things "**ticat** can, others can't".
 
-## Target
-* Human friendly
-    * Easy to understand: lots of features, but well-organized (commands, env, etc)
-    * Zero memorizing presure: good searching and full abbrs support
-* Rich features
-    * Easy to get lots of modules
-        * Components can be easily written in any language
-        * ..or from any existing utility by wrapping it up (in no time)
-    * Easy and powerful configuring
-        * Modules are automatically work together, by running on a shared env
-        * Anything can be configured by modifying the env
-    * Combine modules to flow
-* Easy to share context, or to run others'
-    * Use github repo-tree to distribute code
-    * Share modules and flows easily by adding a top-repo
+It's all about cost,
+**ticat** meet our demand with significantly low cost.
+(both for users and component developers)
 
-
+However, here are some features we rarely saw if not in **ticat**:
+* Self-sufficient component model, make pieces can easily work together.
+* Low cost ad-hot componet assembling, have maximum flexibility to cover any requement.
+* Low cost componet developing support.
+* User-centered publish model and health community.

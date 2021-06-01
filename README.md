@@ -1,5 +1,5 @@
 # ticat
-A casual command line components platform
+A lightweight command line components platform
 
 Workflow automating in unix-pipe style
 
@@ -431,7 +431,7 @@ $> ticat cmds:+ tree
 * Lots of abbrs like `[bench|ben]` in search result, use them to save typing time
 
 ## User manual
-* [Usage examples](./doc/usage)
+* [Usage examples](./doc/usage/user-manual.md)
     - [Basic: build, run commands](./doc/usage/basic.md)
     - [Hub: get modules and flows from others](./doc/usage/hub.md)
     - [Use commands](./doc/usage/cmds.md)
@@ -442,7 +442,7 @@ $> ticat cmds:+ tree
 * [Quick-start](./doc/quick-start-mod.md)
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat)
 * [How modules work together (with graphics)](./doc/concept-graphics.md)
-* [Specifications](./doc/spec)
+* [Specifications](./doc/spec/spec.md)
     - (this is only **ticat**'s spec, a repo provides modules and flows will have it's own spec)
     - [Hub: list/add/disable/enable/purge](./doc/spec/hub.md)
     - [Command sequence](./doc/spec/seq.md)
@@ -459,11 +459,12 @@ $> ticat cmds:+ tree
 
 ## Inside **ticat**
 * [Roadmap and progress](./doc/progress.md)
-* [Zen: how the choices are made](./doc/zen)
+* [Zen: how the choices are made](./doc/zen/zen.md)
     - [Why ticat](./doc/zen/why-ticat.md)
     - [Why use cli as component platform](./doc/zen/why-cli.md)
     - [Why not use unix pipe](./doc/zen/why-not-pipe.md)
     - [Why the usage so weird, especially the `+` and `-`](./doc/zen/why-weird.md)
+    - [Why use tags](./doc/zen/why-tags.md)
     - [Why so many abbrs and aliases](./doc/zen/why-abbrs.md)
     - [Why commands and env key-values are in tree form](./doc/zen/why-tree.md)
     - [Why use git repo to distribute componets](./doc/zen/why-hub.md)

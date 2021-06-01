@@ -5,7 +5,7 @@ The **hub** is all local dirs linked with **ticat**,
 modules will be loaded on bootstrap by scanning these dirs:
 ```
  ┌────────────────────────────────┐
- │ TiCat Hub                      │
+ │ Ticat Hub                      │
  │  ┌──────────────────────────┐  │
  │  │ Normal Local Dir         │  │
  │  │ ┌─────┐  ┌─────┐         │  │
