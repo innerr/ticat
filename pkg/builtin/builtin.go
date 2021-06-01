@@ -138,6 +138,11 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 	flow.AddSub("clear", "reset", "--").
 		RegCmd(RemoveAllFlows,
 			"remove all flows saved in local")
+
+	flow.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
+		RegCmd(MoveSavedFlowsToLocalDir,
+			MoveFlowsToDirHelpStr).
+		AddArg("path", "", "p", "P")
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
@@ -260,7 +265,7 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 
 	hub.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
 		RegCmd(MoveSavedFlowsToLocalDir,
-			"move all saved flows to a local dir (could be a git repo)").
+			MoveFlowsToDirHelpStr).
 		AddArg("path", "", "p", "P")
 }
 
@@ -373,3 +378,9 @@ const LessMoreHelpStr = `
 
 const GlobalHelpHelpStr = "display rich info base on:" + LessMoreHelpStr
 const SkeletonHelpStr = "display brief info base on:" + LessMoreHelpStr
+
+const MoveFlowsToDirHelpStr = `move all saved flows to a local dir (could be a git repo).
+auto move:
+    * if one(and only one) local(not linked to a repo) dir exists in hub
+    * and the arg "path" is empty
+    then flows will move to that dir`

@@ -47,7 +47,6 @@ func main() {
 		CmdPathAlterSeps,
 		AbbrsSep,
 		EnvOpSep,
-		EnvValDelMark,
 		EnvValDelAllMark,
 		EnvKeyValSep,
 		EnvPathSep,
@@ -119,7 +118,6 @@ const (
 	EnvBracketRight     string = "}"
 	EnvKeyValSep        string = "="
 	EnvPathSep          string = "."
-	EnvValDelMark       string = "-"
 	EnvValDelAllMark    string = "--"
 	EnvRuntimeSysPrefix string = "sys"
 	EnvStrsPrefix       string = "strs"

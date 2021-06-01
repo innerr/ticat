@@ -28,18 +28,70 @@ $> ticat env.abbrs
 $> ticat find <find-str> <find-str> ...
 ```
 
-## The "help" command
-We can see there are a lot info and lots of helping commands.
-we plan to use "help" for anything it cound, so that end-users don't need to memorize all those commands.
-(TODO: implement)
+## The commands `+` and `-`
+These two are shortcuts, could display info base on the situation:
+```
+$> ticat cmd -
+[less|-]
+     'display brief info base on:
+      * if in a sequence having
+          * more than 1 other commands: show the sequence execution.
+          * only 1 other command and
+              * has no args and the other command is
+                  * a flow: show the flow execution.
+                  * not a flow: show the command or the branch info.
+              * has args: find commands under the branch of the other command.
+      * if not in a sequence and
+          * has args: do global search.
+          * has no args: show global help.'
+    - args:
+        1st-str|find-str = ''
+        2nd-str = ''
+        3rh-str = ''
+        4th-str = ''
+        5th-str = ''
+        6th-str = ''
+    - cmd-type:
+        power (quiet) (priority)
+    - from:
+        builtin
+
+$> ticat cmd +
+[more|+]
+     'display rich info base on:
+      * if in a sequence having
+          * more than 1 other commands: show the sequence execution.
+          * only 1 other command and
+              * has no args and the other command is
+                  * a flow: show the flow execution.
+                  * not a flow: show the command or the branch info.
+              * has args: find commands under the branch of the other command.
+      * if not in a sequence and
+          * has args: do global search.
+          * has no args: show global help.'
+    - args:
+        1st-str|find-str = ''
+        2nd-str = ''
+        3rh-str = ''
+        4th-str = ''
+        5th-str = ''
+        6th-str = ''
+    - cmd-type:
+        power (quiet) (priority)
+    - from:
+        builtin
+```
+
+Examples:
 ```
 ## Global help, tips for how to use ticat
-$> ticat help
+$> ticat +
+$> ticat -
 
-## Use "help" as "find"
-$> ticat help <find-str> <find-str> ...
+## Use them to find commands
+$> ticat - <find-str> <find-str> ...
+$> ticat + <find-str> <find-str> ...
 
-## Other usages: TODO
+## Other usages:
+(TODO: doc, most are already in usage doc)
 ```
-
-## Use tag for search

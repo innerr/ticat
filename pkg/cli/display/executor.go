@@ -124,7 +124,7 @@ func PrintCmdStack(
 		lines.FlowLen = append(lines.FlowLen, len(line))
 
 		cmdEnv := cmd.GenEnv(env.GetLayer(core.EnvLayerSession),
-			strs.EnvValDelMark, strs.EnvValDelAllMark)
+			strs.EnvValDelAllMark)
 		args := cmd.Args()
 		argv := cmdEnv.GetArgv(cmd.Path(), strs.PathSep, cmd.Args())
 		for _, line := range DumpArgs(&args, argv, false) {

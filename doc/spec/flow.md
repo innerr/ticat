@@ -18,12 +18,16 @@ The flows from repos added by "hub.add" or "hub.add.local" will be not listed:
 ```
 $> ticat flow.list
 $> ticat f.ls
+
+## Command `flow` == `flow.list`
+$> ticat f
 ```
 
 ## Add more info to the saved flow
 ```
 ## Add help
 $> ticat flow.help <command-saved-path>
+
 ## Examples:
 $> ticat flow.help dummy.2 "just a simple test of flow"
 
@@ -44,22 +48,39 @@ The format is:
 
 ## Flow commands overview
 ```
-## "m.t.s" is "cmds.tree.simple"
-$> ticat m.t.s flow
-[flow|fl|f|F]
-    [save|persist|s|S]
-    [set-help-str|help|h|H]
-    [remove|rm|delete|del]
-    [list-local|list|ls]
-    [load|l|L]
-    [clear|reset]
+## Overview
+$> ticat cmds.tree.simple flow
+[flow]
+     'list local saved but unlinked (to any repo) flows'
+    [save]
+         'save current cmds as a flow'
+    [set-help-str]
+         'set help str to a saved flow'
+    [remove]
+         'remove a saved flow'
+    [list-local]
+         'list local saved but unlinked (to any repo) flows'
+    [load]
+         'load flows from local dir'
+    [clear]
+         'remove all flows saved in local'
+    [move-flows-to-dir]
+         'move all saved flows to a local dir (could be a git repo).
+          auto move:
+              * if one (and only one) local dir exists in hub
+              * and the arg "path" is empty
+              then flows will move to that dir'
+```
 
+Usage examples:
+```
 ## Move saved flows to a local dir
 $> ticat hub.move-flows-to-dir <local-dir-path>
 $> ticat hub.move <local-dir-path>
 
 ## Remove a saved flow
 $> ticat flow.rm <command-saved-path>
+
 ## Remove all saved flows
 $> ticat flow.clear
 ```

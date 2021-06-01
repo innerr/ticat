@@ -134,7 +134,7 @@ $> ticat bench
 ```
 
 Now run a larger dataset,
-here we turn on "step-by-step", it will ask for confirming on each step:
+this time we turn on "step-by-step", it will ask for confirming on each step:
 ```
 $> ticat {bench.scale=10} dbg.step.on : bench
 ```
@@ -147,16 +147,15 @@ These changes could all persist to env by `env.save`.
 There is another command `dev.bench` in the previous search result:
 ```
 ...
-[bench]
+[dev.bench]
      'build binary in pwd, then restart cluster and do benchmark. @ready'
-    - full-cmd:
-        dev.bench
-...
+[bench.jitter-scan]
+     'pretend to scan jitter @ready'
 ```
 It does "build" and "restart" before bench according to the help string,
 useful for develeping.
 
-The default data scale is "1", we use "4" for a test.
+The default data scale is "1", we use "4" for testing.
 
 Bisides that, we add a jitter detecting step after benchmark,
 this command also have the `@ready` tag so we found it.
@@ -438,7 +437,6 @@ $> ticat cmds:+ tree
     - [Use commands](./doc/usage/cmds.md)
     - [Manipulate env key-values](./doc/usage/env.md)
     - [Use flows](./doc/usage/flow.md)
-    - [Use abbrs/alias](./doc/usage/abbr.md)
 
 ## Module developing zone
 * [Quick-start](./doc/quick-start-mod.md)
@@ -453,7 +451,7 @@ $> ticat cmds:+ tree
     - [Abbrs of commands, env-keys and flows](./doc/spec/abbr.md)
     - [Flow: list/save/edit](./doc/spec/flow.md)
     - [Display control in executing](./doc/spec/display.md)
-    - [Help command](./doc/spec/help.md)
+    - [Help info commands](./doc/spec/help.md)
     - [Local store dir](./doc/spec/local-store.md)
     - [Repo tree](./doc/spec/repo-tree.md)
     - [Module: env and args](./doc/spec/mod-interact.md)
@@ -461,5 +459,15 @@ $> ticat cmds:+ tree
 
 ## Inside **ticat**
 * [Roadmap and progress](./doc/progress.md)
-* [Zen: how the choices are made](./doc/zen.md)
-* [An user story: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)
+* [Zen: how the choices are made](./doc/zen)
+    - [Why ticat](./doc/zen/why-ticat.md)
+    - [Why use cli as component platform](./doc/zen/why-cli.md)
+    - [Why not use unix pipe](./doc/zen/why-not-pipe.md)
+    - [Why the usage so weird, especially the `+` and `-`](./doc/zen/why-weird.md)
+    - [Why so many abbrs and aliases](./doc/zen/why-abbrs.md)
+    - [Why commands and env key-values are in tree form](./doc/zen/why-tree.md)
+    - [Why use git repo to distribute componets](./doc/zen/why-hub.md)
+    - [Why not support async/concurrent executing](./doc/zen/why-not-async.md)
+
+## User stories
+* [Try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)

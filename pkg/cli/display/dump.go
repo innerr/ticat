@@ -312,7 +312,7 @@ func dumpCmd(
 				prt(2, line)
 			}
 
-			if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
+			if len(cic.Source()) == 0 || !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
 				prt(1, "- from:")
 				if len(cic.Source()) == 0 {
 					prt(2, "builtin")
@@ -398,7 +398,7 @@ func dumpFlowCmd(
 		prt(1, " '"+cic.Help()+"'")
 	}
 
-	cmdEnv := parsedCmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+	cmdEnv := parsedCmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
 	if !skeleton {
 		args := parsedCmd.Args()
 		argv := cmdEnv.GetArgv(parsedCmd.Path(), sep, args)
@@ -413,7 +413,7 @@ func dumpFlowCmd(
 
 	if !skeleton {
 		// TODO: missed kvs in GlobalEnv
-		cmdEnv = parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+		cmdEnv = parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelAllMark)
 		flatten := cmdEnv.Flatten(false, nil, true)
 		if len(flatten) != 0 {
 			prt(1, "- env-values:")

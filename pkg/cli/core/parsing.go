@@ -115,11 +115,11 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 	return
 }
 
-func (self ParsedCmd) GenEnv(env *Env, valDelMark string, valDelAllMark string) *Env {
+func (self ParsedCmd) GenEnv(env *Env, valDelAllMark string) *Env {
 	env = env.NewLayer(EnvLayerCmd)
 	for _, seg := range self {
 		if seg.Env != nil {
-			seg.Env.WriteTo(env, valDelMark, valDelAllMark)
+			seg.Env.WriteTo(env, valDelAllMark)
 		}
 	}
 	return env
@@ -190,11 +190,9 @@ func (self ParsedEnv) Equal(x ParsedEnv) bool {
 	return true
 }
 
-func (self ParsedEnv) WriteTo(env *Env, valDelMark string, valDelAllMark string) {
+func (self ParsedEnv) WriteTo(env *Env, valDelAllMark string) {
 	for k, v := range self {
-		if v.Val == valDelMark {
-			env.DeleteEx(k, EnvLayerDefault)
-		} else if v.Val == valDelAllMark {
+		if v.Val == valDelAllMark {
 			env.Delete(k)
 		} else {
 			env.SetEx(k, v.Val, v.IsArg)
@@ -202,11 +200,9 @@ func (self ParsedEnv) WriteTo(env *Env, valDelMark string, valDelAllMark string)
 	}
 }
 
-func (self ParsedEnv) WriteNotArgTo(env *Env, valDelMark string, valDelAllMark string) {
+func (self ParsedEnv) WriteNotArgTo(env *Env, valDelAllMark string) {
 	for k, v := range self {
-		if v.Val == valDelMark {
-			env.DeleteEx(k, EnvLayerDefault)
-		} else if v.Val == valDelAllMark {
+		if v.Val == valDelAllMark {
 			env.Delete(k)
 		} else if !v.IsArg {
 			env.SetEx(k, v.Val, v.IsArg)
