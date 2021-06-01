@@ -1,49 +1,5 @@
 # Quick start
 
-## Build
-Build ticat: (`golang` is needed)
-```
-$> git clone https://github.com/innerr/ticat
-$> cd ticat
-$> make
-```
-Recommand to set `ticat/bin` to system `$PATH`, it's handy.
-
-## Run
-Run a command sequence `dummy : dummy : dummy`:
-```
-$> ticat dummy : dummy : dummy
-+-------------------+
-| stack-level: [1]  |             05-19 01:03:38
-+-------------------+----------------------------+
-| >> dummy                                       |
-|    dummy                                       |
-|    dummy                                       |
-+------------------------------------------------+
-dummy cmd here
-+-------------------+
-| stack-level: [1]  |             05-19 01:03:38
-+-------------------+----------------------------+
-|    dummy                                       |
-| >> dummy                                       |
-|    dummy                                       |
-+------------------------------------------------+
-dummy cmd here
-+-------------------+
-| stack-level: [1]  |             05-19 01:03:38
-+-------------------+----------------------------+
-|    dummy                                       |
-|    dummy                                       |
-| >> dummy                                       |
-+------------------------------------------------+
-dummy cmd here
-```
-The command `dummy` sequencely executed 3 times,
-It's a little bit like unix-pipe `|`, but different:
-* use `:` to concatenate commands, not `|`
-* execute commands one by one, the second one won't start untill the previous one finishes
-* the `>>` in the box indicate the current command about to run
-
 ## Create a module
 In a empty dir (say the path is `mymods`), create a bash script `mod-1.bash`:
 ```
@@ -248,7 +204,7 @@ So ticat put on a lot works on this,
 to reduce memorizing pressure:
 * use tree to organize info: commands, env, repos, etc
 * full search supporting: commands, env, connecting-points, etc
-* abbrs/alias supporting, eg, a command `mods` will have an alias `mod`
+* abbrs/aliases supporting, eg, a command `mods` will have an alias `mod`
 
 The best thing is,
 we don't need to change anything to adapt ticat,

@@ -6,6 +6,7 @@ the latter one won't start untill the previous one finishes.
 Commands in a sequence are seperated by ":".
 ```
 $> ticat <command> : <command> : <command>
+
 ## Example:
 $> ticat dummy : sleep 1s : echo hello
 
@@ -16,6 +17,7 @@ $> ticat dummy:sleep 1s:echo hello
 ## Display what will happen without execute a sequence
 ```
 $> ticat <command> : <command> : <command> : desc
+
 ## Exmaples:
 $> ticat dummy : desc
 $> ticat dummy : sleep 1s : echo hello : desc
@@ -35,26 +37,36 @@ $> ticat <command-1> : {sys.step = on} <command-2> : <command-3>
 A set of builtin commands could changes this env key for better usage:
 ```
 ## Find these two commands:
-$> ticat m.ls step
-[on|yes|y|Y|1]
-     'enable step by step'
+$> ticat cmds.tree dbg.step
+[step-by-step|step|s|S]
     - full-cmd:
-        dbg.step-by-step.on
+        dbg.step-by-step
     - full-abbrs:
-        dbg.step-by-step|step|s|S.on|yes|y|Y|1
-    - cmd-type:
-        normal (quiet)
-[off|no|n|N|0]
-     'disable step by step'
-    - full-cmd:
-        dbg.step-by-step.off
-    - full-abbrs:
-        dbg.step-by-step|step|s|S.off|no|n|N|0
-    - cmd-type:
-        normal (quiet)
+        dbg.step-by-step|step|s|S
+    [on|yes|y|Y|1|+]
+         'enable step by step'
+        - full-cmd:
+            dbg.step-by-step.on
+        - full-abbrs:
+            dbg.step-by-step|step|s|S.on|yes|y|Y|1|+
+        - cmd-type:
+            normal (quiet)
+        - from:
+            builtin
+    [off|no|n|N|0|-]
+         'disable step by step'
+        - full-cmd:
+            dbg.step-by-step.off
+        - full-abbrs:
+            dbg.step-by-step|step|s|S.off|no|n|N|0|-
+        - cmd-type:
+            normal (quiet)
+        - from:
+            builtin
 
 ## Use these commands:
 $> ticat dbg.step.on : <command> : <command> : <command>
+
 ## Enable step-by-step in the middle
 $> ticat <command> : <command> : dbg.step.on : <command>
 
@@ -62,11 +74,32 @@ $> ticat <command> : <command> : dbg.step.on : <command>
 $> ticat dbg.step.on : env.save
 ```
 
-## The "desc" command
+## The "desc" command branch
+
+Overview
+```
+$> ticat cmds.tree.simple desc
+[desc]
+     'desc the flow about to execute'
+    [simple]
+         'desc the flow about to execute in lite style'
+    [skeleton]
+         'desc the flow about to execute, skeleton only'
+    [dependencies]
+         'list the depended os-commands of the flow'
+    [env-ops-check]
+         'desc the env-ops check result of the flow'
+    [flow]
+         'desc the flow execution'
+        [simple]
+             'desc the flow execution in lite style'
+```
+
+Exmaples of `desc`:
 ```
 $> ticat <command> : <command> : <command> : desc
 
-## Exmaples:
+## Examples:
 $> ticat dummy : desc
 $> ticat dummy : sleep 1s : echo hello : desc
 ```
@@ -109,21 +142,31 @@ $> ticat desc [: <command> : <command> : <command>]
 
 Other power commmands:
 ```
-$> ticat cmds.tree help
-[help|?]
-     'get help'
+$> ticat cmd +
+[more|+]
+     'display rich info base on:
+      * if in a sequence having
+          * more than 1 other commands: show the sequence execution.
+          * only 1 other command and
+              * has no args and the other command is
+                  * a flow: show the flow execution.
+                  * not a flow: show the command or the branch info.
+              * has args: find commands under the branch of the other command.
+      * if not in a sequence and
+          * has args: do global search.
+          * has no args: show global help.'
     - cmd-type:
-        power (priority)
-    - args:
-        1st-str|1|find|str|s|S = ''
-        2rd-str|2 = ''
-(and more)
+        power (quiet) (priority)
+    - from:
+        builtin
+...
 ```
 
 When have more than one priority commands in a sequence:
 ```
 ## User input
 $> ticat <command-1> : <command-2> : <priority-command-a> : <priority-command-b>
+
 ## Actual execute order:
 $> ticat <priority-command-a> : <priority-command-b> : <command-1> : <command-2>
 ```

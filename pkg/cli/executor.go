@@ -61,7 +61,7 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 	}
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
 	if flow.GlobalEnv != nil {
-		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 	}
 	for _, function := range self.funcs {
 		if !function(cc, flow, env) {
@@ -117,7 +117,7 @@ func (self *Executor) executeCmd(
 
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
-	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelMark, cc.Cmds.Strs.EnvValDelAllMark)
+	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
 	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
 
 	ln := cc.Screen.OutputNum()

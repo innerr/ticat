@@ -1,5 +1,24 @@
 # [Spec] Env get/set/save
 
+## Overview
+```
+$> ticat cmds.tree.simple env
+[env]
+     'list env values in flatten format'
+    [tree]
+         'list all env layers and KVs in tree format'
+    [abbrs]
+         'list env tree and abbrs'
+    [list]
+         'list env values in flatten format'
+    [save]
+         'save session env changes to local'
+    [remove-and-save]
+         'remove specific env KV and save changes to local'
+    [reset-and-save]
+         'reset all local saved env KVs'
+```
+
 ## Display/find env values
 ```
 $> ticat env.list
@@ -10,6 +29,7 @@ $> ticat env.list <find-str>
 ```
 ## Set value
 $> ticat {key=value}
+
 ## Examples:
 $> ticat {display.width=40}
 $> ticat {display.width=40} : env.list
@@ -19,6 +39,7 @@ $> ticat {key=value}
 
 ## Set value between segments of a command:
 $> ticat <command-segment>{key=value}.<command-segment>
+
 ## Example:
 $> ticat env{mykey=666}.ls mykey
 env.mykey = 666

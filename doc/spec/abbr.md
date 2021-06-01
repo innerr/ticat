@@ -1,7 +1,7 @@
 # [Spec] Abbrs: commands, env-keys, flows
 
 ## Abbrs types
-There are 3 types of abbrs/alias:
+There are 3 types of abbrs/aliases:
 * for command(command segments in path)
 * for env(key segments in path)
 * for args
@@ -11,7 +11,7 @@ Almost all displaying commands will show the abbrs,
 there are many abbrs info in the example bellow:
 * the command name `tree` with abbrs `t` and `T`
 * the command path:
-    - `cmds` with abbrs/alias: `cmd` `mod` `mods` `m` `M`
+    - `cmds` with abbrs/aliases: `cmd` `mod` `mods` `m` `M`
     - `tree` with abbrs `t` `T`
 * the args `path` with abbrs `p` `P`
 ```

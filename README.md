@@ -1,5 +1,5 @@
 # ticat
-A casual command line components platform
+A lightweight command line components platform
 
 Workflow automating in unix-pipe style
 
@@ -25,12 +25,12 @@ Recommend to set `ticat/bin` to system `$PATH`, it's handy.
 We want to do a benchmark for the demo distributed system.
 
 Someone already wrote a bench tool and push to git server,
-it's easy to fetch it:
+it's easy to fetch it by command `hub.add`:
 ```
 $> ticat hub.add innerr/quick-start-usage.ticat
 ```
 
-### The basic usage about ":" "+" and "-"
+### Find out what we got from the repo
 
 `+` and `-` are important commands to find and display infos, they have the same usage.
 
@@ -38,15 +38,17 @@ The difference is `-` shows brief messages, and `+` shows rich infos.
 
 Now use `+` as search command to find out what we got by search the repo's name.
 
-`@ready` is a conventional tag use for "ready-to-go" commands:
+We also add `@ready` to the searching strings,
+it is a conventional tag use for "ready-to-go"(out-of-the-box) commands:
 ```
 $> ticat + @ready quick-start
-...
-[bench|ben]
+[bench]
      'pretend to do bench. @ready'
 ...
 ```
-From the search we know the command `bench`.
+From the search result we found the command `bench`.
+
+### Find out what command `bench` do
 
 The usage of **ticat** has similar style with unix pipe, but use `:` instead of `|`.
 
@@ -132,7 +134,7 @@ $> ticat bench
 ```
 
 Now run a larger dataset,
-here we turn on "step-by-step", it will ask for confirming on each step:
+this time we turn on "step-by-step", it will ask for confirming on each step:
 ```
 $> ticat {bench.scale=10} dbg.step.on : bench
 ```
@@ -145,16 +147,15 @@ These changes could all persist to env by `env.save`.
 There is another command `dev.bench` in the previous search result:
 ```
 ...
-[bench]
+[dev.bench]
      'build binary in pwd, then restart cluster and do benchmark. @ready'
-    - full-cmd:
-        dev.bench
-...
+[bench.jitter-scan]
+     'pretend to scan jitter @ready'
 ```
 It does "build" and "restart" before bench according to the help string,
 useful for develeping.
 
-The default data scale is "1", we use "4" for a test.
+The default data scale is "1", we use "4" for testing.
 
 Bisides that, we add a jitter detecting step after benchmark,
 this command also have the `@ready` tag so we found it.
@@ -248,7 +249,8 @@ $> ticat xx:-
 
 ### Env: a shared key-value set
 
-The `+` result of `xx` is a bit long, here is the detail about command `bench`:
+We investigate `bench` with `+`:
+(the `+` result of `xx` is a bit long, so we use it on `bench`)
 ```
 $> ticat bench:+
 ```
@@ -304,7 +306,7 @@ we are able to do customizations.
 Let's remove the `bench.load` step from `dev.bench`,
 to make it faster when on coding:
 ```
-$> ticat local.build : cluster.local : cluster.restart : ben.run : flow.save dev.bench.no-reload
+$> ticat local.build : cluster.local : cluster.restart : bench.run : flow.save dev.bench.no-reload
 ```
 
 We just saved a flow without data scale config,
@@ -355,25 +357,47 @@ These builtin branchs are important:
 
 Use `+` `-` to navigate them, here are some usage examples.
 
-Overview branch `cmds`:
+Overview of branch `cmds`:
 ```
 $> ticat cmds:-
-[cmds|cmd|c|C]
-    [tree|t|T]
-        [simple|sim|skeleton|sk|sl|st|s|S|-]
-    [list|ls|flatten|flat|f|F|~]
-        [simple|sim|s|S|-]
+[cmds]
+     'display cmd info, sub tree cmds will not show'
+    [tree]
+         'list builtin and loaded cmds'
+        [simple]
+             'list builtin and loaded cmds, skeleton only'
+    [list]
+         'list builtin and loaded cmds'
+        [simple]
+             'list builtin and loaded cmds in lite style'
 ```
 
-Search "tree"(could be any string) in the branch:
+Overview of branch `env`:
+```
+[0:19] 0 ~ $ ticat env:-
+[env]
+     'list env values in flatten format'
+    [tree]
+         'list all env layers and KVs in tree format'
+    [abbrs]
+         'list env tree and abbrs'
+    [list]
+         'list env values in flatten format'
+    [save]
+         'save session env changes to local'
+    [remove-and-save]
+         'remove specific env KV and save changes to local'
+    [reset-and-save]
+         'reset all local saved env KVs'
+```
+
+Search "tree"(could be any string) in the branch `cmds`:
 ```
 $> ticat cmds:- tree
-[cmds|cmd|c|C]
-[tree|t|T]
-    - full-cmd:
-        cmds.tree
-    - full-abbrs:
-        cmds|cmd|c|C.tree|t|T
+[cmds]
+     'display cmd info, sub tree cmds will not show'
+[cmds.tree]
+     'list builtin and loaded cmds'
 ```
 
 Use `+` instead of `-` to get more detail:
@@ -407,19 +431,18 @@ $> ticat cmds:+ tree
 * Lots of abbrs like `[bench|ben]` in search result, use them to save typing time
 
 ## User manual
-* [Usage examples](./doc/usage)
+* [Usage examples](./doc/usage/user-manual.md)
     - [Basic: build, run commands](./doc/usage/basic.md)
     - [Hub: get modules and flows from others](./doc/usage/hub.md)
     - [Use commands](./doc/usage/cmds.md)
     - [Manipulate env key-values](./doc/usage/env.md)
     - [Use flows](./doc/usage/flow.md)
-    - [Use abbrs/alias](./doc/usage/abbr.md)
 
 ## Module developing zone
 * [Quick-start](./doc/quick-start-mod.md)
 * [Examples: write modules in different languages](https://github.com/innerr/examples.ticat)
 * [How modules work together (with graphics)](./doc/concept-graphics.md)
-* [Specifications](./doc/spec)
+* [Specifications](./doc/spec/spec.md)
     - (this is only **ticat**'s spec, a repo provides modules and flows will have it's own spec)
     - [Hub: list/add/disable/enable/purge](./doc/spec/hub.md)
     - [Command sequence](./doc/spec/seq.md)
@@ -428,7 +451,7 @@ $> ticat cmds:+ tree
     - [Abbrs of commands, env-keys and flows](./doc/spec/abbr.md)
     - [Flow: list/save/edit](./doc/spec/flow.md)
     - [Display control in executing](./doc/spec/display.md)
-    - [Help command](./doc/spec/help.md)
+    - [Help info commands](./doc/spec/help.md)
     - [Local store dir](./doc/spec/local-store.md)
     - [Repo tree](./doc/spec/repo-tree.md)
     - [Module: env and args](./doc/spec/mod-interact.md)
@@ -436,5 +459,16 @@ $> ticat cmds:+ tree
 
 ## Inside **ticat**
 * [Roadmap and progress](./doc/progress.md)
-* [Zen: how the choices are made](./doc/zen.md)
-* [An user story: try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)
+* [Zen: how the choices are made](./doc/zen/zen.md)
+    - [Why ticat](./doc/zen/why-ticat.md)
+    - [Why use cli as component platform](./doc/zen/why-cli.md)
+    - [Why not use unix pipe](./doc/zen/why-not-pipe.md)
+    - [Why the usage so weird, especially the `+` and `-`](./doc/zen/why-weird.md)
+    - [Why use tags](./doc/zen/why-tags.md)
+    - [Why so many abbrs and aliases](./doc/zen/why-abbrs.md)
+    - [Why commands and env key-values are in tree form](./doc/zen/why-tree.md)
+    - [Why use git repo to distribute componets](./doc/zen/why-hub.md)
+    - [Why not support async/concurrent executing](./doc/zen/why-not-async.md)
+
+## User stories
+* [Try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)

@@ -1,3 +1,0 @@
-# Abbreviation / alias
-
-## (TODO)

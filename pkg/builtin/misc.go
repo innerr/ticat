@@ -22,9 +22,13 @@ func Sleep(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 		fmt.Printf("[Sleep] time string '%s' parse failed: %v\n", durStr, err)
 		return false
 	}
-	fmt.Printf(".zzZZ")
-	time.Sleep(dur)
-	fmt.Printf(" ... *\\O/*\n")
+	fmt.Printf(".zzZZ ")
+	secs := int(dur.Seconds())
+	for i := 0; i < secs; i++ {
+		fmt.Printf(".")
+		time.Sleep(time.Second)
+	}
+	fmt.Printf(" *\\O/*\n")
 	return true
 }
 

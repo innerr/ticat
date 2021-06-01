@@ -11,39 +11,37 @@
 ***--      Log and search
 -----      Command history and search
 ****-  Mod framework
-****-      Connector framework
+****-      Env-ops framework
+***--          Env-ops dependencies checking
+-----          "one-of" statment: write-one-of(key1, key1)
+*----      Os-command dependencies:
+-----          Auto install?
 ***--      Args supporting. TODO: free args
 ****-      Mod-ticat interacting
-***--      Dependencies checking
 *****      Support mod types:
 *****          Builtin
-*****          File by ext: python, golang
+****-              Flags: power, quiet, priority. TODO: priority-level
+*****          File by ext: python, golang, ...
 *****          Executable file
 *****          Directory (include repo supporting)
+-----  Flow framework
 ****-      Executor
 *****          Base executor
 -----          Middle re-enter
------          Intellegent
------          Mocking
+-----          Intellegent interactive
+-----          Auto mocking
 -----          Background running
------  Flow framework
-***--      Save, edit and execute flow
-***--      Help and abbrs
+-----          Concurrent running
+****-      Save, edit/remove flow
+****-      Help and abbrs
 **---      Executing ad-hot help
------      Flatten in executing and desc
 -----      Combine mods' props
 -----          Args
 -----          Dependencies
-****-          Connectors
+-----      Flatten in executing and desc
 *****  Hub framework
 *****      Mod and flow sharing
-*****      Authority control (by git now)
-```
-
-## Risks
-```
-* The connector protocal is not stable now, need a best practice
-    - May need: write-one-on-of(key1, key1)
-* Concurrent support?
-* Command path or abbrs confliction
+*****      Authority control (by git for now)
+*----      Command path or abbrs confliction
+-----  Module version manage
 ```

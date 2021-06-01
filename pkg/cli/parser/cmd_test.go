@@ -182,5 +182,5 @@ func TestCmdParserParse(t *testing.T) {
 
 func newCmdTree() *core.CmdTree {
 	return core.NewCmdTree(
-		&core.CmdTreeStrs{"<root>", ".", ".", "|", ":", "-", "--", "=", ".", "\t"})
+		&core.CmdTreeStrs{"<root>", ".", ".", "|", ":", "--", "=", ".", "\t"})
 }

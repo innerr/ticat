@@ -5,7 +5,7 @@ The **hub** is all local dirs linked with **ticat**,
 modules will be loaded on bootstrap by scanning these dirs:
 ```
  ┌────────────────────────────────┐
- │ TiCat Hub                      │
+ │ Ticat Hub                      │
  │  ┌──────────────────────────┐  │
  │  │ Normal Local Dir         │  │
  │  │ ┌─────┐  ┌─────┐         │  │
@@ -29,14 +29,14 @@ modules will be loaded on bootstrap by scanning these dirs:
 
 This command list all dirs in hub:
 ```
-$> ticat hub.ls
+$> ticat hub
 ```
 Or find dirs:
 ```
-$> ticat hub.ls <find-str>
+$> ticat hub <find-str>
 ```
 
-### Add a git repo to hub
+## Add a git repo to hub
 These dirs could be a git repo, **ticat** will `git clone` it to local dir when:
 ```
 $> ticat hub.add <github-id/repo-name>
@@ -54,20 +54,20 @@ These dirs are under **ticat**'s management, are `managed` dirs.
 
 If we add an existed repo to hub, the repo will be updated by `git pull`.
 
-### Init hub by adding default git address
+## Init hub by adding default git address
 This command could add the default git address defined by env key `sys.hub.init-repo` to hub:
 ```
 $> ticat hub.init
 ```
 This repo has the most common modules, it's useful for new users.
 
-### Update all managed repos
+## Update all managed repos
 ```
 $> ticat hub.update
 ```
 The disabled repos won't be updated.
 
-### Add a local dir to hub
+## Add a local dir to hub
 Dirs in hub could be a normal dir added to **ticat** by:
 ```
 $> ticat hub.add.local path=<dir>
@@ -96,3 +96,32 @@ $> ticat hub.purge.all
 
 A managed dir will be totally deleted from file system.
 A normal(unmanaged) dir will be removed from hub but keep on file system.
+
+## All commands about hub
+```
+$> ticat h:-
+[hub]
+     'list dir and repo info in hub'
+    [clear]
+         'remove all repos from hub'
+    [init]
+         'add and pull basic hub-repo to local'
+    [add-and-update]
+         'add and pull a git address to hub'
+        [local-dir]
+             'add a local dir (could be a git repo) to hub'
+    [list]
+         'list dir and repo info in hub'
+    [purge]
+         'remove an inactive repo from hub'
+        [purge-all-inactive]
+             'remove all inactive repos from hub'
+    [update-all]
+         'update all repos and mods defined in hub'
+    [enable-repo]
+         'enable matched git repos in hub'
+    [disable-repo]
+         'disable matched git repos in hub'
+    [move-flows-to-dir]
+         'move all saved flows to a local dir (could be a git repo)'
+```

@@ -32,7 +32,7 @@ If "display.style" is "utf",
 "display.utf8" need to be "true" to display frames in utf8 charset.
 
 ```
-$> ticat dummy:dummy
+$> ticat {dis.style=ascii}:dummy:dummy
 +-------------------+
 | stack-level: [1]  |                                           05-24 04:05:33
 +-------------------+----------------------------------------------------------+
@@ -68,14 +68,23 @@ dummy cmd here
 ## The verb commands
 The overview of verb commands:
 ```
-$> ticat m.t.s verb
-[verbose|verb|v|V]
-    [default|def|d|D]
-    [increase|inc|v+|+]
-    [decrease|dec|v-|-]
+$> ticat verb:-
+[verbose]
+     'change into verbose mode'
+[verbose.default]
+     'set to default verbose mode'
+[verbose.increase]
+     'increase verbose'
+[verbose.decrease]
+     'decrease verbose'
 
-$> ticat m.t.s q
+$> ticat q:-
 [quiet|q|Q]
+     'change into quiet mode'
+    - cmd-type:
+        normal (quiet)
+    - from:
+        builtin
 ```
 
 The commands "verb" and "quiet" is the fast way to display minimum/maximum info:
@@ -99,11 +108,13 @@ $> ticat quiet : verb.default : dummy : dummy
 
 The detail of verb commands:
 ```
-$> ticat m.t verb
+$> ticat cmds.tree.simple verb
 [verbose|verb|v|V]
      'change into verbose mode'
     - cmd-type:
         normal (quiet)
+    - from:
+        builtin
     [default|def|d|D]
          'set to default verbose mode'
         - full-cmd:
@@ -112,28 +123,34 @@ $> ticat m.t verb
             verbose|verb|v|V.default|def|d|D
         - cmd-type:
             normal (quiet)
+        - from:
+            builtin
     [increase|inc|v+|+]
          'increase verbose'
         - full-cmd:
             verbose.increase
         - full-abbrs:
             verbose|verb|v|V.increase|inc|v+|+
-        - cmd-type:
-            normal (quiet)
         - args:
             volume|vol|v|V = 1
+        - cmd-type:
+            normal (quiet)
+        - from:
+            builtin
     [decrease|dec|v-|-]
          'decrease verbose'
         - full-cmd:
             verbose.decrease
         - full-abbrs:
             verbose|verb|v|V.decrease|dec|v-|-
-        - cmd-type:
-            normal (quiet)
         - args:
             volume|vol|v|V = 1
+        - cmd-type:
+            normal (quiet)
+        - from:
+            builtin
 
-$> ticat m.t q
+$> ticat cmd quiet
 [quiet|q|Q]
      'change into quiet mode'
     - cmd-type:
