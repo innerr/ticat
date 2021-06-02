@@ -215,7 +215,7 @@ func (self *Cmd) Flow() []string {
 	flow, err := shellwords.Parse(self.cmdLine)
 	if err != nil {
 		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
-			self.cmdLine, err))
+		self.cmdLine, err))
 	}
 	return flow
 }
@@ -245,6 +245,13 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 	if len(self.cmdLine) == 0 {
 		return true
+	}
+
+	for _, dep := range self.depends {
+		_, err := exec.LookPath(dep.OsCmd)
+		if err != nil {
+			panic(fmt.Errorf("[Cmd.executeFile] %s", err))
+		}
 	}
 
 	var bin string
