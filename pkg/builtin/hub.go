@@ -520,7 +520,7 @@ func updateRepoAndReadSubList(
 				repoPath))
 		}
 		screen.Print(fmt.Sprintf("[%s] => git update\n", name))
-		cmdStrs = []string{"git", "pull", "--recursive"}
+		cmdStrs = []string{"git", "pull", "--recurse-submodules"}
 		pwd = repoPath
 	} else {
 		screen.Print(fmt.Sprintf("[%s] => git clone\n", name))
