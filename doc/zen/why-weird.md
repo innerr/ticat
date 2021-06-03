@@ -231,3 +231,24 @@ $> ticat <command>:<command> :+ <find-str> <find-str>
 $> ticat <command>:<command>:<commad>
 ...
 ```
+
+## Full tail editing style support
+
+We already discussed how we could benefit from tail editing above.
+
+Sometimes `+` and `-` are not enough for full tail editing.
+
+For example, in these cases `+` and `-` are occupied by describing flow execution:
+```
+$> ticat <flow-command> :-
+$> ticat <flow-command> :+
+$> ticat <command>:<command>:<command>:<command> :+
+$> ticat <command>:<command>:<command>:<command> :-
+```
+
+Obviously, more "priority" and "power" commands are needed to avoid long-cusor-move editing.
+
+We tentatively use `$` for "show the last command's info",
+there might be more function giving to `$` in the future,
+but this command is not stable, maybe we would cancel it someday,
+because there are too much weird things for users already.

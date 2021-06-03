@@ -81,6 +81,12 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
+	cmds.AddSub("tail", "$").
+		RegPowerCmd(DumpTailCmd,
+			"display the last cmd info, sub tree cmds will not show").
+		SetQuiet().
+		SetPriority()
+
 	mods := cmds.AddSub("cmds", "cmd", "c", "C")
 	mods.RegCmd(DumpCmdNoRecursive,
 		"display cmd info, sub tree cmds will not show").

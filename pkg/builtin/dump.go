@@ -146,6 +146,21 @@ func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
+func DumpTailCmd(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	if len(flow.Cmds) < 2 {
+		return clearFlow(flow)
+	}
+	cmdPath := flow.Cmds[len(flow.Cmds)-1].DisplayPath(cc.Cmds.Strs.PathSep, false)
+	display.DumpCmds(cc, false, 4, false, false, cmdPath)
+	return clearFlow(flow)
+}
+
 func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	display.DumpCmds(cc, false, 4, false, false, argv.GetRaw("cmd-path"))
 	return true
