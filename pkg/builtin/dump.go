@@ -104,6 +104,12 @@ func DumpFlowAll(
 	return dumpFlowAll(cc, env, flow, currCmdIdx, false)
 }
 
+func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	depth := argv.GetInt("depth")
+	env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
+	return true
+}
+
 func dumpFlowAll(
 	cc *core.Cli,
 	env *core.Env,

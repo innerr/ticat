@@ -51,13 +51,29 @@ func (self *Env) NewLayers(ty ...EnvLayerType) *Env {
 }
 
 func (self *Env) GetLayer(ty EnvLayerType) *Env {
+	env := self.getLayer(ty)
+	if env == nil {
+		panic(fmt.Errorf("[Env.GetLayer] env layer '%s' not found", ty))
+	}
+	return env
+}
+
+func (self *Env) GetOrNewLayer(ty EnvLayerType) *Env {
+	env := self.getLayer(ty)
+	if env == nil {
+		return self.NewLayer(ty)
+	}
+	return env
+}
+
+func (self *Env) getLayer(ty EnvLayerType) *Env {
 	if self.ty == ty {
 		return self
 	}
 	if self.parent == nil {
-		panic(fmt.Errorf("[Env.GetLayer] env layer '%s' not found", ty))
+		return nil
 	}
-	return self.parent.GetLayer(ty)
+	return self.parent.getLayer(ty)
 }
 
 func (self Env) DeleteInSelfLayer(name string) {

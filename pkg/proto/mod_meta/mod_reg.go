@@ -57,13 +57,15 @@ func RegMod(
 			panic(fmt.Errorf("[regMod] cmd '%s' point to a not existed file '%s'",
 				cmdPath, path))
 		}
-	} else if isDir {
-		path = ""
 	}
 
 	var cmd *core.Cmd
 	if isDir {
-		cmd = mod.RegDirCmd(path, strings.TrimSpace(help)).SetSource(source)
+		if len(cmdLine) != 0 {
+			cmd = mod.RegDirWithCmd(path, strings.TrimSpace(help)).SetSource(source)
+		} else {
+			cmd = mod.RegEmptyDirCmd(path, strings.TrimSpace(help)).SetSource(source)
+		}
 	} else {
 		cmd = mod.RegFileCmd(path, strings.TrimSpace(help)).SetSource(source)
 	}
