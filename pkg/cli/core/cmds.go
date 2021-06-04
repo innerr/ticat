@@ -57,32 +57,32 @@ func (self *CmdTree) Execute(
 	}
 }
 
-func (self *CmdTree) cmdConflictCheck(help string) {
+func (self *CmdTree) cmdConflictCheck(help string, funName string) {
 	if self.cmd == nil {
 		return
 	}
 	// Allow to overwrite empty dir cmd
-	if self.cmd.Type() == CmdTypeEmptyDir && len(self.cmd.CmdLine()) == 0 {
+	if self.cmd.Type() == CmdTypeEmptyDir {
 		return
 	}
-	panic(fmt.Errorf("[CmdTree.AddSub] %s: reg-cmd conflicted. old '%s', new '%s'",
-		self.DisplayPath(), self.cmd.Help(), help))
+	panic(fmt.Errorf("[CmdTree.%s] %s: reg-cmd conflicted. old '%s', new '%s'",
+		funName, self.DisplayPath(), self.cmd.Help(), help))
 }
 
 func (self *CmdTree) RegCmd(cmd NormalCmd, help string) *Cmd {
-	self.cmdConflictCheck(help)
+	self.cmdConflictCheck(help, "RegCmd")
 	self.cmd = NewCmd(self, help, cmd)
 	return self.cmd
 }
 
 func (self *CmdTree) RegFileCmd(cmd string, help string) *Cmd {
-	self.cmdConflictCheck(help)
+	self.cmdConflictCheck(help, "RegFileCmd")
 	self.cmd = NewFileCmd(self, help, cmd)
 	return self.cmd
 }
 
 func (self *CmdTree) RegDirWithCmd(cmd string, help string) *Cmd {
-	self.cmdConflictCheck(help)
+	self.cmdConflictCheck(help, "RegDirWithCmd")
 	self.cmd = NewDirWithCmd(self, help, cmd)
 	return self.cmd
 }
@@ -97,13 +97,13 @@ func (self *CmdTree) RegEmptyDirCmd(dir string, help string) *Cmd {
 }
 
 func (self *CmdTree) RegFlowCmd(cmd string, help string) *Cmd {
-	self.cmdConflictCheck(help)
+	self.cmdConflictCheck(help, "RegFlowCmd")
 	self.cmd = NewFlowCmd(self, help, cmd)
 	return self.cmd
 }
 
 func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
-	self.cmdConflictCheck(help)
+	self.cmdConflictCheck(help, "RegPowerCmd")
 	self.cmd = NewPowerCmd(self, help, cmd)
 	return self.cmd
 }

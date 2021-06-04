@@ -239,14 +239,12 @@ func dumpCmd(
 	if cmd.Parent() == nil || cmd.MatchFind(findStrs...) {
 		cic := cmd.Cmd()
 		var name string
-		if !skeleton {
+		if flatten {
+			name = cmd.DisplayPath()
+		} else if !skeleton {
 			name = strings.Join(cmd.Abbrs(), abbrsSep)
 		} else {
-			if !flatten {
-				name = cmd.DisplayName()
-			} else {
-				name = cmd.DisplayPath()
-			}
+			name = cmd.DisplayName()
 		}
 		if len(name) == 0 {
 			name = cmd.DisplayName()
@@ -267,7 +265,7 @@ func dumpCmd(
 			}
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				full := cmd.DisplayPath()
-				if !skeleton {
+				if !skeleton && !flatten {
 					prt(1, "- full-cmd:")
 					prt(2, full)
 				}
@@ -331,16 +329,21 @@ func dumpCmd(
 				}
 			}
 
-			if len(cic.CmdLine()) != 0 && cic.Type() != core.CmdTypeNormal &&
-				cic.Type() != core.CmdTypePower {
-				if cic.Type() == core.CmdTypeFlow {
-					prt(1, "- flow:")
-				} else if cic.Type() == core.CmdTypeEmptyDir {
-					prt(1, "- dir:")
-				} else {
-					prt(1, "- executable:")
+			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
+				if len(cic.CmdLine()) != 0 {
+					if cic.Type() == core.CmdTypeFlow {
+						prt(1, "- flow:")
+					} else if cic.Type() == core.CmdTypeEmptyDir {
+						prt(1, "- dir:")
+					} else {
+						prt(1, "- executable:")
+					}
+					prt(2, cic.CmdLine())
 				}
-				prt(2, cic.CmdLine())
+				if len(cic.MetaFile()) != 0 {
+					prt(1, "- meta:")
+					prt(2, cic.MetaFile())
+				}
 			}
 		}
 	}
@@ -475,12 +478,18 @@ func dumpFlowCmd(
 		if cic.Type() == core.CmdTypeFlow && !skeleton {
 			prt(1, "- flow:")
 			prt(2, cic.CmdLine())
-		} else if cic.Type() == core.CmdTypeEmptyDir {
-			prt(1, "- dir:")
-			prt(2, cic.CmdLine())
 		} else if !simple && !skeleton {
-			prt(1, "- executable:")
-			prt(2, cic.CmdLine())
+			if cic.Type() == core.CmdTypeEmptyDir {
+				prt(1, "- dir:")
+				prt(2, cic.CmdLine())
+			} else {
+				prt(1, "- executable:")
+				prt(2, cic.CmdLine())
+			}
+			if len(cic.MetaFile()) != 0 {
+				prt(1, "- meta:")
+				prt(2, cic.MetaFile())
+			}
 		}
 		if cic.Type() == core.CmdTypeFlow && depth > 1 {
 			prt(2, "--->>>")

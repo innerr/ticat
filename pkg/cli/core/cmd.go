@@ -39,36 +39,37 @@ type Cmd struct {
 	envOps   EnvOps
 	source   string
 	depends  []Depend
+	metaFile string
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypeNormal, false, false,
-		newArgs(), cmd, nil, "", newEnvOps(), "", nil}
+		newArgs(), cmd, nil, "", newEnvOps(), "", nil, ""}
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypePower, false, false,
-		newArgs(), nil, cmd, "", newEnvOps(), "", nil}
+		newArgs(), nil, cmd, "", newEnvOps(), "", nil, ""}
 }
 
 func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFile, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps(), "", nil}
+		newArgs(), nil, nil, cmd, newEnvOps(), "", nil, ""}
 }
 
 func NewEmptyDirCmd(owner *CmdTree, help string, dir string) *Cmd {
 	return &Cmd{owner, help, CmdTypeEmptyDir, false, false,
-		newArgs(), nil, nil, dir, newEnvOps(), "", nil}
+		newArgs(), nil, nil, dir, newEnvOps(), "", nil, ""}
 }
 
 func NewDirWithCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeDirWithCmd, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps(), "", nil}
+		newArgs(), nil, nil, cmd, newEnvOps(), "", nil, ""}
 }
 
 func NewFlowCmd(owner *CmdTree, help string, flow string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFlow, false, false,
-		newArgs(), nil, nil, flow, newEnvOps(), "", nil}
+		newArgs(), nil, nil, flow, newEnvOps(), "", nil, ""}
 }
 
 func (self *Cmd) Execute(
@@ -158,6 +159,15 @@ func (self *Cmd) AddSub(name string, abbrs ...string) *CmdTree {
 func (self *Cmd) SetSource(s string) *Cmd {
 	self.source = s
 	return self
+}
+
+func (self *Cmd) SetMetaFile(path string) *Cmd {
+	self.metaFile = path
+	return self
+}
+
+func (self *Cmd) MetaFile() string {
+	return self.metaFile
 }
 
 func (self *Cmd) AddDepend(dep string, reason string) *Cmd {
