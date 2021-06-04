@@ -19,6 +19,8 @@ func DumpFlow(
 	simple bool,
 	skeleton bool) {
 
+	depth := env.GetInt("display.flow.depth")
+
 	if skeleton {
 		simple = true
 	}
@@ -27,7 +29,7 @@ func DumpFlow(
 		return
 	}
 	cc.Screen.Print("--->>>\n")
-	dumpFlow(cc, env, flow, sep, indentSize, simple, skeleton, 0)
+	dumpFlow(cc, env, flow, depth, sep, indentSize, simple, skeleton, 0)
 	cc.Screen.Print("<<<---\n")
 }
 
@@ -252,8 +254,16 @@ func dumpCmd(
 
 		if !flatten || cic != nil {
 			prt(0, "["+name+"]")
-			if cic != nil && len(cic.Help()) != 0 {
-				prt(1, " '"+cic.Help()+"'")
+			if cic != nil {
+				var helpStr string
+				if !skeleton {
+					helpStr = cic.Help()
+				} else {
+					helpStr = cic.DisplayHelpStr()
+				}
+				if len(helpStr) != 0 {
+					prt(1, " '"+helpStr+"'")
+				}
 			}
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				full := cmd.DisplayPath()
@@ -321,10 +331,12 @@ func dumpCmd(
 				}
 			}
 
-			if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
-				cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
+			if len(cic.CmdLine()) != 0 && cic.Type() != core.CmdTypeNormal &&
+				cic.Type() != core.CmdTypePower {
 				if cic.Type() == core.CmdTypeFlow {
 					prt(1, "- flow:")
+				} else if cic.Type() == core.CmdTypeEmptyDir {
+					prt(1, "- dir:")
 				} else {
 					prt(1, "- executable:")
 				}
@@ -345,6 +357,7 @@ func dumpFlow(
 	cc *core.Cli,
 	env *core.Env,
 	flow []core.ParsedCmd,
+	depth int,
 	sep string,
 	indentSize int,
 	simple bool,
@@ -353,7 +366,7 @@ func dumpFlow(
 
 	for _, cmd := range flow {
 		if len(cmd) != 0 {
-			dumpFlowCmd(cc, env, cmd, sep, indentSize,
+			dumpFlowCmd(cc, env, cmd, depth, sep, indentSize,
 				simple, skeleton, indentAdjust)
 		}
 	}
@@ -363,6 +376,7 @@ func dumpFlowCmd(
 	cc *core.Cli,
 	env *core.Env,
 	parsedCmd core.ParsedCmd,
+	depth int,
 	sep string,
 	indentSize int,
 	simple bool,
@@ -388,13 +402,13 @@ func dumpFlowCmd(
 		return
 	}
 	var name string
-	if !skeleton {
-		name = parsedCmd.DisplayPath(sep, true)
-	} else {
+	if skeleton {
 		name = strings.Join(parsedCmd.Path(), sep)
+	} else {
+		name = parsedCmd.DisplayPath(sep, true)
 	}
 	prt(0, "["+name+"]")
-	if cic != nil && len(cic.Help()) != 0 {
+	if len(cic.Help()) != 0 {
 		prt(1, " '"+cic.Help()+"'")
 	}
 
@@ -447,13 +461,8 @@ func dumpFlowCmd(
 		if cic.IsPriority() {
 			line += " (priority)"
 		}
-		if cic.Type() != core.CmdTypeNormal || cic.IsQuiet() {
-			if cic.Type() != core.CmdTypeFile && cic.Type() != core.CmdTypeDir &&
-				cic.Type() != core.CmdTypeFlow {
-				prt(1, "- cmd-type:")
-				prt(2, line)
-			}
-		}
+		prt(1, "- cmd-type:")
+		prt(2, line)
 
 		if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
 			prt(1, "- from:")
@@ -461,19 +470,22 @@ func dumpFlowCmd(
 		}
 	}
 
-	if len(cic.CmdLine()) != 0 && (cic.Type() == core.CmdTypeFile ||
-		cic.Type() == core.CmdTypeDir || cic.Type() == core.CmdTypeFlow) {
+	if len(cic.CmdLine()) != 0 && cic.Type() != core.CmdTypeNormal &&
+		cic.Type() != core.CmdTypePower {
 		if cic.Type() == core.CmdTypeFlow && !skeleton {
 			prt(1, "- flow:")
+			prt(2, cic.CmdLine())
+		} else if cic.Type() == core.CmdTypeEmptyDir {
+			prt(1, "- dir:")
 			prt(2, cic.CmdLine())
 		} else if !simple && !skeleton {
 			prt(1, "- executable:")
 			prt(2, cic.CmdLine())
 		}
-		if cic.Type() == core.CmdTypeFlow {
+		if cic.Type() == core.CmdTypeFlow && depth > 1 {
 			prt(2, "--->>>")
 			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
-			dumpFlow(cc, env, subFlow.Cmds, sep, indentSize, simple, skeleton, indentAdjust+2)
+			dumpFlow(cc, env, subFlow.Cmds, depth-1, sep, indentSize, simple, skeleton, indentAdjust+2)
 			prt(2, "<<<---")
 		}
 	}

@@ -104,6 +104,12 @@ func DumpFlowAll(
 	return dumpFlowAll(cc, env, flow, currCmdIdx, false)
 }
 
+func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	depth := argv.GetInt("depth")
+	env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
+	return true
+}
+
 func dumpFlowAll(
 	cc *core.Cli,
 	env *core.Env,
@@ -138,6 +144,21 @@ func dumpFlowAll(
 func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	display.DumpEnv(cc.Screen, env, 4)
 	return true
+}
+
+func DumpTailCmd(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	if len(flow.Cmds) < 2 {
+		return clearFlow(flow)
+	}
+	cmdPath := flow.Cmds[len(flow.Cmds)-1].DisplayPath(cc.Cmds.Strs.PathSep, false)
+	display.DumpCmds(cc, false, 4, false, false, cmdPath)
+	return clearFlow(flow)
 }
 
 func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {

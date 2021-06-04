@@ -41,7 +41,7 @@ Now use `+` as search command to find out what we got by search the repo's name.
 We also add `@ready` to the searching strings,
 it is a conventional tag use for "ready-to-go"(out-of-the-box) commands:
 ```
-$> ticat + @ready quick-start
+$> ticat + @ready quick-start-usage
 [bench]
      'pretend to do bench. @ready'
 ...

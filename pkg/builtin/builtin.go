@@ -52,7 +52,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"desc the flow about to execute, skeleton only").
 		SetQuiet().
 		SetPriority()
-	desc.AddSub("dependencies", "depends", "depend", "dep", "d", "D").
+	desc.AddSub("dependencies", "depends", "depend", "dep", "os-cmd", "os").
 		RegPowerCmd(DumpFlowDepends,
 			"list the depended os-commands of the flow").
 		SetQuiet().
@@ -63,6 +63,13 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
+	desc.AddSub("depth", "d", "D").
+		RegCmd(SetDumpFlowDepth,
+			"setup display stack depth of flow desc").
+		SetQuiet().
+		SetPriority().
+		AddArg("depth", "8", "d", "D")
+
 	descFlow := desc.AddSub("flow", "f", "F").
 		RegPowerCmd(DumpFlow,
 			"desc the flow execution").
@@ -71,6 +78,12 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	descFlow.AddSub("simple", "sim", "s", "S", "-").
 		RegPowerCmd(DumpFlowSimple,
 			"desc the flow execution in lite style").
+		SetQuiet().
+		SetPriority()
+
+	cmds.AddSub("tail", "$").
+		RegPowerCmd(DumpTailCmd,
+			"display the last cmd info, sub tree cmds will not show").
 		SetQuiet().
 		SetPriority()
 

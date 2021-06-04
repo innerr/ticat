@@ -14,11 +14,12 @@ import (
 type CmdType string
 
 const (
-	CmdTypeNormal CmdType = "normal"
-	CmdTypePower  CmdType = "power"
-	CmdTypeFile   CmdType = "file"
-	CmdTypeDir    CmdType = "dir"
-	CmdTypeFlow   CmdType = "flow"
+	CmdTypeNormal     CmdType = "normal"
+	CmdTypePower      CmdType = "power"
+	CmdTypeFile       CmdType = "file"
+	CmdTypeEmptyDir   CmdType = "empty"
+	CmdTypeDirWithCmd CmdType = "dir"
+	CmdTypeFlow       CmdType = "flow"
 )
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env) (succeeded bool)
@@ -55,8 +56,13 @@ func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
 		newArgs(), nil, nil, cmd, newEnvOps(), "", nil}
 }
 
-func NewDirCmd(owner *CmdTree, help string, cmd string) *Cmd {
-	return &Cmd{owner, help, CmdTypeDir, false, false,
+func NewEmptyDirCmd(owner *CmdTree, help string, dir string) *Cmd {
+	return &Cmd{owner, help, CmdTypeEmptyDir, false, false,
+		newArgs(), nil, nil, dir, newEnvOps(), "", nil}
+}
+
+func NewDirWithCmd(owner *CmdTree, help string, cmd string) *Cmd {
+	return &Cmd{owner, help, CmdTypeDirWithCmd, false, false,
 		newArgs(), nil, nil, cmd, newEnvOps(), "", nil}
 }
 
@@ -79,7 +85,9 @@ func (self *Cmd) Execute(
 		return currCmdIdx, self.normal(argv, cc, env)
 	case CmdTypeFile:
 		return currCmdIdx, self.executeFile(argv, cc, env)
-	case CmdTypeDir:
+	case CmdTypeEmptyDir:
+		return currCmdIdx, true
+	case CmdTypeDirWithCmd:
 		return currCmdIdx, self.executeFile(argv, cc, env)
 	case CmdTypeFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env)
@@ -183,6 +191,13 @@ func (self *Cmd) Help() string {
 	return self.help
 }
 
+func (self *Cmd) DisplayHelpStr() string {
+	if len(self.help) == 0 && self.ty == CmdTypeFlow {
+		return self.cmdLine
+	}
+	return self.help
+}
+
 func (self *Cmd) IsPowerCmd() bool {
 	return self.ty == CmdTypePower
 }
@@ -245,6 +260,13 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 	if len(self.cmdLine) == 0 {
 		return true
+	}
+
+	for _, dep := range self.depends {
+		_, err := exec.LookPath(dep.OsCmd)
+		if err != nil {
+			panic(fmt.Errorf("[Cmd.executeFile] %s", err))
+		}
 	}
 
 	var bin string

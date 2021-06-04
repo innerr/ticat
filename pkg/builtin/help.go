@@ -27,7 +27,7 @@ func GlobalHelp(
 		}
 		if len(flow.Cmds) > 2 ||
 			cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
-			return DumpFlowAll(argv, cc, env, flow, currCmdIdx)
+			return DumpFlowAllSimple(argv, cc, env, flow, currCmdIdx)
 		}
 		if cmd.HasSub() && cmd.Cmd() == nil {
 			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)

@@ -62,7 +62,7 @@ func (self *CmdTree) cmdConflictCheck(help string) {
 		return
 	}
 	// Allow to overwrite empty dir cmd
-	if self.cmd.Type() == CmdTypeDir && len(self.cmd.CmdLine()) == 0 {
+	if self.cmd.Type() == CmdTypeEmptyDir && len(self.cmd.CmdLine()) == 0 {
 		return
 	}
 	panic(fmt.Errorf("[CmdTree.AddSub] %s: reg-cmd conflicted. old '%s', new '%s'",
@@ -81,13 +81,18 @@ func (self *CmdTree) RegFileCmd(cmd string, help string) *Cmd {
 	return self.cmd
 }
 
-func (self *CmdTree) RegDirCmd(cmd string, help string) *Cmd {
-	// Ignore empty dir cmd register
-	if len(cmd) == 0 && self.cmd != nil {
+func (self *CmdTree) RegDirWithCmd(cmd string, help string) *Cmd {
+	self.cmdConflictCheck(help)
+	self.cmd = NewDirWithCmd(self, help, cmd)
+	return self.cmd
+}
+
+func (self *CmdTree) RegEmptyDirCmd(dir string, help string) *Cmd {
+	//dirnore empty dir cmd register
+	if self.cmd != nil {
 		return self.cmd
 	}
-	self.cmdConflictCheck(help)
-	self.cmd = NewDirCmd(self, help, cmd)
+	self.cmd = NewEmptyDirCmd(self, help, dir)
 	return self.cmd
 }
 
