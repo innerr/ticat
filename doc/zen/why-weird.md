@@ -252,3 +252,7 @@ We tentatively use `$` for "show the last command's info",
 there might be more function giving to `$` in the future,
 but this command is not stable, maybe we would cancel it someday,
 because there are too much weird things for users already.
+
+For now, we check the input args to **ticat**, if the grammar is wrong, **ticat** will report error.
+To achive full tail editing,
+we need a way to let users putting wrong things and then we give back the suggestions.
