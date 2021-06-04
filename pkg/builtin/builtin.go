@@ -159,10 +159,9 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
-	envListHelpStr := "list env values in flatten format"
 	env := cmds.AddSub("env", "e", "E").
-		RegCmd(DumpEnvFlattenVals,
-			envListHelpStr)
+		RegCmd(DumpEssentialEnvFlattenVals,
+			"list essential env values in flatten format")
 	addFindStrArgs(env)
 
 	env.AddSub("tree", "t", "T").
@@ -176,7 +175,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
 		RegCmd(DumpEnvFlattenVals,
-			envListHelpStr)
+			"list env values in flatten format")
 	addFindStrArgs(envList)
 
 	env.AddSub("save", "persist", "s", "S", "+").

@@ -192,6 +192,11 @@ func DumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
 	return true
 }
 
+func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	display.DumpEssentialEnvFlattenVals(cc.Screen, env, getFindStrsFromArgv(argv)...)
+	return true
+}
+
 func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	display.DumpEnvFlattenVals(cc.Screen, env, getFindStrsFromArgv(argv)...)
 	return true

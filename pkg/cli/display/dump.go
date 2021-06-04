@@ -69,8 +69,23 @@ func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
 	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
 }
 
+func DumpEssentialEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
+	filterPrefixs := []string{
+		"session",
+		"strs.",
+		"sys.",
+		"display.",
+	}
+	flatten := env.Flatten(false, filterPrefixs, false)
+	dumpEnvFlattenVals(screen, flatten, findStrs...)
+}
+
 func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 	flatten := env.Flatten(true, nil, true)
+	dumpEnvFlattenVals(screen, flatten, findStrs...)
+}
+
+func dumpEnvFlattenVals(screen core.Screen, flatten map[string]string, findStrs ...string) {
 	var keys []string
 	for k, _ := range flatten {
 		keys = append(keys, k)
