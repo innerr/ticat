@@ -18,16 +18,20 @@ func RegisterCmds(cmds *core.CmdTree) {
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
+	cmds.AddSub("-help", "-HELP", "-h", "-H").
+		RegCmd(GlobalHelp,
+			"get help")
+
 	more := cmds.AddSub("more", "+").
-		RegPowerCmd(GlobalHelp,
-			GlobalHelpHelpStr).
+		RegPowerCmd(GlobalHelpMoreInfo,
+			MoreHelpStr).
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(more)
 
 	less := cmds.AddSub("less", "-").
-		RegPowerCmd(GlobalSkeleton,
-			SkeletonHelpStr).
+		RegPowerCmd(GlobalHelpLessInfo,
+			LessHelpStr).
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(less)
@@ -388,8 +392,8 @@ const LessMoreHelpStr = `
     * has args: do global search.
     * has no args: show global help.`
 
-const GlobalHelpHelpStr = "display rich info base on:" + LessMoreHelpStr
-const SkeletonHelpStr = "display brief info base on:" + LessMoreHelpStr
+const MoreHelpStr = "display rich info base on:" + LessMoreHelpStr
+const LessHelpStr = "display brief info base on:" + LessMoreHelpStr
 
 const MoveFlowsToDirHelpStr = `move all saved flows to a local dir (could be a git repo).
 auto move:

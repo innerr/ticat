@@ -51,6 +51,7 @@ func (self *Executor) Execute(cc *core.Cli, input ...string) bool {
 
 func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) bool {
 	if len(input) == 0 {
+		display.PrintGlobalHelp(cc)
 		return true
 	}
 
@@ -262,8 +263,8 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	allows := []interface{}{
 		builtin.DumpCmdNoRecursive,
 		builtin.SaveFlow,
-		builtin.GlobalHelp,
-		builtin.GlobalSkeleton,
+		builtin.GlobalHelpMoreInfo,
+		builtin.GlobalHelpLessInfo,
 		builtin.DumpFlowAll,
 		builtin.DumpFlowAllSimple,
 		builtin.DumpFlow,
@@ -287,7 +288,8 @@ func doNotFilterEmptyCmds(flow *core.ParsedCmds) bool {
 	}
 	allows := []interface{}{
 		builtin.GlobalHelp,
-		builtin.GlobalSkeleton,
+		builtin.GlobalHelpMoreInfo,
+		builtin.GlobalHelpLessInfo,
 	}
 	for _, allow := range allows {
 		if last.IsTheSameFunc(allow) {
