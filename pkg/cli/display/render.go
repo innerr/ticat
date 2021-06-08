@@ -103,6 +103,15 @@ type FrameChars struct {
 	P9 string
 }
 
+func FrameCharsUtf8Heavy() *FrameChars {
+	return &FrameChars{
+		"┃", "━",
+		"┏", "┳", "┓",
+		"┣", "╋", "┫",
+		"┗", "┻", "┛",
+	}
+}
+
 func FrameCharsUtf8() *FrameChars {
 	return &FrameChars{
 		"│", "─",
@@ -141,8 +150,13 @@ func FrameCharsNoCorner() *FrameChars {
 
 func getFrameChars(env *core.Env) *FrameChars {
 	name := strings.ToLower(env.Get("display.style").Raw)
-	if strings.Index(name, "utf") >= 0 && env.GetBool("display.utf8") {
-		return FrameCharsUtf8()
+	if env.GetBool("display.utf8") {
+		if strings.Index(name, "utf") >= 0 {
+			return FrameCharsUtf8()
+		}
+		if strings.Index(name, "heavy") >= 0 || strings.Index(name, "bold") >= 0 {
+			return FrameCharsUtf8Heavy()
+		}
 	}
 	if strings.Index(name, "slash") >= 0 {
 		return FrameCharsNoSlash()

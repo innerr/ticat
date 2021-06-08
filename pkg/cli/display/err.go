@@ -33,9 +33,3 @@ func PrintPanic(screen core.Screen, title string, kvs []string) {
 	}
 	PrintPanicFooter(screen)
 }
-
-func PrintTipTitle(screen core.Screen, env *core.Env, msg string) {
-	screen.Print("======================================\n")
-	screen.Print("=> " + msg + "\n")
-	screen.Print("--------------------------------------\n")
-}

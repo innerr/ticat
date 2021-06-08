@@ -3,13 +3,13 @@ package builtin
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/cli/display"
 	meta "github.com/pingcap/ticat/pkg/proto/hub_meta"
 )
 
@@ -59,11 +59,20 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	fieldSep := env.GetRaw("strs.proto-sep")
 	findStrs := getFindStrsFromArgv(argv)
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-	listHub(cc.Screen, infos, findStrs...)
+	screen := display.NewCacheScreen()
+	listHub(screen, env, infos, findStrs...)
+	if screen.OutputNum() <= 0 {
+		display.PrintTipTitle(cc.Screen, env,
+			"add more commands by adding more git repos to local with 'h.+'")
+	} else {
+		display.PrintTipTitle(cc.Screen, env,
+			"show more hub usage by:")
+	}
+	screen.WriteTo(cc.Screen)
 	return true
 }
 
-func listHub(screen core.Screen, infos []meta.RepoInfo, filterStrs ...string) {
+func listHub(screen core.Screen, env *core.Env, infos []meta.RepoInfo, filterStrs ...string) {
 	for _, info := range infos {
 		if len(filterStrs) != 0 {
 			filtered := false
@@ -80,7 +89,9 @@ func listHub(screen core.Screen, infos []meta.RepoInfo, filterStrs ...string) {
 		name := repoDisplayName(info)
 		screen.Print(fmt.Sprintf("[%s]", name))
 		if info.OnOff != "on" {
-			screen.Print(" (" + info.OnOff + ")")
+			screen.Print(disabledStr(env))
+		} else {
+			screen.Print(enabledStr(env))
 		}
 		screen.Print("\n")
 		screen.Print(fmt.Sprintf("     '%s'\n", info.HelpStr))
@@ -252,7 +263,7 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 
 	for i, info := range extracted {
 		if info.OnOff == "on" {
-			cc.Screen.Print(fmt.Sprintf("[%s] (disabled)\n", repoDisplayName(info)))
+			cc.Screen.Print(fmt.Sprintf("[%s]%s\n", disabledStr(env), repoDisplayName(info)))
 			cc.Screen.Print(fmt.Sprintf("    %s\n", info.Path))
 			info.OnOff = "disabled"
 			extracted[i] = info
@@ -312,7 +323,7 @@ func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bo
 		panic(fmt.Errorf("[MoveSavedFlowsToLocalDir] cant't find dir by string '%s'", path))
 	}
 	if len(locals) > 1 {
-		listHub(cc.Screen, locals)
+		listHub(cc.Screen, env, locals)
 		cc.Screen.Print(fmt.Sprintf(
 			"\n[MoveSavedFlowsToLocalDir] cant't determine which dir by string '%s'\n",
 			path))
@@ -401,7 +412,7 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if !found {
 		listFileName := env.GetRaw("strs.repos-file-name")
 		listFilePath := filepath.Join(path, listFileName)
-		helpStr, _, _ := readRepoListFromFile(listFilePath)
+		helpStr, _, _ := meta.ReadRepoListFromFile(listFilePath)
 		info := meta.RepoInfo{"", "<local>", path, helpStr, "on"}
 		infos = append(infos, info)
 		cc.Screen.Print(fmt.Sprintf("[%s]\n", repoDisplayName(info)))
@@ -538,67 +549,7 @@ func updateRepoAndReadSubList(
 		panic(fmt.Errorf("[updateRepoAndReadSubList] run '%v' failed: %v", cmdStrs, err))
 	}
 	listFilePath := filepath.Join(repoPath, listFileName)
-	return readRepoListFromFile(listFilePath)
-}
-
-func readRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs []string) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return
-		}
-		panic(fmt.Errorf("[readRepoListFromFile] read list file '%v' failed: %v",
-			path, err))
-	}
-	list := strings.Split(string(data), "\n")
-	meetMark := false
-
-	// TODO: move to specific package
-	const StartMark = "[ticat.hub]"
-	for i, line := range list {
-		line = strings.TrimSpace(line)
-		if i != 0 && len(line) > 0 && len(helpStr) == 0 {
-			j := strings.LastIndex(line, ":")
-			if j < 0 {
-				helpStr = line
-			} else {
-				text := strings.TrimSpace(line[j+1:])
-				if len(text) > 0 {
-					helpStr = text
-				}
-			}
-		}
-		if strings.HasPrefix(line, StartMark) {
-			meetMark = true
-		}
-		if !meetMark {
-			continue
-		}
-		if len(line) > 0 && line[0:1] == "*" {
-			line = strings.TrimSpace(line[1:])
-			i := strings.Index(line, "[")
-			if i < 0 {
-				continue
-			}
-			line = line[i+1:]
-			j := strings.Index(line, "]")
-			if j < 0 {
-				continue
-			}
-			addr := strings.TrimSpace(line[:j])
-			if len(addr) == 0 {
-				continue
-			}
-			addrs = append(addrs, addr)
-			line := line[j+1:]
-			k := strings.LastIndex(line, ":")
-			if k < 0 {
-				continue
-			}
-			helpStrs = append(helpStrs, strings.TrimSpace(line[k+1:]))
-		}
-	}
-	return
+	return meta.ReadRepoListFromFile(listFilePath)
 }
 
 func extractAddrFromList(
@@ -743,4 +694,18 @@ func matchFindRepoInfo(info meta.RepoInfo, findStr string) bool {
 		return true
 	}
 	return false
+}
+
+func disabledStr(env *core.Env) string {
+	if env.GetBool("display.utf8.symbols") {
+		return "⛔(disabled)"
+	}
+	return " (disabled)"
+}
+
+func enabledStr(env *core.Env) string {
+	if env.GetBool("display.utf8.symbols") {
+		return "✅"
+	}
+	return ""
 }

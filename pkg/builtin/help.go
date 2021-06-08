@@ -30,9 +30,9 @@ func GlobalHelpMoreInfo(
 			return DumpFlowAllSimple(argv, cc, env, flow, currCmdIdx)
 		}
 		if cmd.HasSub() && cmd.Cmd() == nil {
-			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
+			display.DumpCmds(cc, true, 4, true, true, cmdPathStr)
 		} else {
-			display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
+			display.DumpCmds(cc, false, 4, true, false, cmdPathStr)
 		}
 		return clearFlow(flow)
 	}
@@ -45,7 +45,7 @@ func GlobalHelpMoreInfo(
 		return clearFlow(flow)
 	}
 
-	display.PrintGlobalHelp(cc)
+	display.DumpCmds(cc, false, 4, true, true, "")
 	return clearFlow(flow)
 }
 
@@ -72,9 +72,9 @@ func GlobalHelpLessInfo(
 			return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
 		}
 		if cmd.HasSub() {
-			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
+			display.DumpCmds(cc, true, 4, true, true, cmdPathStr)
 		} else {
-			display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
+			display.DumpCmds(cc, false, 4, true, false, cmdPathStr)
 		}
 		return clearFlow(flow)
 	}
@@ -87,7 +87,7 @@ func GlobalHelpLessInfo(
 		return clearFlow(flow)
 	}
 
-	display.PrintGlobalHelp(cc)
+	display.DumpCmds(cc, true, 4, true, true, "")
 	return clearFlow(flow)
 }
 
@@ -101,8 +101,8 @@ func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func GlobalHelp(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
-	display.PrintGlobalHelp(cc)
+func GlobalHelp(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+	display.PrintGlobalHelp(cc.Screen, env)
 	return true
 }
 

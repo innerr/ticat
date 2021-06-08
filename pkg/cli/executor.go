@@ -51,13 +51,14 @@ func (self *Executor) Execute(cc *core.Cli, input ...string) bool {
 }
 
 func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) bool {
+	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
+	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
+
 	if len(input) == 0 {
-		display.PrintGlobalHelp(cc)
+		display.PrintGlobalHelp(cc.Screen, env)
 		return true
 	}
 
-	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
-	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
 	if !bootstrap {
 		useEnvAbbrs(cc.EnvAbbrs, env, cc.Cmds.Strs.EnvPathSep)
 	}
@@ -136,15 +137,14 @@ func (self *Executor) executeCmd(
 	start := time.Now()
 	if last != nil {
 		if last.IsEmptyDirCmd() {
+			name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
 			if !last.HasSub() {
 				display.PrintTipTitle(cc.Screen, env,
-					fmt.Sprintf("'%v' don't have executable code and sub commands", last.DisplayPath()))
+					fmt.Sprintf("'%v' is not executable and has no commands on this branch.", name))
 			} else {
 				display.PrintTipTitle(cc.Screen, env,
-					fmt.Sprintf("'%v' don't have executable code, sub commands:", last.DisplayPath()))
-				screen := NewCacheScreen()
-				display.DumpSubCmds(screen, last, 4)
-				screen.WriteTo(cc.Screen)
+					fmt.Sprintf("'%v' is not executable, but has commands on this branch:", name))
+				display.DumpAllCmds(last, cc.Screen, true, 4, true, true)
 			}
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
@@ -171,32 +171,44 @@ func (self *Executor) executeCmd(
 func handleParseError(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
-	_ *core.Env) bool {
-
-	// TODO: temperary, for verify the tail-editing usage
-	helpCmds := map[string]bool{
-		"-":      true,
-		"+":      true,
-		"?":      true,
-		"-H":     true,
-		"-h":     true,
-		"-help":  true,
-		"help":   true,
-		"HELP":   true,
-		"find":   true,
-		"search": true,
-	}
+	env *core.Env) bool {
 
 	for _, cmd := range flow.Cmds {
-		if cmd.ParseError.Error != nil {
-			input := cmd.ParseError.Input
-			if !helpCmds[flow.Cmds.LastCmd().Last().Matched.Name] {
-				cc.Screen.Print(cmd.ParseError.Error.Error() + "\n")
-				cc.Screen.Print(fmt.Sprintf("bad format input, finding for:[%v]\n", input))
+		if cmd.ParseError.Error == nil {
+			continue
+		}
+		// TODO: better handling: sub flow parse failed
+		/*
+			stackDepth := env.GetInt("sys.stack-depth")
+			if stackDepth > 0 {
+				panic(cmd.ParseError.Error)
 			}
-			display.DumpCmds(cc, true, 4, true, true, "", input...)
+		*/
+		input := cmd.ParseError.Input
+		for len(input) > 0 {
+			screen := display.NewCacheScreen()
+			display.DumpAllCmds(cc.Cmds, screen, true, 4, true, true, input...)
+			if screen.OutputNum() <= 0 {
+				input = input[:len(input)-1]
+				continue
+			}
+			display.PrintTipTitle(cc.Screen, env,
+				"'"+strings.Join(input, " ")+"' is not valid input, found related commands:")
+			screen.WriteTo(cc.Screen)
 			return false
 		}
+		inputStr := strings.Join(cmd.ParseError.Input, " ")
+		helpStr := []string{
+			"'" + inputStr + "' is not valid input and no related commands found.",
+			"",
+			"try to change input,",
+			"or search commands by:",
+			"",
+		}
+		helpStr = append(helpStr, display.SuggestStrsFindCmds()...)
+		helpStr = append(helpStr, "")
+		display.PrintTipTitle(cc.Screen, env, helpStr...)
+		return false
 	}
 	return true
 }

@@ -162,7 +162,11 @@ func DumpTailCmd(
 }
 
 func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
-	display.DumpCmds(cc, false, 4, false, false, argv.GetRaw("cmd-path"))
+	cmdPath := argv.GetRaw("cmd-path")
+	if len(cmdPath) == 0 {
+		return DumpCmdListSimple(argv, cc, env)
+	}
+	display.DumpCmds(cc, false, 4, false, false, cmdPath)
 	return true
 }
 

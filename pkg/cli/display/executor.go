@@ -179,7 +179,7 @@ func PrintCmdResult(
 	lines.Dur = formatDuration(elapsed)
 	lines.DurLen = len(lines.Dur)
 
-	useUtf8 := env.GetBool("display.utf8")
+	useUtf8 := env.GetBool("display.utf8.symbols")
 	if useUtf8 {
 		if succeeded {
 			lines.Res = " ✓"
