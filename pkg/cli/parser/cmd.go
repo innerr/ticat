@@ -34,9 +34,23 @@ func NewCmdParser(
 func (self *CmdParser) Parse(
 	cmds *core.CmdTree,
 	envAbbrs *core.EnvAbbrs,
-	input []string) core.ParsedCmd {
+	input []string) (parsed core.ParsedCmd) {
 
-	parsed := core.ParsedCmd{}
+	defer func() {
+		if err := recover(); err != nil {
+			parsed.ParseError = core.ParseError{input, err.(error)}
+		}
+	}()
+	self.safeParse(cmds, envAbbrs, input, &parsed)
+	return
+}
+
+func (self *CmdParser) safeParse(
+	cmds *core.CmdTree,
+	envAbbrs *core.EnvAbbrs,
+	input []string,
+	parsed *core.ParsedCmd) {
+
 	segs := self.parse(cmds, envAbbrs, input)
 	curr := core.ParsedCmdSeg{nil, core.MatchedCmd{}}
 	var path []string
@@ -54,10 +68,10 @@ func (self *CmdParser) Parse(
 		} else if seg.Type == parsedSegTypeCmd {
 			matchedCmd := seg.Val.(core.MatchedCmd)
 			if !curr.IsEmpty() {
-				parsed = append(parsed, curr)
+				parsed.Segments = append(parsed.Segments, curr)
 				curr = core.ParsedCmdSeg{nil, matchedCmd}
 			} else {
-				curr.Cmd = matchedCmd
+				curr.Matched = matchedCmd
 			}
 			path = append(path, matchedCmd.Cmd.Name())
 		} else {
@@ -65,9 +79,8 @@ func (self *CmdParser) Parse(
 		}
 	}
 	if !curr.IsEmpty() {
-		parsed = append(parsed, curr)
+		parsed.Segments = append(parsed.Segments, curr)
 	}
-	return parsed
 }
 
 func (self *CmdParser) parse(

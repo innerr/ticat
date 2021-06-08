@@ -64,6 +64,16 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 	}
 }
 
+func DumpSubCmds(
+	screen core.Screen,
+	cmd *core.CmdTree,
+	indentSize int,
+	findStrs ...string) {
+
+	dumpCmd(screen, cmd, true, indentSize,
+		true, false, -cmd.Depth(), findStrs...)
+}
+
 func DumpCmds(
 	cc *core.Cli,
 	skeleton bool,
@@ -407,7 +417,7 @@ func dumpFlow(
 	indentAdjust int) {
 
 	for _, cmd := range flow {
-		if len(cmd) != 0 {
+		if !cmd.IsEmpty() {
 			dumpFlowCmd(cc, env, cmd, depth, sep, indentSize,
 				simple, skeleton, indentAdjust)
 		}
@@ -425,7 +435,7 @@ func dumpFlowCmd(
 	skeleton bool,
 	indentAdjust int) {
 
-	cmd := parsedCmd[len(parsedCmd)-1].Cmd.Cmd
+	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
 		return
 	}

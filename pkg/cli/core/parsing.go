@@ -12,7 +12,7 @@ import (
 //                  Name      - string
 //                  *CmdTree  - The executable function
 //              ParsedEnv     - The function's env, include argv
-//      GlobalSeqIdx          - Point to the global seequence in []ParsedCmd
+//      GlobalCmdIdx          - Point to the global area command in sequence in []ParsedCmd
 
 type CliParser interface {
 	Parse(cmds *CmdTree, envAbbrs *EnvAbbrs, input ...string) *ParsedCmds
@@ -20,64 +20,82 @@ type CliParser interface {
 
 type ParsedCmds struct {
 	GlobalEnv    ParsedEnv
-	Cmds         []ParsedCmd
-	GlobalSeqIdx int
+	Cmds         ParsedCmdSeq
+	GlobalCmdIdx int
 }
 
-func (self *ParsedCmds) RmLeadingCmds(count int) {
-	self.GlobalSeqIdx -= count
-	if self.GlobalSeqIdx < 0 {
-		self.GlobalSeqIdx = -1
+type ParsedCmdSeq []ParsedCmd
+
+func (self ParsedCmdSeq) LastCmd() (last ParsedCmd) {
+	if len(self) > 0 {
+		last = self[len(self)-1]
+	}
+	return
+}
+
+func (self *ParsedCmds) RemoveLeadingCmds(count int) {
+	self.GlobalCmdIdx -= count
+	if self.GlobalCmdIdx < 0 {
+		self.GlobalCmdIdx = -1
 	}
 	self.Cmds = self.Cmds[count:]
 }
 
-type ParsedCmd []ParsedCmdSeg
-
-func (self ParsedCmd) Args() (args Args) {
-	if len(self) == 0 {
-		return
-	}
-	last := self[len(self)-1].Cmd.Cmd
-	if last == nil || last.Cmd() == nil {
-		return
-	}
-	args = last.cmd.Args()
-	return
+type ParseError struct {
+	Input []string
+	Error error
 }
 
-func (self ParsedCmd) IsPowerCmd() bool {
-	return len(self) != 0 && self[len(self)-1].IsPowerCmd()
+type ParsedCmd struct {
+	Segments   []ParsedCmdSeg
+	ParseError ParseError
 }
 
-func (self ParsedCmd) Help() (help string) {
-	if len(self) == 0 {
+func (self ParsedCmd) IsEmpty() bool {
+	return len(self.Segments) == 0
+}
+
+func (self ParsedCmd) Last() (seg ParsedCmdSeg) {
+	if self.IsEmpty() {
 		return
 	}
-	return self[len(self)-1].Help()
+	return self.Segments[len(self.Segments)-1]
 }
 
-func (self ParsedCmd) IsPriority() bool {
-	return len(self) != 0 && self[len(self)-1].IsPriority()
+func (self ParsedCmd) LastCmdNode() (cmd *CmdTree) {
+	return self.Last().Matched.Cmd
 }
 
 func (self ParsedCmd) LastCmd() (cmd *Cmd) {
-	if len(self) == 0 {
-		return
-	}
-	last := self[len(self)-1].Cmd.Cmd
+	last := self.LastCmdNode()
 	if last == nil {
 		return
 	}
 	return last.Cmd()
 }
 
+func (self ParsedCmd) Args() (args Args) {
+	return self.LastCmd().Args()
+}
+
+func (self ParsedCmd) IsPowerCmd() bool {
+	return self.Last().IsPowerCmd()
+}
+
+func (self ParsedCmd) Help() (help string) {
+	return self.Last().Help()
+}
+
+func (self ParsedCmd) IsPriority() bool {
+	return self.Last().IsPriority()
+}
+
 func (self ParsedCmd) DisplayPath(sep string, displayRealname bool) string {
 	var path []string
-	for _, seg := range self {
-		if seg.Cmd.Cmd != nil {
-			name := seg.Cmd.Name
-			realname := seg.Cmd.Cmd.Name()
+	for _, seg := range self.Segments {
+		if seg.Matched.Cmd != nil {
+			name := seg.Matched.Name
+			realname := seg.Matched.Cmd.Name()
 			if displayRealname && name != realname {
 				name += "(=" + realname + ")"
 			}
@@ -87,9 +105,9 @@ func (self ParsedCmd) DisplayPath(sep string, displayRealname bool) string {
 	return strings.Join(path, sep)
 }
 
-func (self ParsedCmd) TotallyEmpty() bool {
-	for _, seg := range self {
-		cmd := seg.Cmd.Cmd
+func (self ParsedCmd) IsAllEmptySegments() bool {
+	for _, seg := range self.Segments {
+		cmd := seg.Matched.Cmd
 		if cmd != nil && cmd.Cmd() != nil {
 			return false
 		}
@@ -98,18 +116,18 @@ func (self ParsedCmd) TotallyEmpty() bool {
 }
 
 func (self ParsedCmd) Path() (path []string) {
-	for _, it := range self {
-		if it.Cmd.Cmd != nil {
-			path = append(path, it.Cmd.Cmd.Name())
+	for _, seg := range self.Segments {
+		if seg.Matched.Cmd != nil {
+			path = append(path, seg.Matched.Cmd.Name())
 		}
 	}
 	return
 }
 
 func (self ParsedCmd) MatchedPath() (path []string) {
-	for _, it := range self {
-		if it.Cmd.Cmd != nil {
-			path = append(path, it.Cmd.Name)
+	for _, seg := range self.Segments {
+		if seg.Matched.Cmd != nil {
+			path = append(path, seg.Matched.Name)
 		}
 	}
 	return
@@ -117,7 +135,7 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 
 func (self ParsedCmd) GenEnv(env *Env, valDelAllMark string) *Env {
 	env = env.NewLayer(EnvLayerCmd)
-	for _, seg := range self {
+	for _, seg := range self.Segments {
 		if seg.Env != nil {
 			seg.Env.WriteTo(env, valDelAllMark)
 		}
@@ -126,32 +144,47 @@ func (self ParsedCmd) GenEnv(env *Env, valDelAllMark string) *Env {
 }
 
 type ParsedCmdSeg struct {
-	Env ParsedEnv
-	Cmd MatchedCmd
+	Env     ParsedEnv
+	Matched MatchedCmd
 }
 
 func (self ParsedCmdSeg) IsPowerCmd() bool {
-	return self.Cmd.Cmd != nil && self.Cmd.Cmd.Cmd() != nil && self.Cmd.Cmd.IsPowerCmd()
+	return !self.Matched.IsEmptyCmd() && self.Matched.GetCmd().IsPowerCmd()
 }
 
 func (self ParsedCmdSeg) IsPriority() bool {
-	return self.Cmd.Cmd != nil && self.Cmd.Cmd.Cmd() != nil && self.Cmd.Cmd.Cmd().IsPriority()
-}
-
-func (self *ParsedCmdSeg) IsEmpty() bool {
-	return self.Env == nil && len(self.Cmd.Name) == 0 && self.Cmd.Cmd == nil
+	return !self.Matched.IsEmptyCmd() && self.Matched.GetCmd().IsPriority()
 }
 
 func (self ParsedCmdSeg) Help() (help string) {
-	if self.Cmd.Cmd == nil || self.Cmd.Cmd.Cmd() == nil {
+	if self.Matched.IsEmptyCmd() {
 		return
 	}
-	return self.Cmd.Cmd.Cmd().Help()
+	return self.Matched.GetCmd().Help()
+}
+
+func (self *ParsedCmdSeg) IsEmpty() bool {
+	return self.Env == nil && self.Matched.IsEmpty()
 }
 
 type MatchedCmd struct {
 	Name string
 	Cmd  *CmdTree
+}
+
+func (self MatchedCmd) GetCmd() *Cmd {
+	if self.Cmd != nil {
+		return self.Cmd.Cmd()
+	}
+	return nil
+}
+
+func (self MatchedCmd) IsEmptyCmd() bool {
+	return self.Cmd == nil || self.Cmd.Cmd() == nil
+}
+
+func (self MatchedCmd) IsEmpty() bool {
+	return self.IsEmptyCmd() && len(self.Name) == 0
 }
 
 type ParsedEnv map[string]ParsedEnvVal

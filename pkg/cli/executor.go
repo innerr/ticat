@@ -26,6 +26,7 @@ func NewExecutor(sessionFileName string) *Executor {
 	return &Executor{
 		[]ExecFunc{
 			// TODO: implement and add functions: flowFlatten, mockModInject, stepByStepInject
+			handleParseError,
 			filterEmptyCmdsAndReorderByPriority,
 			verifyEnvOps,
 		},
@@ -125,15 +126,30 @@ func (self *Executor) executeCmd(
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
+	var width int
 	if stackLines.Display {
-		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
+		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
 		tryDelayAndStepByStep(cc, env)
 	}
 
-	last := cmd[len(cmd)-1].Cmd.Cmd
+	last := cmd.LastCmdNode()
 	start := time.Now()
 	if last != nil {
-		newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
+		if last.IsEmptyDirCmd() {
+			if !last.HasSub() {
+				display.PrintTipTitle(cc.Screen, env,
+					fmt.Sprintf("'%v' don't have executable code and sub commands", last.DisplayPath()))
+			} else {
+				display.PrintTipTitle(cc.Screen, env,
+					fmt.Sprintf("'%v' don't have executable code, sub commands:", last.DisplayPath()))
+				screen := NewCacheScreen()
+				display.DumpSubCmds(screen, last, 4)
+				screen.WriteTo(cc.Screen)
+			}
+			newCurrCmdIdx, succeeded = currCmdIdx, true
+		} else {
+			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
+		}
 	} else {
 		newCurrCmdIdx, succeeded = currCmdIdx, false
 	}
@@ -142,7 +158,7 @@ func (self *Executor) executeCmd(
 	if stackLines.Display {
 		resultLines := display.PrintCmdResult(bootstrap, cc.Screen, cmd,
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
-		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
+		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen, width)
 	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
 		last := flow.Cmds[len(flow.Cmds)-1]
 		if last.LastCmd() != nil && !last.LastCmd().IsQuiet() {
@@ -152,9 +168,43 @@ func (self *Executor) executeCmd(
 	return
 }
 
+func handleParseError(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	_ *core.Env) bool {
+
+	// TODO: temperary, for verify the tail-editing usage
+	helpCmds := map[string]bool{
+		"-":      true,
+		"+":      true,
+		"?":      true,
+		"-H":     true,
+		"-h":     true,
+		"-help":  true,
+		"help":   true,
+		"HELP":   true,
+		"find":   true,
+		"search": true,
+	}
+
+	for _, cmd := range flow.Cmds {
+		if cmd.ParseError.Error != nil {
+			input := cmd.ParseError.Input
+			if !helpCmds[flow.Cmds.LastCmd().Last().Matched.Name] {
+				cc.Screen.Print(cmd.ParseError.Error.Error() + "\n")
+				cc.Screen.Print(fmt.Sprintf("bad format input, finding for:[%v]\n", input))
+			}
+			display.DumpCmds(cc, true, 4, true, true, "", input...)
+			return false
+		}
+	}
+	return true
+}
+
 // 1. remove the cmds only have cmd-level env definication but have no executable
 // 2. move priority cmds to the head
 // TODO: sort commands by priority-value, not just a bool flag, so '+' '-' can have the top priority
+// TODO: move to core
 func filterEmptyCmdsAndReorderByPriority(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
@@ -163,38 +213,38 @@ func filterEmptyCmdsAndReorderByPriority(
 	notFilterEmpty := doNotFilterEmptyCmds(flow)
 
 	var unfiltered []core.ParsedCmd
-	unfilteredGlobalSeqIdx := -1
+	unfilteredGlobalCmdIdx := -1
 	var priorities []core.ParsedCmd
-	prioritiesGlobalSeqIdx := -1
+	prioritiesGlobalCmdIdx := -1
 
 	for i, cmd := range flow.Cmds {
-		if cmd.TotallyEmpty() {
+		if cmd.IsAllEmptySegments() {
 			if notFilterEmpty {
 				unfiltered = append(unfiltered, cmd)
-				if i == flow.GlobalSeqIdx {
-					unfilteredGlobalSeqIdx = len(unfiltered) - 1
+				if i == flow.GlobalCmdIdx {
+					unfilteredGlobalCmdIdx = len(unfiltered) - 1
 				}
 			}
 			continue
 		}
 		if cmd.IsPriority() {
 			priorities = append(priorities, cmd)
-			if i == flow.GlobalSeqIdx {
-				prioritiesGlobalSeqIdx = len(priorities) - 1
+			if i == flow.GlobalCmdIdx {
+				prioritiesGlobalCmdIdx = len(priorities) - 1
 			}
 		} else {
 			unfiltered = append(unfiltered, cmd)
-			if i == flow.GlobalSeqIdx {
-				unfilteredGlobalSeqIdx = len(unfiltered) - 1
+			if i == flow.GlobalCmdIdx {
+				unfilteredGlobalCmdIdx = len(unfiltered) - 1
 			}
 		}
 	}
 	flow.Cmds = append(priorities, unfiltered...)
-	if prioritiesGlobalSeqIdx >= 0 {
-		flow.GlobalSeqIdx = prioritiesGlobalSeqIdx
+	if prioritiesGlobalCmdIdx >= 0 {
+		flow.GlobalCmdIdx = prioritiesGlobalCmdIdx
 	}
-	if unfilteredGlobalSeqIdx >= 0 {
-		flow.GlobalSeqIdx = len(priorities) + unfilteredGlobalSeqIdx
+	if unfilteredGlobalCmdIdx >= 0 {
+		flow.GlobalCmdIdx = len(priorities) + unfilteredGlobalCmdIdx
 	}
 	return true
 }
