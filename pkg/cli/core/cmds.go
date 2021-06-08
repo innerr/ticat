@@ -28,6 +28,7 @@ type CmdTree struct {
 	cmd             *Cmd
 	subAbbrs        map[string][]string
 	subAbbrsRevIdx  map[string]string
+	hidden          bool
 }
 
 func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
@@ -40,6 +41,7 @@ func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
 		nil,
 		map[string][]string{},
 		map[string]string{},
+		false,
 	}
 }
 
@@ -67,6 +69,15 @@ func (self *CmdTree) cmdConflictCheck(help string, funName string) {
 	}
 	panic(fmt.Errorf("[CmdTree.%s] %s: reg-cmd conflicted. old '%s', new '%s'",
 		funName, self.DisplayPath(), self.cmd.Help(), help))
+}
+
+func (self *CmdTree) SetHidden() *CmdTree {
+	self.hidden = true
+	return self
+}
+
+func (self *CmdTree) IsHidden() bool {
+	return self.hidden
 }
 
 func (self *CmdTree) RegCmd(cmd NormalCmd, help string) *Cmd {

@@ -104,7 +104,7 @@ func DumpFlowAll(
 	return dumpFlowAll(cc, env, flow, currCmdIdx, false)
 }
 
-func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	depth := argv.GetInt("depth")
 	env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
 	return true
@@ -141,7 +141,7 @@ func dumpFlowAll(
 	return 0, true
 }
 
-func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	display.DumpEnv(cc.Screen, env, 4)
 	return true
 }
@@ -161,47 +161,47 @@ func DumpTailCmd(
 	return clearFlow(flow)
 }
 
-func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
 	cmdPath := argv.GetRaw("cmd-path")
 	if len(cmdPath) == 0 {
-		return DumpCmdListSimple(argv, cc, env)
+		return DumpCmdListSimple(argv, cc, env, cmd)
 	}
 	display.DumpCmds(cc, false, 4, false, false, cmdPath)
 	return true
 }
 
-func DumpCmdTree(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DumpCmdTree(argv core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
 	display.DumpCmds(cc, false, 4, false, true, argv.GetRaw("cmd-path"))
 	return true
 }
 
-func DumpCmdTreeSkeleton(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DumpCmdTreeSkeleton(argv core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
 	display.DumpCmds(cc, true, 4, false, true, argv.GetRaw("cmd-path"))
 	return true
 }
 
-func DumpCmdListSimple(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DumpCmdListSimple(argv core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
 	display.DumpCmds(cc, true, 4, true, true, argv.GetRaw("cmd-path"),
 		getFindStrsFromArgv(argv)...)
 	return true
 }
 
-func DumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DumpCmds(argv core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
 	display.DumpCmds(cc, false, 4, true, true, "", getFindStrsFromArgv(argv)...)
 	return true
 }
 
-func DumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func DumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
 	display.DumpEnvAbbrs(cc, 4)
 	return true
 }
 
-func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	display.DumpEssentialEnvFlattenVals(cc.Screen, env, getFindStrsFromArgv(argv)...)
 	return true
 }
 
-func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	display.DumpEnvFlattenVals(cc.Screen, env, getFindStrsFromArgv(argv)...)
 	return true
 }

@@ -14,7 +14,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterFlowCmds(cmds)
 	RegisterHubCmds(cmds)
 	RegisterDbgCmds(cmds.AddSub("dbg"))
-	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B"))
+	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B").SetHidden())
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {

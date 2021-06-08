@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func ReadRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs []string) {
+func ReadRepoListFromFile(selfName string, path string) (helpStr string, addrs []string, helpStrs []string) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -19,8 +19,7 @@ func ReadRepoListFromFile(path string) (helpStr string, addrs []string, helpStrs
 	list := strings.Split(string(data), "\n")
 	meetMark := false
 
-	// TODO: move to specific package
-	const StartMark = "[ticat.hub]"
+	StartMark := "[" + selfName + ".hub]"
 	for i, line := range list {
 		line = strings.TrimSpace(line)
 		if i != 0 && len(line) > 0 && len(helpStr) == 0 {

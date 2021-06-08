@@ -217,6 +217,7 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 			prti("- but not provided", 7)
 		}
 
+		// TODO: hint
 		// User should know how to search commands, so no need to display the hint
 		// screen.Print("\n<HINT>   to find key provider:\n")
 		// prti("- ticat cmds.ls <key> write <other-find-str> <more-find-str> ..", 7)
@@ -257,7 +258,7 @@ func dumpCmd(
 	indentAdjust int,
 	findStrs ...string) {
 
-	if cmd == nil {
+	if cmd == nil || cmd.IsHidden() {
 		return
 	}
 

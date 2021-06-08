@@ -34,73 +34,75 @@ func PrintGlobalHelp(screen core.Screen, env *core.Env) {
 		}
 	}
 
+	selfName := env.GetRaw("strs.self-name")
+
 	PrintTipTitle(screen, env,
-		"use "+env.GetRaw("strs.self-name")+" to automate workflow in unix-pipe style",
+		"use "+selfName+" to automate workflow in unix-pipe style",
 		"", "cheat sheet:")
 
 	pln("")
-	pln(SuggestStrsExeCmds()...)
+	pln(SuggestStrsExeCmds(selfName)...)
 	pln("")
-	pln(SuggestStrsExeCmdsWithArgs()...)
+	pln(SuggestStrsExeCmdsWithArgs(selfName)...)
 	pln("")
-	pln(SuggestStrsListCmds()...)
+	pln(SuggestStrsListCmds(selfName)...)
 	pln("")
-	pln(SuggestStrsFindCmds()...)
+	pln(SuggestStrsFindCmds(selfName)...)
 	pln("")
-	pln(SuggestStrsHubAdd()...)
+	pln(SuggestStrsHubAdd(selfName)...)
 	pln("")
-	pln(SuggestStrsFlowAdd()...)
+	pln(SuggestStrsFlowAdd(selfName)...)
 	pln("")
-	pln(SuggestStrsDesc()...)
+	pln(SuggestStrsDesc(selfName)...)
 }
 
-func SuggestStrsExeCmds() []string {
+func SuggestStrsExeCmds(selfName string) []string {
 	return []string{
-		"ticat cmd1 : cmd2 : cmd3              - execute commands one by one,",
+		selfName + " cmd1 : cmd2 : cmd3              - execute commands one by one,",
 		"                                        like unix-pipe, use ':' instead of '|'",
 	}
 }
 
-func SuggestStrsExeCmdsWithArgs() []string {
+func SuggestStrsExeCmdsWithArgs(selfName string) []string {
 	return []string{
-		"ticat dbg.echo msg=hi : slp 1s        - an example of executing commands,",
+		selfName + " dbg.echo msg=hi : slp 1s        - an example of executing commands,",
 		"                                        'dbg.echo' is a command name",
 	}
 }
 
-func SuggestStrsListCmds() []string {
+func SuggestStrsListCmds(selfName string) []string {
 	return []string{
-		"ticat -                               - list all commands",
-		"ticat +                               - list all commands with details",
+		selfName + " -                               - list all commands",
+		selfName + " +                               - list all commands with details",
 	}
 }
 
-func SuggestStrsFindCmds() []string {
+func SuggestStrsFindCmds(selfName string) []string {
 	return []string{
-		"ticat str1 str2 :-                    - search commands",
-		"ticat str1 str2 :+                    - search commands with details",
+		selfName + " str1 str2 :-                    - search commands",
+		selfName + " str1 str2 :+                    - search commands with details",
 	}
 }
 
-func SuggestStrsHubAdd() []string {
+func SuggestStrsHubAdd(selfName string) []string {
 	return []string{
-		"ticat h.init                          - get more commands by adding a default git repo",
-		"ticat h.+ innerr/tidb.ticat           - get more commands by adding a git repo,",
+		selfName + " h.init                          - get more commands by adding a default git repo",
+		selfName + " h.+ innerr/tidb." + selfName + "           - get more commands by adding a git repo,",
 		"                                        could use https address like:",
-		"                                        'https://github.com/innerr/tidb.ticat'",
+		"                                        'https://github.com/innerr/tidb." + selfName + "'",
 	}
 }
 
-func SuggestStrsFlowAdd() []string {
+func SuggestStrsFlowAdd(selfName string) []string {
 	return []string{
-		"ticat dbg.echo hi : slp 1s : f.+ xx   - create a flow 'xx' by 'f.+' for convenient",
-		"ticat xx                              - execute command 'xx'",
+		selfName + " dbg.echo hi : slp 1s : f.+ xx   - create a flow 'xx' by 'f.+' for convenient",
+		selfName + " xx                              - execute command 'xx'",
 	}
 }
 
-func SuggestStrsDesc() []string {
+func SuggestStrsDesc(selfName string) []string {
 	return []string{
-		"ticat xx :-                           - show what 'xx' will do without executing it",
-		"ticat xx :+                           - show what 'xx' will do without executing it, with details",
+		selfName + " xx :-                           - show what 'xx' will do without executing it",
+		selfName + " xx :+                           - show what 'xx' will do without executing it, with details",
 	}
 }

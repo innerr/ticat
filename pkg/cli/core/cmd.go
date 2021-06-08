@@ -22,7 +22,7 @@ const (
 	CmdTypeFlow       CmdType = "flow"
 )
 
-type NormalCmd func(argv ArgVals, cc *Cli, env *Env) (succeeded bool)
+type NormalCmd func(argv ArgVals, cc *Cli, env *Env, cmd ParsedCmd) (succeeded bool)
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
@@ -83,7 +83,7 @@ func (self *Cmd) Execute(
 	case CmdTypePower:
 		return self.power(argv, cc, env, flow, currCmdIdx)
 	case CmdTypeNormal:
-		return currCmdIdx, self.normal(argv, cc, env)
+		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx])
 	case CmdTypeFile:
 		return currCmdIdx, self.executeFile(argv, cc, env)
 	case CmdTypeEmptyDir:

@@ -13,7 +13,7 @@ import (
 	meta "github.com/pingcap/ticat/pkg/proto/hub_meta"
 )
 
-func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	metaExt := env.GetRaw("strs.meta-ext")
 	flowExt := env.GetRaw("strs.flow-ext")
 	abbrsSep := env.GetRaw("strs.abbrs-sep")
@@ -36,7 +36,7 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	addr := argv.GetRaw("git-address")
 	if len(addr) == 0 {
 		panic(fmt.Errorf("[AddGitRepoToHub] cant't get hub address"))
@@ -45,7 +45,7 @@ func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	addr := env.GetRaw("sys.hub.init-repo")
 	if len(addr) == 0 {
 		panic(fmt.Errorf("[AddGitDefaultToHub] cant't get init-repo address from env"))
@@ -54,7 +54,7 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	metaPath := getReposInfoPath(env, "ListHub")
 	fieldSep := env.GetRaw("strs.proto-sep")
 	findStrs := getFindStrsFromArgv(argv)
@@ -103,7 +103,7 @@ func listHub(screen core.Screen, env *core.Env, infos []meta.RepoInfo, filterStr
 	}
 }
 
-func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	metaPath := getReposInfoPath(env, "RemoveAllFromHub")
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
@@ -131,12 +131,12 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func PurgeAllInactiveReposFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func PurgeAllInactiveReposFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	purgeInactiveRepoFromHub("", cc, env)
 	return true
 }
 
-func PurgeInactiveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func PurgeInactiveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	findStr := argv.GetRaw("find-str")
 	if len(findStr) == 0 {
 		panic(fmt.Errorf("[PurgeInactiveRepoFromHub] cant't get target repo addr from args"))
@@ -176,7 +176,7 @@ func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env) {
 }
 
 // TODO: support partly update, not all
-func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	metaPath := getReposInfoPath(env, "UpdateHub")
 	listFileName := env.GetRaw("strs.repos-file-name")
 	repoExt := env.GetRaw("strs.mods-repo-ext")
@@ -196,13 +196,14 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	}
 
 	var infos []meta.RepoInfo
+	selfName := env.GetRaw("strs.self-name")
 
 	for _, info := range oldInfos {
 		if len(info.Addr) == 0 {
 			continue
 		}
 		_, addrs, helpStrs := updateRepoAndSubRepos(
-			cc.Screen, finisheds, path, info.Addr, repoExt, listFileName)
+			cc.Screen, finisheds, path, info.Addr, repoExt, listFileName, selfName)
 		for i, addr := range addrs {
 			if oldList[addr] {
 				continue
@@ -219,7 +220,7 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	metaPath := getReposInfoPath(env, "EnableRepoInHub")
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
@@ -247,7 +248,7 @@ func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	metaPath := getReposInfoPath(env, "DisableRepoInHub")
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
@@ -274,7 +275,7 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	path := argv.GetRaw("path")
 	if len(path) == 0 {
 		panic("[MoveSavedFlowsToLocalDir] arg 'path' is empty")
@@ -368,7 +369,7 @@ func moveSavedFlowsToLocalDir(toDir string, cc *core.Cli, env *core.Env) {
 	})
 }
 
-func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	path := argv.GetRaw("path")
 	if len(path) == 0 {
 		panic("[AddLocalDirToHub] arg 'path' is empty")
@@ -412,7 +413,7 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	if !found {
 		listFileName := env.GetRaw("strs.repos-file-name")
 		listFilePath := filepath.Join(path, listFileName)
-		helpStr, _, _ := meta.ReadRepoListFromFile(listFilePath)
+		helpStr, _, _ := meta.ReadRepoListFromFile(env.GetRaw("strs.self-name"), listFilePath)
 		info := meta.RepoInfo{"", "<local>", path, helpStr, "on"}
 		infos = append(infos, info)
 		cc.Screen.Print(fmt.Sprintf("[%s]\n", repoDisplayName(info)))
@@ -462,10 +463,11 @@ func addRepoToHub(
 		}
 	}
 
+	selfName := env.GetRaw("strs.self-name")
 	listFileName := env.GetRaw("strs.repos-file-name")
 	var topRepoHelpStr string
 	topRepoHelpStr, addrs, helpStrs = updateRepoAndSubRepos(
-		screen, finisheds, path, gitAddr, repoExt, listFileName)
+		screen, finisheds, path, gitAddr, repoExt, listFileName, selfName)
 
 	addrs = append([]string{gitAddr}, addrs...)
 	helpStrs = append([]string{topRepoHelpStr}, helpStrs...)
@@ -490,18 +492,19 @@ func updateRepoAndSubRepos(
 	hubPath string,
 	gitAddr string,
 	repoExt string,
-	listFileName string) (topRepoHelpStr string, addrs []string, helpStrs []string) {
+	listFileName string,
+	selfName string) (topRepoHelpStr string, addrs []string, helpStrs []string) {
 
 	if finisheds[gitAddr] {
 		return
 	}
 	topRepoHelpStr, addrs, helpStrs = updateRepoAndReadSubList(
-		screen, hubPath, gitAddr, listFileName)
+		screen, hubPath, gitAddr, listFileName, selfName)
 	finisheds[gitAddr] = true
 
 	for i, addr := range addrs {
 		subTopHelpStr, subAddrs, subHelpStrs := updateRepoAndSubRepos(
-			screen, finisheds, hubPath, addr, repoExt, listFileName)
+			screen, finisheds, hubPath, addr, repoExt, listFileName, selfName)
 		// If a repo has no help-str from hub-repo list, try to get the title from it's README
 		if len(helpStrs[i]) == 0 && len(subTopHelpStr) != 0 {
 			helpStrs[i] = subTopHelpStr
@@ -517,7 +520,8 @@ func updateRepoAndReadSubList(
 	screen core.Screen,
 	hubPath string,
 	gitAddr string,
-	listFileName string) (helpStr string, addrs []string, helpStrs []string) {
+	listFileName string,
+	selfName string) (helpStr string, addrs []string, helpStrs []string) {
 
 	name := addrDisplayName(gitAddr)
 	repoPath := getRepoPath(hubPath, gitAddr)
@@ -549,7 +553,7 @@ func updateRepoAndReadSubList(
 		panic(fmt.Errorf("[updateRepoAndReadSubList] run '%v' failed: %v", cmdStrs, err))
 	}
 	listFilePath := filepath.Join(repoPath, listFileName)
-	return meta.ReadRepoListFromFile(listFilePath)
+	return meta.ReadRepoListFromFile(selfName, listFilePath)
 }
 
 func extractAddrFromList(

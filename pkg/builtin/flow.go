@@ -15,7 +15,7 @@ import (
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
@@ -69,7 +69,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	cmdPath, filePath := getFlowCmdPath(argv, cc, env, true, "cmd-path", "RemoveFlow")
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
@@ -85,7 +85,7 @@ func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
@@ -159,7 +159,7 @@ func SaveFlow(
 	return 0, true
 }
 
-func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	help := argv.GetRaw("help-str")
 	_, path := getFlowCmdPath(argv, cc, env, true, "cmd-path", "SetFlowHelpStr")
 	flowStr, _, abbrsStr := flow_file.LoadFlowFile(path)
@@ -167,7 +167,7 @@ func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
 		panic(fmt.Errorf("[LoadFlows] env 'sys.paths.flows' is empty"))
@@ -176,7 +176,7 @@ func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	root := argv.GetRaw("path")
 	loadFlowsFromDir(root, cc, env, root)
 	return true

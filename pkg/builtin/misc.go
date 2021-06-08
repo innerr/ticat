@@ -8,7 +8,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func Sleep(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
+func Sleep(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	durStr := argv.GetRaw("duration")
 
 	// Default unit is 's'
@@ -32,16 +32,16 @@ func Sleep(argv core.ArgVals, _ *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func MockStub(_ core.ArgVals, _ *core.Cli, env *core.Env) bool {
+func MockStub(_ core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	return true
 }
 
-func Dummy(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func Dummy(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
 	cc.Screen.Print("dummy cmd here\n")
 	return true
 }
 
-func QuietDummy(_ core.ArgVals, cc *core.Cli, _ *core.Env) bool {
+func QuietDummy(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
 	cc.Screen.Print("quiet dummy cmd here\n")
 	return true
 }

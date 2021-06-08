@@ -91,7 +91,7 @@ func GlobalHelpLessInfo(
 	return clearFlow(flow)
 }
 
-func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	findStrs := getFindStrsFromArgv(argv)
 	if len(findStrs) == 0 {
 		return true
@@ -101,7 +101,7 @@ func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func GlobalHelp(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func GlobalHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	display.PrintGlobalHelp(cc.Screen, env)
 	return true
 }

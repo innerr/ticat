@@ -205,7 +205,7 @@ func handleParseError(
 			"or search commands by:",
 			"",
 		}
-		helpStr = append(helpStr, display.SuggestStrsFindCmds()...)
+		helpStr = append(helpStr, display.SuggestStrsFindCmds(env.GetRaw("strs.self-name"))...)
 		helpStr = append(helpStr, "")
 		display.PrintTipTitle(cc.Screen, env, helpStr...)
 		return false
