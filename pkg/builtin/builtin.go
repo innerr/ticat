@@ -244,7 +244,7 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 
 	add := hub.AddSub("add-and-update", "add", "a", "A", "+")
 	add.RegCmd(AddGitRepoToHub,
-		"add and pull a git address to hub").
+		"add and pull a git address to hub, do update if already exists").
 		AddArg("git-address", "", "git", "address", "addr")
 
 	add.AddSub("local-dir", "local", "l", "L").

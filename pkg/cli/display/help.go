@@ -1,26 +1,95 @@
 package display
 
 import (
+	"strings"
+
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func PrintTipTitle(screen core.Screen, env *core.Env, msgs ...string) {
-	if len(msgs) == 0 {
-		return
+type TipBoxPrinter struct {
+	screen   core.Screen
+	env      *core.Env
+	isErr    bool
+	inited   bool
+	buf      *CacheScreen
+	maxWidth int
+}
+
+func NewTipBoxPrinter(screen core.Screen, env *core.Env, isErr bool) *TipBoxPrinter {
+	return &TipBoxPrinter{
+		screen,
+		env,
+		isErr,
+		false,
+		NewCacheScreen(),
+		env.GetInt("display.width") - 4 - 2,
 	}
-	tip := "<TIP>"
-	tipLen := len(tip)
-	if env.GetBool("display.utf8.symbols") {
-		tip = "💡"
-		tipLen = 2
-	}
-	buf := NewCacheScreen()
-	buf.PrintEx(tip+" "+msgs[0], len(msgs[0])+1+tipLen)
-	msgs = msgs[1:]
+}
+
+func (self *TipBoxPrinter) PrintWrap(msgs ...string) {
 	for _, msg := range msgs {
-		buf.Print("   " + msg)
+		for len(msg) > self.maxWidth {
+			self.Print(msg[0:self.maxWidth])
+			msg = msg[self.maxWidth:]
+		}
+		self.Print(msg)
 	}
-	PrintFramedLines(screen, env, buf)
+}
+
+func (self *TipBoxPrinter) Prints(msgs ...string) {
+	for _, msg := range msgs {
+		self.Print(msg)
+	}
+}
+
+func (self *TipBoxPrinter) Print(msg string) {
+	msg = strings.TrimRight(msg, "\n")
+	if !self.inited {
+		var tip string
+		var tipLen int
+		utf8 := self.env.GetBool("display.utf8.symbols")
+		if self.isErr {
+			tip = "<ERR>"
+			tipLen = len(tip)
+			if utf8 {
+				tip = "⛔"
+				tipLen = 2
+			}
+		} else {
+			tip = "<TIP>"
+			tipLen = len(tip)
+			if utf8 {
+				tip = "💡"
+				tipLen = 2
+			}
+		}
+		self.buf.PrintEx(tip+" "+msg, len(msg)+1+tipLen)
+		self.inited = true
+	} else {
+		self.buf.Print("   " + msg)
+	}
+}
+
+func (self *TipBoxPrinter) Error(msg string) {
+	self.buf.Error(msg)
+}
+
+func (self *TipBoxPrinter) OutputNum() int {
+	return self.buf.OutputNum()
+}
+
+func (self *TipBoxPrinter) Finish() {
+	PrintFramedLines(self.screen, self.env, self.buf)
+}
+
+func PrintTipTitle(screen core.Screen, env *core.Env, msgs ...string) {
+	printTipTitle(screen, env, false, msgs...)
+}
+
+func printTipTitle(screen core.Screen, env *core.Env, isErr bool, msgs ...string) {
+	printer := NewTipBoxPrinter(screen, env, isErr)
+	printer.Prints(msgs...)
+	printer.Finish()
 }
 
 func PrintGlobalHelp(screen core.Screen, env *core.Env) {
@@ -37,8 +106,10 @@ func PrintGlobalHelp(screen core.Screen, env *core.Env) {
 	selfName := env.GetRaw("strs.self-name")
 
 	PrintTipTitle(screen, env,
-		"use "+selfName+" to automate workflow in unix-pipe style",
-		"", "cheat sheet:")
+		selfName+": workflow automating in unix-pipe style")
+
+	pln("")
+	screen.Print("usage:\n")
 
 	pln("")
 	pln(SuggestStrsExeCmds(selfName)...)
@@ -90,6 +161,21 @@ func SuggestStrsHubAdd(selfName string) []string {
 		selfName + " h.+ innerr/tidb." + selfName + "           - get more commands by adding a git repo,",
 		"                                        could use https address like:",
 		"                                        'https://github.com/innerr/tidb." + selfName + "'",
+	}
+}
+
+func SuggestStrsHubAddShort(selfName string) []string {
+	return []string{
+		selfName + " h.init                          - add a default git repo.",
+		selfName + " h.+ innerr/tidb." + selfName + "           - add a git repo,",
+		"                                        could use https address.",
+	}
+}
+
+func SuggestStrsHubBranch(selfName string) []string {
+	return []string{
+		selfName + " h :-                            - branch 'hub' usage",
+		selfName + " h :+                            - branch 'hub' usage, with details",
 	}
 }
 

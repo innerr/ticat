@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/pingcap/ticat/pkg/builtin"
 	"github.com/pingcap/ticat/pkg/cli"
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/cli/display"
 	"github.com/pingcap/ticat/pkg/cli/parser"
 )
 
@@ -93,7 +93,7 @@ func main() {
 	// TODO: handle error by types
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println(r)
+			display.PrintError(cc, cc.GlobalEnv, r.(error))
 			os.Exit(-1)
 		}
 	}()

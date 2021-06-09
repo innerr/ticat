@@ -408,7 +408,7 @@ func dumpFlow(
 
 	for _, cmd := range flow {
 		if !cmd.IsEmpty() {
-			dumpFlowCmd(cc, env, cmd, depth, sep, indentSize,
+			dumpFlowCmd(cc, cc.Screen, env, cmd, depth, sep, indentSize,
 				simple, skeleton, indentAdjust)
 		}
 	}
@@ -416,6 +416,7 @@ func dumpFlow(
 
 func dumpFlowCmd(
 	cc *core.Cli,
+	screen core.Screen,
 	env *core.Env,
 	parsedCmd core.ParsedCmd,
 	depth int,
@@ -436,7 +437,7 @@ func dumpFlowCmd(
 		indentLvl += indentAdjust
 		padding := rpt(" ", indentSize*indentLvl)
 		msg = autoPadNewLine(padding, msg)
-		cc.Screen.Print(padding + msg + "\n")
+		screen.Print(padding + msg + "\n")
 	}
 
 	cic := cmd.Cmd()

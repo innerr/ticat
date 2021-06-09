@@ -26,6 +26,23 @@ type NormalCmd func(argv ArgVals, cc *Cli, env *Env, cmd ParsedCmd) (succeeded b
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
+type CmdError struct {
+	Cmd ParsedCmd
+	Err error
+}
+
+func WrapCmdError(cmd ParsedCmd, err error) *CmdError {
+	return &CmdError{cmd, err}
+}
+
+func NewCmdError(cmd ParsedCmd, err string) *CmdError {
+	return &CmdError{cmd, fmt.Errorf(err)}
+}
+
+func (self CmdError) Error() string {
+	return self.Err.Error()
+}
+
 type Cmd struct {
 	owner    *CmdTree
 	help     string
