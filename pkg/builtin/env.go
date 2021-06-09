@@ -40,7 +40,9 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	disp := abbrs.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
 	disp.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
 	disp.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
-	disp.GetOrAddSub("utf8").AddAbbrs("utf", "u", "U")
+	utf8 := disp.GetOrAddSub("utf8")
+	utf8.AddAbbrs("utf", "u", "U")
+	utf8.GetOrAddSub("symbols").AddAbbrs("symbol", "sym", "s", "S")
 	disp.GetOrAddSub("executor").AddAbbrs("exe", "exec")
 	disp.GetOrAddSub("bootstrap").AddAbbrs("boot")
 	disp.GetOrAddSub("one-cmd").AddAbbrs("one", "1")
@@ -57,7 +59,7 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	mod.GetOrAddSub("realname").AddAbbrs("real", "r", "R")
 }
 
-func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	env = env.GetLayer(core.EnvLayerSession)
 
 	path, err := os.Executable()
@@ -84,7 +86,7 @@ func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep)
@@ -94,7 +96,7 @@ func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.SaveEnvToFile(env, path, kvSep)
@@ -102,7 +104,7 @@ func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
 }
 
 // TODO: support abbrs for arg 'key'
-func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	key := argv.GetRaw("key")
 	if len(key) == 0 {
 		panic(fmt.Errorf("[RemoveEnvValAndSaveToLocal] arg 'key' is empty"))
@@ -115,7 +117,7 @@ func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env) 
 	return true
 }
 
-func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	path := getEnvLocalFilePath(env)
 	err := os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {
@@ -141,6 +143,7 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.one-cmd", false)
 	env.Set("display.style", "utf8")
 	env.SetBool("display.utf8", true)
+	env.SetBool("display.utf8.symbols", true)
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.sys", false)
 	env.SetBool("display.env.sys.paths", false)
@@ -152,6 +155,6 @@ func setToDefaultVerb(env *core.Env) {
 
 	env.SetInt("display.flow.depth", 6)
 
-	env.SetInt("display.width", 80)
+	env.SetInt("display.width", 100)
 	env.SetInt("display.max-cmd-cnt", 7)
 }

@@ -179,7 +179,7 @@ func PrintCmdResult(
 	lines.Dur = formatDuration(elapsed)
 	lines.DurLen = len(lines.Dur)
 
-	useUtf8 := env.GetBool("display.utf8")
+	useUtf8 := env.GetBool("display.utf8.symbols")
 	if useUtf8 {
 		if succeeded {
 			lines.Res = " ✓"
@@ -208,12 +208,14 @@ func PrintCmdResult(
 }
 
 func checkPrintFilter(cmd core.ParsedCmd, env *core.Env) bool {
-	if len(cmd) == 0 {
+	if cmd.IsEmpty() {
 		return true
 	}
-	lastSeg := cmd[len(cmd)-1]
-	if lastSeg.Cmd.Cmd == nil || lastSeg.Cmd.Cmd.Cmd() == nil ||
-		(lastSeg.Cmd.Cmd.IsQuiet() && !env.GetBool("display.mod.quiet")) {
+	last := cmd.LastCmd()
+	if last == nil {
+		return true
+	}
+	if last.IsQuiet() && !env.GetBool("display.mod.quiet") {
 		return true
 	}
 	return false
@@ -227,11 +229,11 @@ func filterQuietCmds(env *core.Env, flow []core.ParsedCmd, currCmdIdx int) ([]co
 	var newCmds []core.ParsedCmd
 	newIdx := currCmdIdx
 	for i, cmd := range flow {
-		if len(cmd) == 0 {
+		if cmd.IsEmpty() {
 			continue
 		}
-		lastSeg := cmd[len(cmd)-1].Cmd
-		if lastSeg.Cmd == nil || lastSeg.Cmd.Cmd() == nil || lastSeg.Cmd.IsQuiet() {
+		last := cmd.LastCmd()
+		if last == nil || last.IsQuiet() {
 			if i < currCmdIdx {
 				newIdx -= 1
 			}

@@ -6,7 +6,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) {
+func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) (renderWidth int) {
 	if !l.Display {
 		return
 	}
@@ -56,9 +56,11 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) {
 		}
 	}
 	pln(c.P7 + rpt(c.H, width) + c.P9)
+
+	return width + 2
 }
 
-func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen) {
+func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen, width int) {
 	if !l.Display {
 		return
 	}
@@ -67,7 +69,7 @@ func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen) {
 		screen.Print(text + "\n")
 	}
 
-	width := env.GetInt("display.width") - 2
+	width -= 2
 	pad := width - 1 - l.ResLen - 1 - l.CmdLen - l.DurLen - 1
 
 	if pad < 0 {
@@ -99,6 +101,15 @@ type FrameChars struct {
 	P7 string
 	P8 string
 	P9 string
+}
+
+func FrameCharsUtf8Heavy() *FrameChars {
+	return &FrameChars{
+		"┃", "━",
+		"┏", "┳", "┓",
+		"┣", "╋", "┫",
+		"┗", "┻", "┛",
+	}
 }
 
 func FrameCharsUtf8() *FrameChars {
@@ -139,8 +150,13 @@ func FrameCharsNoCorner() *FrameChars {
 
 func getFrameChars(env *core.Env) *FrameChars {
 	name := strings.ToLower(env.Get("display.style").Raw)
-	if strings.Index(name, "utf") >= 0 && env.GetBool("display.utf8") {
-		return FrameCharsUtf8()
+	if env.GetBool("display.utf8") {
+		if strings.Index(name, "utf") >= 0 {
+			return FrameCharsUtf8()
+		}
+		if strings.Index(name, "heavy") >= 0 || strings.Index(name, "bold") >= 0 {
+			return FrameCharsUtf8Heavy()
+		}
 	}
 	if strings.Index(name, "slash") >= 0 {
 		return FrameCharsNoSlash()

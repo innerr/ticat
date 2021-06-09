@@ -62,13 +62,14 @@ func RegMod(
 	var cmd *core.Cmd
 	if isDir {
 		if len(cmdLine) != 0 {
-			cmd = mod.RegDirWithCmd(path, strings.TrimSpace(help)).SetSource(source)
+			cmd = mod.RegDirWithCmd(path, strings.TrimSpace(help))
 		} else {
-			cmd = mod.RegEmptyDirCmd(path, strings.TrimSpace(help)).SetSource(source)
+			cmd = mod.RegEmptyDirCmd(path, strings.TrimSpace(help))
 		}
 	} else {
-		cmd = mod.RegFileCmd(path, strings.TrimSpace(help)).SetSource(source)
+		cmd = mod.RegFileCmd(path, strings.TrimSpace(help))
 	}
+	cmd.SetSource(source).SetMetaFile(metaPath)
 
 	abbrs := meta.Get("abbrs")
 	if len(abbrs) == 0 {

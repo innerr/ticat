@@ -16,6 +16,10 @@ type RepoInfo struct {
 	OnOff     string
 }
 
+func (self RepoInfo) IsLocal() bool {
+	return len(self.Addr) == 0
+}
+
 func WriteReposInfoFile(path string, infos []RepoInfo, sep string) {
 	os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	tmp := path + ".tmp"

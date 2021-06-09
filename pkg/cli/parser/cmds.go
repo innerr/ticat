@@ -28,11 +28,11 @@ func (self *Parser) Parse(
 		flow.Cmds = append(flow.Cmds, self.cmdParser.Parse(cmds, envAbbrs, seq))
 	}
 	if firstIsGlobal && len(flow.Cmds) != 0 {
-		flow.GlobalSeqIdx = 0
+		flow.GlobalCmdIdx = 0
 		// TODO: remove GlobalEnv?
-		if len(flow.Cmds[0]) != 0 {
+		if !flow.Cmds[0].IsEmpty() {
 			firstCmd := flow.Cmds[0]
-			for _, seg := range firstCmd {
+			for _, seg := range firstCmd.Segments {
 				flow.GlobalEnv.Merge(seg.Env)
 				seg.Env = nil
 			}

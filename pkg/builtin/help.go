@@ -7,7 +7,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func GlobalHelp(
+func GlobalHelpMoreInfo(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -15,12 +15,14 @@ func GlobalHelp(
 	currCmdIdx int) (int, bool) {
 
 	if len(flow.Cmds) >= 2 {
+		findStrs := getFindStrsFromArgv(argv)
 		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
 		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
 		if cmd == nil {
+			display.DumpCmds(cc, false, 4, true, true, "",
+				append([]string{cmdPathStr}, findStrs...)...)
 			return clearFlow(flow)
 		}
-		findStrs := getFindStrsFromArgv(argv)
 		if len(findStrs) != 0 {
 			display.DumpCmds(cc, false, 4, true, true, cmdPathStr, findStrs...)
 			return clearFlow(flow)
@@ -30,9 +32,9 @@ func GlobalHelp(
 			return DumpFlowAllSimple(argv, cc, env, flow, currCmdIdx)
 		}
 		if cmd.HasSub() && cmd.Cmd() == nil {
-			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
+			display.DumpCmds(cc, true, 4, true, true, cmdPathStr)
 		} else {
-			display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
+			display.DumpCmds(cc, false, 4, true, true, cmdPathStr)
 		}
 		return clearFlow(flow)
 	}
@@ -45,11 +47,11 @@ func GlobalHelp(
 		return clearFlow(flow)
 	}
 
-	printGlobalHelp(cc)
+	display.DumpCmds(cc, false, 4, true, true, "")
 	return clearFlow(flow)
 }
 
-func GlobalSkeleton(
+func GlobalHelpLessInfo(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -57,12 +59,14 @@ func GlobalSkeleton(
 	currCmdIdx int) (int, bool) {
 
 	if len(flow.Cmds) >= 2 {
+		findStrs := getFindStrsFromArgv(argv)
 		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
 		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
 		if cmd == nil {
+			display.DumpCmds(cc, true, 4, true, true, "",
+				append([]string{cmdPathStr}, findStrs...)...)
 			return clearFlow(flow)
 		}
-		findStrs := getFindStrsFromArgv(argv)
 		if len(findStrs) != 0 {
 			display.DumpCmds(cc, true, 4, true, true, cmdPathStr, findStrs...)
 			return clearFlow(flow)
@@ -72,9 +76,9 @@ func GlobalSkeleton(
 			return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
 		}
 		if cmd.HasSub() {
-			display.DumpCmds(cc, true, 4, false, true, cmdPathStr)
+			display.DumpCmds(cc, true, 4, true, true, cmdPathStr)
 		} else {
-			display.DumpCmds(cc, false, 4, false, false, cmdPathStr)
+			display.DumpCmds(cc, false, 4, true, false, cmdPathStr)
 		}
 		return clearFlow(flow)
 	}
@@ -87,11 +91,11 @@ func GlobalSkeleton(
 		return clearFlow(flow)
 	}
 
-	printGlobalHelp(cc)
+	display.DumpCmds(cc, true, 4, true, true, "")
 	return clearFlow(flow)
 }
 
-func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	findStrs := getFindStrsFromArgv(argv)
 	if len(findStrs) == 0 {
 		return true
@@ -101,28 +105,9 @@ func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func printGlobalHelp(cc *core.Cli) {
-	pln := func(text string) {
-		cc.Screen.Print(text + "\n")
-	}
-
-	pln("usages:")
-	pln("    list all cmds:                 - ticat cmd.tree")
-	pln("    find cmds or env KVs:          - ticat find example")
-	pln("                                   - ticat find example golang")
-	pln("                                   - ticat find str1 str2 str3")
-	pln("    list all env KVs:              - ticat env.tree")
-	pln("    execute a cmd with args:       - ticat example.golang arg1 arg2")
-	pln("                                     ticat example.golang {arg1 arg2}")
-	pln("                                     ticat example.golang {a=arg1 b=arg2}")
-	pln("    execute a list of cmd:         - ticat cmd1 : cmd2 : cmd3")
-	pln("    check and desc cmd list:       - ticat cmd1 : cmd2 : cmd3 : desc")
-	pln("    set env KVs when executing:    - ticat cmd1 : {display.style=ascii} cmd2")
-	pln("    set session-global env KVs:    - ticat {display.width=120} : cmd1 : cmd2")
-	pln("    set env KVs and save to local: - ticat {display.width=120} : env.save")
-	pln("    use abbrs in cmd:              - ticat exam.go arg1 arg2")
-	pln("    use abbrs in env KVs setting:  - ticat {disp.w=120} : cmd1 : cmd2")
-	pln("                                   - ticat {disp.w=120} : e.s")
+func GlobalHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+	display.PrintGlobalHelp(cc.Screen, env)
+	return true
 }
 
 func clearFlow(flow *core.ParsedCmds) (int, bool) {

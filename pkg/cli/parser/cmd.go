@@ -36,8 +36,21 @@ func (self *CmdParser) Parse(
 	envAbbrs *core.EnvAbbrs,
 	input []string) core.ParsedCmd {
 
-	parsed := core.ParsedCmd{}
-	segs := self.parse(cmds, envAbbrs, input)
+	parsed, err := self.safeParse(cmds, envAbbrs, input)
+	if err != nil {
+		parsed.ParseError = core.ParseError{input, err}
+	}
+	return parsed
+}
+
+func (self *CmdParser) safeParse(
+	cmds *core.CmdTree,
+	envAbbrs *core.EnvAbbrs,
+	input []string) (parsed core.ParsedCmd, err error) {
+
+	// Delay err check
+	segs, err := self.parse(cmds, envAbbrs, input)
+
 	curr := core.ParsedCmdSeg{nil, core.MatchedCmd{}}
 	var path []string
 	for _, seg := range segs {
@@ -54,10 +67,10 @@ func (self *CmdParser) Parse(
 		} else if seg.Type == parsedSegTypeCmd {
 			matchedCmd := seg.Val.(core.MatchedCmd)
 			if !curr.IsEmpty() {
-				parsed = append(parsed, curr)
+				parsed.Segments = append(parsed.Segments, curr)
 				curr = core.ParsedCmdSeg{nil, matchedCmd}
 			} else {
-				curr.Cmd = matchedCmd
+				curr.Matched = matchedCmd
 			}
 			path = append(path, matchedCmd.Cmd.Name())
 		} else {
@@ -65,17 +78,16 @@ func (self *CmdParser) Parse(
 		}
 	}
 	if !curr.IsEmpty() {
-		parsed = append(parsed, curr)
+		parsed.Segments = append(parsed.Segments, curr)
 	}
-	return parsed
+	return parsed, err
 }
 
 func (self *CmdParser) parse(
 	cmds *core.CmdTree,
 	envAbbrs *core.EnvAbbrs,
-	input []string) []parsedSeg {
+	input []string) (parsed []parsedSeg, err error) {
 
-	var parsed []parsedSeg
 	var matchedCmdPath []string
 	var curr = cmds
 	var currEnvAbbrs = envAbbrs
@@ -90,8 +102,8 @@ func (self *CmdParser) parse(
 		// Try to parse input to env
 		env, input, succeeded, err = self.envParser.TryParse(curr, currEnvAbbrs, input)
 		if err != nil {
-			self.err("parse", matchedCmdPath, err.Error())
-			break
+			err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), err.Error())
+			return parsed, core.ParseErrEnv{err}
 		}
 		if succeeded {
 			if env != nil {
@@ -151,8 +163,9 @@ func (self *CmdParser) parse(
 				allowSub = false
 				continue
 			} else {
-				self.err("parse", matchedCmdPath, "unknow input '"+
-					strings.Join(input, " ")+"', should be sub cmd")
+				errStr := "unknow input '" + strings.Join(input, " ") + "', should be sub cmd"
+				err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
+				return parsed, core.ParseErrExpectCmd{err}
 			}
 		} else {
 			// Try to parse cmd args
@@ -164,25 +177,33 @@ func (self *CmdParser) parse(
 				var errStr string
 				if cmdHasArgs(curr) {
 					errStr = "args parse failed"
+					errStr = "unknow input '" + strings.Join(input, " ") + "', " + errStr
+					err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
+					return parsed, core.ParseErrExpectArgs{err}
 				} else {
 					errStr = "looks like args, but curr cmd has no args"
+					errStr = "unknow input '" + strings.Join(input, " ") + "', " + errStr
+					err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
+					return parsed, core.ParseErrExpectNoArg{err}
 				}
-				self.err("parse", matchedCmdPath, "unknow input '"+
-					strings.Join(input, " ")+"', "+errStr)
 			}
 			break
 		}
 	}
 
-	return parsed
+	return parsed, nil
 }
 
-func (self *CmdParser) err(function string, matchedCmdPath []string, msg string) {
+func (self *CmdParser) displayPath(matchedCmdPath []string) string {
 	displayPath := self.cmdRootNodeName
 	if len(matchedCmdPath) != 0 {
 		displayPath = strings.Join(matchedCmdPath, self.cmdSep)
 	}
-	panic(fmt.Errorf("[CmdParser.%s] %s: %s", function, displayPath, msg))
+	return displayPath
+}
+
+func (self *CmdParser) err(function string, matchedCmdPath []string, msg string) {
+	panic(fmt.Errorf("[CmdParser.%s] %s: %s", function, self.displayPath(matchedCmdPath), msg))
 }
 
 type parsedSegType uint

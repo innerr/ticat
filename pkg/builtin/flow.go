@@ -15,7 +15,7 @@ import (
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
@@ -69,7 +69,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	cmdPath, filePath := getFlowCmdPath(argv, cc, env, true, "cmd-path", "RemoveFlow")
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
@@ -85,7 +85,7 @@ func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
@@ -131,7 +131,7 @@ func SaveFlow(
 	width := env.GetInt("display.width")
 
 	w := bytes.NewBuffer(nil)
-	flow.RmLeadingCmds(1)
+	flow.RemoveLeadingCmds(1)
 	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
 	data := w.String()
 	cc.Screen.Print(strings.Repeat("-", width) + "\n")
@@ -159,7 +159,7 @@ func SaveFlow(
 	return 0, true
 }
 
-func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	help := argv.GetRaw("help-str")
 	_, path := getFlowCmdPath(argv, cc, env, true, "cmd-path", "SetFlowHelpStr")
 	flowStr, _, abbrsStr := flow_file.LoadFlowFile(path)
@@ -167,7 +167,7 @@ func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
 		panic(fmt.Errorf("[LoadFlows] env 'sys.paths.flows' is empty"))
@@ -176,7 +176,7 @@ func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
 	return true
 }
 
-func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	root := argv.GetRaw("path")
 	loadFlowsFromDir(root, cc, env, root)
 	return true
@@ -271,7 +271,7 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 	for i, cmd := range flow.Cmds {
 		if len(flow.Cmds) > 1 {
 			if i == 0 {
-				if flow.GlobalSeqIdx < 0 {
+				if flow.GlobalCmdIdx < 0 {
 					fmt.Fprint(w, seqSep+" ")
 				}
 			} else {
@@ -283,21 +283,21 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 		var lastSegHasNoCmd bool
 		var cmdHasEnv bool
 
-		for j, seg := range cmd {
-			if len(cmd) > 1 && j != 0 && !lastSegHasNoCmd {
+		for j, seg := range cmd.Segments {
+			if len(cmd.Segments) > 1 && j != 0 && !lastSegHasNoCmd {
 				fmt.Fprint(w, cmdPathSep)
 			}
-			fmt.Fprint(w, seg.Cmd.Name)
+			fmt.Fprint(w, seg.Matched.Name)
 
-			if seg.Cmd.Cmd != nil {
-				path = append(path, seg.Cmd.Cmd.Name())
+			if seg.Matched.Cmd != nil {
+				path = append(path, seg.Matched.Cmd.Name())
 			} else {
-				path = append(path, seg.Cmd.Name)
+				path = append(path, seg.Matched.Name)
 			}
-			lastSegHasNoCmd = (seg.Cmd.Cmd == nil)
+			lastSegHasNoCmd = (seg.Matched.Cmd == nil)
 			cmdHasEnv = cmdHasEnv || saveEnv(w, seg.Env, path, envPathSep,
 				bracketLeft, bracketRight, envKeyValSep,
-				!cmdHasEnv && j == len(cmd)-1)
+				!cmdHasEnv && j == len(cmd.Segments)-1)
 		}
 	}
 	fmt.Fprintf(w, "\n")

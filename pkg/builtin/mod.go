@@ -11,7 +11,7 @@ import (
 	"github.com/pingcap/ticat/pkg/proto/mod_meta"
 )
 
-func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env) bool {
+func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	env = env.GetLayer(core.EnvLayerDefault)
 	env.Set("sys.ext.exec.bash", "bash")
 	env.Set("sys.ext.exec.sh", "sh")

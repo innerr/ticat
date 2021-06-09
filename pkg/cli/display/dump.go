@@ -40,6 +40,29 @@ func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
 	}
 }
 
+func DumpSubCmds(
+	screen core.Screen,
+	cmd *core.CmdTree,
+	indentSize int,
+	findStrs ...string) {
+
+	dumpCmd(screen, cmd, true, indentSize,
+		true, false, -cmd.Depth(), findStrs...)
+}
+
+func DumpAllCmds(
+	cmds *core.CmdTree,
+	screen core.Screen,
+	skeleton bool,
+	indentSize int,
+	flatten bool,
+	recursive bool,
+	findStrs ...string) {
+
+	dumpCmd(screen, cmds, skeleton, indentSize,
+		recursive, flatten, -cmds.Depth(), findStrs...)
+}
+
 func DumpCmds(
 	cc *core.Cli,
 	skeleton bool,
@@ -69,8 +92,23 @@ func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
 	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
 }
 
+func DumpEssentialEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
+	filterPrefixs := []string{
+		"session",
+		"strs.",
+		"sys.",
+		"display.",
+	}
+	flatten := env.Flatten(false, filterPrefixs, false)
+	dumpEnvFlattenVals(screen, flatten, findStrs...)
+}
+
 func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 	flatten := env.Flatten(true, nil, true)
+	dumpEnvFlattenVals(screen, flatten, findStrs...)
+}
+
+func dumpEnvFlattenVals(screen core.Screen, flatten map[string]string, findStrs ...string) {
 	var keys []string
 	for k, _ := range flatten {
 		keys = append(keys, k)
@@ -121,8 +159,6 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 	if len(result) == 0 {
 		return
 	}
-	//PrintSepTitle(screen, env, "unsatisfied env read")
-	PrintDisplayBlockSep(screen, "unsatisfied env read")
 
 	fatals := newEnvOpsCheckResultAgg()
 	risks := newEnvOpsCheckResultAgg()
@@ -134,6 +170,31 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 		}
 	}
 
+	if env.GetBool("display.utf8") {
+		if len(fatals.result) != 0 {
+			selfName := env.GetRaw("strs.self-name")
+			helpStr := []string{
+				"this flow has 'read before write' on env keys, so it can't execute.", "",
+				"search which commands write these keys and concate them in front of the flow:", "",
+			}
+			helpStr = append(helpStr, SuggestStrsFindProvider(selfName)...)
+			helpStr = append(helpStr, "",
+				"some configuring-flows will provide a batch env keys by calling providing commands,",
+				"use these two tags to find them:", "")
+			helpStr = append(helpStr, SuggestStrsFindConfigFlows(selfName)...)
+			helpStr = append(helpStr, "",
+				"or provide keys by putting '{key=value}' in front of the flow.", "")
+			PrintErrTitle(screen, env, helpStr...)
+		} else {
+			PrintTipTitle(screen, env,
+				"this flow has 'read before write' risks on env keys.", "",
+				"risks are caused by 'may-read' or 'may-write' on env keys,",
+				"normally modules declair these uncertain behaviors will handle them, don't worry too much.")
+		}
+	} else {
+		screen.Print(fmt.Sprintf("-------=<%s>=-------\n\n", "unsatisfied env read"))
+	}
+
 	prt0 := func(msg string) {
 		screen.Print(msg + "\n")
 	}
@@ -142,8 +203,10 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 	}
 
 	if len(risks.result) != 0 && len(fatals.result) == 0 {
-		for _, it := range risks.result {
-			screen.Print("\n")
+		for i, it := range risks.result {
+			if i != 0 {
+				screen.Print("\n")
+			}
 			prt0("<risk>  '" + it.Key + "'")
 			if it.MayReadNotExist || it.MayReadMayWrite {
 				prti("- may-read by:", 7)
@@ -169,8 +232,10 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 	}
 
 	if len(fatals.result) != 0 {
-		for _, it := range fatals.result {
-			screen.Print("\n")
+		for i, it := range fatals.result {
+			if i != 0 {
+				screen.Print("\n")
+			}
 			prt0("<FATAL> '" + it.Key + "'")
 			prti("- read by:", 7)
 			for _, cmd := range it.Cmds {
@@ -179,6 +244,7 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 			prti("- but not provided", 7)
 		}
 
+		// TODO: hint
 		// User should know how to search commands, so no need to display the hint
 		// screen.Print("\n<HINT>   to find key provider:\n")
 		// prti("- ticat cmds.ls <key> write <other-find-str> <more-find-str> ..", 7)
@@ -219,7 +285,7 @@ func dumpCmd(
 	indentAdjust int,
 	findStrs ...string) {
 
-	if cmd == nil {
+	if cmd == nil || cmd.IsHidden() {
 		return
 	}
 
@@ -239,14 +305,12 @@ func dumpCmd(
 	if cmd.Parent() == nil || cmd.MatchFind(findStrs...) {
 		cic := cmd.Cmd()
 		var name string
-		if !skeleton {
+		if flatten {
+			name = cmd.DisplayPath()
+		} else if !skeleton {
 			name = strings.Join(cmd.Abbrs(), abbrsSep)
 		} else {
-			if !flatten {
-				name = cmd.DisplayName()
-			} else {
-				name = cmd.DisplayPath()
-			}
+			name = cmd.DisplayName()
 		}
 		if len(name) == 0 {
 			name = cmd.DisplayName()
@@ -267,7 +331,7 @@ func dumpCmd(
 			}
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				full := cmd.DisplayPath()
-				if !skeleton {
+				if !skeleton && !flatten {
 					prt(1, "- full-cmd:")
 					prt(2, full)
 				}
@@ -331,16 +395,21 @@ func dumpCmd(
 				}
 			}
 
-			if len(cic.CmdLine()) != 0 && cic.Type() != core.CmdTypeNormal &&
-				cic.Type() != core.CmdTypePower {
-				if cic.Type() == core.CmdTypeFlow {
-					prt(1, "- flow:")
-				} else if cic.Type() == core.CmdTypeEmptyDir {
-					prt(1, "- dir:")
-				} else {
-					prt(1, "- executable:")
+			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
+				if len(cic.CmdLine()) != 0 {
+					if cic.Type() == core.CmdTypeFlow {
+						prt(1, "- flow:")
+					} else if cic.Type() == core.CmdTypeEmptyDir {
+						prt(1, "- dir:")
+					} else {
+						prt(1, "- executable:")
+					}
+					prt(2, cic.CmdLine())
 				}
-				prt(2, cic.CmdLine())
+				if len(cic.MetaFile()) != 0 {
+					prt(1, "- meta:")
+					prt(2, cic.MetaFile())
+				}
 			}
 		}
 	}
@@ -365,8 +434,8 @@ func dumpFlow(
 	indentAdjust int) {
 
 	for _, cmd := range flow {
-		if len(cmd) != 0 {
-			dumpFlowCmd(cc, env, cmd, depth, sep, indentSize,
+		if !cmd.IsEmpty() {
+			dumpFlowCmd(cc, cc.Screen, env, cmd, depth, sep, indentSize,
 				simple, skeleton, indentAdjust)
 		}
 	}
@@ -374,6 +443,7 @@ func dumpFlow(
 
 func dumpFlowCmd(
 	cc *core.Cli,
+	screen core.Screen,
 	env *core.Env,
 	parsedCmd core.ParsedCmd,
 	depth int,
@@ -383,7 +453,7 @@ func dumpFlowCmd(
 	skeleton bool,
 	indentAdjust int) {
 
-	cmd := parsedCmd[len(parsedCmd)-1].Cmd.Cmd
+	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
 		return
 	}
@@ -394,7 +464,7 @@ func dumpFlowCmd(
 		indentLvl += indentAdjust
 		padding := rpt(" ", indentSize*indentLvl)
 		msg = autoPadNewLine(padding, msg)
-		cc.Screen.Print(padding + msg + "\n")
+		screen.Print(padding + msg + "\n")
 	}
 
 	cic := cmd.Cmd()
@@ -475,12 +545,18 @@ func dumpFlowCmd(
 		if cic.Type() == core.CmdTypeFlow && !skeleton {
 			prt(1, "- flow:")
 			prt(2, cic.CmdLine())
-		} else if cic.Type() == core.CmdTypeEmptyDir {
-			prt(1, "- dir:")
-			prt(2, cic.CmdLine())
 		} else if !simple && !skeleton {
-			prt(1, "- executable:")
-			prt(2, cic.CmdLine())
+			if cic.Type() == core.CmdTypeEmptyDir {
+				prt(1, "- dir:")
+				prt(2, cic.CmdLine())
+			} else {
+				prt(1, "- executable:")
+				prt(2, cic.CmdLine())
+			}
+			if len(cic.MetaFile()) != 0 {
+				prt(1, "- meta:")
+				prt(2, cic.MetaFile())
+			}
 		}
 		if cic.Type() == core.CmdTypeFlow && depth > 1 {
 			prt(2, "--->>>")
@@ -673,11 +749,17 @@ func DumpDepends(cc *core.Cli, env *core.Env, deps Depends) {
 
 	sep := env.Get("strs.cmd-path-sep").Raw
 
-	//PrintSepTitle(cc.Screen, env, "")
-	PrintDisplayBlockSep(cc.Screen, "depended os commands")
+	if env.GetBool("display.utf8") {
+		PrintTipTitle(cc.Screen, env,
+			"depended os commands.", "",
+			"this flow need the os commands below to execute,",
+			"make sure they are all installed.")
+	} else {
+		cc.Screen.Print(fmt.Sprintf("-------=<%s>=-------\n\n", "depended os commands"))
+	}
 
 	for osCmd, cmds := range deps {
-		cc.Screen.Print(fmt.Sprintf("\n[%s]\n", osCmd))
+		cc.Screen.Print(fmt.Sprintf("[%s]\n", osCmd))
 		for _, info := range cmds {
 			cc.Screen.Print(fmt.Sprintf("        '%s'\n", info.Reason))
 			cc.Screen.Print(fmt.Sprintf("            [%s]\n", info.Cmd.DisplayPath(sep, true)))

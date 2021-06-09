@@ -26,6 +26,7 @@ func NewExecutor(sessionFileName string) *Executor {
 	return &Executor{
 		[]ExecFunc{
 			// TODO: implement and add functions: flowFlatten, mockModInject, stepByStepInject
+			handleParseError,
 			filterEmptyCmdsAndReorderByPriority,
 			verifyEnvOps,
 		},
@@ -50,12 +51,14 @@ func (self *Executor) Execute(cc *core.Cli, input ...string) bool {
 }
 
 func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) bool {
+	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
+	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
+
 	if len(input) == 0 {
+		display.PrintGlobalHelp(cc.Screen, env)
 		return true
 	}
 
-	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
-	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
 	if !bootstrap {
 		useEnvAbbrs(cc.EnvAbbrs, env, cc.Cmds.Strs.EnvPathSep)
 	}
@@ -124,15 +127,29 @@ func (self *Executor) executeCmd(
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
+	var width int
 	if stackLines.Display {
-		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
+		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
 		tryDelayAndStepByStep(cc, env)
 	}
 
-	last := cmd[len(cmd)-1].Cmd.Cmd
+	last := cmd.LastCmdNode()
 	start := time.Now()
 	if last != nil {
-		newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
+		if last.IsEmptyDirCmd() {
+			name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+			if !last.HasSub() {
+				display.PrintTipTitle(cc.Screen, env,
+					fmt.Sprintf("'%v' is not executable and has no commands on this branch.", name))
+			} else {
+				display.PrintTipTitle(cc.Screen, env,
+					fmt.Sprintf("'%v' is not executable, but has commands on this branch:", name))
+				display.DumpAllCmds(last, cc.Screen, true, 4, true, true)
+			}
+			newCurrCmdIdx, succeeded = currCmdIdx, true
+		} else {
+			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
+		}
 	} else {
 		newCurrCmdIdx, succeeded = currCmdIdx, false
 	}
@@ -141,7 +158,7 @@ func (self *Executor) executeCmd(
 	if stackLines.Display {
 		resultLines := display.PrintCmdResult(bootstrap, cc.Screen, cmd,
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
-		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen)
+		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen, width)
 	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
 		last := flow.Cmds[len(flow.Cmds)-1]
 		if last.LastCmd() != nil && !last.LastCmd().IsQuiet() {
@@ -151,49 +168,246 @@ func (self *Executor) executeCmd(
 	return
 }
 
+func printCmdByParseError(
+	cc *core.Cli,
+	cmd core.ParsedCmd,
+	env *core.Env) bool {
+
+	sep := cc.Cmds.Strs.PathSep
+	cmdName := cmd.DisplayPath(sep, true)
+	printer := display.NewTipBoxPrinter(cc.Screen, env, true)
+	input := cmd.ParseError.Input
+
+	printer.PrintWrap("[" + cmdName + "] parse args failed, '" +
+		strings.Join(input, " ") + "' is not valid input.")
+	printer.Prints("", "command detail:", "")
+	display.DumpAllCmds(cmd.Last().Matched.Cmd, printer, false, 4, false, false)
+	printer.Finish()
+	return false
+}
+
+func printSubCmdByParseError(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	cmd core.ParsedCmd,
+	env *core.Env) bool {
+
+	sep := cc.Cmds.Strs.PathSep
+	cmdName := cmd.DisplayPath(sep, true)
+	printer := display.NewTipBoxPrinter(cc.Screen, env, true)
+	input := cmd.ParseError.Input
+
+	last := cmd.LastCmdNode()
+	if last == nil {
+		return printFreeSearchResultByParseError(cc, flow, env, input...)
+	}
+	printer.PrintWrap("[" + cmdName + "] parse sub command failed, '" +
+		strings.Join(input, " ") + "' is not valid input.")
+	if last.HasSub() {
+		printer.Prints("", "command branch:", "")
+		display.DumpAllCmds(last, printer, true, 4, true, true)
+	} else {
+		printer.Prints("", "command branch '"+last.DisplayPath()+"' doesn't have any sub commands.")
+		// TODO: search hint
+	}
+	printer.Finish()
+	return false
+}
+
+// TODO: better way to do this
+func isEndWithSearchCmd(flow *core.ParsedCmds) (isSearch, isLess, isMore bool) {
+	if len(flow.Cmds) == 0 {
+		return
+	}
+	cmd := flow.Cmds.LastCmd()
+	last := cmd.LastCmd()
+	if last == nil {
+		return
+	}
+	if last.IsTheSameFunc(builtin.GlobalHelpMoreInfo) {
+		isSearch = true
+		isMore = true
+	} else if last.IsTheSameFunc(builtin.GlobalHelpLessInfo) {
+		isSearch = true
+		isLess = true
+	} else if last.IsTheSameFunc(builtin.DumpTailCmd) {
+		isSearch = true
+	}
+	return
+}
+
+func printFreeSearchResultByParseError(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	env *core.Env,
+	findStr ...string) bool {
+
+	isSearch, _, isMore := isEndWithSearchCmd(flow)
+	selfName := env.GetRaw("strs.self-name")
+	input := findStr
+	inputStr := strings.Join(input, " ")
+	notValidStr := "'" + inputStr + "' is not valid input."
+
+	var lines int
+	for len(input) > 0 {
+		screen := display.NewCacheScreen()
+		display.DumpAllCmds(cc.Cmds, screen, !isMore, 4, true, true, input...)
+		lines = screen.OutputNum()
+		if lines <= 0 {
+			input = input[:len(input)-1]
+			continue
+		}
+		helpStr := []string{
+			"search and found commands matched '" + strings.Join(input, " ") + "':",
+		}
+		if !isSearch {
+			helpStr = append([]string{notValidStr, ""}, helpStr...)
+		}
+		display.PrintTipTitle(cc.Screen, env, helpStr...)
+		screen.WriteTo(cc.Screen)
+		return false
+	}
+	helpStr := []string{
+		"search but no commands matched '" + inputStr + "'.",
+		"",
+		"try to change keywords on the leftside, ",
+		selfName + " will filter results by kewords from left to right.",
+	}
+	if !isSearch {
+		helpStr = append([]string{notValidStr, ""}, helpStr...)
+	}
+	display.PrintTipTitle(cc.Screen, env, helpStr...)
+	return false
+}
+
+func printFindResultByParseError(
+	cc *core.Cli,
+	cmd core.ParsedCmd,
+	env *core.Env,
+	title string) bool {
+
+	input := cmd.ParseError.Input
+	inputStr := strings.Join(input, " ")
+	screen := display.NewCacheScreen()
+	display.DumpAllCmds(cc.Cmds, screen, true, 4, true, true, input...)
+
+	if len(title) == 0 {
+		title = cmd.ParseError.Error.Error()
+	}
+
+	if screen.OutputNum() > 0 {
+		display.PrintTipTitle(cc.Screen, env, title, "",
+			"'"+inputStr+"' is not valid input, found related commands by search:")
+		screen.WriteTo(cc.Screen)
+	} else {
+		helpStr := []string{
+			title, "",
+			"'" + inputStr + "' is not valid input and no related commands found.",
+			"", "try to change input,", "or search commands by:", "",
+		}
+		helpStr = append(helpStr, display.SuggestStrsFindCmds(env.GetRaw("strs.self-name"))...)
+		helpStr = append(helpStr, "")
+		display.PrintTipTitle(cc.Screen, env, helpStr...)
+	}
+	return false
+}
+
+func handleParseError(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	env *core.Env) bool {
+
+	_, isLess, isMore := isEndWithSearchCmd(flow)
+	if isMore || isLess {
+		return true
+	}
+
+	for _, cmd := range flow.Cmds {
+		if cmd.ParseError.Error == nil {
+			continue
+		}
+		// TODO: better handling: sub flow parse failed
+		/*
+			stackDepth := env.GetInt("sys.stack-depth")
+			if stackDepth > 0 {
+				panic(cmd.ParseError.Error)
+			}
+		*/
+
+		input := cmd.ParseError.Input
+		inputStr := strings.Join(input, " ")
+
+		switch cmd.ParseError.Error.(type) {
+		case core.ParseErrExpectNoArg:
+			title := "[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] doesn't have args."
+			return printFindResultByParseError(cc, cmd, env, title)
+		case core.ParseErrEnv:
+			helpStr := []string{
+				"[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] parse env failed, " +
+					"'" + inputStr + "' is not valid input.",
+				"", "env setting examples:", "",
+			}
+			helpStr = append(helpStr, display.SuggestStrsEnvSetting(env.GetRaw("strs.self-name"))...)
+			helpStr = append(helpStr, "")
+			display.PrintTipTitle(cc.Screen, env, helpStr...)
+		case core.ParseErrExpectArgs:
+			return printCmdByParseError(cc, cmd, env)
+		case core.ParseErrExpectCmd:
+			return printSubCmdByParseError(cc, flow, cmd, env)
+		default:
+			return printFindResultByParseError(cc, cmd, env, "")
+		}
+	}
+	return true
+}
+
 // 1. remove the cmds only have cmd-level env definication but have no executable
 // 2. move priority cmds to the head
 // TODO: sort commands by priority-value, not just a bool flag, so '+' '-' can have the top priority
+// TODO: move to core
 func filterEmptyCmdsAndReorderByPriority(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
 	_ *core.Env) bool {
 
-	notFilterEmpty := doNotFilterEmptyCmds(flow)
+	// TODO: clean up this code
+	//notFilterEmpty := doNotFilterEmptyCmds(flow)
 
 	var unfiltered []core.ParsedCmd
-	unfilteredGlobalSeqIdx := -1
+	unfilteredGlobalCmdIdx := -1
 	var priorities []core.ParsedCmd
-	prioritiesGlobalSeqIdx := -1
+	prioritiesGlobalCmdIdx := -1
 
 	for i, cmd := range flow.Cmds {
-		if cmd.TotallyEmpty() {
+		/*
+		if cmd.IsAllEmptySegments() {
 			if notFilterEmpty {
 				unfiltered = append(unfiltered, cmd)
-				if i == flow.GlobalSeqIdx {
-					unfilteredGlobalSeqIdx = len(unfiltered) - 1
+				if i == flow.GlobalCmdIdx {
+					unfilteredGlobalCmdIdx = len(unfiltered) - 1
 				}
 			}
 			continue
 		}
+		*/
 		if cmd.IsPriority() {
 			priorities = append(priorities, cmd)
-			if i == flow.GlobalSeqIdx {
-				prioritiesGlobalSeqIdx = len(priorities) - 1
+			if i == flow.GlobalCmdIdx {
+				prioritiesGlobalCmdIdx = len(priorities) - 1
 			}
 		} else {
 			unfiltered = append(unfiltered, cmd)
-			if i == flow.GlobalSeqIdx {
-				unfilteredGlobalSeqIdx = len(unfiltered) - 1
+			if i == flow.GlobalCmdIdx {
+				unfilteredGlobalCmdIdx = len(unfiltered) - 1
 			}
 		}
 	}
 	flow.Cmds = append(priorities, unfiltered...)
-	if prioritiesGlobalSeqIdx >= 0 {
-		flow.GlobalSeqIdx = prioritiesGlobalSeqIdx
+	if prioritiesGlobalCmdIdx >= 0 {
+		flow.GlobalCmdIdx = prioritiesGlobalCmdIdx
 	}
-	if unfilteredGlobalSeqIdx >= 0 {
-		flow.GlobalSeqIdx = len(priorities) + unfilteredGlobalSeqIdx
+	if unfilteredGlobalCmdIdx >= 0 {
+		flow.GlobalCmdIdx = len(priorities) + unfilteredGlobalCmdIdx
 	}
 	return true
 }
@@ -262,8 +476,8 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	allows := []interface{}{
 		builtin.DumpCmdNoRecursive,
 		builtin.SaveFlow,
-		builtin.GlobalHelp,
-		builtin.GlobalSkeleton,
+		builtin.GlobalHelpMoreInfo,
+		builtin.GlobalHelpLessInfo,
 		builtin.DumpFlowAll,
 		builtin.DumpFlowAllSimple,
 		builtin.DumpFlow,
@@ -287,7 +501,8 @@ func doNotFilterEmptyCmds(flow *core.ParsedCmds) bool {
 	}
 	allows := []interface{}{
 		builtin.GlobalHelp,
-		builtin.GlobalSkeleton,
+		builtin.GlobalHelpMoreInfo,
+		builtin.GlobalHelpLessInfo,
 	}
 	for _, allow := range allows {
 		if last.IsTheSameFunc(allow) {
