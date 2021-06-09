@@ -230,7 +230,7 @@ func isEndWithSearchCmd(flow *core.ParsedCmds) (isSearch, isLess, isMore bool) {
 	} else if last.IsTheSameFunc(builtin.GlobalHelpLessInfo) {
 		isSearch = true
 		isLess = true
-	} else if last.IsTheSameFunc(builtin.DumpTailCmd) {
+	} else if last.IsTheSameFunc(builtin.DumpTellTailCmd) {
 		isSearch = true
 	}
 	return
@@ -242,6 +242,7 @@ func printFreeSearchResultByParseError(
 	env *core.Env,
 	findStr ...string) bool {
 
+	// TODO: better way to do this
 	isSearch, _, isMore := isEndWithSearchCmd(flow)
 	selfName := env.GetRaw("strs.self-name")
 	input := findStr
@@ -267,6 +268,7 @@ func printFreeSearchResultByParseError(
 		screen.WriteTo(cc.Screen)
 		return false
 	}
+
 	helpStr := []string{
 		"search but no commands matched '" + inputStr + "'.",
 		"",
@@ -380,15 +382,15 @@ func filterEmptyCmdsAndReorderByPriority(
 
 	for i, cmd := range flow.Cmds {
 		/*
-		if cmd.IsAllEmptySegments() {
-			if notFilterEmpty {
-				unfiltered = append(unfiltered, cmd)
-				if i == flow.GlobalCmdIdx {
-					unfilteredGlobalCmdIdx = len(unfiltered) - 1
+			if cmd.IsAllEmptySegments() {
+				if notFilterEmpty {
+					unfiltered = append(unfiltered, cmd)
+					if i == flow.GlobalCmdIdx {
+						unfilteredGlobalCmdIdx = len(unfiltered) - 1
+					}
 				}
+				continue
 			}
-			continue
-		}
 		*/
 		if cmd.IsPriority() {
 			priorities = append(priorities, cmd)
@@ -471,11 +473,13 @@ func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *co
 	return true
 }
 
+// TODO: move to command property
 func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	last := flow.Cmds[0].LastCmd()
 	allows := []interface{}{
 		builtin.DumpCmdNoRecursive,
 		builtin.SaveFlow,
+		builtin.DumpTellTailCmd,
 		builtin.GlobalHelpMoreInfo,
 		builtin.GlobalHelpLessInfo,
 		builtin.DumpFlowAll,
