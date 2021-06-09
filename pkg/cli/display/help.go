@@ -44,6 +44,12 @@ func (self *TipBoxPrinter) Prints(msgs ...string) {
 
 func (self *TipBoxPrinter) Print(msg string) {
 	msg = strings.TrimRight(msg, "\n")
+	msgs := strings.Split(msg, "\n")
+	if len(msgs) > 1 {
+		self.Prints(msgs...)
+		return
+	}
+
 	if !self.inited {
 		var tip string
 		var tipLen int

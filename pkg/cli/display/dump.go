@@ -182,11 +182,12 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 				"some configuring-flows will provide a batch env keys by calling providing commands,",
 				"use these two tags to find them:", "")
 			helpStr = append(helpStr, SuggestStrsFindConfigFlows(selfName)...)
-			helpStr = append(helpStr, "")
+			helpStr = append(helpStr, "",
+				"or provide keys by putting '{key=value}' in front of the flow.", "")
 			PrintErrTitle(screen, env, helpStr...)
 		} else {
 			PrintTipTitle(screen, env,
-				"this flow has env read risks.", "",
+				"this flow has 'read before write' risks on env keys.", "",
 				"risks are caused by 'may-read' or 'may-write' on env keys,",
 				"normally modules declair these uncertain behaviors will handle them, don't worry too much.")
 		}
