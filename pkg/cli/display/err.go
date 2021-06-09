@@ -33,9 +33,13 @@ func PrintSepTitle(screen core.Screen, env *core.Env, msg string) {
 	screen.Print(rpt("-", width-len(msg)) + "<[" + msg + "]\n")
 }
 
-// TODO: pad/cut title, make it fixed length
-func PrintDisplayBlockSep(screen core.Screen, title string) {
-	screen.Print(fmt.Sprintf("-------=<%s>=-------\n", title))
+// TODO: unused
+func PrintDisplayBlockSep(screen core.Screen, env *core.Env, title string) {
+	if env.GetBool("display.utf8") {
+		PrintTipTitle(screen, env, title)
+	} else {
+		screen.Print(fmt.Sprintf("-------=<%s>=-------\n", title))
+	}
 }
 
 func PrintPanicHeader(screen core.Screen, title string) {

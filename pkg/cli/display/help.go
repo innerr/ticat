@@ -207,3 +207,17 @@ func SuggestStrsDesc(selfName string) []string {
 		selfName + " xx :+                           - show what 'xx' will do without executing it, with details",
 	}
 }
+
+func SuggestStrsFindConfigFlows(selfName string) []string {
+	return []string{
+		selfName + " @ready @provider :-             - find configuring flows",
+		selfName + " @ready @provider :+             - find configuring flows, with details",
+	}
+}
+
+func SuggestStrsFindProvider(selfName string) []string {
+	return []string{
+		selfName + " key-name write :-               - find modules will write this key",
+		selfName + " key-name write :+               - find modules will write this key, with details",
+	}
+}

@@ -155,6 +155,6 @@ func setToDefaultVerb(env *core.Env) {
 
 	env.SetInt("display.flow.depth", 6)
 
-	env.SetInt("display.width", 90)
+	env.SetInt("display.width", 100)
 	env.SetInt("display.max-cmd-cnt", 7)
 }

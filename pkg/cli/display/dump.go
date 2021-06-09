@@ -159,8 +159,6 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 	if len(result) == 0 {
 		return
 	}
-	//PrintSepTitle(screen, env, "unsatisfied env read")
-	PrintDisplayBlockSep(screen, "unsatisfied env read")
 
 	fatals := newEnvOpsCheckResultAgg()
 	risks := newEnvOpsCheckResultAgg()
@@ -172,6 +170,30 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 		}
 	}
 
+	if env.GetBool("display.utf8") {
+		if len(fatals.result) != 0 {
+			selfName := env.GetRaw("strs.self-name")
+			helpStr := []string{
+				"this flow has 'read before write' on env keys, so it can't execute.", "",
+				"search which commands write these keys and concate them in front of the flow:", "",
+			}
+			helpStr = append(helpStr, SuggestStrsFindProvider(selfName)...)
+			helpStr = append(helpStr, "",
+				"some configuring-flows will provide a batch env keys by calling providing commands,",
+				"use these two tags to find them:", "")
+			helpStr = append(helpStr, SuggestStrsFindConfigFlows(selfName)...)
+			helpStr = append(helpStr, "")
+			PrintErrTitle(screen, env, helpStr...)
+		} else {
+			PrintTipTitle(screen, env,
+				"this flow has env read risks.", "",
+				"risks are caused by 'may-read' or 'may-write' on env keys,",
+				"normally modules declair these uncertain behaviors will handle them, don't worry too much.")
+		}
+	} else {
+		screen.Print(fmt.Sprintf("-------=<%s>=-------\n\n", "unsatisfied env read"))
+	}
+
 	prt0 := func(msg string) {
 		screen.Print(msg + "\n")
 	}
@@ -180,8 +202,10 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 	}
 
 	if len(risks.result) != 0 && len(fatals.result) == 0 {
-		for _, it := range risks.result {
-			screen.Print("\n")
+		for i, it := range risks.result {
+			if i != 0 {
+				screen.Print("\n")
+			}
 			prt0("<risk>  '" + it.Key + "'")
 			if it.MayReadNotExist || it.MayReadMayWrite {
 				prti("- may-read by:", 7)
@@ -207,8 +231,10 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 	}
 
 	if len(fatals.result) != 0 {
-		for _, it := range fatals.result {
-			screen.Print("\n")
+		for i, it := range fatals.result {
+			if i != 0 {
+				screen.Print("\n")
+			}
 			prt0("<FATAL> '" + it.Key + "'")
 			prti("- read by:", 7)
 			for _, cmd := range it.Cmds {
@@ -722,11 +748,17 @@ func DumpDepends(cc *core.Cli, env *core.Env, deps Depends) {
 
 	sep := env.Get("strs.cmd-path-sep").Raw
 
-	//PrintSepTitle(cc.Screen, env, "")
-	PrintDisplayBlockSep(cc.Screen, "depended os commands")
+	if env.GetBool("display.utf8") {
+		PrintTipTitle(cc.Screen, env,
+			"depended os commands.", "",
+			"this flow need the os commands below to execute,",
+			"make sure they are all installed.")
+	} else {
+		cc.Screen.Print(fmt.Sprintf("-------=<%s>=-------\n\n", "depended os commands"))
+	}
 
 	for osCmd, cmds := range deps {
-		cc.Screen.Print(fmt.Sprintf("\n[%s]\n", osCmd))
+		cc.Screen.Print(fmt.Sprintf("[%s]\n", osCmd))
 		for _, info := range cmds {
 			cc.Screen.Print(fmt.Sprintf("        '%s'\n", info.Reason))
 			cc.Screen.Print(fmt.Sprintf("            [%s]\n", info.Cmd.DisplayPath(sep, true)))
