@@ -168,6 +168,83 @@ func (self *Executor) executeCmd(
 	return
 }
 
+func printCmdByParseError(
+	cc *core.Cli,
+	cmd core.ParsedCmd,
+	env *core.Env) bool {
+
+	sep := cc.Cmds.Strs.PathSep
+	cmdName := cmd.DisplayPath(sep, true)
+	printer := display.NewTipBoxPrinter(cc.Screen, env, true)
+	input := cmd.ParseError.Input
+
+	printer.PrintWrap("[" + cmdName + "] parse args failed, '" +
+		strings.Join(input, " ") + "' is not valid input.")
+	printer.Prints("", "command detail:", "")
+	display.DumpAllCmds(cmd.Last().Matched.Cmd, printer, false, 4, false, false)
+	printer.Finish()
+	return false
+}
+
+func printSubCmdByParseError(
+	cc *core.Cli,
+	cmd core.ParsedCmd,
+	env *core.Env) bool {
+
+	sep := cc.Cmds.Strs.PathSep
+	cmdName := cmd.DisplayPath(sep, true)
+	printer := display.NewTipBoxPrinter(cc.Screen, env, true)
+	input := cmd.ParseError.Input
+
+	last := cmd.LastCmdNode()
+	if last == nil {
+		panic(fmt.Errorf("[printSubCmdByParseError] should not happen"))
+	}
+	printer.PrintWrap("[" + cmdName + "] parse sub command failed, '" +
+		strings.Join(input, " ") + "' is not valid input.")
+	if last.HasSub() {
+		printer.Prints("", "command branch:", "")
+		display.DumpAllCmds(last, printer, true, 4, true, true)
+	} else {
+		printer.Prints("", "command branch '"+last.DisplayPath()+"' doesn't have any sub commands.")
+		// TODO: search hint
+	}
+	printer.Finish()
+	return false
+}
+
+func printFindResultByParseError(
+	cc *core.Cli,
+	cmd core.ParsedCmd,
+	env *core.Env,
+	title string) bool {
+
+	input := cmd.ParseError.Input
+	inputStr := strings.Join(input, " ")
+	screen := display.NewCacheScreen()
+	display.DumpAllCmds(cc.Cmds, screen, true, 4, true, true, input...)
+
+	if len(title) == 0 {
+		title = cmd.ParseError.Error.Error()
+	}
+
+	if screen.OutputNum() > 0 {
+		display.PrintTipTitle(cc.Screen, env, title, "",
+			"'"+inputStr+"' is not valid input, found related commands by search:")
+		screen.WriteTo(cc.Screen)
+	} else {
+		helpStr := []string{
+			title, "",
+			"'" + inputStr + "' is not valid input and no related commands found.",
+			"", "try to change input,", "or search commands by:", "",
+		}
+		helpStr = append(helpStr, display.SuggestStrsFindCmds(env.GetRaw("strs.self-name"))...)
+		helpStr = append(helpStr, "")
+		display.PrintTipTitle(cc.Screen, env, helpStr...)
+	}
+	return false
+}
+
 func handleParseError(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
@@ -184,31 +261,30 @@ func handleParseError(
 				panic(cmd.ParseError.Error)
 			}
 		*/
+
 		input := cmd.ParseError.Input
-		for len(input) > 0 {
-			screen := display.NewCacheScreen()
-			display.DumpAllCmds(cc.Cmds, screen, true, 4, true, true, input...)
-			if screen.OutputNum() <= 0 {
-				input = input[:len(input)-1]
-				continue
+		inputStr := strings.Join(input, " ")
+
+		switch cmd.ParseError.Error.(type) {
+		case core.ParseErrExpectNoArg:
+			title := "[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] doesn't have args."
+			return printFindResultByParseError(cc, cmd, env, title)
+		case core.ParseErrEnv:
+			helpStr := []string{
+				"[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] parse env failed, " +
+					"'" + inputStr + "' is not valid input.",
+				"", "env setting examples:", "",
 			}
-			display.PrintTipTitle(cc.Screen, env,
-				"'"+strings.Join(input, " ")+"' is not valid input, found related commands:")
-			screen.WriteTo(cc.Screen)
-			return false
+			helpStr = append(helpStr, display.SuggestStrsEnvSetting(env.GetRaw("strs.self-name"))...)
+			helpStr = append(helpStr, "")
+			display.PrintTipTitle(cc.Screen, env, helpStr...)
+		case core.ParseErrExpectArgs:
+			return printCmdByParseError(cc, cmd, env)
+		case core.ParseErrExpectCmd:
+			return printSubCmdByParseError(cc, cmd, env)
+		default:
+			return printFindResultByParseError(cc, cmd, env, "")
 		}
-		inputStr := strings.Join(cmd.ParseError.Input, " ")
-		helpStr := []string{
-			"'" + inputStr + "' is not valid input and no related commands found.",
-			"",
-			"try to change input,",
-			"or search commands by:",
-			"",
-		}
-		helpStr = append(helpStr, display.SuggestStrsFindCmds(env.GetRaw("strs.self-name"))...)
-		helpStr = append(helpStr, "")
-		display.PrintTipTitle(cc.Screen, env, helpStr...)
-		return false
 	}
 	return true
 }

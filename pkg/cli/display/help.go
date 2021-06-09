@@ -172,6 +172,14 @@ func SuggestStrsHubAddShort(selfName string) []string {
 	}
 }
 
+func SuggestStrsEnvSetting(selfName string) []string {
+	return []string{
+		selfName + " {k=v} : env                     - set 'k=v', then display it",
+		selfName + " {k=v} dummy : env               - set 'k=v', then display it",
+		selfName + " dummy : {k=v} env               - set 'k=v', then display it",
+	}
+}
+
 func SuggestStrsHubBranch(selfName string) []string {
 	return []string{
 		selfName + " h :-                            - branch 'hub' usage",

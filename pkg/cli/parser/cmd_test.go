@@ -61,7 +61,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	}
 
 	test := func(a []string, b []parsedSeg) {
-		parsed := parser.parse(root, nil, a)
+		parsed, _ := parser.parse(root, nil, a)
 		assertEq(a, parsed, b)
 	}
 

@@ -256,3 +256,35 @@ func NewParsedEnvVal(key string, val string) ParsedEnvVal {
 func NewParsedEnvArgv(key string, val string) ParsedEnvVal {
 	return ParsedEnvVal{val, true, []string{key}}
 }
+
+type ParseErrExpectCmd struct {
+	Origin error
+}
+
+func (self ParseErrExpectCmd) Error() string {
+	return self.Origin.Error()
+}
+
+type ParseErrExpectArgs struct {
+	Origin error
+}
+
+func (self ParseErrExpectArgs) Error() string {
+	return self.Origin.Error()
+}
+
+type ParseErrExpectNoArg struct {
+	Origin error
+}
+
+func (self ParseErrExpectNoArg) Error() string {
+	return self.Origin.Error()
+}
+
+type ParseErrEnv struct {
+	Origin error
+}
+
+func (self ParseErrEnv) Error() string {
+	return self.Origin.Error()
+}
