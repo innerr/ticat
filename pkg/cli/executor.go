@@ -317,6 +317,11 @@ func handleParseError(
 	flow *core.ParsedCmds,
 	env *core.Env) bool {
 
+	_, isLess, isMore := isEndWithSearchCmd(flow)
+	if isMore || isLess {
+		return true
+	}
+
 	for _, cmd := range flow.Cmds {
 		if cmd.ParseError.Error == nil {
 			continue
@@ -365,7 +370,8 @@ func filterEmptyCmdsAndReorderByPriority(
 	flow *core.ParsedCmds,
 	_ *core.Env) bool {
 
-	notFilterEmpty := doNotFilterEmptyCmds(flow)
+	// TODO: clean up this code
+	//notFilterEmpty := doNotFilterEmptyCmds(flow)
 
 	var unfiltered []core.ParsedCmd
 	unfilteredGlobalCmdIdx := -1
@@ -373,6 +379,7 @@ func filterEmptyCmdsAndReorderByPriority(
 	prioritiesGlobalCmdIdx := -1
 
 	for i, cmd := range flow.Cmds {
+		/*
 		if cmd.IsAllEmptySegments() {
 			if notFilterEmpty {
 				unfiltered = append(unfiltered, cmd)
@@ -382,6 +389,7 @@ func filterEmptyCmdsAndReorderByPriority(
 			}
 			continue
 		}
+		*/
 		if cmd.IsPriority() {
 			priorities = append(priorities, cmd)
 			if i == flow.GlobalCmdIdx {

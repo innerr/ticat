@@ -15,12 +15,14 @@ func GlobalHelpMoreInfo(
 	currCmdIdx int) (int, bool) {
 
 	if len(flow.Cmds) >= 2 {
+		findStrs := getFindStrsFromArgv(argv)
 		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
 		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
 		if cmd == nil {
+			display.DumpCmds(cc, false, 4, true, true, "",
+				append([]string{cmdPathStr}, findStrs...)...)
 			return clearFlow(flow)
 		}
-		findStrs := getFindStrsFromArgv(argv)
 		if len(findStrs) != 0 {
 			display.DumpCmds(cc, false, 4, true, true, cmdPathStr, findStrs...)
 			return clearFlow(flow)
@@ -57,12 +59,14 @@ func GlobalHelpLessInfo(
 	currCmdIdx int) (int, bool) {
 
 	if len(flow.Cmds) >= 2 {
+		findStrs := getFindStrsFromArgv(argv)
 		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
 		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
 		if cmd == nil {
+			display.DumpCmds(cc, true, 4, true, true, "",
+				append([]string{cmdPathStr}, findStrs...)...)
 			return clearFlow(flow)
 		}
-		findStrs := getFindStrsFromArgv(argv)
 		if len(findStrs) != 0 {
 			display.DumpCmds(cc, true, 4, true, true, cmdPathStr, findStrs...)
 			return clearFlow(flow)
