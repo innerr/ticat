@@ -39,6 +39,7 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
 	addr := getAndCheckArg(argv, env, cmd, "git-address")
 	addRepoToHub(addr, argv, cc.Screen, env, cmd)
+	showFindTip(cc.Screen, env)
 	return true
 }
 
@@ -48,6 +49,7 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core
 		panic(core.NewCmdError(cmd, "cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
 	}
 	addRepoToHub(addr, argv, cc.Screen, env, cmd)
+	showFindTip(cc.Screen, env)
 	return true
 }
 
@@ -63,9 +65,9 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd)
 	listHub(screen, env, infos, findStrs...)
 	if screen.OutputNum() <= 0 {
 		helpStr := []string{
-			"hub manages all added git repos, now it'is empty.",
+			"'hub' manages all added git repos, now it's empty.",
 			"",
-			"add more commands by adding more git repos:",
+			"add more git repos to get more avaialable commands:",
 			"",
 		}
 		helpStr = append(helpStr, display.SuggestStrsHubAddShort(selfName)...)
@@ -128,11 +130,6 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 		}
 		cc.Screen.Print(fmt.Sprintf("[%s]%s\n", repoDisplayName(info), purgedStr(env, info.IsLocal())))
 		printInfoProps(cc.Screen, info)
-		if len(info.Addr) != 0 {
-			cc.Screen.Print("      (removed)\n")
-		} else {
-			cc.Screen.Print("      (unlinked)\n")
-		}
 	}
 
 	err := os.Remove(metaPath)
@@ -142,6 +139,17 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 		}
 		panic(core.WrapCmdError(cmd, fmt.Errorf("remove '%s' failed: %v", metaPath, err)))
 	}
+
+	selfName := env.GetRaw("strs.self-name")
+	helpStr := []string{
+		"hub now is empty.",
+		"",
+		"add more git repos to get more avaialable commands:",
+		"",
+	}
+	helpStr = append(helpStr, display.SuggestStrsHubAddShort(selfName)...)
+	display.PrintTipTitle(cc.Screen, env, helpStr...)
+
 	return true
 }
 
@@ -719,4 +727,14 @@ func purgedStr(env *core.Env, isLocal bool) string {
 			return " (purged)"
 		}
 	}
+}
+
+func showFindTip(screen core.Screen, env *core.Env) {
+	selfName := env.GetRaw("strs.self-name")
+	helpStr := []string{
+		"try to search commands by tag @ready, it means 'out-of-the-box':",
+		"",
+	}
+	helpStr = append(helpStr, display.SuggestStrsFindRepoTag(selfName)...)
+	display.PrintTipTitle(screen, env, helpStr...)
 }

@@ -85,7 +85,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail", "$").
+	cmds.AddSub("tell", "$").
 		RegPowerCmd(DumpTailCmd,
 			"display the last cmd info, sub tree cmds will not show").
 		SetQuiet().

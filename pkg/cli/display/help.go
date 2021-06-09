@@ -155,6 +155,13 @@ func SuggestStrsFindCmds(selfName string) []string {
 	}
 }
 
+func SuggestStrsFindRepoTag(selfName string) []string {
+	return []string{
+		selfName + " @ready repo-name str1 :-        - search commands in repo",
+		selfName + " @ready repo-name str1 :+        - search commands in repo, with details",
+	}
+}
+
 func SuggestStrsHubAdd(selfName string) []string {
 	return []string{
 		selfName + " h.init                          - get more commands by adding a default git repo",

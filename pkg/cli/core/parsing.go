@@ -26,6 +26,10 @@ type ParsedCmds struct {
 
 type ParsedCmdSeq []ParsedCmd
 
+func (self *ParsedCmds) Last() (last ParsedCmd) {
+	return self.Cmds[len(self.Cmds)-1]
+}
+
 func (self ParsedCmdSeq) LastCmd() (last ParsedCmd) {
 	if len(self) > 0 {
 		last = self[len(self)-1]

@@ -188,6 +188,7 @@ func printCmdByParseError(
 
 func printSubCmdByParseError(
 	cc *core.Cli,
+	flow *core.ParsedCmds,
 	cmd core.ParsedCmd,
 	env *core.Env) bool {
 
@@ -198,7 +199,7 @@ func printSubCmdByParseError(
 
 	last := cmd.LastCmdNode()
 	if last == nil {
-		panic(fmt.Errorf("[printSubCmdByParseError] should not happen"))
+		return printFreeSearchResultByParseError(cc, flow, env, input...)
 	}
 	printer.PrintWrap("[" + cmdName + "] parse sub command failed, '" +
 		strings.Join(input, " ") + "' is not valid input.")
@@ -210,6 +211,72 @@ func printSubCmdByParseError(
 		// TODO: search hint
 	}
 	printer.Finish()
+	return false
+}
+
+// TODO: better way to do this
+func isEndWithSearchCmd(flow *core.ParsedCmds) (isSearch, isLess, isMore bool) {
+	if len(flow.Cmds) == 0 {
+		return
+	}
+	cmd := flow.Cmds.LastCmd()
+	last := cmd.LastCmd()
+	if last == nil {
+		return
+	}
+	if last.IsTheSameFunc(builtin.GlobalHelpMoreInfo) {
+		isSearch = true
+		isMore = true
+	} else if last.IsTheSameFunc(builtin.GlobalHelpLessInfo) {
+		isSearch = true
+		isLess = true
+	} else if last.IsTheSameFunc(builtin.DumpTailCmd) {
+		isSearch = true
+	}
+	return
+}
+
+func printFreeSearchResultByParseError(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	env *core.Env,
+	findStr ...string) bool {
+
+	isSearch, _, isMore := isEndWithSearchCmd(flow)
+	selfName := env.GetRaw("strs.self-name")
+	input := findStr
+	inputStr := strings.Join(input, " ")
+	notValidStr := "'" + inputStr + "' is not valid input."
+
+	var lines int
+	for len(input) > 0 {
+		screen := display.NewCacheScreen()
+		display.DumpAllCmds(cc.Cmds, screen, !isMore, 4, true, true, input...)
+		lines = screen.OutputNum()
+		if lines <= 0 {
+			input = input[:len(input)-1]
+			continue
+		}
+		helpStr := []string{
+			"search and found commands matched '" + strings.Join(input, " ") + "':",
+		}
+		if !isSearch {
+			helpStr = append([]string{notValidStr, ""}, helpStr...)
+		}
+		display.PrintTipTitle(cc.Screen, env, helpStr...)
+		screen.WriteTo(cc.Screen)
+		return false
+	}
+	helpStr := []string{
+		"search but no commands matched '" + inputStr + "'.",
+		"",
+		"try to change keywords on the leftside, ",
+		selfName + " will filter results by kewords from left to right.",
+	}
+	if !isSearch {
+		helpStr = append([]string{notValidStr, ""}, helpStr...)
+	}
+	display.PrintTipTitle(cc.Screen, env, helpStr...)
 	return false
 }
 
@@ -281,7 +348,7 @@ func handleParseError(
 		case core.ParseErrExpectArgs:
 			return printCmdByParseError(cc, cmd, env)
 		case core.ParseErrExpectCmd:
-			return printSubCmdByParseError(cc, cmd, env)
+			return printSubCmdByParseError(cc, flow, cmd, env)
 		default:
 			return printFindResultByParseError(cc, cmd, env, "")
 		}

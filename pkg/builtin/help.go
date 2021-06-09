@@ -32,7 +32,7 @@ func GlobalHelpMoreInfo(
 		if cmd.HasSub() && cmd.Cmd() == nil {
 			display.DumpCmds(cc, true, 4, true, true, cmdPathStr)
 		} else {
-			display.DumpCmds(cc, false, 4, true, false, cmdPathStr)
+			display.DumpCmds(cc, false, 4, true, true, cmdPathStr)
 		}
 		return clearFlow(flow)
 	}
