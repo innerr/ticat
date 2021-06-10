@@ -28,6 +28,8 @@ func DumpFlow(
 	if len(flow) == 0 {
 		return
 	}
+
+	PrintTipTitle(cc.Screen, env, "flow executing description:")
 	cc.Screen.Print("--->>>\n")
 	dumpFlow(cc, env, flow, depth, sep, indentSize, simple, skeleton, 0)
 	cc.Screen.Print("<<<---\n")
@@ -329,18 +331,18 @@ func dumpCmd(
 					prt(1, " '"+helpStr+"'")
 				}
 			}
+			full := cmd.DisplayPath()
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
-				full := cmd.DisplayPath()
 				if !skeleton && !flatten {
 					prt(1, "- full-cmd:")
 					prt(2, full)
 				}
-				if !skeleton {
-					abbrs := cmd.DisplayAbbrsPath()
-					if len(abbrs) != 0 && abbrs != full {
-						prt(1, "- full-abbrs:")
-						prt(2, abbrs)
-					}
+			}
+			if !skeleton {
+				abbrs := cmd.DisplayAbbrsPath()
+				if len(abbrs) != 0 && abbrs != full {
+					prt(1, "- full-abbrs:")
+					prt(2, abbrs)
 				}
 			}
 		}

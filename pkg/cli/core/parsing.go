@@ -79,7 +79,11 @@ func (self ParsedCmd) LastCmd() (cmd *Cmd) {
 }
 
 func (self ParsedCmd) Args() (args Args) {
-	return self.LastCmd().Args()
+	cmd := self.LastCmd()
+	if cmd != nil {
+		args = cmd.Args()
+	}
+	return
 }
 
 func (self ParsedCmd) IsPowerCmd() bool {

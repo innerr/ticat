@@ -476,6 +476,9 @@ func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *co
 // TODO: move to command property
 func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	last := flow.Cmds[0].LastCmd()
+	if last == nil {
+		return false
+	}
 	allows := []interface{}{
 		builtin.DumpCmdNoRecursive,
 		builtin.SaveFlow,

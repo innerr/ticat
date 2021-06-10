@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pingcap/ticat/pkg/utils"
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
@@ -83,6 +84,7 @@ func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCm
 
 	env.Set("sys.paths.sessions", filepath.Join(data, "sessions"))
 	paths.GetOrAddSub("sessions").AddAbbrs("session", "s", "S")
+
 	return true
 }
 
@@ -155,6 +157,12 @@ func setToDefaultVerb(env *core.Env) {
 
 	env.SetInt("display.flow.depth", 6)
 
-	env.SetInt("display.width", 100)
 	env.SetInt("display.max-cmd-cnt", 7)
+
+	row, col := utils.GetTerminalWidth()
+	if col > 100 {
+		col = 100
+	}
+	env.SetInt("display.width", col)
+	env.SetInt("display.height", row)
 }

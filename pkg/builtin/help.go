@@ -21,15 +21,22 @@ func GlobalHelpMoreInfo(
 			continue
 		}
 		findStrs = append(cmd.ParseError.Input, findStrs...)
-		return dumpMoreLessFindResult(flow, cc.Screen, env, "", cc.Cmds, false, findStrs...)
+		cmdPathStr := ""
+		cic := cc.Cmds
+		if !cmd.IsEmpty() {
+			cic = cmd.Last().Matched.Cmd
+			cmdPathStr = cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+		}
+		return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cic, false, findStrs...)
 	}
 
 	if len(flow.Cmds) >= 2 {
 		cmdPathStr := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
 		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
 		if cmd == nil {
-			panic("[GlobalHelpLessInfo] should never happen")
+			panic("[GlobalHelpMoreInfo] should never happen")
 		}
+		cmdPathStr = flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, true)
 		if len(findStrs) != 0 {
 			return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cmd, false, findStrs...)
 		}
@@ -37,7 +44,7 @@ func GlobalHelpMoreInfo(
 			cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
 			return DumpFlowAllSimple(argv, cc, env, flow, currCmdIdx)
 		}
-		return dumpMoreLessFindResult(flow, cc.Screen, env, "", cmd, false)
+		return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cmd, false)
 	}
 
 	return dumpMoreLessFindResult(flow, cc.Screen, env, "", cc.Cmds, false, findStrs...)
@@ -57,15 +64,22 @@ func GlobalHelpLessInfo(
 			continue
 		}
 		findStrs = append(cmd.ParseError.Input, findStrs...)
-		return dumpMoreLessFindResult(flow, cc.Screen, env, "", cc.Cmds, true, findStrs...)
+		cmdPathStr := ""
+		cic := cc.Cmds
+		if !cmd.IsEmpty() {
+			cic = cmd.Last().Matched.Cmd
+			cmdPathStr = cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+		}
+		return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cic, true, findStrs...)
 	}
 
 	if len(flow.Cmds) >= 2 {
-		cmdPathStr := flow.Cmds[1].DisplayPath(cc.Cmds.Strs.PathSep, false)
+		cmdPathStr := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
 		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
 		if cmd == nil {
 			panic("[GlobalHelpLessInfo] should never happen")
 		}
+		cmdPathStr = flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, true)
 		if len(findStrs) != 0 {
 			return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cmd, true, findStrs...)
 		}
@@ -73,7 +87,7 @@ func GlobalHelpLessInfo(
 			cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
 			return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
 		}
-		return dumpMoreLessFindResult(flow, cc.Screen, env, "", cmd, true)
+		return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cmd, true)
 	}
 
 	return dumpMoreLessFindResult(flow, cc.Screen, env, "", cc.Cmds, true, findStrs...)
@@ -104,6 +118,7 @@ func dumpMoreLessFindResult(
 	findStrs ...string) (int, bool) {
 
 	findStr := strings.Join(findStrs, " ")
+	selfName := env.GetRaw("strs.self-name")
 
 	prt := func(text string) {
 		display.PrintTipTitle(screen, env, text)
@@ -135,20 +150,28 @@ func dumpMoreLessFindResult(
 				prt("branch '" + cmdPathStr + "' has no commands. (this should never happen)")
 			}
 		} else {
-			selfName := env.GetRaw("strs.self-name")
 			if printer.OutputNum() > 0 {
-				printer.WriteTo(screen)
-				tips := display.NewTipBoxPrinter(screen, env, false)
-				tips.Prints(selfName+" commands are listed above.", "", "find commands by keywords:", "")
-				tips.Prints(display.SuggestStrsFindCmds(selfName)...)
-				tips.Finish()
-				return clearFlow(flow)
+				prt("all commands loaded to " + selfName+":")
 			} else {
-				prt(selfName + " has no commands. (this should never happen)")
+				prt(selfName + " has no loaded commands. (this should never happen)")
 			}
 		}
 	}
 	printer.WriteTo(screen)
+
+	height := env.GetInt("display.height")
+	if height > 0 && printer.OutputNum() > int(float64(height) * 1.5) {
+		printer.WriteTo(screen)
+		tips := display.NewTipBoxPrinter(screen, env, false)
+		if !skeleton {
+			tips.Prints("get a brief view by using '-' instead of '+'.", "")
+			tips.Prints("or/and locate exact commands by adding more keywords:", "")
+		} else {
+			tips.Prints("locate exact commands by adding more keywords:", "")
+		}
+		tips.Prints(display.SuggestStrsFindCmds(selfName)...)
+		tips.Finish()
+	}
 
 	return clearFlow(flow)
 }

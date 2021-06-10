@@ -146,7 +146,7 @@ func (self *CmdTree) GetOrAddSub(path ...string) *CmdTree {
 }
 
 func (self *CmdTree) HasSub() bool {
-	return len(self.subs) != 0
+	return len(self.subs) != 0 && !self.IsHidden()
 }
 
 func (self *CmdTree) GetSub(path ...string) *CmdTree {
@@ -158,7 +158,7 @@ func (self *CmdTree) IsQuiet() bool {
 }
 
 func (self *CmdTree) IsEmptyDirCmd() bool {
-	return self.cmd != nil && self.cmd.Type() == CmdTypeEmptyDir
+	return self.cmd == nil || self.cmd.Type() == CmdTypeEmptyDir
 }
 
 func (self *CmdTree) IsPowerCmd() bool {
