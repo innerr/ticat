@@ -243,14 +243,3 @@ func filterQuietCmds(env *core.Env, flow []core.ParsedCmd, currCmdIdx int) ([]co
 	}
 	return newCmds, newIdx
 }
-
-func padRight(str string, pad string, width int) string {
-	if len(str) >= width {
-		return str
-	}
-	return str + strings.Repeat(pad, width-len(str))
-}
-
-func formatDuration(dur time.Duration) string {
-	return strings.ReplaceAll(fmt.Sprintf("%s", dur), "µ", "u")
-}

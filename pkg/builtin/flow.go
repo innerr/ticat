@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/cli/display"
 	"github.com/pingcap/ticat/pkg/proto/flow_file"
 	"github.com/pingcap/ticat/pkg/utils"
 )
@@ -22,6 +23,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 		panic(fmt.Errorf("[ListFlows] env 'sys.paths.flows' is empty"))
 	}
 
+	screen := display.NewCacheScreen()
 	findStrs := getFindStrsFromArgv(argv)
 
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
@@ -52,20 +54,32 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 			return nil
 		}
 
-		cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
+		screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
 		if len(help) != 0 {
-			cc.Screen.Print(fmt.Sprintf("      '%s'\n", help))
+			screen.Print(fmt.Sprintf("      '%s'\n", help))
 		}
 		if len(abbrsStr) != 0 {
-			cc.Screen.Print("    - abbrs:\n")
-			cc.Screen.Print(fmt.Sprintf("        %s\n", abbrsStr))
+			screen.Print("    - abbrs:\n")
+			screen.Print(fmt.Sprintf("        %s\n", abbrsStr))
 		}
-		cc.Screen.Print("    - flow:\n")
-		cc.Screen.Print(fmt.Sprintf("        %s\n", flowStr))
-		cc.Screen.Print("    - executable:\n")
-		cc.Screen.Print(fmt.Sprintf("        %s\n", path))
+		screen.Print("    - flow:\n")
+		screen.Print(fmt.Sprintf("        %s\n", flowStr))
+		screen.Print("    - executable:\n")
+		screen.Print(fmt.Sprintf("        %s\n", path))
 		return nil
 	})
+
+	if screen.OutputNum() > 0 {
+		display.PrintTipTitle(cc.Screen, env, "all saved flows: (flows from added repos are not included)")
+	} else {
+		helpStr := []string{
+			"there is no saved flows yet, save flow by:", "",
+		}
+		selfName := env.GetRaw("strs.self-name")
+		helpStr = append(helpStr, display.SuggestStrsFlowAdd(selfName)...)
+		display.PrintTipTitle(cc.Screen, env, helpStr...)
+	}
+	screen.WriteTo(cc.Screen)
 	return true
 }
 
@@ -295,7 +309,7 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 				path = append(path, seg.Matched.Name)
 			}
 			lastSegHasNoCmd = (seg.Matched.Cmd == nil)
-			cmdHasEnv = cmdHasEnv || saveEnv(w, seg.Env, path, envPathSep,
+			cmdHasEnv = cmdHasEnv || saveFlowEnv(w, seg.Env, path, envPathSep,
 				bracketLeft, bracketRight, envKeyValSep,
 				!cmdHasEnv && j == len(cmd.Segments)-1)
 		}
@@ -303,7 +317,7 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 	fmt.Fprintf(w, "\n")
 }
 
-func saveEnv(
+func saveFlowEnv(
 	w io.Writer,
 	env core.ParsedEnv,
 	prefixPath []string,

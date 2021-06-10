@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/pingcap/ticat/pkg/builtin"
-	"github.com/pingcap/ticat/pkg/cli"
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
+	"github.com/pingcap/ticat/pkg/cli/execute"
 	"github.com/pingcap/ticat/pkg/cli/parser"
 )
 
@@ -77,7 +77,7 @@ func main() {
 	cliParser := parser.NewParser(seqParser, cmdParser)
 
 	// Virtual tty, for re-directing (in the future)
-	screen := cli.NewScreen()
+	screen := execute.NewScreen()
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs)
@@ -97,7 +97,7 @@ func main() {
 			os.Exit(-1)
 		}
 	}()
-	executor := cli.NewExecutor(SessionEnvFileName)
+	executor := execute.NewExecutor(SessionEnvFileName)
 	cc.Executor = executor
 	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
 	if !succeeded {

@@ -125,6 +125,9 @@ func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
 }
 
 func (self *Cmd) MatchFind(findStr string) bool {
+	if strings.Index(self.owner.DisplayPath(), findStr) >= 0 {
+		return true
+	}
 	if strings.Index(self.help, findStr) >= 0 {
 		return true
 	}

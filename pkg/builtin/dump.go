@@ -146,7 +146,7 @@ func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool
 	return true
 }
 
-func DumpTailCmd(
+func DumpTellTailCmd(
 	_ core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
