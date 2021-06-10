@@ -309,7 +309,7 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 				path = append(path, seg.Matched.Name)
 			}
 			lastSegHasNoCmd = (seg.Matched.Cmd == nil)
-			cmdHasEnv = cmdHasEnv || saveEnv(w, seg.Env, path, envPathSep,
+			cmdHasEnv = cmdHasEnv || saveFlowEnv(w, seg.Env, path, envPathSep,
 				bracketLeft, bracketRight, envKeyValSep,
 				!cmdHasEnv && j == len(cmd.Segments)-1)
 		}
@@ -317,7 +317,7 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 	fmt.Fprintf(w, "\n")
 }
 
-func saveEnv(
+func saveFlowEnv(
 	w io.Writer,
 	env core.ParsedEnv,
 	prefixPath []string,
