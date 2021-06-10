@@ -204,7 +204,7 @@ func printSubCmdByParseError(
 	printer.PrintWrap("[" + cmdName + "] parse sub command failed, '" +
 		strings.Join(input, " ") + "' is not valid input.")
 	if last.HasSub() {
-		printer.Prints("", "command branch:", "")
+		printer.Prints("", "commands on branch '"+last.DisplayPath()+"':", "")
 		display.DumpAllCmds(last, printer, true, 4, true, true)
 	} else {
 		printer.Prints("", "command branch '"+last.DisplayPath()+"' doesn't have any sub commands.")

@@ -58,7 +58,7 @@ func (self *TipBoxPrinter) Print(msg string) {
 			tip = "<ERR>"
 			tipLen = len(tip)
 			if utf8 {
-				tip = "⛔"
+				tip = "🛑"
 				tipLen = 2
 			}
 		} else {
@@ -136,14 +136,14 @@ func PrintGlobalHelp(screen core.Screen, env *core.Env) {
 func SuggestStrsExeCmds(selfName string) []string {
 	return []string{
 		selfName + " cmd1 : cmd2 : cmd3              - execute commands one by one,",
-		"                                        like unix-pipe, use ':' instead of '|'",
+		"                                        similar to unix-pipe, use ':' instead of '|'",
 	}
 }
 
 func SuggestStrsExeCmdsWithArgs(selfName string) []string {
 	return []string{
-		selfName + " dbg.echo msg=hi : slp 1s        - an example of executing commands,",
-		"                                        'dbg.echo' is a command name",
+		selfName + " dbg.echo msg=hi : sleep 1s      - an example of executing commands,",
+		"                                        'dbg.echo' is a command name, 'msg' is an arg",
 	}
 }
 

@@ -85,7 +85,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tell", "$").
+	cmds.AddSub("tell", "=").
 		RegPowerCmd(DumpTellTailCmd,
 			"display the last cmd info, sub tree cmds will not show").
 		SetQuiet().
@@ -244,7 +244,7 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 
 	add := hub.AddSub("add-and-update", "add", "a", "A", "+")
 	add.RegCmd(AddGitRepoToHub,
-		"add and pull a git address to hub, do update if already exists").
+		"add and pull a git address to hub, do update if it already exists").
 		AddArg("git-address", "", "git", "address", "addr")
 
 	add.AddSub("local-dir", "local", "l", "L").

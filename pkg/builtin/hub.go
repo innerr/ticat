@@ -746,7 +746,7 @@ func matchFindRepoInfo(info meta.RepoInfo, findStr string) bool {
 
 func disabledStr(env *core.Env) string {
 	if env.GetBool("display.utf8.symbols") {
-		return "⛔(disabled)"
+		return "❎(disabled)"
 	} else {
 		return " (disabled)"
 	}
@@ -773,7 +773,7 @@ func purgedStr(env *core.Env, isLocal bool) string {
 		if isLocal {
 			return "❎(unlinked)"
 		} else {
-			return "❌(purged)"
+			return "🚮(purged)"
 		}
 	} else {
 		if isLocal {
