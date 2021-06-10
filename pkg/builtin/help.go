@@ -151,7 +151,7 @@ func dumpMoreLessFindResult(
 			}
 		} else {
 			if printer.OutputNum() > 0 {
-				prt("all commands loaded to " + selfName+":")
+				prt("all commands loaded to " + selfName + ":")
 			} else {
 				prt(selfName + " has no loaded commands. (this should never happen)")
 			}
@@ -160,7 +160,7 @@ func dumpMoreLessFindResult(
 	printer.WriteTo(screen)
 
 	height := env.GetInt("display.height")
-	if height > 0 && printer.OutputNum() > int(float64(height) * 1.5) {
+	if height > 0 && printer.OutputNum() > int(float64(height)*1.5) {
 		printer.WriteTo(screen)
 		tips := display.NewTipBoxPrinter(screen, env, false)
 		if !skeleton {

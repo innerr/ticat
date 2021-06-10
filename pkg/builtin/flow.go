@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/cli/display"
 	"github.com/pingcap/ticat/pkg/proto/flow_file"
 	"github.com/pingcap/ticat/pkg/utils"
-	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
 func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
@@ -72,7 +72,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 	if screen.OutputNum() > 0 {
 		display.PrintTipTitle(cc.Screen, env, "all saved flows: (flows from added repos are not included)")
 	} else {
-		helpStr := []string {
+		helpStr := []string{
 			"there is no saved flows yet, save flow by:", "",
 		}
 		selfName := env.GetRaw("strs.self-name")
