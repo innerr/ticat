@@ -22,6 +22,9 @@ func RegMod(
 
 	defer func() {
 		// TODO: configurable display
+		// CmdTreeErrSubCmdConflicted
+		// CmdTreeErrSubAbbrConflicted
+		// CmdTreeErrExecutableConflicted
 		if err := recover(); err != nil {
 			display.PrintPanic(cc.Screen, "mod loading failed", []string{
 				"cmd", cmdPath,

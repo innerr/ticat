@@ -23,7 +23,7 @@ func PrintGlobalHelp(screen core.Screen, env *core.Env) {
 	pln("")
 	screen.Print("usage:\n")
 
-	list := []func(*core.Env)[]string {
+	list := []func(*core.Env) []string{
 		SuggestExeCmds,
 		SuggestExeCmdsWithArgs,
 		SuggestListCmds,

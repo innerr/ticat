@@ -14,11 +14,15 @@ func (self Env) SetInt(name string, val int) {
 }
 
 func (self Env) GetInt(name string) int {
-	val, err := strconv.Atoi(self.Get(name).Raw)
+	val := self.Get(name).Raw
+	intVal, err := strconv.Atoi(val)
 	if err != nil {
-		panic(fmt.Errorf("[EnvVal.GetInt] strconv failed: %v", err))
+		panic(EnvValErrWrongType{
+			fmt.Sprintf("[EnvVal.GetInt] key '%s' = '%s' is not int: %v", name, val, err),
+			name, val, "int", err,
+		})
 	}
-	return int(val)
+	return int(intVal)
 }
 
 func (self Env) PlusInt(name string, val int) {
@@ -33,4 +37,16 @@ func (self Env) SetBool(name string, val bool) bool {
 
 func (self Env) GetBool(name string) bool {
 	return StrToBool(self.Get(name).Raw)
+}
+
+type EnvValErrWrongType struct {
+	Str        string
+	Key        string
+	Val        string
+	ExpectType string
+	ConvertErr error
+}
+
+func (self EnvValErrWrongType) Error() string {
+	return self.Str
 }

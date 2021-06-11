@@ -232,6 +232,9 @@ func loadFlow(cc *core.Cli, root string, path string, flowExt string, source str
 	var cmdPathStr string
 	defer func() {
 		// TODO: configurable display
+		// CmdTreeErrSubCmdConflicted
+		// CmdTreeErrSubAbbrConflicted
+		// CmdTreeErrExecutableConflicted
 		if err := recover(); err != nil {
 			cc.Screen.Error("======================================\n\n")
 			cc.Screen.Error("[ERR] flow loading failed:\n")

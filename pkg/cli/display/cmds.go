@@ -30,6 +30,7 @@ func DumpAllCmds(
 		recursive, flatten, -cmds.Depth(), findStrs...)
 }
 
+// TODO: remove this
 func DumpCmds(
 	cc *core.Cli,
 	skeleton bool,
@@ -47,6 +48,7 @@ func DumpCmds(
 	if len(path) != 0 {
 		cmds = cmds.GetSub(strings.Split(path, cc.Cmds.Strs.PathSep)...)
 		if cmds == nil {
+			// TODO: better display
 			panic(fmt.Errorf("[DumpCmds] can't find sub cmd tree by path '%s'", path))
 		}
 	}

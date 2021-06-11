@@ -259,6 +259,7 @@ func (self *Cmd) EnvOps() EnvOps {
 func (self *Cmd) Flow() []string {
 	flow, err := shellwords.Parse(self.cmdLine)
 	if err != nil {
+		// TODO: better display
 		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
 			self.cmdLine, err))
 	}
@@ -295,6 +296,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 	for _, dep := range self.depends {
 		_, err := exec.LookPath(dep.OsCmd)
 		if err != nil {
+			// TODO: better display
 			panic(fmt.Errorf("[Cmd.executeFile] %s", err))
 		}
 	}
