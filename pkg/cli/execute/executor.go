@@ -190,6 +190,7 @@ func filterEmptyCmdsAndReorderByPriority(
 	prioritiesGlobalCmdIdx := -1
 
 	for i, cmd := range flow.Cmds {
+		// TODO: seems filter empty cmds don't have much help, remove it
 		/*
 			if cmd.IsAllEmptySegments() {
 				if notFilterEmpty {
@@ -300,6 +301,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	return false
 }
 
+// Borrow abbrs from cmds to env
 func useCmdsAbbrs(abbrs *core.EnvAbbrs, cmds *core.CmdTree) {
 	if cmds == nil {
 		return

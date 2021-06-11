@@ -371,29 +371,8 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 			"verify bash in os/exec")
 }
 
-func addFindStrArgs(cmd *core.Cmd) {
-	cmd.AddArg("1st-str", "", "find-str").
-		AddArg("2nd-str", "").
-		AddArg("3rh-str", "").
-		AddArg("4th-str", "").
-		AddArg("5th-str", "").
-		AddArg("6th-str", "")
-}
-
-const LessMoreHelpStr = `
-* if in a sequence having
-    * more than 1 other commands: show the sequence execution.
-    * only 1 other command and
-        * has no args and the other command is
-            * a flow: show the flow execution.
-            * not a flow: show the command or the branch info.
-        * has args: find commands under the branch of the other command.
-* if not in a sequence and
-    * has args: do global search.
-    * has no args: show global help.`
-
-const MoreHelpStr = "display rich info base on:" + LessMoreHelpStr
-const LessHelpStr = "display brief info base on:" + LessMoreHelpStr
+const LessHelpStr = "display/search info base on the current flow and args"
+const MoreHelpStr = LessHelpStr + ", with details"
 
 const MoveFlowsToDirHelpStr = `move all saved flows to a local dir (could be a git repo).
 auto move:

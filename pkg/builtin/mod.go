@@ -76,8 +76,3 @@ func loadLocalMods(
 		return nil
 	})
 }
-
-func fileExists(path string) bool {
-	info, err := os.Stat(path)
-	return !os.IsNotExist(err) && !info.IsDir()
-}

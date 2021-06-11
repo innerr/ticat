@@ -110,37 +110,6 @@ func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.Par
 	return true
 }
 
-func dumpFlowAll(
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int,
-	simple bool) (int, bool) {
-
-	cmds := flow.Cmds[currCmdIdx+1:]
-	display.DumpFlow(cc, env, cmds, cc.Cmds.Strs.PathSep, 4, simple, false)
-
-	deps := display.Depends{}
-	display.CollectDepends(cc, flow.Cmds[currCmdIdx+1:], deps)
-
-	if len(deps) != 0 {
-		cc.Screen.Print("\n")
-		display.DumpDepends(cc, env, deps)
-	}
-
-	checker := &core.EnvOpsChecker{}
-	result := []core.EnvOpsCheckResult{}
-	core.CheckEnvOps(cc, flow, env, checker, false, &result)
-
-	if len(result) != 0 {
-		cc.Screen.Print("\n")
-		display.DumpEnvOpsCheckResult(cc.Screen, env, result, cc.Cmds.Strs.PathSep)
-	}
-
-	flow.Cmds = nil
-	return 0, true
-}
-
 func DumpEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	display.DumpEnv(cc.Screen, env, 4)
 	return true
@@ -206,20 +175,33 @@ func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.P
 	return true
 }
 
-func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
-	names := []string{
-		"1st-str",
-		"2nd-str",
-		"3rd-str",
-		"4th-str",
-		"5th-str",
-		"6th-str",
+func dumpFlowAll(
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	simple bool) (int, bool) {
+
+	cmds := flow.Cmds[currCmdIdx+1:]
+	display.DumpFlow(cc, env, cmds, cc.Cmds.Strs.PathSep, 4, simple, false)
+
+	deps := display.Depends{}
+	display.CollectDepends(cc, flow.Cmds[currCmdIdx+1:], deps)
+
+	if len(deps) != 0 {
+		cc.Screen.Print("\n")
+		display.DumpDepends(cc, env, deps)
 	}
-	for _, name := range names {
-		val := argv.GetRaw(name)
-		if len(val) != 0 {
-			findStrs = append(findStrs, val)
-		}
+
+	checker := &core.EnvOpsChecker{}
+	result := []core.EnvOpsCheckResult{}
+	core.CheckEnvOps(cc, flow, env, checker, false, &result)
+
+	if len(result) != 0 {
+		cc.Screen.Print("\n")
+		display.DumpEnvOpsCheckResult(cc.Screen, env, result, cc.Cmds.Strs.PathSep)
 	}
-	return
+
+	flow.Cmds = nil
+	return 0, true
 }

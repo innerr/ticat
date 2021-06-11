@@ -359,21 +359,6 @@ func saveFlowEnv(
 	return true
 }
 
-func quoteIfHasSpace(str string) string {
-	if strings.IndexAny(str, " \t\r\n") < 0 {
-		return str
-	}
-	i := strings.Index(str, "\"")
-	if i < 0 {
-		return "\"" + str + "\""
-	}
-	i = strings.Index(str, "'")
-	if i < 0 {
-		return "'" + str + "'"
-	}
-	return str
-}
-
 func getFlowCmdPath(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -412,29 +397,4 @@ func getFlowCmdPath(
 		panic(fmt.Errorf("[%s] flow '%s' file '%s' not exists", funcName, cmdPath, filePath))
 	}
 	return
-}
-
-func normalizeCmdPath(path string, sep string, alterSeps string) string {
-	var segs []string
-	for len(path) > 0 {
-		i := strings.IndexAny(path, alterSeps)
-		if i < 0 {
-			segs = append(segs, path)
-			break
-		} else if i == 0 {
-			path = path[1:]
-		} else {
-			segs = append(segs, path[0:i])
-			path = path[i+1:]
-		}
-	}
-	return strings.Join(segs, sep)
-}
-
-func getCmdPath(path string, flowExt string) string {
-	base := filepath.Base(path)
-	if !strings.HasSuffix(base, flowExt) {
-		panic(fmt.Errorf("[getCmdPath] flow file '%s' ext not match '%s'", path, flowExt))
-	}
-	return base[:len(base)-len(flowExt)]
 }

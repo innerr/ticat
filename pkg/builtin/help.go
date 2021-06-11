@@ -175,8 +175,3 @@ func dumpMoreLessFindResult(
 
 	return clearFlow(flow)
 }
-
-func clearFlow(flow *core.ParsedCmds) (int, bool) {
-	flow.Cmds = nil
-	return 0, true
-}
