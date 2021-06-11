@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -151,13 +150,13 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCm
 		if len(info.Addr) == 0 {
 			continue
 		}
-		_, addrs, helpStrs := updateRepoAndSubRepos(
+		_, addrs, helpStrs := meta.UpdateRepoAndSubRepos(
 			cc.Screen, finisheds, path, info.Addr, repoExt, listFileName, selfName, cmd)
 		for i, addr := range addrs {
 			if oldList[addr] {
 				continue
 			}
-			repoPath := getRepoPath(path, addr)
+			repoPath := meta.GetRepoPath(path, addr)
 			infos = append(infos, meta.RepoInfo{addr, info.Addr, repoPath, helpStrs[i], "on"})
 		}
 	}
@@ -179,7 +178,7 @@ func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	findStr := getAndCheckArg(argv, env, cmd, "find-str")
 
-	extracted, rest := extractAddrFromList(infos, findStr)
+	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
 	checkFoundRepos(env, cmd, extracted, findStr)
 
 	var count int
@@ -212,7 +211,7 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	findStr := getAndCheckArg(argv, env, cmd, "find-str")
 
-	extracted, rest := extractAddrFromList(infos, findStr)
+	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
 	checkFoundRepos(env, cmd, extracted, findStr)
 
 	var count int
@@ -483,7 +482,7 @@ func addRepoToHub(
 	// A repo with this suffix should be a well controlled one, that we could assume some things
 	repoExt := env.GetRaw("strs.mods-repo-ext")
 
-	gitAddr = normalizeGitAddr(gitAddr)
+	gitAddr = meta.NormalizeGitAddr(gitAddr)
 
 	if !isOsCmdExists("git") {
 		panic(core.NewCmdError(cmd, "cant't find 'git'"))
@@ -512,7 +511,7 @@ func addRepoToHub(
 	selfName := env.GetRaw("strs.self-name")
 	listFileName := env.GetRaw("strs.repos-file-name")
 	var topRepoHelpStr string
-	topRepoHelpStr, addrs, helpStrs = updateRepoAndSubRepos(
+	topRepoHelpStr, addrs, helpStrs = meta.UpdateRepoAndSubRepos(
 		screen, finisheds, path, gitAddr, repoExt, listFileName, selfName, cmd)
 
 	addrs = append([]string{gitAddr}, addrs...)
@@ -523,167 +522,13 @@ func addRepoToHub(
 		if oldList[addr] {
 			continue
 		}
-		repoPath := getRepoPath(path, addr)
+		repoPath := meta.GetRepoPath(path, addr)
 		infos = append(infos, meta.RepoInfo{addr, gitAddr, repoPath, helpStrs[i], "on"})
 	}
 
 	infos = append(oldInfos, infos...)
 	meta.WriteReposInfoFile(metaPath, infos, fieldSep)
 	return
-}
-
-func updateRepoAndSubRepos(
-	screen core.Screen,
-	finisheds map[string]bool,
-	hubPath string,
-	gitAddr string,
-	repoExt string,
-	listFileName string,
-	selfName string,
-	cmd core.ParsedCmd) (topRepoHelpStr string, addrs []string, helpStrs []string) {
-
-	if finisheds[gitAddr] {
-		return
-	}
-	topRepoHelpStr, addrs, helpStrs = updateRepoAndReadSubList(
-		screen, hubPath, gitAddr, listFileName, selfName, cmd)
-	finisheds[gitAddr] = true
-
-	for i, addr := range addrs {
-		subTopHelpStr, subAddrs, subHelpStrs := updateRepoAndSubRepos(
-			screen, finisheds, hubPath, addr, repoExt, listFileName, selfName, cmd)
-		// If a repo has no help-str from hub-repo list, try to get the title from it's README
-		if len(helpStrs[i]) == 0 && len(subTopHelpStr) != 0 {
-			helpStrs[i] = subTopHelpStr
-		}
-		addrs = append(addrs, subAddrs...)
-		helpStrs = append(helpStrs, subHelpStrs...)
-	}
-
-	return topRepoHelpStr, addrs, helpStrs
-}
-
-func updateRepoAndReadSubList(
-	screen core.Screen,
-	hubPath string,
-	gitAddr string,
-	listFileName string,
-	selfName string,
-	cmd core.ParsedCmd) (helpStr string, addrs []string, helpStrs []string) {
-
-	name := addrDisplayName(gitAddr)
-	repoPath := getRepoPath(hubPath, gitAddr)
-	var cmdStrs []string
-
-	stat, err := os.Stat(repoPath)
-	var pwd string
-	if !os.IsNotExist(err) {
-		if !stat.IsDir() {
-			panic(core.WrapCmdError(cmd, fmt.Errorf("repo path '%v' exists but is not dir",
-				repoPath)))
-		}
-		screen.Print(fmt.Sprintf("[%s] => git update\n", name))
-		cmdStrs = []string{"git", "pull", "--recurse-submodules"}
-		pwd = repoPath
-	} else {
-		screen.Print(fmt.Sprintf("[%s] => git clone\n", name))
-		cmdStrs = []string{"git", "clone", "--recursive", gitAddr, repoPath}
-	}
-
-	c := exec.Command(cmdStrs[0], cmdStrs[1:]...)
-	if len(pwd) != 0 {
-		c.Dir = pwd
-	}
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	err = c.Run()
-	if err != nil {
-		panic(core.WrapCmdError(cmd, fmt.Errorf("run '%v' failed: %v", cmdStrs, err)))
-	}
-	listFilePath := filepath.Join(repoPath, listFileName)
-	return meta.ReadRepoListFromFile(selfName, listFilePath)
-}
-
-func extractAddrFromList(
-	infos []meta.RepoInfo,
-	findStr string) (extracted []meta.RepoInfo, rest []meta.RepoInfo) {
-
-	for _, info := range infos {
-		findInStr := info.Addr
-		if len(info.Addr) == 0 {
-			findInStr = info.Path
-		}
-		if strings.Index(findInStr, findStr) >= 0 {
-			extracted = append(extracted, info)
-		} else {
-			rest = append(rest, info)
-		}
-	}
-	return
-}
-
-func normalizeGitAddr(addr string) string {
-	if strings.HasPrefix(strings.ToLower(addr), "http") {
-		return addr
-	}
-	if strings.HasPrefix(strings.ToLower(addr), "git") {
-		return addr
-	}
-	return "git@github.com:" + addr
-}
-
-func gitAddrAbbr(addr string) (abbr string) {
-	// TODO: support other git platform
-	abbrExtractors := []func(string) string{
-		githubAddrAbbr,
-	}
-	for _, extractor := range abbrExtractors {
-		abbr = extractor(addr)
-		if len(abbr) != 0 {
-			break
-		}
-	}
-	return
-}
-
-func repoDisplayName(info meta.RepoInfo) string {
-	if len(info.Addr) == 0 {
-		return filepath.Base(info.Path)
-	}
-	return addrDisplayName(info.Addr)
-}
-
-func addrDisplayName(addr string) string {
-	abbr := gitAddrAbbr(addr)
-	if len(abbr) == 0 {
-		return addr
-	}
-	return abbr
-}
-
-func githubAddrAbbr(addr string) (abbr string) {
-	httpPrefix := "http://github.com/"
-	if strings.HasPrefix(strings.ToLower(addr), httpPrefix) {
-		return addr[len(httpPrefix):]
-	}
-	sshPrefix := "git@github.com:"
-	if strings.HasPrefix(strings.ToLower(addr), sshPrefix) {
-		return addr[len(sshPrefix):]
-	}
-	return
-}
-
-func getReposInfoPath(env *core.Env, cmd core.ParsedCmd) string {
-	path := getHubPath(env, cmd)
-	reposInfoFileName := env.GetRaw("strs.hub-file-name")
-	if len(reposInfoFileName) == 0 {
-		panic(core.NewCmdError(cmd, "cant't hub meta file name"))
-	}
-	return filepath.Join(path, reposInfoFileName)
-}
-
-func getRepoPath(hubPath string, gitAddr string) string {
-	return filepath.Join(hubPath, filepath.Base(gitAddr))
 }
 
 func printInfoProps(screen core.Screen, info meta.RepoInfo) {
@@ -742,6 +587,31 @@ func matchFindRepoInfo(info meta.RepoInfo, findStr string) bool {
 	return false
 }
 
+func showFindTip(screen core.Screen, env *core.Env) {
+	helpStr := []string{
+		"try to search commands by tag @ready, it means 'out-of-the-box':",
+		"",
+	}
+	helpStr = append(helpStr, display.SuggestFindRepoTag(env)...)
+	display.PrintTipTitle(screen, env, helpStr...)
+}
+
+func getReposInfoPath(env *core.Env, cmd core.ParsedCmd) string {
+	path := getHubPath(env, cmd)
+	reposInfoFileName := env.GetRaw("strs.hub-file-name")
+	if len(reposInfoFileName) == 0 {
+		panic(core.NewCmdError(cmd, "cant't hub meta file name"))
+	}
+	return filepath.Join(path, reposInfoFileName)
+}
+
+func repoDisplayName(info meta.RepoInfo) string {
+	if len(info.Addr) == 0 {
+		return filepath.Base(info.Path)
+	}
+	return meta.AddrDisplayName(info.Addr)
+}
+
 func disabledStr(env *core.Env) string {
 	if env.GetBool("display.utf8.symbols") {
 		return "❎(disabled)"
@@ -780,13 +650,4 @@ func purgedStr(env *core.Env, isLocal bool) string {
 			return " (purged)"
 		}
 	}
-}
-
-func showFindTip(screen core.Screen, env *core.Env) {
-	helpStr := []string{
-		"try to search commands by tag @ready, it means 'out-of-the-box':",
-		"",
-	}
-	helpStr = append(helpStr, display.SuggestFindRepoTag(env)...)
-	display.PrintTipTitle(screen, env, helpStr...)
 }

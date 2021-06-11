@@ -141,16 +141,7 @@ func (self *Executor) executeCmd(
 	start := time.Now()
 	if last != nil {
 		if last.IsEmptyDirCmd() {
-			name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
-			if !last.HasSub() {
-				display.PrintTipTitle(cc.Screen, env,
-					fmt.Sprintf("'%v' is not executable and has no commands on this branch.", name))
-			} else {
-				display.PrintTipTitle(cc.Screen, env,
-					fmt.Sprintf("'%v' is not executable, but has commands on this branch:", name))
-				dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
-				display.DumpCmds(last, cc.Screen, dumpArgs)
-			}
+			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
 			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)

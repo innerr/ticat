@@ -82,3 +82,21 @@ func ReadReposInfoFile(
 	}
 	return
 }
+
+func ExtractAddrFromList(
+	infos []RepoInfo,
+	findStr string) (extracted []RepoInfo, rest []RepoInfo) {
+
+	for _, info := range infos {
+		findInStr := info.Addr
+		if len(info.Addr) == 0 {
+			findInStr = info.Path
+		}
+		if strings.Index(findInStr, findStr) >= 0 {
+			extracted = append(extracted, info)
+		} else {
+			rest = append(rest, info)
+		}
+	}
+	return
+}

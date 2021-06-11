@@ -7,6 +7,21 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func PrintEmptyDirCmdHint(screen core.Screen, env *core.Env, cmd core.ParsedCmd) {
+	sep := env.GetRaw("strs.cmd-path-sep")
+	name := cmd.DisplayPath(sep, true)
+	last := cmd.LastCmdNode()
+	if !last.HasSub() {
+		PrintTipTitle(screen, env,
+			fmt.Sprintf("'%v' is not executable and has no commands on this branch.", name))
+	} else {
+		PrintTipTitle(screen, env,
+			fmt.Sprintf("'%v' is not executable, but has commands on this branch:", name))
+		dumpArgs := NewDumpCmdArgs().SetSkeleton()
+		DumpCmds(last, screen, dumpArgs)
+	}
+}
+
 func PrintError(cc *core.Cli, env *core.Env, err error) {
 	switch err.(type) {
 	case *core.CmdError:
