@@ -31,8 +31,8 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		printer := NewTipBoxPrinter(cc.Screen, env, true)
 		printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
 		printer.Prints("", "command detail:", "")
-		dumpFlowCmd(cc, printer, env, e.Cmd, 0, sep, 4,
-			true, false, 0)
+		dumpArgs := NewDumpFlowArgs().SetSimple()
+		dumpFlowCmd(cc, printer, env, e.Cmd, dumpArgs, 0, 0)
 		printer.Finish()
 	default:
 		PrintErrTitle(cc.Screen, env, err.Error())

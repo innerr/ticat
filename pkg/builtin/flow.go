@@ -168,8 +168,7 @@ func SaveFlow(
 			tmp, filePath, err))
 	}
 
-	flow.Cmds = nil
-	return 0, true
+	return clearFlow(flow)
 }
 
 func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {

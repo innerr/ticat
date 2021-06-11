@@ -5,6 +5,12 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
+func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+	depth := argv.GetInt("depth")
+	env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
+	return true
+}
+
 func DumpFlow(
 	_ core.ArgVals,
 	cc *core.Cli,
@@ -12,10 +18,9 @@ func DumpFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:],
-		cc.Cmds.Strs.PathSep, 4, false, false)
-	flow.Cmds = nil
-	return 0, true
+	dumpArgs := display.NewDumpFlowArgs()
+	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	return clearFlow(flow)
 }
 
 func DumpFlowSimple(
@@ -25,10 +30,9 @@ func DumpFlowSimple(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:],
-		cc.Cmds.Strs.PathSep, 4, true, false)
-	flow.Cmds = nil
-	return 0, true
+	dumpArgs := display.NewDumpFlowArgs().SetSimple()
+	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	return clearFlow(flow)
 }
 
 func DumpFlowSkeleton(
@@ -38,10 +42,9 @@ func DumpFlowSkeleton(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:],
-		cc.Cmds.Strs.PathSep, 4, true, true)
-	flow.Cmds = nil
-	return 0, true
+	dumpArgs := display.NewDumpFlowArgs().SetSkeleton()
+	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	return clearFlow(flow)
 }
 
 func DumpFlowDepends(
@@ -59,8 +62,7 @@ func DumpFlowDepends(
 	} else {
 		cc.Screen.Print("no depended os commands\n")
 	}
-	flow.Cmds = nil
-	return 0, true
+	return clearFlow(flow)
 }
 
 func DumpFlowEnvOpsCheckResult(
@@ -80,8 +82,7 @@ func DumpFlowEnvOpsCheckResult(
 		cc.Screen.Print("all env-ops are satisfied, can directly run\n")
 	}
 
-	flow.Cmds = nil
-	return 0, true
+	return clearFlow(flow)
 }
 
 func DumpFlowAllSimple(
@@ -104,12 +105,6 @@ func DumpFlowAll(
 	return dumpFlowAll(cc, env, flow, currCmdIdx, false)
 }
 
-func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	depth := argv.GetInt("depth")
-	env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
-	return true
-}
-
 func dumpFlowAll(
 	cc *core.Cli,
 	env *core.Env,
@@ -118,7 +113,10 @@ func dumpFlowAll(
 	simple bool) (int, bool) {
 
 	cmds := flow.Cmds[currCmdIdx+1:]
-	display.DumpFlow(cc, env, cmds, cc.Cmds.Strs.PathSep, 4, simple, false)
+
+	dumpArgs := display.NewDumpFlowArgs()
+	dumpArgs.Simple = simple
+	display.DumpFlow(cc, env, cmds, dumpArgs)
 
 	deps := display.Depends{}
 	display.CollectDepends(cc, flow.Cmds[currCmdIdx+1:], deps)
@@ -137,6 +135,5 @@ func dumpFlowAll(
 		display.DumpEnvOpsCheckResult(cc.Screen, env, result, cc.Cmds.Strs.PathSep)
 	}
 
-	flow.Cmds = nil
-	return 0, true
+	return clearFlow(flow)
 }
