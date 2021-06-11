@@ -75,8 +75,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 		helpStr := []string{
 			"there is no saved flows yet, save flow by:", "",
 		}
-		selfName := env.GetRaw("strs.self-name")
-		helpStr = append(helpStr, display.SuggestStrsFlowAdd(selfName)...)
+		helpStr = append(helpStr, display.SuggestFlowAdd(env)...)
 		display.PrintTipTitle(cc.Screen, env, helpStr...)
 	}
 	screen.WriteTo(cc.Screen)

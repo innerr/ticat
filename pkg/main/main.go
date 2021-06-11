@@ -39,6 +39,9 @@ func main() {
 	defEnv.Set("strs.repos-file-name", ReposFileName)
 	defEnv.Set("strs.mods-repo-ext", ModsRepoExt)
 	defEnv.Set("strs.proto-sep", ProtoSep)
+	defEnv.Set("strs.tag-out-of-the-box", TagOutOfTheBox)
+	defEnv.Set("strs.tag-provider", TagProvider)
+	defEnv.Set("strs.tag-self-test", TagSelfTest)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -76,12 +79,13 @@ func main() {
 		CmdRootDisplayName)
 	cliParser := parser.NewParser(seqParser, cmdParser)
 
-	// Virtual tty, for re-directing (in the future)
+	// Virtual tty, for re-directing
 	screen := execute.NewScreen()
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs)
 
+	// Modules and env loaders
 	bootstrap := `
 		B.E.L.R:
 		B.M.L.E:
@@ -97,9 +101,13 @@ func main() {
 			os.Exit(-1)
 		}
 	}()
+
+	// Main process
 	executor := execute.NewExecutor(SessionEnvFileName)
 	cc.Executor = executor
 	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
+
+	// TODO: more exit codes
 	if !succeeded {
 		os.Exit(1)
 	}
@@ -129,4 +137,7 @@ const (
 	HubFileName         string = "repos.hub"
 	ReposFileName       string = "README.md"
 	SessionEnvFileName  string = "env"
+	TagOutOfTheBox      string = "@ready"
+	TagProvider         string = "@provider"
+	TagSelfTest         string = "@selftest"
 )

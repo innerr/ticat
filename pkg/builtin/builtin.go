@@ -366,7 +366,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		AddArg("seconds", "5", "second", "sec", "s", "S")
 
-	cmds.AddSub("exec").
+	cmds.AddSub("exec").SetHidden().
 		RegCmd(DbgExecBash,
 			"verify bash in os/exec")
 }

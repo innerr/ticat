@@ -6,6 +6,57 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func HandleParseError(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	env *core.Env,
+	isSearch bool,
+	isLess bool,
+	isMore bool) bool {
+
+	if isMore || isLess {
+		return true
+	}
+
+	for _, cmd := range flow.Cmds {
+		if cmd.ParseError.Error == nil {
+			continue
+		}
+		// TODO: better handling: sub flow parse failed
+		/*
+			stackDepth := env.GetInt("sys.stack-depth")
+			if stackDepth > 0 {
+				panic(cmd.ParseError.Error)
+			}
+		*/
+
+		input := cmd.ParseError.Input
+		inputStr := strings.Join(input, " ")
+
+		switch cmd.ParseError.Error.(type) {
+		case core.ParseErrExpectNoArg:
+			title := "[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] doesn't have args."
+			return PrintFindResultByParseError(cc, cmd, env, title)
+		case core.ParseErrEnv:
+			helpStr := []string{
+				"[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] parse env failed, " +
+					"'" + inputStr + "' is not valid input.",
+				"", "env setting examples:", "",
+			}
+			helpStr = append(helpStr, SuggestEnvSetting(env)...)
+			helpStr = append(helpStr, "")
+			PrintTipTitle(cc.Screen, env, helpStr...)
+		case core.ParseErrExpectArgs:
+			return PrintCmdByParseError(cc, cmd, env)
+		case core.ParseErrExpectCmd:
+			return PrintSubCmdByParseError(cc, flow, cmd, env, isSearch, isMore)
+		default:
+			return PrintFindResultByParseError(cc, cmd, env, "")
+		}
+	}
+	return true
+}
+
 func PrintCmdByParseError(
 	cc *core.Cli,
 	cmd core.ParsedCmd,
@@ -125,7 +176,7 @@ func PrintFindResultByParseError(
 			"'" + inputStr + "' is not valid input and no related commands found.",
 			"", "try to change input,", "or search commands by:", "",
 		}
-		helpStr = append(helpStr, SuggestStrsFindCmds(env.GetRaw("strs.self-name"))...)
+		helpStr = append(helpStr, SuggestFindCmds(env)...)
 		helpStr = append(helpStr, "")
 		PrintTipTitle(cc.Screen, env, helpStr...)
 	}

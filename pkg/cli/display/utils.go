@@ -25,6 +25,10 @@ func autoPadNewLine(padding string, msg string) string {
 	return msg
 }
 
+func padR(str string, width int) string {
+	return padRight(str, " ", width)
+}
+
 func padRight(str string, pad string, width int) string {
 	if len(str) >= width {
 		return str

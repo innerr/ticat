@@ -169,7 +169,7 @@ func dumpMoreLessFindResult(
 		} else {
 			tips.Prints("locate exact commands by adding more keywords:", "")
 		}
-		tips.Prints(display.SuggestStrsFindCmds(selfName)...)
+		tips.Prints(display.SuggestFindCmds(env)...)
 		tips.Finish()
 	}
 

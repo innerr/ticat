@@ -165,4 +165,6 @@ func setToDefaultVerb(env *core.Env) {
 	}
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
+
+	env.SetInt("display.hint.indent.2rd", 38)
 }

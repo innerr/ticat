@@ -24,16 +24,15 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 
 	if env.GetBool("display.utf8") {
 		if len(fatals.result) != 0 {
-			selfName := env.GetRaw("strs.self-name")
 			helpStr := []string{
 				"this flow has 'read before write' on env keys, so it can't execute.", "",
 				"search which commands write these keys and concate them in front of the flow:", "",
 			}
-			helpStr = append(helpStr, SuggestStrsFindProvider(selfName)...)
+			helpStr = append(helpStr, SuggestFindProvider(env)...)
 			helpStr = append(helpStr, "",
 				"some configuring-flows will provide a batch env keys by calling providing commands,",
 				"use these two tags to find them:", "")
-			helpStr = append(helpStr, SuggestStrsFindConfigFlows(selfName)...)
+			helpStr = append(helpStr, SuggestFindConfigFlows(env)...)
 			helpStr = append(helpStr, "",
 				"or provide keys by putting '{key=value}' in front of the flow.", "")
 			PrintErrTitle(screen, env, helpStr...)

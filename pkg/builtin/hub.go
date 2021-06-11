@@ -59,7 +59,6 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd)
 	findStrs := getFindStrsFromArgv(argv)
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 
-	selfName := env.GetRaw("strs.self-name")
 	screen := display.NewCacheScreen()
 
 	listHub(screen, env, infos, findStrs...)
@@ -70,7 +69,7 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd)
 			"add more git repos to get more avaialable commands:",
 			"",
 		}
-		helpStr = append(helpStr, display.SuggestStrsHubAddShort(selfName)...)
+		helpStr = append(helpStr, display.SuggestHubAddShort(env)...)
 		display.PrintTipTitle(cc.Screen, env, helpStr...)
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "repo list in hub:")
@@ -80,7 +79,7 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd)
 			"command branch '" + cmdName + "' manages the repos in local disk.",
 			"", "to see more usage:", "",
 		}
-		helpStr = append(helpStr, display.SuggestStrsHubBranch(selfName)...)
+		helpStr = append(helpStr, display.SuggestHubBranch(env)...)
 		display.PrintTipTitle(cc.Screen, env, helpStr...)
 	}
 	return true
@@ -107,14 +106,13 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 		panic(core.WrapCmdError(cmd, fmt.Errorf("remove '%s' failed: %v", metaPath, err)))
 	}
 
-	selfName := env.GetRaw("strs.self-name")
 	helpStr := []string{
 		"hub now is empty.",
 		"",
 		"add more git repos to get more avaialable commands:",
 		"",
 	}
-	helpStr = append(helpStr, display.SuggestStrsHubAddShort(selfName)...)
+	helpStr = append(helpStr, display.SuggestHubAddShort(env)...)
 	display.PrintTipTitle(cc.Screen, env, helpStr...)
 
 	return true
@@ -146,8 +144,8 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCm
 		}
 	}
 
-	var infos []meta.RepoInfo
 	selfName := env.GetRaw("strs.self-name")
+	var infos []meta.RepoInfo
 
 	for _, info := range oldInfos {
 		if len(info.Addr) == 0 {
@@ -785,11 +783,10 @@ func purgedStr(env *core.Env, isLocal bool) string {
 }
 
 func showFindTip(screen core.Screen, env *core.Env) {
-	selfName := env.GetRaw("strs.self-name")
 	helpStr := []string{
 		"try to search commands by tag @ready, it means 'out-of-the-box':",
 		"",
 	}
-	helpStr = append(helpStr, display.SuggestStrsFindRepoTag(selfName)...)
+	helpStr = append(helpStr, display.SuggestFindRepoTag(env)...)
 	display.PrintTipTitle(screen, env, helpStr...)
 }
