@@ -39,10 +39,6 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 	}
 }
 
-func PrintErrTitle(screen core.Screen, env *core.Env, msgs ...string) {
-	printTipTitle(screen, env, true, msgs...)
-}
-
 func PrintSepTitle(screen core.Screen, env *core.Env, msg string) {
 	width := env.GetInt("display.width") - 3
 	screen.Print(rpt("-", width-len(msg)) + "<[" + msg + "]\n")

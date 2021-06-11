@@ -38,14 +38,14 @@ func HandleParseError(
 			title := "[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] doesn't have args."
 			return PrintFindResultByParseError(cc, cmd, env, title)
 		case core.ParseErrEnv:
-			helpStr := []string{
-				"[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] parse env failed, " +
-					"'" + inputStr + "' is not valid input.",
-				"", "env setting examples:", "",
-			}
-			helpStr = append(helpStr, SuggestEnvSetting(env)...)
-			helpStr = append(helpStr, "")
-			PrintTipTitle(cc.Screen, env, helpStr...)
+			PrintTipTitle(cc.Screen, env,
+				"["+cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)+"] parse env failed, "+
+					"'"+inputStr+"' is not valid input.",
+				"",
+				"env setting examples:",
+				"",
+				SuggestEnvSetting(env),
+				"")
 		case core.ParseErrExpectArgs:
 			return PrintCmdByParseError(cc, cmd, env)
 		case core.ParseErrExpectCmd:
@@ -137,7 +137,7 @@ func PrintFreeSearchResultByParseError(
 		if !isSearch {
 			helpStr = append([]string{notValidStr, ""}, helpStr...)
 		}
-		PrintTipTitle(cc.Screen, env, helpStr...)
+		PrintTipTitle(cc.Screen, env, helpStr)
 		screen.WriteTo(cc.Screen)
 		return false
 	}
@@ -151,7 +151,7 @@ func PrintFreeSearchResultByParseError(
 	if !isSearch {
 		helpStr = append([]string{notValidStr, ""}, helpStr...)
 	}
-	PrintTipTitle(cc.Screen, env, helpStr...)
+	PrintTipTitle(cc.Screen, env, helpStr)
 	return false
 }
 
@@ -172,18 +172,20 @@ func PrintFindResultByParseError(
 	}
 
 	if screen.OutputNum() > 0 {
-		PrintTipTitle(cc.Screen, env, title, "",
+		PrintTipTitle(cc.Screen, env,
+			title,
+			"",
 			"'"+inputStr+"' is not valid input, found related commands by search:")
 		screen.WriteTo(cc.Screen)
 	} else {
-		helpStr := []string{
-			title, "",
-			"'" + inputStr + "' is not valid input and no related commands found.",
-			"", "try to change input,", "or search commands by:", "",
-		}
-		helpStr = append(helpStr, SuggestFindCmds(env)...)
-		helpStr = append(helpStr, "")
-		PrintTipTitle(cc.Screen, env, helpStr...)
+		PrintTipTitle(cc.Screen, env,
+			title,
+			"",
+			"'"+inputStr+"' is not valid input and no related commands found.",
+			"",
+			"try to change input,", "or search commands by:", "",
+			SuggestFindCmds(env),
+			"")
 	}
 	return false
 }

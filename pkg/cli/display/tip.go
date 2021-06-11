@@ -1,18 +1,35 @@
 package display
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func PrintTipTitle(screen core.Screen, env *core.Env, msgs ...string) {
+func PrintErrTitle(screen core.Screen, env *core.Env, msgs ...interface{}) {
+	printTipTitle(screen, env, true, msgs...)
+}
+
+func PrintTipTitle(screen core.Screen, env *core.Env, msgs ...interface{}) {
 	printTipTitle(screen, env, false, msgs...)
 }
 
-func printTipTitle(screen core.Screen, env *core.Env, isErr bool, msgs ...string) {
+func printTipTitle(screen core.Screen, env *core.Env, isErr bool, msgs ...interface{}) {
+	var strs []string
+	for _, it := range msgs {
+		switch it.(type) {
+		case string:
+			strs = append(strs, it.(string))
+		case []string:
+			strs = append(strs, it.([]string)...)
+		default:
+			panic(fmt.Errorf("[PrintTipTitle] invalid msg type, should never happen"))
+		}
+	}
+
 	printer := NewTipBoxPrinter(screen, env, isErr)
-	printer.Prints(msgs...)
+	printer.Prints(strs...)
 	printer.Finish()
 }
 

@@ -22,7 +22,8 @@ func DumpDepends(cc *core.Cli, env *core.Env, deps Depends) {
 
 	if env.GetBool("display.utf8") {
 		PrintTipTitle(cc.Screen, env,
-			"depended os commands.", "",
+			"depended os commands.",
+			"",
 			"this flow need the os commands below to execute,",
 			"make sure they are all installed.")
 	} else {

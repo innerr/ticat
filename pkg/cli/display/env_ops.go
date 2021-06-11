@@ -24,21 +24,24 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 
 	if env.GetBool("display.utf8") {
 		if len(fatals.result) != 0 {
-			helpStr := []string{
-				"this flow has 'read before write' on env keys, so it can't execute.", "",
-				"search which commands write these keys and concate them in front of the flow:", "",
-			}
-			helpStr = append(helpStr, SuggestFindProvider(env)...)
-			helpStr = append(helpStr, "",
+			PrintErrTitle(screen, env,
+				"this flow has 'read before write' on env keys, so it can't execute.",
+				"",
+				"search which commands write these keys and concate them in front of the flow:",
+				"",
+				SuggestFindProvider(env),
+				"",
 				"some configuring-flows will provide a batch env keys by calling providing commands,",
-				"use these two tags to find them:", "")
-			helpStr = append(helpStr, SuggestFindConfigFlows(env)...)
-			helpStr = append(helpStr, "",
-				"or provide keys by putting '{key=value}' in front of the flow.", "")
-			PrintErrTitle(screen, env, helpStr...)
+				"use these two tags to find them:",
+				"",
+				SuggestFindConfigFlows(env),
+				"",
+				"or provide keys by putting '{key=value}' in front of the flow.",
+				"")
 		} else {
 			PrintTipTitle(screen, env,
-				"this flow has 'read before write' risks on env keys.", "",
+				"this flow has 'read before write' risks on env keys.",
+				"",
 				"risks are caused by 'may-read' or 'may-write' on env keys,",
 				"normally modules declair these uncertain behaviors will handle them, don't worry too much.")
 		}

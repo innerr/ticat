@@ -62,24 +62,22 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd)
 
 	listHub(screen, env, infos, findStrs...)
 	if screen.OutputNum() <= 0 {
-		helpStr := []string{
+		display.PrintTipTitle(cc.Screen, env,
 			"'hub' manages all added git repos, now it's empty.",
 			"",
 			"add more git repos to get more avaialable commands:",
 			"",
-		}
-		helpStr = append(helpStr, display.SuggestHubAddShort(env)...)
-		display.PrintTipTitle(cc.Screen, env, helpStr...)
+			display.SuggestHubAddShort(env))
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "repo list in hub:")
 		screen.WriteTo(cc.Screen)
 		cmdName := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
-		helpStr := []string{
-			"command branch '" + cmdName + "' manages the repos in local disk.",
-			"", "to see more usage:", "",
-		}
-		helpStr = append(helpStr, display.SuggestHubBranch(env)...)
-		display.PrintTipTitle(cc.Screen, env, helpStr...)
+		display.PrintTipTitle(cc.Screen, env,
+			"command branch '"+cmdName+"' manages the repos in local disk.",
+			"",
+			"to see more usage:",
+			"",
+			display.SuggestHubBranch(env))
 	}
 	return true
 }
@@ -105,14 +103,12 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 		panic(core.WrapCmdError(cmd, fmt.Errorf("remove '%s' failed: %v", metaPath, err)))
 	}
 
-	helpStr := []string{
+	display.PrintTipTitle(cc.Screen, env,
 		"hub now is empty.",
 		"",
 		"add more git repos to get more avaialable commands:",
 		"",
-	}
-	helpStr = append(helpStr, display.SuggestHubAddShort(env)...)
-	display.PrintTipTitle(cc.Screen, env, helpStr...)
+		display.SuggestHubAddShort(env))
 
 	return true
 }
@@ -432,7 +428,7 @@ func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env, cmd c
 		helpStr = append(helpStr, fmt.Sprintf("%v local dir unlinked to %s, files are untouched.",
 			unlinkeds, env.GetRaw("strs.self-name")))
 	}
-	display.PrintTipTitle(cc.Screen, env, helpStr...)
+	display.PrintTipTitle(cc.Screen, env, helpStr)
 }
 
 func moveSavedFlowsToLocalDir(toDir string, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) int {
@@ -588,12 +584,10 @@ func matchFindRepoInfo(info meta.RepoInfo, findStr string) bool {
 }
 
 func showFindTip(screen core.Screen, env *core.Env) {
-	helpStr := []string{
+	display.PrintTipTitle(screen, env,
 		"try to search commands by tag @ready, it means 'out-of-the-box':",
 		"",
-	}
-	helpStr = append(helpStr, display.SuggestFindRepoTag(env)...)
-	display.PrintTipTitle(screen, env, helpStr...)
+		display.SuggestFindRepoTag(env))
 }
 
 func getReposInfoPath(env *core.Env, cmd core.ParsedCmd) string {

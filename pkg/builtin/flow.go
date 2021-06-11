@@ -70,13 +70,13 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 	})
 
 	if screen.OutputNum() > 0 {
-		display.PrintTipTitle(cc.Screen, env, "all saved flows: (flows from added repos are not included)")
+		display.PrintTipTitle(cc.Screen, env,
+			"all saved flows: (flows from added repos are not included)")
 	} else {
-		helpStr := []string{
-			"there is no saved flows yet, save flow by:", "",
-		}
-		helpStr = append(helpStr, display.SuggestFlowAdd(env)...)
-		display.PrintTipTitle(cc.Screen, env, helpStr...)
+		display.PrintTipTitle(cc.Screen, env,
+			"there is no saved flows yet, save flow by:",
+			"",
+			display.SuggestFlowAdd(env))
 	}
 	screen.WriteTo(cc.Screen)
 	return true
