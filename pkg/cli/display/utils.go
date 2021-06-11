@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func MayQuoteStr(origin string) string {
+func mayQuoteStr(origin string) string {
 	trimed := strings.TrimSpace(origin)
 	if len(trimed) == 0 || len(trimed) != len(origin) {
 		return "'" + origin + "'"

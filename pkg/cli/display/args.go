@@ -10,16 +10,16 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 		line := k + " = "
 		if argv != nil {
 			v := argv[k].Raw
-			line += MayQuoteStr(v)
+			line += mayQuoteStr(v)
 			if printDef {
 				if defV != v {
-					line += "(def=" + MayQuoteStr(defV) + ")"
+					line += "(def=" + mayQuoteStr(defV) + ")"
 				} else {
 					line += "(=def)"
 				}
 			}
 		} else {
-			line += MayQuoteStr(defV)
+			line += mayQuoteStr(defV)
 		}
 		output = append(output, line)
 	}

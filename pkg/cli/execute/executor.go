@@ -148,7 +148,8 @@ func (self *Executor) executeCmd(
 			} else {
 				display.PrintTipTitle(cc.Screen, env,
 					fmt.Sprintf("'%v' is not executable, but has commands on this branch:", name))
-				display.DumpAllCmds(last, cc.Screen, true, 4, true, true)
+				dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
+				display.DumpCmds(last, cc.Screen, dumpArgs)
 			}
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {

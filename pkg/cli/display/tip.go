@@ -6,6 +6,16 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func PrintTipTitle(screen core.Screen, env *core.Env, msgs ...string) {
+	printTipTitle(screen, env, false, msgs...)
+}
+
+func printTipTitle(screen core.Screen, env *core.Env, isErr bool, msgs ...string) {
+	printer := NewTipBoxPrinter(screen, env, isErr)
+	printer.Prints(msgs...)
+	printer.Finish()
+}
+
 type TipBoxPrinter struct {
 	screen   core.Screen
 	env      *core.Env
@@ -86,14 +96,4 @@ func (self *TipBoxPrinter) OutputNum() int {
 
 func (self *TipBoxPrinter) Finish() {
 	PrintFramedLines(self.screen, self.env, self.buf)
-}
-
-func PrintTipTitle(screen core.Screen, env *core.Env, msgs ...string) {
-	printTipTitle(screen, env, false, msgs...)
-}
-
-func printTipTitle(screen core.Screen, env *core.Env, isErr bool, msgs ...string) {
-	printer := NewTipBoxPrinter(screen, env, isErr)
-	printer.Prints(msgs...)
-	printer.Finish()
 }

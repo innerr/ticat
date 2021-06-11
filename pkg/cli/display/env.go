@@ -51,7 +51,7 @@ func dumpEnvFlattenVals(screen core.Screen, flatten map[string]string, findStrs 
 				continue
 			}
 		}
-		screen.Print(k + " = " + MayQuoteStr(v) + "\n")
+		screen.Print(k + " = " + mayQuoteStr(v) + "\n")
 	}
 }
 
@@ -116,7 +116,7 @@ func dumpEnvLayer(
 			}
 		}
 		if !filtered {
-			output = append(output, indent+"- "+k+" = "+MayQuoteStr(v.Raw))
+			output = append(output, indent+"- "+k+" = "+mayQuoteStr(v.Raw))
 		}
 	}
 	if env.Parent() != nil {

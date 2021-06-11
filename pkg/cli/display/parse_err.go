@@ -70,7 +70,8 @@ func PrintCmdByParseError(
 	printer.PrintWrap("[" + cmdName + "] parse args failed, '" +
 		strings.Join(input, " ") + "' is not valid input.")
 	printer.Prints("", "command detail:", "")
-	DumpAllCmds(cmd.Last().Matched.Cmd, printer, false, 4, false, false)
+	dumpArgs := NewDumpCmdArgs().NoFlatten().NoRecursive()
+	DumpCmds(cmd.Last().Matched.Cmd, printer, dumpArgs)
 	printer.Finish()
 	return false
 }
@@ -96,7 +97,8 @@ func PrintSubCmdByParseError(
 		strings.Join(input, " ") + "' is not valid input.")
 	if last.HasSub() {
 		printer.Prints("", "commands on branch '"+last.DisplayPath()+"':", "")
-		DumpAllCmds(last, printer, true, 4, true, true)
+		dumpArgs := NewDumpCmdArgs().SetSkeleton()
+		DumpCmds(last, printer, dumpArgs)
 	} else {
 		printer.Prints("", "command branch '"+last.DisplayPath()+"' doesn't have any sub commands.")
 		// TODO: search hint
@@ -121,7 +123,9 @@ func PrintFreeSearchResultByParseError(
 	var lines int
 	for len(input) > 0 {
 		screen := NewCacheScreen()
-		DumpAllCmds(cc.Cmds, screen, !isMore, 4, true, true, input...)
+		dumpArgs := NewDumpCmdArgs().AddFindStrs(input...)
+		dumpArgs.Skeleton = !isMore
+		DumpCmds(cc.Cmds, screen, dumpArgs)
 		lines = screen.OutputNum()
 		if lines <= 0 {
 			input = input[:len(input)-1]
@@ -160,7 +164,8 @@ func PrintFindResultByParseError(
 	input := cmd.ParseError.Input
 	inputStr := strings.Join(input, " ")
 	screen := NewCacheScreen()
-	DumpAllCmds(cc.Cmds, screen, true, 4, true, true, input...)
+	dumpArgs := NewDumpCmdArgs().SetSkeleton().AddFindStrs(input...)
+	DumpCmds(cc.Cmds, screen, dumpArgs)
 
 	if len(title) == 0 {
 		title = cmd.ParseError.Error.Error()

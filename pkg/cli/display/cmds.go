@@ -7,43 +7,10 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func DumpSubCmds(
-	screen core.Screen,
-	cmd *core.CmdTree,
-	indentSize int,
-	findStrs ...string) {
-
-	dumpCmd(screen, cmd, true, indentSize,
-		true, false, -cmd.Depth(), findStrs...)
-}
-
-func DumpAllCmds(
-	cmds *core.CmdTree,
-	screen core.Screen,
-	skeleton bool,
-	indentSize int,
-	flatten bool,
-	recursive bool,
-	findStrs ...string) {
-
-	dumpCmd(screen, cmds, skeleton, indentSize,
-		recursive, flatten, -cmds.Depth(), findStrs...)
-}
-
-// TODO: remove this
-func DumpCmds(
-	cc *core.Cli,
-	skeleton bool,
-	indentSize int,
-	flatten bool,
-	recursive bool,
-	path string,
-	findStrs ...string) {
-
-	if len(path) == 0 && !recursive {
+func DumpCmdsByPath(cc *core.Cli, args *DumpCmdArgs, path string) {
+	if len(path) == 0 && !args.Recursive {
 		return
 	}
-
 	cmds := cc.Cmds
 	if len(path) != 0 {
 		cmds = cmds.GetSub(strings.Split(path, cc.Cmds.Strs.PathSep)...)
@@ -52,19 +19,50 @@ func DumpCmds(
 			panic(fmt.Errorf("[DumpCmds] can't find sub cmd tree by path '%s'", path))
 		}
 	}
-	dumpCmd(cc.Screen, cmds, skeleton, indentSize,
-		recursive, flatten, -cmds.Depth(), findStrs...)
+	dumpCmd(cc.Screen, cmds, args, -cmds.Depth())
+}
+
+func DumpCmds(cmds *core.CmdTree, screen core.Screen, args *DumpCmdArgs) {
+	dumpCmd(screen, cmds, args, -cmds.Depth())
+}
+
+type DumpCmdArgs struct {
+	Skeleton   bool
+	Flatten    bool
+	Recursive  bool
+	FindStrs   []string
+	IndentSize int
+}
+
+func NewDumpCmdArgs() *DumpCmdArgs {
+	return &DumpCmdArgs{false, true, true, nil, 4}
+}
+
+func (self *DumpCmdArgs) SetSkeleton() *DumpCmdArgs {
+	self.Skeleton = true
+	return self
+}
+
+func (self *DumpCmdArgs) NoFlatten() *DumpCmdArgs {
+	self.Flatten = false
+	return self
+}
+
+func (self *DumpCmdArgs) NoRecursive() *DumpCmdArgs {
+	self.Recursive = false
+	return self
+}
+
+func (self *DumpCmdArgs) AddFindStrs(findStrs ...string) *DumpCmdArgs {
+	self.FindStrs = append(self.FindStrs, findStrs...)
+	return self
 }
 
 func dumpCmd(
 	screen core.Screen,
 	cmd *core.CmdTree,
-	skeleton bool,
-	indentSize int,
-	recursive bool,
-	flatten bool,
-	indentAdjust int,
-	findStrs ...string) {
+	args *DumpCmdArgs,
+	indentAdjust int) {
 
 	if cmd == nil || cmd.IsHidden() {
 		return
@@ -75,20 +73,20 @@ func dumpCmd(
 	indent := cmd.Depth() + indentAdjust
 
 	prt := func(indentLvl int, msg string) {
-		if !flatten {
+		if !args.Flatten {
 			indentLvl += indent
 		}
-		padding := rpt(" ", indentSize*indentLvl)
+		padding := rpt(" ", args.IndentSize*indentLvl)
 		msg = autoPadNewLine(padding, msg)
 		screen.Print(padding + msg + "\n")
 	}
 
-	if cmd.Parent() == nil || cmd.MatchFind(findStrs...) {
+	if cmd.Parent() == nil || cmd.MatchFind(args.FindStrs...) {
 		cic := cmd.Cmd()
 		var name string
-		if flatten {
+		if args.Flatten {
 			name = cmd.DisplayPath()
-		} else if !skeleton {
+		} else if !args.Skeleton {
 			name = strings.Join(cmd.Abbrs(), abbrsSep)
 		} else {
 			name = cmd.DisplayName()
@@ -97,11 +95,11 @@ func dumpCmd(
 			name = cmd.DisplayName()
 		}
 
-		if !flatten || cic != nil {
+		if !args.Flatten || cic != nil {
 			prt(0, "["+name+"]")
 			if cic != nil {
 				var helpStr string
-				if !skeleton {
+				if !args.Skeleton {
 					helpStr = cic.Help()
 				} else {
 					helpStr = cic.DisplayHelpStr()
@@ -112,12 +110,12 @@ func dumpCmd(
 			}
 			full := cmd.DisplayPath()
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
-				if !skeleton && !flatten {
+				if !args.Skeleton && !args.Flatten {
 					prt(1, "- full-cmd:")
 					prt(2, full)
 				}
 			}
-			if !skeleton {
+			if !args.Skeleton {
 				abbrs := cmd.DisplayAbbrsPath()
 				if len(abbrs) != 0 && abbrs != full {
 					prt(1, "- full-abbrs:")
@@ -126,7 +124,7 @@ func dumpCmd(
 			}
 		}
 
-		if !skeleton && cic != nil {
+		if !args.Skeleton && cic != nil {
 			args := cic.Args()
 			argNames := args.Names()
 			if len(argNames) != 0 {
@@ -135,7 +133,7 @@ func dumpCmd(
 			for _, name := range argNames {
 				val := args.DefVal(name)
 				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
-				prt(2, nameStr+" = "+MayQuoteStr(val))
+				prt(2, nameStr+" = "+mayQuoteStr(val))
 			}
 
 			envOps := cic.EnvOps()
@@ -195,10 +193,9 @@ func dumpCmd(
 		}
 	}
 
-	if recursive {
+	if args.Recursive {
 		for _, name := range cmd.SubNames() {
-			dumpCmd(screen, cmd.GetSub(name), skeleton, indentSize,
-				recursive, flatten, indentAdjust, findStrs...)
+			dumpCmd(screen, cmd.GetSub(name), args, indentAdjust)
 		}
 	}
 }
