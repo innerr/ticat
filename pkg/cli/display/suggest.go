@@ -29,12 +29,22 @@ func SuggestListCmds(env *core.Env) []string {
 	}
 }
 
-func SuggestFindCmds(env *core.Env) []string {
+func SuggestFindCmdsMore(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" str1 str2 :+", indent) + "- search commands with details",
+	}
+}
+
+func SuggestFindCmdsLess(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" str1 str2 :-", indent) + "- search commands",
-		padR(selfName+" str1 str2 :+", indent) + "- search commands with details",
 	}
+}
+
+func SuggestFindCmds(env *core.Env) []string {
+	return append(SuggestFindCmdsLess(env), SuggestFindCmdsMore(env)...)
 }
 
 func SuggestFindRepoTag(env *core.Env) []string {
@@ -131,7 +141,7 @@ func SuggestFindProvider(env *core.Env) []string {
 func SuggestFlowsFilter(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" h find-str find-str", indent) + "- find flows matched these strings",
+		padR(selfName+" h str1 str2", indent) + "- find flows matched these strings",
 	}
 }
 

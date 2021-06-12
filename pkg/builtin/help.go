@@ -138,8 +138,8 @@ func dumpMoreLessFindResult(
 	findStr := strings.Join(findStrs, " ")
 	selfName := env.GetRaw("strs.self-name")
 
-	prt := func(text string) {
-		display.PrintTipTitle(screen, env, text)
+	prt := func(text ...interface{}) {
+		display.PrintTipTitle(screen, env, text...)
 	}
 
 	printer := display.NewCacheScreen()
@@ -158,7 +158,13 @@ func dumpMoreLessFindResult(
 			}
 		} else {
 			if printer.OutputNum() > 0 {
-				prt(tip + "and found" + matchStr)
+				if printer.OutputNum() <= 6 {
+					prt(tip+"and found"+matchStr,
+						"",
+						"get more details by using '-' instead of '+'.")
+				} else {
+					prt(tip + "and found" + matchStr)
+				}
 			} else {
 				prt(tip + "but no" + matchStr)
 			}
@@ -186,10 +192,11 @@ func dumpMoreLessFindResult(
 		if !skeleton {
 			tips.Prints("get a brief view by using '-' instead of '+'.", "")
 			tips.Prints("or/and locate exact commands by adding more keywords:", "")
+			tips.Prints(display.SuggestFindCmds(env)...)
 		} else {
 			tips.Prints("locate exact commands by adding more keywords:", "")
+			tips.Prints(display.SuggestFindCmdsLess(env)...)
 		}
-		tips.Prints(display.SuggestFindCmds(env)...)
 		tips.Finish()
 	}
 

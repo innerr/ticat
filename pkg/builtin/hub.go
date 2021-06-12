@@ -38,7 +38,7 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
 	addr := getAndCheckArg(argv, env, cmd, "git-address")
 	addRepoToHub(addr, argv, cc.Screen, env, cmd)
-	showFindTip(cc.Screen, env)
+	showHubFindTip(cc.Screen, env)
 	return true
 }
 
@@ -48,7 +48,7 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core
 		panic(core.NewCmdError(cmd, "cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
 	}
 	addRepoToHub(addr, argv, cc.Screen, env, cmd)
-	showFindTip(cc.Screen, env)
+	showHubFindTip(cc.Screen, env)
 	return true
 }
 
@@ -183,7 +183,7 @@ func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 			continue
 		}
 		count += 1
-		cc.Screen.Print(fmt.Sprintf("[%s]%s\n", repoDisplayName(info), enabledStr(env, true)))
+		cc.Screen.Print(fmt.Sprintf("[%s] (enabled)\n", repoDisplayName(info)))
 		printInfoProps(cc.Screen, info)
 		info.OnOff = "on"
 		extracted[i] = info
@@ -213,7 +213,7 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 	var count int
 	for i, info := range extracted {
 		if info.OnOff == "on" {
-			cc.Screen.Print(fmt.Sprintf("[%s]%s\n", repoDisplayName(info), disabledStr(env)))
+			cc.Screen.Print(fmt.Sprintf("[%s] (disabled)\n", repoDisplayName(info)))
 			printInfoProps(cc.Screen, info)
 			if info.OnOff != "disabled" {
 				count += 1
@@ -227,7 +227,7 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 
 	if count > 0 {
 		display.PrintTipTitle(cc.Screen, env,
-			"a disabled repo will not update, commands in it are not available")
+			"need two steps to remove a repo or unlink a dir: disable, purge")
 	} else {
 		display.PrintTipTitle(cc.Screen, env,
 			"no enabled repos matched find string '"+findStr+"'")
@@ -251,6 +251,8 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 		panic(core.WrapCmdError(cmd, fmt.Errorf("get abs path of '%v' failed: %v", path, err)))
 	}
 
+	screen := display.NewCacheScreen()
+
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
@@ -258,14 +260,16 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 	for i, info := range infos {
 		if info.Path == path {
 			if info.OnOff == "on" {
-				cc.Screen.Print(fmt.Sprintf("[%s] (exists)\n", repoDisplayName(info)))
-				printInfoProps(cc.Screen, info)
+				screen.Print(fmt.Sprintf("[%s] (exists)\n", repoDisplayName(info)))
+				printInfoProps(screen, info)
+				display.PrintTipTitle(cc.Screen, env,
+					"local dir already in hub, nothing to do")
 				return true
 			}
 			info.OnOff = "on"
 			infos[i] = info
-			cc.Screen.Print(fmt.Sprintf("[%s] (%s)\n", repoDisplayName(info), info.OnOff))
-			printInfoProps(cc.Screen, info)
+			screen.Print(fmt.Sprintf("[%s] (enabled)\n", repoDisplayName(info)))
+			printInfoProps(screen, info)
 			found = true
 			break
 		}
@@ -277,13 +281,19 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 		helpStr, _, _ := meta.ReadRepoListFromFile(env.GetRaw("strs.self-name"), listFilePath)
 		info := meta.RepoInfo{"", "<local>", path, helpStr, "on"}
 		infos = append(infos, info)
-		cc.Screen.Print(fmt.Sprintf("[%s]\n", repoDisplayName(info)))
-		printInfoProps(cc.Screen, info)
+		screen.Print(fmt.Sprintf("[%s]\n", repoDisplayName(info)))
+		printInfoProps(screen, info)
 	}
 	meta.WriteReposInfoFile(metaPath, infos, fieldSep)
 
-	display.PrintTipTitle(cc.Screen, env,
-		"need two steps to remove a repo or unlink a dir: disable, purge")
+	if !found {
+		display.PrintTipTitle(cc.Screen, env,
+			"local dir added to hub")
+	} else {
+		display.PrintTipTitle(cc.Screen, env,
+			"local dir re-enabled")
+	}
+	screen.WriteTo(cc.Screen)
 
 	// TODO: load mods now?
 	return true
@@ -291,21 +301,21 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 
 func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
 	path := argv.GetRaw("path")
-	if len(path) == 0 {
-		panic(core.NewCmdError(cmd, "arg 'path' is empty"))
-	}
-
-	stat, err := os.Stat(path)
-	if err != nil && !os.IsNotExist(err) {
-		panic(core.WrapCmdError(cmd, fmt.Errorf("access path '%v' failed: %v", path, err)))
-	}
-
-	if !os.IsNotExist(err) {
-		if !stat.IsDir() {
-			panic(core.WrapCmdError(cmd, fmt.Errorf("path '%v' exists but is not a dir", path)))
+	if len(path) != 0 {
+		stat, err := os.Stat(path)
+		if err != nil && !os.IsNotExist(err) {
+			panic(core.WrapCmdError(cmd, fmt.Errorf("access path '%v' failed: %v", path, err)))
 		}
-		moveSavedFlowsToLocalDir(path, cc, env, cmd)
-		return true
+
+		if !os.IsNotExist(err) {
+			if !stat.IsDir() {
+				panic(core.WrapCmdError(cmd, fmt.Errorf("path '%v' exists but is not a dir", path)))
+			}
+			moveSavedFlowsToLocalDir(path, cc, env, cmd)
+			display.PrintTipTitle(cc.Screen, env,
+				"all saved flow moved to '"+path+"'.")
+			return true
+		}
 	}
 
 	metaPath := getReposInfoPath(env, cmd)
@@ -341,13 +351,16 @@ func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, cm
 	if len(locals) > 1 {
 		display.PrintErrTitle(cc.Screen, env,
 			"cant't determine which dir by string '"+path+"'.",
-			"only could move to the one and only one matched dir.",
+			"only could move to the one and only matched dir.",
 			"", "current matcheds:")
 		listHub(cc.Screen, env, locals)
 		return false
 	}
 
 	moveSavedFlowsToLocalDir(locals[0].Path, cc, env, cmd)
+
+	display.PrintTipTitle(cc.Screen, env,
+		"all saved flow moved to '"+locals[0].Path+"', it's the only local dir in hub")
 	return true
 }
 
@@ -583,7 +596,7 @@ func matchFindRepoInfo(info meta.RepoInfo, findStr string) bool {
 	return false
 }
 
-func showFindTip(screen core.Screen, env *core.Env) {
+func showHubFindTip(screen core.Screen, env *core.Env) {
 	display.PrintTipTitle(screen, env,
 		"try to search commands by tag @ready, it means 'out-of-the-box':",
 		"",
@@ -608,7 +621,7 @@ func repoDisplayName(info meta.RepoInfo) string {
 
 func disabledStr(env *core.Env) string {
 	if env.GetBool("display.utf8.symbols") {
-		return "❎(disabled)"
+		return "🛑(disabled)"
 	} else {
 		return " (disabled)"
 	}
@@ -631,17 +644,9 @@ func enabledStr(env *core.Env, str bool) string {
 }
 
 func purgedStr(env *core.Env, isLocal bool) string {
-	if env.GetBool("display.utf8.symbols") {
-		if isLocal {
-			return "❎(unlinked)"
-		} else {
-			return "🚮(purged)"
-		}
+	if isLocal {
+		return " (unlinked)"
 	} else {
-		if isLocal {
-			return " (unlinked)"
-		} else {
-			return " (purged)"
-		}
+		return " (purged)"
 	}
 }
