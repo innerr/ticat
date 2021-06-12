@@ -44,47 +44,23 @@ func PrintSepTitle(screen core.Screen, env *core.Env, msg string) {
 	screen.Print(rpt("-", width-len(msg)) + "<[" + msg + "]\n")
 }
 
-// TODO: unused
-func PrintDisplayBlockSep(screen core.Screen, env *core.Env, title string) {
-	if env.GetBool("display.utf8") {
-		PrintTipTitle(screen, env, title)
-	} else {
-		screen.Print(fmt.Sprintf("-------=<%s>=-------\n", title))
-	}
-}
-
-func PrintPanicHeader(screen core.Screen, title string) {
-	screen.Error("======================================\n\n")
-	screen.Error(fmt.Sprintf("[ERR] %s:\n", title))
-}
-
-func PrintPanicFooter(screen core.Screen) {
-	screen.Error("\n======================================\n\n")
-}
-
-func PrintPanic(screen core.Screen, title string, kvs []string) {
-	PrintPanicHeader(screen, title)
-	for i := 0; i+1 < len(kvs); i += 2 {
-		screen.Error(fmt.Sprintf("    - %s:\n", kvs[i]))
-		screen.Error(fmt.Sprintf("        %s\n", kvs[i+1]))
-	}
-	PrintPanicFooter(screen)
-}
-
 func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableErrs) {
 	for _, err := range errs.Uncatalogeds {
-		PrintPanic(screen, err.Reason, []string{
-			"source", err.Source,
-			"error", err.Err.(error).Error(),
-		})
+		PrintErrTitle(screen, env,
+			err.Reason+", from repo/dir:",
+			"    - '"+err.Source+"'",
+			"detail:",
+			"    - "+err.Err.(error).Error())
 	}
 
 	// Conflicted error list:
+	//
 	// CmdTreeErrSubCmdConflicted
 	// CmdTreeErrSubAbbrConflicted
 	// CmdTreeErrExecutableConflicted
 
-	// TODO: add '<builtin>' to env strs
+	sep := env.GetRaw("strs.cmd-path-sep")
+
 	for newSource, list := range errs.ConflictedWithBuiltin {
 		if len(list) > 1 {
 			PrintErrTitle(screen, env,
@@ -97,9 +73,12 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 			)
 		} else {
 			for _, err := range list {
+				cmdPath := err.Err.(core.ErrConflicted).GetConflictedCmdPath()
 				PrintErrTitle(screen, env,
 					err.Reason+", command conflicted with builtin's, from repo/dir:",
 					"    - '"+err.Source+"'",
+					"command:",
+					"    - "+strings.Join(cmdPath, sep),
 					"detail:",
 					"    - "+err.Err.(error).Error(),
 					"",
@@ -117,18 +96,21 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 					"    - '"+oldSource+"'",
 					"    - '"+newSource+"' (conflicteds are not loaded)",
 					"",
-					"use command 'hub.disable' to disable one of them.",
+					"use command 'h.disable' to disable one of them.",
 				)
 			} else {
 				for _, err := range list {
+					cmdPath := err.Err.(core.ErrConflicted).GetConflictedCmdPath()
 					PrintErrTitle(screen, env,
 						err.Reason+", command conflicted from repos/dirs:",
 						"    - '"+oldSource+"'",
 						"    - '"+newSource+"' (not loaded)",
+						"command:",
+						"    - "+strings.Join(cmdPath, sep),
 						"detail:",
 						"    - "+err.Err.(error).Error(),
 						"",
-						"use command 'hub.disable' to disable one of the repo/dir, or edit the command.",
+						"use command 'h.disable' to disable one of the repo/dir, or edit the command.",
 					)
 				}
 			}

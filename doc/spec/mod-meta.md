@@ -129,7 +129,4 @@ $> ticat db.stop
 ## Register conflictions
 When more than one command register to a same command path,
 or more than one abbrs for a command path segment,
-**ticat** will throws errors by confllictions.
-
-In this case, manually edit the hub file is recommended for now.
-(TODO: better way to detect and solve conflictions)
+**ticat** will display conflicting errors.

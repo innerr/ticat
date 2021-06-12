@@ -8,15 +8,16 @@ import (
 // TODO: share some code with EnvAbbrs
 
 type CmdTreeStrs struct {
-	RootDisplayName  string
-	PathSep          string
-	PathAlterSeps    string
-	AbbrsSep         string
-	EnvOpSep         string
-	EnvValDelAllMark string
-	EnvKeyValSep     string
-	EnvPathSep       string
-	ProtoSep         string
+	RootDisplayName    string
+	BuiltinDisplayName string
+	PathSep            string
+	PathAlterSeps      string
+	AbbrsSep           string
+	EnvOpSep           string
+	EnvValDelAllMark   string
+	EnvKeyValSep       string
+	EnvPathSep         string
+	ProtoSep           string
 }
 
 type CmdTree struct {
@@ -68,8 +69,7 @@ func (self *CmdTree) cmdConflictCheck(help string, funName string) {
 		return
 	}
 	err := CmdTreeErrExecutableConflicted{
-		fmt.Sprintf("[%s]: reg-cmd conflicted. old '%s', new '%s'",
-			self.DisplayPath(),
+		fmt.Sprintf("reg-cmd conflicted. old-help '%s', new-help '%s'",
 			strings.Split(self.cmd.Help(), "\n")[0],
 			strings.Split(help, "\n")[0]),
 		self.Path(),
@@ -129,8 +129,7 @@ func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
 func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	if old, ok := self.subs[name]; ok && old.name != name {
 		err := CmdTreeErrSubCmdConflicted{
-			fmt.Sprintf("[%s]: sub-cmd name conflicted: %s",
-				self.DisplayPath(), name),
+			fmt.Sprintf("sub-cmd name conflicted: %s", name),
 			self.Path(),
 			name,
 			old.cmd.Source(),

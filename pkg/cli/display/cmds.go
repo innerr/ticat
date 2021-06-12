@@ -68,6 +68,7 @@ func dumpCmd(
 		return
 	}
 
+	builtinName := cmd.Strs.BuiltinDisplayName
 	abbrsSep := cmd.Strs.AbbrsSep
 	envOpSep := " " + cmd.Strs.EnvOpSep + " "
 	indent := cmd.Depth() + indentAdjust
@@ -168,7 +169,7 @@ func dumpCmd(
 			if len(cic.Source()) == 0 || !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
 				prt(1, "- from:")
 				if len(cic.Source()) == 0 {
-					prt(2, "builtin")
+					prt(2, builtinName)
 				} else {
 					prt(2, cic.Source())
 				}

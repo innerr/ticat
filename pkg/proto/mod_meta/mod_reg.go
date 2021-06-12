@@ -109,7 +109,6 @@ func RegMod(
 			var path []string
 			for _, seg := range segs {
 				var abbrs []string
-				// TODO: just use ":"
 				fields := strings.Split(seg, abbrsSep)
 				if len(fields) == 1 {
 					fields = strings.Split(seg, ":")
@@ -129,7 +128,6 @@ func RegMod(
 
 			key := strings.Join(path, envPathSep)
 			opFields := strings.Split(op, abbrsSep)
-			// TODO: change all "|" to ":" in envOps
 			if len(opFields) == 1 {
 				opFields = strings.Split(op, ":")
 			}

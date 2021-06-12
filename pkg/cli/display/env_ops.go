@@ -22,7 +22,7 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 		}
 	}
 
-	if env.GetBool("display.utf8") {
+	if !env.GetBool("display.flow.simplified") {
 		if len(fatals.result) != 0 {
 			PrintErrTitle(screen, env,
 				"this flow has 'read before write' on env keys, so it can't execute.",

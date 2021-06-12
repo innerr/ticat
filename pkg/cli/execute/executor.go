@@ -24,7 +24,7 @@ type Executor struct {
 func NewExecutor(sessionFileName string) *Executor {
 	return &Executor{
 		[]ExecFunc{
-			// TODO: implement and add functions: flowFlatten, mockModInject, stepByStepInject
+			// TODO: implement and add functions: flowFlatten, mockModInject
 			filterEmptyCmdsAndReorderByPriority,
 			verifyEnvOps,
 		},
@@ -244,7 +244,6 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core
 
 	for _, dir := range dirs {
 		pid, err := strconv.Atoi(dir.Name())
-		// TODO: warning
 		if err != nil {
 			continue
 		}

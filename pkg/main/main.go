@@ -21,6 +21,7 @@ func main() {
 	// Any mod could get the specific string val from env when it's called
 	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
 	defEnv.Set("strs.self-name", SelfName)
+	defEnv.Set("strs.cmd-builtin-display-name", CmdBuiltinDisplayName)
 	defEnv.Set("strs.meta-ext", MetaExt)
 	defEnv.Set("strs.flow-ext", FlowExt)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)
@@ -46,6 +47,7 @@ func main() {
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
 		CmdRootDisplayName,
+		CmdBuiltinDisplayName,
 		CmdPathSep,
 		CmdPathAlterSeps,
 		AbbrsSep,
@@ -114,30 +116,31 @@ func main() {
 }
 
 const (
-	SelfName            string = "ticat"
-	CmdRootDisplayName  string = "<root>"
-	Spaces              string = "\t\n\r "
-	AbbrsSep            string = "|"
-	EnvOpSep            string = ":"
-	SequenceSep         string = ":"
-	CmdPathSep          string = "."
-	CmdPathAlterSeps    string = "./"
-	EnvBracketLeft      string = "{"
-	EnvBracketRight     string = "}"
-	EnvKeyValSep        string = "="
-	EnvPathSep          string = "."
-	EnvValDelAllMark    string = "--"
-	EnvRuntimeSysPrefix string = "sys"
-	EnvStrsPrefix       string = "strs"
-	EnvFileName         string = "bootstrap.env"
-	ProtoSep            string = "\t"
-	ModsRepoExt         string = "." + SelfName
-	MetaExt             string = "." + SelfName
-	FlowExt             string = ".flow." + SelfName
-	HubFileName         string = "repos.hub"
-	ReposFileName       string = "README.md"
-	SessionEnvFileName  string = "env"
-	TagOutOfTheBox      string = "@ready"
-	TagProvider         string = "@provider"
-	TagSelfTest         string = "@selftest"
+	SelfName              string = "ticat"
+	CmdRootDisplayName    string = "<root>"
+	CmdBuiltinDisplayName string = "<builtin>"
+	Spaces                string = "\t\n\r "
+	AbbrsSep              string = "|"
+	EnvOpSep              string = ":"
+	SequenceSep           string = ":"
+	CmdPathSep            string = "."
+	CmdPathAlterSeps      string = "./"
+	EnvBracketLeft        string = "{"
+	EnvBracketRight       string = "}"
+	EnvKeyValSep          string = "="
+	EnvPathSep            string = "."
+	EnvValDelAllMark      string = "--"
+	EnvRuntimeSysPrefix   string = "sys"
+	EnvStrsPrefix         string = "strs"
+	EnvFileName           string = "bootstrap.env"
+	ProtoSep              string = "\t"
+	ModsRepoExt           string = "." + SelfName
+	MetaExt               string = "." + SelfName
+	FlowExt               string = ".flow." + SelfName
+	HubFileName           string = "repos.hub"
+	ReposFileName         string = "README.md"
+	SessionEnvFileName    string = "env"
+	TagOutOfTheBox        string = "@ready"
+	TagProvider           string = "@provider"
+	TagSelfTest           string = "@selftest"
 )

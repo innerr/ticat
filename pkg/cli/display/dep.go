@@ -20,7 +20,7 @@ func DumpDepends(cc *core.Cli, env *core.Env, deps Depends) {
 
 	sep := env.Get("strs.cmd-path-sep").Raw
 
-	if env.GetBool("display.utf8") {
+	if !env.GetBool("display.flow.simplified") {
 		PrintTipTitle(cc.Screen, env,
 			"depended os commands.",
 			"",

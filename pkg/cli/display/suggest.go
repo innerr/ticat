@@ -49,14 +49,14 @@ func SuggestFindRepoTag(env *core.Env) []string {
 
 func SuggestHubAdd(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	exampleRepo := env.GetRaw("display.example-https-repo")
 	return []string{
 		padR(selfName+" h.init", indent) +
 			"- get more commands by adding a default git repo",
 		padR(selfName+" h.+ innerr/tidb."+selfName, indent) +
 			"- get more commands by adding a git repo,",
 		padR("", indent+2) + "could use https address like:",
-		// TODO: move repo name to env?
-		padR("", indent+2) + "'https://github.com/innerr/tidb." + selfName + "'",
+		padR("", indent+2) + "'" + exampleRepo + "'",
 	}
 }
 
