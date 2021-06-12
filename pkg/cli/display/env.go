@@ -7,7 +7,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func DumpEnv(screen core.Screen, env *core.Env, indentSize int) {
+func DumpEnvTree(screen core.Screen, env *core.Env, indentSize int) {
 	lines := dumpEnv(env, true, true, true, true, nil, indentSize)
 	for _, line := range lines {
 		screen.Print(line + "\n")
@@ -21,7 +21,7 @@ func DumpEssentialEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...
 		"sys.",
 		"display.",
 	}
-	flatten := env.Flatten(false, filterPrefixs, false)
+	flatten := env.Flatten(false, filterPrefixs, true)
 	dumpEnvFlattenVals(screen, flatten, findStrs...)
 }
 

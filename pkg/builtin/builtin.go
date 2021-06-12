@@ -169,7 +169,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 	addFindStrArgs(env)
 
 	env.AddSub("tree", "t", "T").
-		RegCmd(DumpEnv,
+		RegCmd(DumpEnvTree,
 			"list all env layers and KVs in tree format")
 
 	// TODO: add search supporting

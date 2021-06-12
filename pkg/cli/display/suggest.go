@@ -36,6 +36,25 @@ func SuggestFindCmdsMore(env *core.Env) []string {
 	}
 }
 
+func SuggestAddAndSaveEnv(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" {k1=v2 k2=v2} cmd1 : cmd2", indent) + "- set env key-values, one time only",
+		"",
+		padR(selfName+" {k1=v2 k2=v2} e.save", indent) + "- save the key-values",
+		padR(selfName+" cmd1 : cmd2", indent) + "- execute with saved key-values",
+		"",
+		padR(selfName+" e", indent) + "- list saved env key-values",
+	}
+}
+
+func SuggestFindEnv(env *core.Env, subCmd string) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" e"+subCmd+" str1 str2 :-", indent) + "- search env keys",
+	}
+}
+
 func SuggestFindCmdsLess(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{

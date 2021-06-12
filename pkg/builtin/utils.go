@@ -12,7 +12,7 @@ import (
 
 func tooMuchOutput(env *core.Env, screen core.Screen) bool {
 	height := env.GetInt("display.height")
-	return height > 0 && screen.OutputNum() > int(float64(height)*1.5)
+	return height > 0 && screen.OutputNum() > int(float64(height)*1.1)
 }
 
 func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
