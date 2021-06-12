@@ -180,8 +180,7 @@ func dumpMoreLessFindResult(
 	}
 	printer.WriteTo(screen)
 
-	height := env.GetInt("display.height")
-	if height > 0 && printer.OutputNum() > int(float64(height)*1.5) {
+	if tooMuchOutput(env, printer) {
 		printer.WriteTo(screen)
 		tips := display.NewTipBoxPrinter(screen, env, false)
 		if !skeleton {

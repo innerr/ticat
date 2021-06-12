@@ -49,7 +49,9 @@ func (self *Executor) Execute(cc *core.Cli, input ...string) bool {
 }
 
 func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) bool {
-	useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
+	if cc.GlobalEnv.GetBool("sys.env.use-cmd-abbrs") {
+		useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
+	}
 	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
 
 	if len(input) == 0 {

@@ -93,7 +93,7 @@ func SuggestFlowAdd(env *core.Env) []string {
 	return []string{
 		padR(selfName+" dbg.echo hi : slp 1s : f.+ xx", indent) +
 			"- create a flow 'xx' by 'f.+' for convenient",
-		padR(selfName+" xx", indent) + "- execute command 'xx'",
+		padR(selfName+" xx", indent) + "- execute flow command 'xx'",
 	}
 }
 
@@ -125,6 +125,13 @@ func SuggestFindProvider(env *core.Env) []string {
 	return []string{
 		padR(prefix+"-", indent) + explain,
 		padR(prefix+"+", indent) + explain + ", with details",
+	}
+}
+
+func SuggestFlowsFilter(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" h find-str find-str", indent) + "- find flows matched these strings",
 	}
 }
 

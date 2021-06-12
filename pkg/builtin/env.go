@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/cli/display"
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
@@ -21,6 +22,8 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.Set("sys.version", "1.0.0")
 	env.Set("sys.dev.name", "marsh")
+
+	env.SetBool("sys.env.use-cmd-abbrs", false)
 
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
@@ -115,6 +118,7 @@ func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCm
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.SaveEnvToFile(env, path, kvSep)
+	display.PrintTipTitle(cc.Screen, env, "changes of env are saved")
 	return true
 }
 
@@ -129,15 +133,22 @@ func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env, 
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.SaveEnvToFile(env.GetLayer(core.EnvLayerSession), path, kvSep)
+	display.PrintTipTitle(cc.Screen, env, "key '"+key+"' removed, changes of env are saved")
 	return true
 }
 
 func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	path := getEnvLocalFilePath(env)
 	err := os.Remove(path)
-	if err != nil && !os.IsNotExist(err) {
-		panic(fmt.Errorf("[ResetLocalEnv] remove env file '%s' failed: %v", path, err))
+	if err != nil {
+		if os.IsNotExist(err) {
+			display.PrintTipTitle(cc.Screen, env, "there is no saved env changes, nothing to do")
+			return true
+		} else {
+			panic(fmt.Errorf("[ResetLocalEnv] remove env file '%s' failed: %v", path, err))
+		}
 	}
+	display.PrintTipTitle(cc.Screen, env, "all saved env changes are removed")
 	return true
 }
 
