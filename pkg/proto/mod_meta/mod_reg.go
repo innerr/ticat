@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
-	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
 func RegMod(
@@ -21,21 +20,12 @@ func RegMod(
 	source string) {
 
 	defer func() {
-		// TODO: configurable display
-		// CmdTreeErrSubCmdConflicted
-		// CmdTreeErrSubAbbrConflicted
-		// CmdTreeErrExecutableConflicted
 		if err := recover(); err != nil {
-			display.PrintPanic(cc.Screen, "mod loading failed", []string{
-				"cmd", cmdPath,
-				"source", source,
-				"error", err.(error).Error(),
-			})
+			cc.TolerableErrs.OnErr(err, source, "module loading failed")
 		}
 	}()
 
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
-
 	meta := NewModMeta(metaPath)
 
 	// 'cmd' should be a relative path base on this file

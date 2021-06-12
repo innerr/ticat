@@ -70,6 +70,8 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 		return false
 	}
 
+	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
+
 	for _, function := range self.funcs {
 		if !function(cc, flow, env) {
 			return false

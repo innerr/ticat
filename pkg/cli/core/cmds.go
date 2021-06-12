@@ -69,7 +69,9 @@ func (self *CmdTree) cmdConflictCheck(help string, funName string) {
 	}
 	err := CmdTreeErrExecutableConflicted{
 		fmt.Sprintf("[%s]: reg-cmd conflicted. old '%s', new '%s'",
-			self.DisplayPath(), self.cmd.Help(), help),
+			self.DisplayPath(),
+			strings.Split(self.cmd.Help(), "\n")[0],
+			strings.Split(help, "\n")[0]),
 		self.Path(),
 		self.cmd.Source(),
 	}
@@ -343,38 +345,4 @@ func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {
 		sub = self.AddSub(name)
 	}
 	return sub.getSub(addIfNotExists, path[1:]...)
-}
-
-type CmdTreeErrExecutableConflicted struct {
-	Str       string
-	CmdPath   []string
-	OldSource string
-}
-
-func (self CmdTreeErrExecutableConflicted) Error() string {
-	return self.Str
-}
-
-type CmdTreeErrSubCmdConflicted struct {
-	Str           string
-	ParentCmdPath []string
-	SubCmdName    string
-	OldSource     string
-}
-
-func (self CmdTreeErrSubCmdConflicted) Error() string {
-	return self.Str
-}
-
-type CmdTreeErrSubAbbrConflicted struct {
-	Str           string
-	ParentCmdPath []string
-	Abbr          string
-	ForOldCmdName string
-	ForNewCmdName string
-	OldSource     string
-}
-
-func (self CmdTreeErrSubAbbrConflicted) Error() string {
-	return self.Str
 }

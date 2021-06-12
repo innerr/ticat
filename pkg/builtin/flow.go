@@ -141,17 +141,16 @@ func SaveFlow(
 		}
 	}
 
-	width := env.GetInt("display.width")
-
 	w := bytes.NewBuffer(nil)
 	flow.RemoveLeadingCmds(1)
 	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
 	data := w.String()
-	cc.Screen.Print(strings.Repeat("-", width) + "\n")
-	cc.Screen.Print(data)
-	cc.Screen.Print(strings.Repeat("-", width) + "\n")
+
 	cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
-	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
+	cc.Screen.Print("    - flow:\n")
+	cc.Screen.Print(fmt.Sprintf("        %s", data))
+	cc.Screen.Print("    - executable:\n")
+	cc.Screen.Print(fmt.Sprintf("        %s\n", filePath))
 
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
@@ -230,22 +229,8 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 func loadFlow(cc *core.Cli, root string, path string, flowExt string, source string) {
 	var cmdPathStr string
 	defer func() {
-		// TODO: configurable display
-		// CmdTreeErrSubCmdConflicted
-		// CmdTreeErrSubAbbrConflicted
-		// CmdTreeErrExecutableConflicted
 		if err := recover(); err != nil {
-			cc.Screen.Error("======================================\n\n")
-			cc.Screen.Error("[ERR] flow loading failed:\n")
-			if len(cmdPathStr) != 0 {
-				cc.Screen.Error("    - cmd:\n")
-				cc.Screen.Error(fmt.Sprintf("        %s\n", cmdPathStr))
-			}
-			cc.Screen.Error("    - source:\n")
-			cc.Screen.Error(fmt.Sprintf("        %s\n", source))
-			cc.Screen.Error("    - error:\n")
-			cc.Screen.Error(fmt.Sprintf("        %s\n", err.(error).Error()))
-			cc.Screen.Error("\n======================================\n\n")
+			cc.TolerableErrs.OnErr(err, source, "flow loading failed")
 		}
 	}()
 

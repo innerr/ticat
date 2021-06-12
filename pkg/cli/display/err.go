@@ -70,3 +70,68 @@ func PrintPanic(screen core.Screen, title string, kvs []string) {
 	}
 	PrintPanicFooter(screen)
 }
+
+func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableErrs) {
+	for _, err := range errs.Uncatalogeds {
+		PrintPanic(screen, err.Reason, []string{
+			"source", err.Source,
+			"error", err.Err.(error).Error(),
+		})
+	}
+
+	// Conflicted error list:
+	// CmdTreeErrSubCmdConflicted
+	// CmdTreeErrSubAbbrConflicted
+	// CmdTreeErrExecutableConflicted
+
+	// TODO: add '<builtin>' to env strs
+	for newSource, list := range errs.ConflictedWithBuiltin {
+		if len(list) > 1 {
+			PrintErrTitle(screen, env,
+				fmt.Sprintf("this repo/dir has too many (%v) conflicts with builtin commands:", len(list)),
+				"",
+				"    - '"+newSource+"'",
+				"",
+				"conflicted commands are not loaded.",
+				"use command 'hub.disable' to disable the repo/dir, or edit these commands.",
+			)
+		} else {
+			for _, err := range list {
+				PrintErrTitle(screen, env,
+					err.Reason+", command conflicted with builtin's, from repo/dir:",
+					"    - '"+err.Source+"'",
+					"detail:",
+					"    - "+err.Err.(error).Error(),
+					"",
+					"use command 'hub.disable' to disable the repo/dir, or edit this command.")
+			}
+		}
+	}
+
+	for oldSource, conflicteds := range errs.Conflicteds {
+		for newSource, list := range conflicteds {
+			if len(list) > 1 {
+				PrintErrTitle(screen, env,
+					fmt.Sprintf("too many (%v) conflicts between these two repos/dirs:", len(list)),
+					"",
+					"    - '"+oldSource+"'",
+					"    - '"+newSource+"' (conflicteds are not loaded)",
+					"",
+					"use command 'hub.disable' to disable one of them.",
+				)
+			} else {
+				for _, err := range list {
+					PrintErrTitle(screen, env,
+						err.Reason+", command conflicted from repos/dirs:",
+						"    - '"+oldSource+"'",
+						"    - '"+newSource+"' (not loaded)",
+						"detail:",
+						"    - "+err.Err.(error).Error(),
+						"",
+						"use command 'hub.disable' to disable one of the repo/dir, or edit the command.",
+					)
+				}
+			}
+		}
+	}
+}
