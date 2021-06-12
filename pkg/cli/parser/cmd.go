@@ -202,10 +202,6 @@ func (self *CmdParser) displayPath(matchedCmdPath []string) string {
 	return displayPath
 }
 
-func (self *CmdParser) err(function string, matchedCmdPath []string, msg string) {
-	panic(fmt.Errorf("[CmdParser.%s] %s: %s", function, self.displayPath(matchedCmdPath), msg))
-}
-
 type parsedSegType uint
 
 const (

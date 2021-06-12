@@ -11,24 +11,17 @@ func DumpFlow(
 	cc *core.Cli,
 	env *core.Env,
 	flow []core.ParsedCmd,
-	sep string,
-	indentSize int,
-	simple bool,
-	skeleton bool) {
-
-	depth := env.GetInt("display.flow.depth")
-
-	if skeleton {
-		simple = true
-	}
+	args *DumpFlowArgs) {
 
 	if len(flow) == 0 {
 		return
 	}
 
+	maxDepth := env.GetInt("display.flow.depth")
+
 	PrintTipTitle(cc.Screen, env, "flow executing description:")
 	cc.Screen.Print("--->>>\n")
-	dumpFlow(cc, env, flow, depth, sep, indentSize, simple, skeleton, 0)
+	dumpFlow(cc, env, flow, args, maxDepth, 0)
 	cc.Screen.Print("<<<---\n")
 }
 
@@ -36,17 +29,14 @@ func dumpFlow(
 	cc *core.Cli,
 	env *core.Env,
 	flow []core.ParsedCmd,
-	depth int,
-	sep string,
-	indentSize int,
-	simple bool,
-	skeleton bool,
+	args *DumpFlowArgs,
+	maxDepth int,
 	indentAdjust int) {
 
 	for _, cmd := range flow {
 		if !cmd.IsEmpty() {
-			dumpFlowCmd(cc, cc.Screen, env, cmd, depth, sep, indentSize,
-				simple, skeleton, indentAdjust)
+			dumpFlowCmd(cc, cc.Screen, env, cmd, args,
+				maxDepth, indentAdjust)
 		}
 	}
 }
@@ -56,11 +46,8 @@ func dumpFlowCmd(
 	screen core.Screen,
 	env *core.Env,
 	parsedCmd core.ParsedCmd,
-	depth int,
-	sep string,
-	indentSize int,
-	simple bool,
-	skeleton bool,
+	args *DumpFlowArgs,
+	maxDepth int,
 	indentAdjust int) {
 
 	cmd := parsedCmd.Last().Matched.Cmd
@@ -68,11 +55,12 @@ func dumpFlowCmd(
 		return
 	}
 
+	sep := cmd.Strs.PathSep
 	envOpSep := " " + cmd.Strs.EnvOpSep + " "
 
 	prt := func(indentLvl int, msg string) {
 		indentLvl += indentAdjust
-		padding := rpt(" ", indentSize*indentLvl)
+		padding := rpt(" ", args.IndentSize*indentLvl)
 		msg = autoPadNewLine(padding, msg)
 		screen.Print(padding + msg + "\n")
 	}
@@ -82,7 +70,7 @@ func dumpFlowCmd(
 		return
 	}
 	var name string
-	if skeleton {
+	if args.Skeleton {
 		name = strings.Join(parsedCmd.Path(), sep)
 	} else {
 		name = parsedCmd.DisplayPath(sep, true)
@@ -93,7 +81,7 @@ func dumpFlowCmd(
 	}
 
 	cmdEnv := parsedCmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
-	if !skeleton {
+	if !args.Skeleton {
 		args := parsedCmd.Args()
 		argv := cmdEnv.GetArgv(parsedCmd.Path(), sep, args)
 		argLines := DumpArgs(&args, argv, true)
@@ -105,7 +93,7 @@ func dumpFlowCmd(
 		}
 	}
 
-	if !skeleton {
+	if !args.Skeleton {
 		// TODO: missed kvs in GlobalEnv
 		cmdEnv = parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelAllMark)
 		flatten := cmdEnv.Flatten(false, nil, true)
@@ -122,7 +110,7 @@ func dumpFlowCmd(
 		}
 	}
 
-	if !skeleton {
+	if !args.Skeleton {
 		envOps := cic.EnvOps()
 		envOpKeys := envOps.EnvKeys()
 		if len(envOpKeys) != 0 {
@@ -133,7 +121,7 @@ func dumpFlowCmd(
 		}
 	}
 
-	if !simple && !skeleton {
+	if !args.Simple && !args.Skeleton {
 		line := string(cic.Type())
 		if cic.IsQuiet() {
 			line += " (quiet)"
@@ -152,10 +140,10 @@ func dumpFlowCmd(
 
 	if len(cic.CmdLine()) != 0 && cic.Type() != core.CmdTypeNormal &&
 		cic.Type() != core.CmdTypePower {
-		if cic.Type() == core.CmdTypeFlow && !skeleton {
+		if cic.Type() == core.CmdTypeFlow && !args.Skeleton {
 			prt(1, "- flow:")
 			prt(2, cic.CmdLine())
-		} else if !simple && !skeleton {
+		} else if !args.Simple && !args.Skeleton {
 			if cic.Type() == core.CmdTypeEmptyDir {
 				prt(1, "- dir:")
 				prt(2, cic.CmdLine())
@@ -168,11 +156,32 @@ func dumpFlowCmd(
 				prt(2, cic.MetaFile())
 			}
 		}
-		if cic.Type() == core.CmdTypeFlow && depth > 1 {
+		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 {
 			prt(2, "--->>>")
 			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
-			dumpFlow(cc, env, subFlow.Cmds, depth-1, sep, indentSize, simple, skeleton, indentAdjust+2)
+			dumpFlow(cc, env, subFlow.Cmds, args, maxDepth-1, indentAdjust+2)
 			prt(2, "<<<---")
 		}
 	}
+}
+
+type DumpFlowArgs struct {
+	Simple     bool
+	Skeleton   bool
+	IndentSize int
+}
+
+func NewDumpFlowArgs() *DumpFlowArgs {
+	return &DumpFlowArgs{false, false, 4}
+}
+
+func (self *DumpFlowArgs) SetSimple() *DumpFlowArgs {
+	self.Simple = true
+	return self
+}
+
+func (self *DumpFlowArgs) SetSkeleton() *DumpFlowArgs {
+	self.Simple = true
+	self.Skeleton = true
+	return self
 }

@@ -8,15 +8,16 @@ import (
 // TODO: share some code with EnvAbbrs
 
 type CmdTreeStrs struct {
-	RootDisplayName  string
-	PathSep          string
-	PathAlterSeps    string
-	AbbrsSep         string
-	EnvOpSep         string
-	EnvValDelAllMark string
-	EnvKeyValSep     string
-	EnvPathSep       string
-	ProtoSep         string
+	RootDisplayName    string
+	BuiltinDisplayName string
+	PathSep            string
+	PathAlterSeps      string
+	AbbrsSep           string
+	EnvOpSep           string
+	EnvValDelAllMark   string
+	EnvKeyValSep       string
+	EnvPathSep         string
+	ProtoSep           string
 }
 
 type CmdTree struct {
@@ -67,8 +68,14 @@ func (self *CmdTree) cmdConflictCheck(help string, funName string) {
 	if self.cmd.Type() == CmdTypeEmptyDir {
 		return
 	}
-	panic(fmt.Errorf("[CmdTree.%s] %s: reg-cmd conflicted. old '%s', new '%s'",
-		funName, self.DisplayPath(), self.cmd.Help(), help))
+	err := CmdTreeErrExecutableConflicted{
+		fmt.Sprintf("reg-cmd conflicted. old-help '%s', new-help '%s'",
+			strings.Split(self.cmd.Help(), "\n")[0],
+			strings.Split(help, "\n")[0]),
+		self.Path(),
+		self.cmd.Source(),
+	}
+	panic(err)
 }
 
 func (self *CmdTree) SetHidden() *CmdTree {
@@ -121,8 +128,13 @@ func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
 
 func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	if old, ok := self.subs[name]; ok && old.name != name {
-		panic(fmt.Errorf("[CmdTree.AddSub] %s: sub-cmd name conflicted: %s",
-			self.DisplayPath(), name))
+		err := CmdTreeErrSubCmdConflicted{
+			fmt.Sprintf("sub-cmd name conflicted: %s", name),
+			self.Path(),
+			name,
+			old.cmd.Source(),
+		}
+		panic(err)
 	}
 	sub := NewCmdTree(self.Strs)
 	sub.name = name
@@ -298,10 +310,17 @@ func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 			continue
 		}
 		if ok {
-			panic(fmt.Errorf(
-				"[CmdTree.addSubAbbrs] %s: command abbr name '%s' conflicted, "+
+			err := CmdTreeErrSubAbbrConflicted{
+				fmt.Sprintf("%s: sub command abbr name '%s' conflicted, "+
 					"old for '%s', new for '%s'",
-				self.DisplayPath(), abbr, old, name))
+					self.DisplayPath(), abbr, old, name),
+				self.Path(),
+				abbr,
+				old,
+				name,
+				self.GetSub(old).cmd.Source(),
+			}
+			panic(err)
 		}
 		self.subAbbrsRevIdx[abbr] = name
 		olds, _ := self.subAbbrs[name]

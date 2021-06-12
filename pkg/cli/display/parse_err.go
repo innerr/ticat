@@ -6,6 +6,57 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func HandleParseError(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	env *core.Env,
+	isSearch bool,
+	isLess bool,
+	isMore bool) bool {
+
+	if isMore || isLess {
+		return true
+	}
+
+	for _, cmd := range flow.Cmds {
+		if cmd.ParseError.Error == nil {
+			continue
+		}
+		// TODO: better handling: sub flow parse failed
+		/*
+			stackDepth := env.GetInt("sys.stack-depth")
+			if stackDepth > 0 {
+				panic(cmd.ParseError.Error)
+			}
+		*/
+
+		input := cmd.ParseError.Input
+		inputStr := strings.Join(input, " ")
+
+		switch cmd.ParseError.Error.(type) {
+		case core.ParseErrExpectNoArg:
+			title := "[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] doesn't have args."
+			return PrintFindResultByParseError(cc, cmd, env, title)
+		case core.ParseErrEnv:
+			PrintTipTitle(cc.Screen, env,
+				"["+cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)+"] parse env failed, "+
+					"'"+inputStr+"' is not valid input.",
+				"",
+				"env setting examples:",
+				"",
+				SuggestEnvSetting(env),
+				"")
+		case core.ParseErrExpectArgs:
+			return PrintCmdByParseError(cc, cmd, env)
+		case core.ParseErrExpectCmd:
+			return PrintSubCmdByParseError(cc, flow, cmd, env, isSearch, isMore)
+		default:
+			return PrintFindResultByParseError(cc, cmd, env, "")
+		}
+	}
+	return true
+}
+
 func PrintCmdByParseError(
 	cc *core.Cli,
 	cmd core.ParsedCmd,
@@ -19,7 +70,8 @@ func PrintCmdByParseError(
 	printer.PrintWrap("[" + cmdName + "] parse args failed, '" +
 		strings.Join(input, " ") + "' is not valid input.")
 	printer.Prints("", "command detail:", "")
-	DumpAllCmds(cmd.Last().Matched.Cmd, printer, false, 4, false, false)
+	dumpArgs := NewDumpCmdArgs().NoFlatten().NoRecursive()
+	DumpCmds(cmd.Last().Matched.Cmd, printer, dumpArgs)
 	printer.Finish()
 	return false
 }
@@ -45,7 +97,8 @@ func PrintSubCmdByParseError(
 		strings.Join(input, " ") + "' is not valid input.")
 	if last.HasSub() {
 		printer.Prints("", "commands on branch '"+last.DisplayPath()+"':", "")
-		DumpAllCmds(last, printer, true, 4, true, true)
+		dumpArgs := NewDumpCmdArgs().SetSkeleton()
+		DumpCmds(last, printer, dumpArgs)
 	} else {
 		printer.Prints("", "command branch '"+last.DisplayPath()+"' doesn't have any sub commands.")
 		// TODO: search hint
@@ -70,7 +123,9 @@ func PrintFreeSearchResultByParseError(
 	var lines int
 	for len(input) > 0 {
 		screen := NewCacheScreen()
-		DumpAllCmds(cc.Cmds, screen, !isMore, 4, true, true, input...)
+		dumpArgs := NewDumpCmdArgs().AddFindStrs(input...)
+		dumpArgs.Skeleton = !isMore
+		DumpCmds(cc.Cmds, screen, dumpArgs)
 		lines = screen.OutputNum()
 		if lines <= 0 {
 			input = input[:len(input)-1]
@@ -82,7 +137,7 @@ func PrintFreeSearchResultByParseError(
 		if !isSearch {
 			helpStr = append([]string{notValidStr, ""}, helpStr...)
 		}
-		PrintTipTitle(cc.Screen, env, helpStr...)
+		PrintTipTitle(cc.Screen, env, helpStr)
 		screen.WriteTo(cc.Screen)
 		return false
 	}
@@ -96,7 +151,7 @@ func PrintFreeSearchResultByParseError(
 	if !isSearch {
 		helpStr = append([]string{notValidStr, ""}, helpStr...)
 	}
-	PrintTipTitle(cc.Screen, env, helpStr...)
+	PrintTipTitle(cc.Screen, env, helpStr)
 	return false
 }
 
@@ -109,25 +164,28 @@ func PrintFindResultByParseError(
 	input := cmd.ParseError.Input
 	inputStr := strings.Join(input, " ")
 	screen := NewCacheScreen()
-	DumpAllCmds(cc.Cmds, screen, true, 4, true, true, input...)
+	dumpArgs := NewDumpCmdArgs().SetSkeleton().AddFindStrs(input...)
+	DumpCmds(cc.Cmds, screen, dumpArgs)
 
 	if len(title) == 0 {
 		title = cmd.ParseError.Error.Error()
 	}
 
 	if screen.OutputNum() > 0 {
-		PrintTipTitle(cc.Screen, env, title, "",
+		PrintTipTitle(cc.Screen, env,
+			title,
+			"",
 			"'"+inputStr+"' is not valid input, found related commands by search:")
 		screen.WriteTo(cc.Screen)
 	} else {
-		helpStr := []string{
-			title, "",
-			"'" + inputStr + "' is not valid input and no related commands found.",
-			"", "try to change input,", "or search commands by:", "",
-		}
-		helpStr = append(helpStr, SuggestStrsFindCmds(env.GetRaw("strs.self-name"))...)
-		helpStr = append(helpStr, "")
-		PrintTipTitle(cc.Screen, env, helpStr...)
+		PrintTipTitle(cc.Screen, env,
+			title,
+			"",
+			"'"+inputStr+"' is not valid input and no related commands found.",
+			"",
+			"try to change input,", "or search commands by:", "",
+			SuggestFindCmds(env),
+			"")
 	}
 	return false
 }

@@ -1,7 +1,6 @@
 package display
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -48,7 +47,8 @@ func PrintCmdStack(
 	const cmdCntKey = "display.max-cmd-cnt"
 	cmdDisplayCnt := env.GetInt(cmdCntKey)
 	if cmdDisplayCnt < 4 {
-		panic(fmt.Errorf("[PrintCmdStack] %s should not less than 4", cmdCntKey))
+		// panic(fmt.Errorf("[PrintCmdStack] %s should not less than 4", cmdCntKey))
+		cmdDisplayCnt = 4
 	}
 
 	stackDepth := env.Get("sys.stack-depth").Raw

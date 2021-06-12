@@ -13,12 +13,13 @@ type Executor interface {
 }
 
 type Cli struct {
-	GlobalEnv *Env
-	Screen    Screen
-	Cmds      *CmdTree
-	Parser    CliParser
-	EnvAbbrs  *EnvAbbrs
-	Executor  Executor
+	GlobalEnv     *Env
+	Screen        Screen
+	Cmds          *CmdTree
+	Parser        CliParser
+	EnvAbbrs      *EnvAbbrs
+	TolerableErrs *TolerableErrs
+	Executor      Executor
 }
 
 func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs) *Cli {
@@ -28,6 +29,7 @@ func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *Env
 		cmds,
 		parser,
 		abbrs,
+		NewTolerableErrs(),
 		nil,
 	}
 }

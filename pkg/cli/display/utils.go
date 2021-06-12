@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func MayQuoteStr(origin string) string {
+func mayQuoteStr(origin string) string {
 	trimed := strings.TrimSpace(origin)
 	if len(trimed) == 0 || len(trimed) != len(origin) {
 		return "'" + origin + "'"
@@ -23,6 +23,10 @@ func autoPadNewLine(padding string, msg string) string {
 	hiddenPad := rpt(" ", len(msg)-len(msgNoPad))
 	msg = strings.ReplaceAll(msg, "\n", "\n"+padding+hiddenPad)
 	return msg
+}
+
+func padR(str string, width int) string {
+	return padRight(str, " ", width)
 }
 
 func padRight(str string, pad string, width int) string {

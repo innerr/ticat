@@ -33,12 +33,12 @@ type CachedOutput struct {
 	Len     int
 }
 
-func (self *CacheScreen) IsEmpty() bool {
-	return len(self.data) == 0
-}
-
 func NewCacheScreen() *CacheScreen {
 	return &CacheScreen{nil, 0}
+}
+
+func (self *CacheScreen) IsEmpty() bool {
+	return len(self.data) == 0
 }
 
 func (self *CacheScreen) Print(text string) {

@@ -93,13 +93,31 @@ func GlobalHelpLessInfo(
 	return dumpMoreLessFindResult(flow, cc.Screen, env, "", cc.Cmds, true, findStrs...)
 }
 
+func DumpTellTailCmd(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	if len(flow.Cmds) < 2 {
+		return clearFlow(flow)
+	}
+	// TODO: use DumpCmds
+	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+	dumpArgs := display.NewDumpCmdArgs().NoFlatten().NoRecursive()
+	display.DumpCmdsByPath(cc, dumpArgs, cmdPath)
+	return clearFlow(flow)
+}
+
 func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	findStrs := getFindStrsFromArgv(argv)
 	if len(findStrs) == 0 {
 		return true
 	}
 	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
-	display.DumpCmds(cc, false, 4, true, true, "", findStrs...)
+	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
+	display.DumpCmds(cc.Cmds, cc.Screen, dumpArgs)
 	return true
 }
 
@@ -125,7 +143,10 @@ func dumpMoreLessFindResult(
 	}
 
 	printer := display.NewCacheScreen()
-	display.DumpAllCmds(cmd, printer, skeleton, 4, true, true, findStrs...)
+	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
+	dumpArgs.Skeleton = skeleton
+	display.DumpCmds(cmd, printer, dumpArgs)
+
 	if len(findStrs) != 0 {
 		tip := "search "
 		matchStr := " commands matched '" + findStr + "'"
@@ -169,14 +190,9 @@ func dumpMoreLessFindResult(
 		} else {
 			tips.Prints("locate exact commands by adding more keywords:", "")
 		}
-		tips.Prints(display.SuggestStrsFindCmds(selfName)...)
+		tips.Prints(display.SuggestFindCmds(env)...)
 		tips.Finish()
 	}
 
 	return clearFlow(flow)
-}
-
-func clearFlow(flow *core.ParsedCmds) (int, bool) {
-	flow.Cmds = nil
-	return 0, true
 }

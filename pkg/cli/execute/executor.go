@@ -24,8 +24,7 @@ type Executor struct {
 func NewExecutor(sessionFileName string) *Executor {
 	return &Executor{
 		[]ExecFunc{
-			// TODO: implement and add functions: flowFlatten, mockModInject, stepByStepInject
-			handleParseError,
+			// TODO: implement and add functions: flowFlatten, mockModInject
 			filterEmptyCmdsAndReorderByPriority,
 			verifyEnvOps,
 		},
@@ -65,6 +64,14 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 	if flow.GlobalEnv != nil {
 		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 	}
+
+	isSearch, isLess, isMore := isEndWithSearchCmd(flow)
+	if !display.HandleParseError(cc, flow, env, isSearch, isLess, isMore) {
+		return false
+	}
+
+	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
+
 	for _, function := range self.funcs {
 		if !function(cc, flow, env) {
 			return false
@@ -136,15 +143,7 @@ func (self *Executor) executeCmd(
 	start := time.Now()
 	if last != nil {
 		if last.IsEmptyDirCmd() {
-			name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
-			if !last.HasSub() {
-				display.PrintTipTitle(cc.Screen, env,
-					fmt.Sprintf("'%v' is not executable and has no commands on this branch.", name))
-			} else {
-				display.PrintTipTitle(cc.Screen, env,
-					fmt.Sprintf("'%v' is not executable, but has commands on this branch:", name))
-				display.DumpAllCmds(last, cc.Screen, true, 4, true, true)
-			}
+			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
 			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
@@ -167,55 +166,6 @@ func (self *Executor) executeCmd(
 	return
 }
 
-func handleParseError(
-	cc *core.Cli,
-	flow *core.ParsedCmds,
-	env *core.Env) bool {
-
-	isSearch, isLess, isMore := isEndWithSearchCmd(flow)
-	if isMore || isLess {
-		return true
-	}
-
-	for _, cmd := range flow.Cmds {
-		if cmd.ParseError.Error == nil {
-			continue
-		}
-		// TODO: better handling: sub flow parse failed
-		/*
-			stackDepth := env.GetInt("sys.stack-depth")
-			if stackDepth > 0 {
-				panic(cmd.ParseError.Error)
-			}
-		*/
-
-		input := cmd.ParseError.Input
-		inputStr := strings.Join(input, " ")
-
-		switch cmd.ParseError.Error.(type) {
-		case core.ParseErrExpectNoArg:
-			title := "[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] doesn't have args."
-			return display.PrintFindResultByParseError(cc, cmd, env, title)
-		case core.ParseErrEnv:
-			helpStr := []string{
-				"[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] parse env failed, " +
-					"'" + inputStr + "' is not valid input.",
-				"", "env setting examples:", "",
-			}
-			helpStr = append(helpStr, display.SuggestStrsEnvSetting(env.GetRaw("strs.self-name"))...)
-			helpStr = append(helpStr, "")
-			display.PrintTipTitle(cc.Screen, env, helpStr...)
-		case core.ParseErrExpectArgs:
-			return display.PrintCmdByParseError(cc, cmd, env)
-		case core.ParseErrExpectCmd:
-			return display.PrintSubCmdByParseError(cc, flow, cmd, env, isSearch, isMore)
-		default:
-			return display.PrintFindResultByParseError(cc, cmd, env, "")
-		}
-	}
-	return true
-}
-
 // 1. remove the cmds only have cmd-level env definication but have no executable
 // 2. move priority cmds to the head
 // TODO: sort commands by priority-value, not just a bool flag, so '+' '-' can have the top priority
@@ -234,6 +184,7 @@ func filterEmptyCmdsAndReorderByPriority(
 	prioritiesGlobalCmdIdx := -1
 
 	for i, cmd := range flow.Cmds {
+		// TODO: seems filter empty cmds don't have much help, remove it
 		/*
 			if cmd.IsAllEmptySegments() {
 				if notFilterEmpty {
@@ -293,7 +244,6 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core
 
 	for _, dir := range dirs {
 		pid, err := strconv.Atoi(dir.Name())
-		// TODO: warning
 		if err != nil {
 			continue
 		}
@@ -344,6 +294,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	return false
 }
 
+// Borrow abbrs from cmds to env
 func useCmdsAbbrs(abbrs *core.EnvAbbrs, cmds *core.CmdTree) {
 	if cmds == nil {
 		return

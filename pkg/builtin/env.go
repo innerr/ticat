@@ -23,6 +23,19 @@ func LoadDefaultEnv(env *core.Env) {
 	env.Set("sys.dev.name", "marsh")
 
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
+
+	row, col := utils.GetTerminalWidth()
+	if col > 100 {
+		col = 100
+	}
+	env.SetInt("display.width", col)
+	env.SetInt("display.height", row)
+
+	env.SetBool("display.flow.simplified", false)
+
+	env.Set("display.example-https-repo", "https://github.com/innerr/tidb.ticat")
+
+	env.SetInt("display.hint.indent.2rd", 38)
 	setToDefaultVerb(env)
 }
 
@@ -154,15 +167,6 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.mod.quiet", false)
 	env.SetBool("display.mod.realname", true)
 	env.SetBool("display.env.display", false)
-
 	env.SetInt("display.flow.depth", 6)
-
 	env.SetInt("display.max-cmd-cnt", 7)
-
-	row, col := utils.GetTerminalWidth()
-	if col > 100 {
-		col = 100
-	}
-	env.SetInt("display.width", col)
-	env.SetInt("display.height", row)
 }

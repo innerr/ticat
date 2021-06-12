@@ -37,12 +37,12 @@ func MockStub(_ core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool
 }
 
 func Dummy(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
-	cc.Screen.Print("dummy cmd here\n")
+	cc.Screen.Print("dummy command here\n")
 	return true
 }
 
 func QuietDummy(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
-	cc.Screen.Print("quiet dummy cmd here\n")
+	cc.Screen.Print("quiet dummy command here\n")
 	return true
 }
 
@@ -53,7 +53,7 @@ func PowerDummy(
 	_ *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	cc.Screen.Print("power dummy cmd here\n")
+	cc.Screen.Print("power dummy command here\n")
 	return currCmdIdx, true
 }
 
@@ -64,6 +64,6 @@ func PriorityPowerDummy(
 	_ *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	cc.Screen.Print("priority power dummy cmd here\n")
+	cc.Screen.Print("priority power dummy command here\n")
 	return currCmdIdx, true
 }

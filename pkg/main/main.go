@@ -21,6 +21,7 @@ func main() {
 	// Any mod could get the specific string val from env when it's called
 	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
 	defEnv.Set("strs.self-name", SelfName)
+	defEnv.Set("strs.cmd-builtin-display-name", CmdBuiltinDisplayName)
 	defEnv.Set("strs.meta-ext", MetaExt)
 	defEnv.Set("strs.flow-ext", FlowExt)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)
@@ -39,10 +40,14 @@ func main() {
 	defEnv.Set("strs.repos-file-name", ReposFileName)
 	defEnv.Set("strs.mods-repo-ext", ModsRepoExt)
 	defEnv.Set("strs.proto-sep", ProtoSep)
+	defEnv.Set("strs.tag-out-of-the-box", TagOutOfTheBox)
+	defEnv.Set("strs.tag-provider", TagProvider)
+	defEnv.Set("strs.tag-self-test", TagSelfTest)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
 		CmdRootDisplayName,
+		CmdBuiltinDisplayName,
 		CmdPathSep,
 		CmdPathAlterSeps,
 		AbbrsSep,
@@ -76,12 +81,13 @@ func main() {
 		CmdRootDisplayName)
 	cliParser := parser.NewParser(seqParser, cmdParser)
 
-	// Virtual tty, for re-directing (in the future)
+	// Virtual tty, for re-directing
 	screen := execute.NewScreen()
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs)
 
+	// Modules and env loaders
 	bootstrap := `
 		B.E.L.R:
 		B.M.L.E:
@@ -97,36 +103,44 @@ func main() {
 			os.Exit(-1)
 		}
 	}()
+
+	// Main process
 	executor := execute.NewExecutor(SessionEnvFileName)
 	cc.Executor = executor
 	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
+
+	// TODO: more exit codes
 	if !succeeded {
 		os.Exit(1)
 	}
 }
 
 const (
-	SelfName            string = "ticat"
-	CmdRootDisplayName  string = "<root>"
-	Spaces              string = "\t\n\r "
-	AbbrsSep            string = "|"
-	EnvOpSep            string = ":"
-	SequenceSep         string = ":"
-	CmdPathSep          string = "."
-	CmdPathAlterSeps    string = "./"
-	EnvBracketLeft      string = "{"
-	EnvBracketRight     string = "}"
-	EnvKeyValSep        string = "="
-	EnvPathSep          string = "."
-	EnvValDelAllMark    string = "--"
-	EnvRuntimeSysPrefix string = "sys"
-	EnvStrsPrefix       string = "strs"
-	EnvFileName         string = "bootstrap.env"
-	ProtoSep            string = "\t"
-	ModsRepoExt         string = "." + SelfName
-	MetaExt             string = "." + SelfName
-	FlowExt             string = ".flow." + SelfName
-	HubFileName         string = "repos.hub"
-	ReposFileName       string = "README.md"
-	SessionEnvFileName  string = "env"
+	SelfName              string = "ticat"
+	CmdRootDisplayName    string = "<root>"
+	CmdBuiltinDisplayName string = "<builtin>"
+	Spaces                string = "\t\n\r "
+	AbbrsSep              string = "|"
+	EnvOpSep              string = ":"
+	SequenceSep           string = ":"
+	CmdPathSep            string = "."
+	CmdPathAlterSeps      string = "./"
+	EnvBracketLeft        string = "{"
+	EnvBracketRight       string = "}"
+	EnvKeyValSep          string = "="
+	EnvPathSep            string = "."
+	EnvValDelAllMark      string = "--"
+	EnvRuntimeSysPrefix   string = "sys"
+	EnvStrsPrefix         string = "strs"
+	EnvFileName           string = "bootstrap.env"
+	ProtoSep              string = "\t"
+	ModsRepoExt           string = "." + SelfName
+	MetaExt               string = "." + SelfName
+	FlowExt               string = ".flow." + SelfName
+	HubFileName           string = "repos.hub"
+	ReposFileName         string = "README.md"
+	SessionEnvFileName    string = "env"
+	TagOutOfTheBox        string = "@ready"
+	TagProvider           string = "@provider"
+	TagSelfTest           string = "@selftest"
 )

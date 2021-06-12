@@ -70,14 +70,13 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 	})
 
 	if screen.OutputNum() > 0 {
-		display.PrintTipTitle(cc.Screen, env, "all saved flows: (flows from added repos are not included)")
+		display.PrintTipTitle(cc.Screen, env,
+			"all saved flows: (flows from added repos are not included)")
 	} else {
-		helpStr := []string{
-			"there is no saved flows yet, save flow by:", "",
-		}
-		selfName := env.GetRaw("strs.self-name")
-		helpStr = append(helpStr, display.SuggestStrsFlowAdd(selfName)...)
-		display.PrintTipTitle(cc.Screen, env, helpStr...)
+		display.PrintTipTitle(cc.Screen, env,
+			"there is no saved flows yet, save flow by:",
+			"",
+			display.SuggestFlowAdd(env))
 	}
 	screen.WriteTo(cc.Screen)
 	return true
@@ -142,17 +141,16 @@ func SaveFlow(
 		}
 	}
 
-	width := env.GetInt("display.width")
-
 	w := bytes.NewBuffer(nil)
 	flow.RemoveLeadingCmds(1)
 	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
 	data := w.String()
-	cc.Screen.Print(strings.Repeat("-", width) + "\n")
-	cc.Screen.Print(data)
-	cc.Screen.Print(strings.Repeat("-", width) + "\n")
+
 	cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
-	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
+	cc.Screen.Print("    - flow:\n")
+	cc.Screen.Print(fmt.Sprintf("        %s", data))
+	cc.Screen.Print("    - executable:\n")
+	cc.Screen.Print(fmt.Sprintf("        %s\n", filePath))
 
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
@@ -169,8 +167,7 @@ func SaveFlow(
 			tmp, filePath, err))
 	}
 
-	flow.Cmds = nil
-	return 0, true
+	return clearFlow(flow)
 }
 
 func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
@@ -232,19 +229,8 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 func loadFlow(cc *core.Cli, root string, path string, flowExt string, source string) {
 	var cmdPathStr string
 	defer func() {
-		// TODO: configurable display
 		if err := recover(); err != nil {
-			cc.Screen.Error("======================================\n\n")
-			cc.Screen.Error("[ERR] flow loading failed:\n")
-			if len(cmdPathStr) != 0 {
-				cc.Screen.Error("    - cmd:\n")
-				cc.Screen.Error(fmt.Sprintf("        %s\n", cmdPathStr))
-			}
-			cc.Screen.Error("    - source:\n")
-			cc.Screen.Error(fmt.Sprintf("        %s\n", source))
-			cc.Screen.Error("    - error:\n")
-			cc.Screen.Error(fmt.Sprintf("        %s\n", err.(error).Error()))
-			cc.Screen.Error("\n======================================\n\n")
+			cc.TolerableErrs.OnErr(err, source, "flow loading failed")
 		}
 	}()
 
@@ -357,21 +343,6 @@ func saveFlowEnv(
 	return true
 }
 
-func quoteIfHasSpace(str string) string {
-	if strings.IndexAny(str, " \t\r\n") < 0 {
-		return str
-	}
-	i := strings.Index(str, "\"")
-	if i < 0 {
-		return "\"" + str + "\""
-	}
-	i = strings.Index(str, "'")
-	if i < 0 {
-		return "'" + str + "'"
-	}
-	return str
-}
-
 func getFlowCmdPath(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -410,29 +381,4 @@ func getFlowCmdPath(
 		panic(fmt.Errorf("[%s] flow '%s' file '%s' not exists", funcName, cmdPath, filePath))
 	}
 	return
-}
-
-func normalizeCmdPath(path string, sep string, alterSeps string) string {
-	var segs []string
-	for len(path) > 0 {
-		i := strings.IndexAny(path, alterSeps)
-		if i < 0 {
-			segs = append(segs, path)
-			break
-		} else if i == 0 {
-			path = path[1:]
-		} else {
-			segs = append(segs, path[0:i])
-			path = path[i+1:]
-		}
-	}
-	return strings.Join(segs, sep)
-}
-
-func getCmdPath(path string, flowExt string) string {
-	base := filepath.Base(path)
-	if !strings.HasSuffix(base, flowExt) {
-		panic(fmt.Errorf("[getCmdPath] flow file '%s' ext not match '%s'", path, flowExt))
-	}
-	return base[:len(base)-len(flowExt)]
 }
