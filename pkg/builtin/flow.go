@@ -35,7 +35,8 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 		}
 
 		cmdPath := getCmdPath(path, flowExt)
-		flowStr, help, abbrsStr := flow_file.LoadFlowFile(path)
+		flowStrs, help, abbrsStr := flow_file.LoadFlowFile(path)
+		flowStr := strings.Join(flowStrs, " ")
 
 		matched := true
 		for _, findStr := range findStrs {
@@ -63,7 +64,9 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 			screen.Print(fmt.Sprintf("        %s\n", abbrsStr))
 		}
 		screen.Print("    - flow:\n")
-		screen.Print(fmt.Sprintf("        %s\n", flowStr))
+		for _, flowStr := range flowStrs {
+			screen.Print(fmt.Sprintf("        %s\n", flowStr))
+		}
 		screen.Print("    - executable:\n")
 		screen.Print(fmt.Sprintf("        %s\n", path))
 		return nil
@@ -169,6 +172,7 @@ func SaveFlow(
 	w := bytes.NewBuffer(nil)
 	flow.RemoveLeadingCmds(1)
 	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
+	// TODO: wrap line if too long
 	data := w.String()
 
 	screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
@@ -201,8 +205,8 @@ func SaveFlow(
 func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	help := argv.GetRaw("help-str")
 	cmdPath, filePath := getFlowCmdPath(argv, cc, env, true, "cmd-path", "SetFlowHelpStr")
-	flowStr, oldHelp, abbrsStr := flow_file.LoadFlowFile(filePath)
-	flow_file.SaveFlowFile(filePath, flowStr, help, abbrsStr)
+	flowStrs, oldHelp, abbrsStr := flow_file.LoadFlowFile(filePath)
+	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr)
 
 	display.PrintTipTitle(cc.Screen, env,
 		"help string of flow '"+cmdPath+"' is saved")
@@ -210,7 +214,9 @@ func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.Parse
 	cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
 	cc.Screen.Print(fmt.Sprintf("     '%s'\n", help))
 	cc.Screen.Print("    - flow:\n")
-	cc.Screen.Print(fmt.Sprintf("        %s\n", flowStr))
+	for _, flowStr := range flowStrs {
+		cc.Screen.Print(fmt.Sprintf("        %s\n", flowStr))
+	}
 	cc.Screen.Print("    - executable:\n")
 	cc.Screen.Print(fmt.Sprintf("        %s\n", filePath))
 	if len(oldHelp) != 0 {
@@ -281,7 +287,7 @@ func loadFlow(cc *core.Cli, root string, path string, flowExt string, source str
 		}
 	}()
 
-	flowStr, help, abbrsStr := flow_file.LoadFlowFile(path)
+	flowStrs, help, abbrsStr := flow_file.LoadFlowFile(path)
 
 	pathSep := cc.Cmds.Strs.PathSep
 	abbrsSep := cc.Cmds.Strs.AbbrsSep
@@ -301,7 +307,7 @@ func loadFlow(cc *core.Cli, root string, path string, flowExt string, source str
 		}
 	}
 
-	flow.RegFlowCmd(flowStr, help).SetSource(source)
+	flow.RegFlowCmd(flowStrs, help).SetSource(source)
 }
 
 func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.Env) {

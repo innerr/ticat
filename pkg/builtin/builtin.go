@@ -14,6 +14,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterFlowCmds(cmds)
 	RegisterHubCmds(cmds)
 	RegisterDbgCmds(cmds.AddSub("dbg"))
+	RegisterDisplayCmds(cmds.AddSub("display", "disp", "dis", "di"))
 	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B").SetHidden())
 }
 
@@ -85,34 +86,40 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tell", "=").
-		RegPowerCmd(DumpTellTailCmd,
-			"display the last cmd info, sub tree cmds will not show").
+	cmds.AddSub("tail-info", "=").
+		RegPowerCmd(DumpTailCmdInfo,
+			"display the last command info, sub tree commands will not show").
+		SetQuiet().
+		SetPriority()
+
+	cmds.AddSub("tail-sub", "$").
+		RegPowerCmd(DumpTailCmdSub,
+			"display commands on the branch of the last command").
 		SetQuiet().
 		SetPriority()
 
 	mods := cmds.AddSub("cmds", "cmd", "c", "C")
 	mods.RegCmd(DumpCmdNoRecursive,
-		"display cmd info, sub tree cmds will not show").
+		"display command info, sub tree commands will not show").
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	tree := mods.AddSub("tree", "t", "T")
 	tree.RegCmd(DumpCmdTree,
-		"list builtin and loaded cmds").
+		"list builtin and loaded commands").
 		AddArg("cmd-path", "", "path", "p", "P")
 	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
 		RegCmd(DumpCmdTreeSkeleton,
-			"list builtin and loaded cmds, skeleton only").
+			"list builtin and loaded commands, skeleton only").
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
 		RegCmd(DumpCmdList,
-			"list builtin and loaded cmds")
+			"list builtin and loaded commands")
 	addFindStrArgs(list)
 
 	listSimple := list.AddSub("simple", "sim", "s", "S", "-").
 		RegCmd(DumpCmdListSimple,
-			"list builtin and loaded cmds in lite style")
+			"list builtin and loaded commands in lite style")
 	addFindStrArgs(listSimple)
 }
 
@@ -125,7 +132,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 
 	flow.AddSub("save", "persist", "s", "S", "+").
 		RegPowerCmd(SaveFlow,
-			"save current cmds as a flow").
+			"save current commands as a flow").
 		SetQuiet().
 		SetPriority().
 		AddArg("to-cmd-path", "", "path", "p", "P")
@@ -196,7 +203,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		RegCmd(ResetLocalEnv,
 			"reset all local saved env KVs")
 
-	abbrsCmdHelpStr := "enable borrowing cmds's abbrs when setting KVs"
+	abbrsCmdHelpStr := "enable borrowing commands' abbrs when setting KVs"
 	abbrsCmd := abbrs.AddSub("cmd")
 	abbrsCmd.RegCmd(EnvAbbrsBorrowFromCmdsEnable,
 		abbrsCmdHelpStr)
@@ -332,20 +339,20 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 	dummy := cmds.AddSub("dummy", "dmy", "dm")
 
 	dummy.RegCmd(Dummy,
-		"dummy cmd for testing")
+		"dummy command for testing")
 
 	dummy.AddSub("quiet", "q", "Q").
 		RegCmd(QuietDummy,
-			"quiet dummy cmd for testing").
+			"quiet dummy command for testing").
 		SetQuiet()
 
 	dummy.AddSub("power", "p", "P").
 		RegPowerCmd(PowerDummy,
-			"power dummy cmd for testing")
+			"power dummy command for testing")
 
 	dummy.AddSub("priority", "prior", "prio", "pri").
 		RegPowerCmd(PriorityPowerDummy,
-			"power dummy cmd for testing").
+			"power dummy command for testing").
 		SetPriority()
 
 	cmds.AddSub("sleep", "slp").
@@ -376,7 +383,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 
 	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
 		RegCmd(DbgDelayExecute,
-			"wait for a while before executing a cmd").
+			"wait for a while before executing a command").
 		SetQuiet().
 		AddArg("seconds", "5", "second", "sec", "s", "S")
 
@@ -386,6 +393,18 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 }
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {
+	utf8 := cmds.AddSub("utf8", "utf")
+	utf8.RegCmd(DisplayUtf8On,
+		"enable utf8 display").
+		SetQuiet()
+	utf8.AddSub("on", "yes", "y", "Y", "1", "+").
+		RegCmd(DisplayUtf8On,
+			"enable utf8 display").
+		SetQuiet()
+	utf8.AddSub("off", "no", "n", "N", "0", "-").
+		RegCmd(DisplayUtf8Off,
+			"disable utf8 display").
+		SetQuiet()
 }
 
 const LessHelpStr = "display/search info base on the current flow and args"

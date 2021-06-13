@@ -232,7 +232,7 @@ func dumpCmd(
 
 			deps := cic.GetDepends()
 			if len(deps) != 0 {
-				prt(1, "- deps:")
+				prt(1, "- os-cmd-dep:")
 			}
 			for _, dep := range deps {
 				prt(2, dep.OsCmd+" = '"+dep.Reason+"'")
@@ -260,15 +260,19 @@ func dumpCmd(
 			}
 
 			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
-				if len(cic.CmdLine()) != 0 {
+				if len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0 {
 					if cic.Type() == core.CmdTypeFlow {
 						prt(1, "- flow:")
+						for _, flowStr := range cic.FlowStrs() {
+							prt(2, flowStr)
+						}
 					} else if cic.Type() == core.CmdTypeEmptyDir {
 						prt(1, "- dir:")
+						prt(2, cic.CmdLine())
 					} else {
 						prt(1, "- executable:")
+						prt(2, cic.CmdLine())
 					}
-					prt(2, cic.CmdLine())
 				}
 				if len(cic.MetaFile()) != 0 {
 					prt(1, "- meta:")

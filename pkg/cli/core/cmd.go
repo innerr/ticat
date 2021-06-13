@@ -53,6 +53,7 @@ type Cmd struct {
 	normal   NormalCmd
 	power    PowerCmd
 	cmdLine  string
+	flow     []string
 	envOps   EnvOps
 	source   string
 	depends  []Depend
@@ -61,32 +62,32 @@ type Cmd struct {
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypeNormal, false, false,
-		newArgs(), cmd, nil, "", newEnvOps(), "", nil, ""}
+		newArgs(), cmd, nil, "", nil, newEnvOps(), "", nil, ""}
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 	return &Cmd{owner, help, CmdTypePower, false, false,
-		newArgs(), nil, cmd, "", newEnvOps(), "", nil, ""}
+		newArgs(), nil, cmd, "", nil, newEnvOps(), "", nil, ""}
 }
 
 func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFile, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps(), "", nil, ""}
+		newArgs(), nil, nil, cmd, nil, newEnvOps(), "", nil, ""}
 }
 
 func NewEmptyDirCmd(owner *CmdTree, help string, dir string) *Cmd {
 	return &Cmd{owner, help, CmdTypeEmptyDir, false, false,
-		newArgs(), nil, nil, dir, newEnvOps(), "", nil, ""}
+		newArgs(), nil, nil, dir, nil, newEnvOps(), "", nil, ""}
 }
 
 func NewDirWithCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	return &Cmd{owner, help, CmdTypeDirWithCmd, false, false,
-		newArgs(), nil, nil, cmd, newEnvOps(), "", nil, ""}
+		newArgs(), nil, nil, cmd, nil, newEnvOps(), "", nil, ""}
 }
 
-func NewFlowCmd(owner *CmdTree, help string, flow string) *Cmd {
+func NewFlowCmd(owner *CmdTree, help string, flow []string) *Cmd {
 	return &Cmd{owner, help, CmdTypeFlow, false, false,
-		newArgs(), nil, nil, flow, newEnvOps(), "", nil, ""}
+		newArgs(), nil, nil, "", flow, newEnvOps(), "", nil, ""}
 }
 
 func (self *Cmd) Execute(
@@ -256,8 +257,13 @@ func (self *Cmd) EnvOps() EnvOps {
 	return self.envOps
 }
 
+func (self *Cmd) FlowStrs() []string {
+	return self.flow
+}
+
 func (self *Cmd) Flow() []string {
-	flow, err := shellwords.Parse(self.cmdLine)
+	flowStr := strings.Join(self.flow, " ")
+	flow, err := shellwords.Parse(flowStr)
 	if err != nil {
 		// TODO: better display
 		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",

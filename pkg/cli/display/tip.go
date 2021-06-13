@@ -85,7 +85,7 @@ func (self *TipBoxPrinter) Print(msg string) {
 			tip = "<ERR>"
 			tipLen = len(tip)
 			if utf8 {
-				tip = "🛑"
+				tip = "⛔"
 				tipLen = 2
 			}
 		} else {
