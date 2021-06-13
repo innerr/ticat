@@ -118,7 +118,10 @@ func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCm
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.SaveEnvToFile(env, path, kvSep)
-	display.PrintTipTitle(cc.Screen, env, "changes of env are saved")
+	display.PrintTipTitle(cc.Screen, env,
+		"changes of env are saved, could be listed by:",
+		"",
+		display.SuggestListEnv(env))
 	return true
 }
 
@@ -149,6 +152,16 @@ func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.Parsed
 		}
 	}
 	display.PrintTipTitle(cc.Screen, env, "all saved env changes are removed")
+	return true
+}
+
+func EnvAbbrsBorrowFromCmdsEnable(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+	env.GetLayer(core.EnvLayerSession).SetBool("sys.env.use-cmd-abbrs", true)
+	return true
+}
+
+func EnvAbbrsBorrowFromCmdsDisable(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+	env.GetLayer(core.EnvLayerSession).SetBool("sys.env.use-cmd-abbrs", false)
 	return true
 }
 

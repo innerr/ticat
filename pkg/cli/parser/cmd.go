@@ -34,19 +34,7 @@ func NewCmdParser(
 func (self *CmdParser) Parse(
 	cmds *core.CmdTree,
 	envAbbrs *core.EnvAbbrs,
-	input []string) core.ParsedCmd {
-
-	parsed, err := self.safeParse(cmds, envAbbrs, input)
-	if err != nil {
-		parsed.ParseError = core.ParseError{input, err}
-	}
-	return parsed
-}
-
-func (self *CmdParser) safeParse(
-	cmds *core.CmdTree,
-	envAbbrs *core.EnvAbbrs,
-	input []string) (parsed core.ParsedCmd, err error) {
+	input []string) (parsed core.ParsedCmd) {
 
 	// Delay err check
 	segs, err := self.parse(cmds, envAbbrs, input)
@@ -80,7 +68,9 @@ func (self *CmdParser) safeParse(
 	if !curr.IsEmpty() {
 		parsed.Segments = append(parsed.Segments, curr)
 	}
-	return parsed, err
+
+	parsed.ParseResult = core.ParseResult{input, err}
+	return parsed
 }
 
 func (self *CmdParser) parse(

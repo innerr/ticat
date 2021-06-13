@@ -256,3 +256,15 @@ because there are too much weird things for users already.
 For now, we check the input args to **ticat**, if the grammar is wrong, **ticat** will report error.
 To achive full tail editing,
 we need a way to let users putting wrong things and then we give back the suggestions.
+
+## The only one rule
+
+To avoid confusing, there is a clean rule for when we could use tail editing:
+
+All command-related things is supported with tail editing, others are not.
+
+Command-related things:
+* searching commands
+* check command details
+* concate command to flow
+* check flow details

@@ -144,7 +144,7 @@ func TestCmdParserParse(t *testing.T) {
 	}
 
 	cmd := func(segs ...core.ParsedCmdSeg) core.ParsedCmd {
-		return core.ParsedCmd{segs, core.ParseError{nil, nil}}
+		return core.ParsedCmd{segs, core.ParseResult{nil, nil}}
 	}
 
 	test := func(a []string, b core.ParsedCmd) {

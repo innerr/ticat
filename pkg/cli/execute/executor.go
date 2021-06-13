@@ -68,7 +68,7 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 	}
 
 	isSearch, isLess, isMore := isEndWithSearchCmd(flow)
-	if !display.HandleParseError(cc, flow, env, isSearch, isLess, isMore) {
+	if !display.HandleParseResult(cc, flow, env, isSearch, isLess, isMore) {
 		return false
 	}
 

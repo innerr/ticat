@@ -38,13 +38,21 @@ func SuggestFindCmdsMore(env *core.Env) []string {
 
 func SuggestAddAndSaveEnv(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	return []string{
-		padR(selfName+" {k1=v2 k2=v2} cmd1 : cmd2", indent) + "- set env key-values, one time only",
+	res := []string{
+		padR(selfName+" {k1=v2 k2=v2} cmd1 : cmd2", indent) + "- set/change env key-values, one time only",
 		"",
 		padR(selfName+" {k1=v2 k2=v2} e.save", indent) + "- save the key-values",
 		padR(selfName+" cmd1 : cmd2", indent) + "- execute with saved key-values",
 		"",
-		padR(selfName+" e", indent) + "- list saved env key-values",
+	}
+	return append(res, SuggestListEnv(env)...)
+}
+
+func SuggestListEnv(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" e", indent) + "- list changed env key-values, not include system's",
+		padR(selfName+" e.ls", indent) + "- list all key-values, include system's",
 	}
 }
 

@@ -45,10 +45,16 @@ func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env,
 	if screen.OutputNum() <= 0 {
 		if len(findStrs) != 0 {
 			display.PrintTipTitle(cc.Screen, env,
-				"no matched saved env keys.")
+				"no matched changed env key-values.",
+				"(system's are not included)",
+				"",
+				display.SuggestListEnv(env))
 		} else {
 			display.PrintTipTitle(cc.Screen, env,
-				"no saved env keys.",
+				"no changed env key-values found.",
+				"(system's are not included)",
+				"",
+				"env usage:",
 				"",
 				display.SuggestAddAndSaveEnv(env))
 		}
@@ -57,7 +63,7 @@ func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env,
 			"essential env key-values: (use command 'e.ls' to show all)")
 	} else {
 		display.PrintTipTitle(cc.Screen, env,
-			"matched essential env key-values: (use command 'e.ls' to show more)")
+			"matched essential env key-values: (use command 'e.ls' to show all)")
 	}
 	screen.WriteTo(cc.Screen)
 	if display.TooMuchOutput(env, screen) {

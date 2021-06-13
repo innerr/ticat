@@ -173,9 +173,9 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 			"list all env layers and KVs in tree format")
 
 	// TODO: add search supporting
-	env.AddSub("abbrs", "abbr", "a", "A").
-		RegCmd(DumpEnvAbbrs,
-			"list env tree and abbrs")
+	abbrs := env.AddSub("abbrs", "abbr", "a", "A")
+	abbrs.RegCmd(DumpEnvAbbrs,
+		"list env tree and abbrs")
 
 	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
 		RegCmd(DumpEnvFlattenVals,
@@ -195,6 +195,17 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 	env.AddSub("reset-and-save", "reset", "clear", "--").
 		RegCmd(ResetLocalEnv,
 			"reset all local saved env KVs")
+
+	abbrsCmdHelpStr := "enable borrowing cmds's abbrs when setting KVs"
+	abbrsCmd := abbrs.AddSub("cmd")
+	abbrsCmd.RegCmd(EnvAbbrsBorrowFromCmdsEnable,
+		abbrsCmdHelpStr)
+	abbrsCmd.AddSub("on", "yes", "y", "Y", "1", "+").
+		RegCmd(EnvAbbrsBorrowFromCmdsEnable,
+			abbrsCmdHelpStr)
+	abbrsCmd.AddSub("off", "no", "n", "N", "0", "-").
+		RegCmd(EnvAbbrsBorrowFromCmdsDisable,
+			abbrsCmdHelpStr)
 }
 
 func RegisterVerbCmds(cmds *core.CmdTree) {
@@ -351,6 +362,9 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		AddArg("message", "", "msg", "m", "M")
 
 	step := cmds.AddSub("step-by-step", "step", "s", "S")
+	step.RegCmd(DbgStepOn,
+		"enable step by step").
+		SetQuiet()
 	step.AddSub("on", "yes", "y", "Y", "1", "+").
 		RegCmd(DbgStepOn,
 			"enable step by step").
@@ -369,6 +383,9 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 	cmds.AddSub("exec").SetHidden().
 		RegCmd(DbgExecBash,
 			"verify bash in os/exec")
+}
+
+func RegisterDisplayCmds(cmds *core.CmdTree) {
 }
 
 const LessHelpStr = "display/search info base on the current flow and args"

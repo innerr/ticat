@@ -6,7 +6,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func HandleParseError(
+func HandleParseResult(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
 	env *core.Env,
@@ -19,21 +19,21 @@ func HandleParseError(
 	}
 
 	for _, cmd := range flow.Cmds {
-		if cmd.ParseError.Error == nil {
+		if cmd.ParseResult.Error == nil {
 			continue
 		}
 		// TODO: better handling: sub flow parse failed
 		/*
 			stackDepth := env.GetInt("sys.stack-depth")
 			if stackDepth > 0 {
-				panic(cmd.ParseError.Error)
+				panic(cmd.ParseResult.Error)
 			}
 		*/
 
-		input := cmd.ParseError.Input
+		input := cmd.ParseResult.Input
 		inputStr := strings.Join(input, " ")
 
-		switch cmd.ParseError.Error.(type) {
+		switch cmd.ParseResult.Error.(type) {
 		case core.ParseErrExpectNoArg:
 			title := "[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] doesn't have args."
 			return PrintFindResultByParseError(cc, cmd, env, title)
@@ -65,7 +65,7 @@ func PrintCmdByParseError(
 	sep := cc.Cmds.Strs.PathSep
 	cmdName := cmd.DisplayPath(sep, true)
 	printer := NewTipBoxPrinter(cc.Screen, env, true)
-	input := cmd.ParseError.Input
+	input := cmd.ParseResult.Input
 
 	printer.PrintWrap("[" + cmdName + "] parse args failed, '" +
 		strings.Join(input, " ") + "' is not valid input.")
@@ -87,7 +87,7 @@ func PrintSubCmdByParseError(
 	sep := cc.Cmds.Strs.PathSep
 	cmdName := cmd.DisplayPath(sep, true)
 	printer := NewTipBoxPrinter(cc.Screen, env, true)
-	input := cmd.ParseError.Input
+	input := cmd.ParseResult.Input
 
 	last := cmd.LastCmdNode()
 	if last == nil {
@@ -161,14 +161,14 @@ func PrintFindResultByParseError(
 	env *core.Env,
 	title string) bool {
 
-	input := cmd.ParseError.Input
+	input := cmd.ParseResult.Input
 	inputStr := strings.Join(input, " ")
 	screen := NewCacheScreen()
 	dumpArgs := NewDumpCmdArgs().SetSkeleton().AddFindStrs(input...)
 	DumpCmds(cc.Cmds, screen, env, dumpArgs)
 
 	if len(title) == 0 {
-		title = cmd.ParseError.Error.Error()
+		title = cmd.ParseResult.Error.Error()
 	}
 
 	if screen.OutputNum() > 0 {
