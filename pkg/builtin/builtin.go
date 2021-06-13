@@ -333,6 +333,13 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	modLoad.AddSub("hub", "h", "H").
 		RegCmd(LoadModsFromHub,
 			"load flows and mods from local hub")
+
+	cmds.AddSub("display", "disp", "dis", "di", "d", "D").
+		AddSub("load", "l", "L").
+		AddSub("platform", "p", "P").
+		RegCmd(LoadPlatformDisplay,
+			"load platform(OS) specialized display settings").
+		SetQuiet()
 }
 
 func RegisterTrivialCmds(cmds *core.CmdTree) {

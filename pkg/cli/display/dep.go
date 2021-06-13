@@ -34,7 +34,7 @@ func DumpDepends(cc *core.Cli, env *core.Env, deps Depends) {
 	sep := env.Get("strs.cmd-path-sep").Raw
 	notFoundStr := "(not found)"
 	if env.GetBool("display.utf8.symbols") {
-		notFoundStr = "⛔"
+		notFoundStr = env.GetRaw("display.utf8.symbols.err")
 	}
 
 	if !env.GetBool("display.flow.simplified") {
