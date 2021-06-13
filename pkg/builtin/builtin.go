@@ -106,7 +106,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
-		RegCmd(DumpCmds,
+		RegCmd(DumpCmdList,
 			"list builtin and loaded cmds")
 	addFindStrArgs(list)
 

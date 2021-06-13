@@ -1,28 +1,112 @@
 package display
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func DumpCmdsByPath(cc *core.Cli, args *DumpCmdArgs, path string) {
-	if len(path) == 0 && !args.Recursive {
-		return
+func DumpCmdsWithTips(
+	cmds *core.CmdTree,
+	screen core.Screen,
+	env *core.Env,
+	args *DumpCmdArgs,
+	displayCmdPath string,
+	isLessMore bool) {
+
+	prt := func(text ...interface{}) {
+		PrintTipTitle(screen, env, text...)
 	}
-	cmds := cc.Cmds
-	if len(path) != 0 {
-		cmds = cmds.GetSub(strings.Split(path, cc.Cmds.Strs.PathSep)...)
-		if cmds == nil {
-			// TODO: better display
-			panic(fmt.Errorf("[DumpCmds] can't find sub cmd tree by path '%s'", path))
+
+	buf := NewCacheScreen()
+	dumpCmd(buf, cmds, args, -cmds.Depth())
+
+	findStr := strings.Join(args.FindStrs, " ")
+	selfName := env.GetRaw("strs.self-name")
+
+	if !args.Recursive {
+		prt("command details:")
+	} else if len(args.FindStrs) != 0 {
+		tip := "search "
+		matchStr := " commands matched '" + findStr + "'"
+		if !cmds.IsRoot() {
+			if buf.OutputNum() > 0 {
+				prt(tip + "branch '" + displayCmdPath + "', found" + matchStr + ":")
+			} else {
+				prt(tip + "branch '" + displayCmdPath + "', no" + matchStr + ".")
+			}
+		} else {
+			if buf.OutputNum() > 0 {
+				if args.Skeleton && buf.OutputNum() <= 6 && isLessMore {
+					prt(tip+"and found"+matchStr,
+						"",
+						"get more details by using '-' instead of '+'.")
+				} else {
+					prt(tip + "and found" + matchStr)
+				}
+			} else {
+				prt(tip + "but no" + matchStr)
+			}
+		}
+	} else {
+		if !cmds.IsRoot() {
+			if buf.OutputNum() > 0 {
+				prt("branch '" + displayCmdPath + "' has commands:")
+			} else {
+				prt("branch '" + displayCmdPath + "' has no commands. (this should never happen)")
+			}
+		} else {
+			if buf.OutputNum() > 0 {
+				prt("all commands loaded to " + selfName + ":")
+			} else {
+				prt(selfName + " has no loaded commands. (this should never happen)")
+			}
 		}
 	}
-	dumpCmd(cc.Screen, cmds, args, -cmds.Depth())
+
+	buf.WriteTo(screen)
+
+	if !args.Recursive || !TooMuchOutput(env, buf) {
+		return
+	}
+
+	if !args.Flatten {
+		prt(
+			"locate exact commands by:",
+			"",
+			SuggestFindCmds(env))
+	} else {
+		if !isLessMore {
+			if len(args.FindStrs) != 0 {
+				prt("locate exact commands by adding more keywords.")
+			} else {
+				prt(
+					"locate exact commands by:",
+					"",
+					SuggestFindCmds(env))
+			}
+		} else if !args.Skeleton {
+			prt(
+				"get a brief view by using '-' instead of '+'.",
+				"",
+				"or/and locate exact commands by adding more keywords:",
+				"",
+				SuggestFindCmds(env))
+		} else {
+			prt(
+				"locate exact commands by adding more keywords:",
+				"",
+				SuggestFindCmdsLess(env))
+		}
+	}
 }
 
-func DumpCmds(cmds *core.CmdTree, screen core.Screen, args *DumpCmdArgs) {
+func DumpCmds(
+	cmds *core.CmdTree,
+	screen core.Screen,
+	env *core.Env,
+	args *DumpCmdArgs) {
+
 	dumpCmd(screen, cmds, args, -cmds.Depth())
 }
 

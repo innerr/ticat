@@ -14,12 +14,12 @@ func PrintEmptyDirCmdHint(screen core.Screen, env *core.Env, cmd core.ParsedCmd)
 	if !last.HasSub() {
 		PrintTipTitle(screen, env,
 			fmt.Sprintf("'%v' is not executable and has no commands on this branch.", name))
-	} else {
-		PrintTipTitle(screen, env,
-			fmt.Sprintf("'%v' is not executable, but has commands on this branch:", name))
-		dumpArgs := NewDumpCmdArgs().SetSkeleton()
-		DumpCmds(last, screen, dumpArgs)
+		return
 	}
+	PrintTipTitle(screen, env,
+		fmt.Sprintf("'%v' is not executable, but has commands on this branch:", name))
+	dumpArgs := NewDumpCmdArgs().SetSkeleton()
+	DumpCmds(last, screen, env, dumpArgs)
 }
 
 func PrintError(cc *core.Cli, env *core.Env, err error) {

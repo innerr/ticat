@@ -29,7 +29,7 @@ func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.P
 		display.PrintTipTitle(cc.Screen, env, "all matched env key-values:")
 	}
 	screen.WriteTo(cc.Screen)
-	if tooMuchOutput(env, screen) {
+	if display.TooMuchOutput(env, screen) {
 		display.PrintTipTitle(cc.Screen, env,
 			"filter env keys by:",
 			"",
@@ -60,7 +60,7 @@ func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env,
 			"matched essential env key-values: (use command 'e.ls' to show more)")
 	}
 	screen.WriteTo(cc.Screen)
-	if tooMuchOutput(env, screen) {
+	if display.TooMuchOutput(env, screen) {
 		display.PrintTipTitle(cc.Screen, env,
 			"filter env keys by:",
 			"",

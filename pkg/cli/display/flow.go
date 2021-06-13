@@ -140,7 +140,7 @@ func dumpFlowCmd(
 
 	if len(cic.CmdLine()) != 0 && cic.Type() != core.CmdTypeNormal &&
 		cic.Type() != core.CmdTypePower {
-		if cic.Type() == core.CmdTypeFlow && !args.Skeleton {
+		if cic.Type() == core.CmdTypeFlow {
 			prt(1, "- flow:")
 			prt(2, cic.CmdLine())
 		} else if !args.Simple && !args.Skeleton {

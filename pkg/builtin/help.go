@@ -103,10 +103,9 @@ func DumpTellTailCmd(
 	if len(flow.Cmds) < 2 {
 		return clearFlow(flow)
 	}
-	// TODO: use DumpCmds
 	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
 	dumpArgs := display.NewDumpCmdArgs().NoFlatten().NoRecursive()
-	display.DumpCmdsByPath(cc, dumpArgs, cmdPath)
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	return clearFlow(flow)
 }
 
@@ -117,7 +116,7 @@ func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) b
 	}
 	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
 	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
-	display.DumpCmds(cc.Cmds, cc.Screen, dumpArgs)
+	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
 	return true
 }
 
@@ -135,70 +134,10 @@ func dumpMoreLessFindResult(
 	skeleton bool,
 	findStrs ...string) (int, bool) {
 
-	findStr := strings.Join(findStrs, " ")
-	selfName := env.GetRaw("strs.self-name")
-
-	prt := func(text ...interface{}) {
-		display.PrintTipTitle(screen, env, text...)
-	}
-
 	printer := display.NewCacheScreen()
 	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
 	dumpArgs.Skeleton = skeleton
-	display.DumpCmds(cmd, printer, dumpArgs)
-
-	if len(findStrs) != 0 {
-		tip := "search "
-		matchStr := " commands matched '" + findStr + "'"
-		if len(cmdPathStr) != 0 {
-			if printer.OutputNum() > 0 {
-				prt(tip + "branch '" + cmdPathStr + "', found" + matchStr + ":")
-			} else {
-				prt(tip + "branch '" + cmdPathStr + "', no" + matchStr + ".")
-			}
-		} else {
-			if printer.OutputNum() > 0 {
-				if printer.OutputNum() <= 6 {
-					prt(tip+"and found"+matchStr,
-						"",
-						"get more details by using '-' instead of '+'.")
-				} else {
-					prt(tip + "and found" + matchStr)
-				}
-			} else {
-				prt(tip + "but no" + matchStr)
-			}
-		}
-	} else {
-		if len(cmdPathStr) != 0 {
-			if printer.OutputNum() > 0 {
-				prt("branch '" + cmdPathStr + "' has commands:")
-			} else {
-				prt("branch '" + cmdPathStr + "' has no commands. (this should never happen)")
-			}
-		} else {
-			if printer.OutputNum() > 0 {
-				prt("all commands loaded to " + selfName + ":")
-			} else {
-				prt(selfName + " has no loaded commands. (this should never happen)")
-			}
-		}
-	}
+	display.DumpCmdsWithTips(cmd, printer, env, dumpArgs, cmdPathStr, true)
 	printer.WriteTo(screen)
-
-	if tooMuchOutput(env, printer) {
-		printer.WriteTo(screen)
-		tips := display.NewTipBoxPrinter(screen, env, false)
-		if !skeleton {
-			tips.Prints("get a brief view by using '-' instead of '+'.", "")
-			tips.Prints("or/and locate exact commands by adding more keywords:", "")
-			tips.Prints(display.SuggestFindCmds(env)...)
-		} else {
-			tips.Prints("locate exact commands by adding more keywords:", "")
-			tips.Prints(display.SuggestFindCmdsLess(env)...)
-		}
-		tips.Finish()
-	}
-
 	return clearFlow(flow)
 }

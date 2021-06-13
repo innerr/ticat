@@ -79,7 +79,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 			display.SuggestFlowAdd(env))
 	}
 	screen.WriteTo(cc.Screen)
-	if tooMuchOutput(env, screen) {
+	if display.TooMuchOutput(env, screen) {
 		display.PrintTipTitle(cc.Screen, env,
 			"filter flows by keywords if there are too many:",
 			"",

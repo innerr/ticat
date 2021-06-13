@@ -10,11 +10,6 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func tooMuchOutput(env *core.Env, screen core.Screen) bool {
-	height := env.GetInt("display.height")
-	return height > 0 && screen.OutputNum() > int(float64(height)*1.1)
-}
-
 func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
 	names := []string{
 		"1st-str",
