@@ -11,6 +11,26 @@ func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.Par
 	return true
 }
 
+func DumpFlowAll(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return dumpFlowAll(cc, env, flow, currCmdIdx, false)
+}
+
+func DumpFlowAllSimple(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return dumpFlowAll(cc, env, flow, currCmdIdx, true)
+}
+
 func DumpFlow(
 	_ core.ArgVals,
 	cc *core.Cli,
@@ -83,26 +103,6 @@ func DumpFlowEnvOpsCheckResult(
 	}
 
 	return clearFlow(flow)
-}
-
-func DumpFlowAllSimple(
-	_ core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	return dumpFlowAll(cc, env, flow, currCmdIdx, true)
-}
-
-func DumpFlowAll(
-	_ core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	return dumpFlowAll(cc, env, flow, currCmdIdx, false)
 }
 
 func dumpFlowAll(

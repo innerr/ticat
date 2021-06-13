@@ -4,7 +4,14 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/pingcap/ticat/pkg/cli/core"
 )
+
+func TooMuchOutput(env *core.Env, screen core.Screen) bool {
+	height := env.GetInt("display.height")
+	return height > 0 && screen.OutputNum() > int(float64(height)*1.1)
+}
 
 func mayQuoteStr(origin string) string {
 	trimed := strings.TrimSpace(origin)

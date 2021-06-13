@@ -29,12 +29,49 @@ func SuggestListCmds(env *core.Env) []string {
 	}
 }
 
-func SuggestFindCmds(env *core.Env) []string {
+func SuggestFindCmdsMore(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" str1 str2 :+", indent) + "- search commands with details",
+	}
+}
+
+func SuggestAddAndSaveEnv(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	res := []string{
+		padR(selfName+" {k1=v2 k2=v2} cmd1 : cmd2", indent) + "- set/change env key-values, one time only",
+		"",
+		padR(selfName+" {k1=v2 k2=v2} e.save", indent) + "- save the key-values",
+		padR(selfName+" cmd1 : cmd2", indent) + "- execute with saved key-values",
+		"",
+	}
+	return append(res, SuggestListEnv(env)...)
+}
+
+func SuggestListEnv(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" e", indent) + "- list changed env key-values, not include system's",
+		padR(selfName+" e.ls", indent) + "- list all key-values, include system's",
+	}
+}
+
+func SuggestFindEnv(env *core.Env, subCmd string) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" e"+subCmd+" str1 str2 :-", indent) + "- search env keys",
+	}
+}
+
+func SuggestFindCmdsLess(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" str1 str2 :-", indent) + "- search commands",
-		padR(selfName+" str1 str2 :+", indent) + "- search commands with details",
 	}
+}
+
+func SuggestFindCmds(env *core.Env) []string {
+	return append(SuggestFindCmdsLess(env), SuggestFindCmdsMore(env)...)
 }
 
 func SuggestFindRepoTag(env *core.Env) []string {
@@ -93,7 +130,7 @@ func SuggestFlowAdd(env *core.Env) []string {
 	return []string{
 		padR(selfName+" dbg.echo hi : slp 1s : f.+ xx", indent) +
 			"- create a flow 'xx' by 'f.+' for convenient",
-		padR(selfName+" xx", indent) + "- execute command 'xx'",
+		padR(selfName+" xx", indent) + "- execute flow command 'xx'",
 	}
 }
 
@@ -125,6 +162,13 @@ func SuggestFindProvider(env *core.Env) []string {
 	return []string{
 		padR(prefix+"-", indent) + explain,
 		padR(prefix+"+", indent) + explain + ", with details",
+	}
+}
+
+func SuggestFlowsFilter(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" h str1 str2", indent) + "- find flows matched these strings",
 	}
 }
 

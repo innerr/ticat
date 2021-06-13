@@ -181,6 +181,10 @@ func (self *CmdTree) Parent() *CmdTree {
 	return self.parent
 }
 
+func (self *CmdTree) IsRoot() bool {
+	return self.parent == nil
+}
+
 func (self *CmdTree) Name() string {
 	return self.name
 }

@@ -45,14 +45,14 @@ func (self *ParsedCmds) RemoveLeadingCmds(count int) {
 	self.Cmds = self.Cmds[count:]
 }
 
-type ParseError struct {
+type ParseResult struct {
 	Input []string
 	Error error
 }
 
 type ParsedCmd struct {
-	Segments   []ParsedCmdSeg
-	ParseError ParseError
+	Segments    []ParsedCmdSeg
+	ParseResult ParseResult
 }
 
 func (self ParsedCmd) IsEmpty() bool {
