@@ -17,7 +17,8 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	allows := []interface{}{
 		builtin.DumpCmdNoRecursive,
 		builtin.SaveFlow,
-		builtin.DumpTellTailCmd,
+		builtin.DumpTailCmdInfo,
+		builtin.DumpTailCmdSub,
 		builtin.GlobalHelpMoreInfo,
 		builtin.GlobalHelpLessInfo,
 		builtin.DumpFlowAll,
@@ -69,7 +70,8 @@ func isEndWithSearchCmd(flow *core.ParsedCmds) (isSearch, isLess, isMore bool) {
 	} else if last.IsTheSameFunc(builtin.GlobalHelpLessInfo) {
 		isSearch = true
 		isLess = true
-	} else if last.IsTheSameFunc(builtin.DumpTellTailCmd) {
+	} else if last.IsTheSameFunc(builtin.DumpTailCmdInfo) ||
+		last.IsTheSameFunc(builtin.DumpTailCmdSub) {
 		isSearch = true
 	}
 	return

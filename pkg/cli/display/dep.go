@@ -2,6 +2,8 @@ package display
 
 import (
 	"fmt"
+	"os/exec"
+	"sort"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
@@ -13,30 +15,56 @@ type DependInfo struct {
 
 type Depends map[string]map[*core.Cmd]DependInfo
 
-func DumpDepends(cc *core.Cli, env *core.Env, deps Depends) {
+func DumpDepends(
+	screen core.Screen,
+	env *core.Env,
+	deps Depends) (hasMissedOsCmd bool) {
+
 	if len(deps) == 0 {
 		return
 	}
 
+	foundOsCmds := map[string]bool{}
+	var osCmds []string
+	for osCmd, _ := range deps {
+		exists := isOsCmdExists(osCmd)
+		foundOsCmds[osCmd] = exists
+		hasMissedOsCmd = hasMissedOsCmd || !exists
+		osCmds = append(osCmds, osCmd)
+	}
+	sort.Strings(osCmds)
+
 	sep := env.Get("strs.cmd-path-sep").Raw
 
 	if !env.GetBool("display.flow.simplified") {
-		PrintTipTitle(cc.Screen, env,
-			"depended os commands.",
-			"",
-			"this flow need the os commands below to execute,",
-			"make sure they are all installed.")
+		if hasMissedOsCmd {
+			PrintErrTitle(screen, env,
+				"missed depended os-commands.",
+				"",
+				"the needed os-commands below are not installed:")
+		} else {
+			PrintTipTitle(screen, env,
+				"depended os-commands are all installed.",
+				"",
+				"this flow need these os-commands below to execute:")
+		}
 	} else {
-		cc.Screen.Print(fmt.Sprintf("-------=<%s>=-------\n\n", "depended os commands"))
+		screen.Print(fmt.Sprintf("-------=<%s>=-------\n\n", "depended os-commands"))
 	}
 
-	for osCmd, cmds := range deps {
-		cc.Screen.Print(fmt.Sprintf("[%s]\n", osCmd))
+	for _, osCmd := range osCmds {
+		if hasMissedOsCmd && foundOsCmds[osCmd] {
+			continue
+		}
+		cmds := deps[osCmd]
+		screen.Print(fmt.Sprintf("[%s]\n", osCmd))
 		for _, info := range cmds {
-			cc.Screen.Print(fmt.Sprintf("        '%s'\n", info.Reason))
-			cc.Screen.Print(fmt.Sprintf("            [%s]\n", info.Cmd.DisplayPath(sep, true)))
+			screen.Print(fmt.Sprintf("        '%s'\n", info.Reason))
+			screen.Print(fmt.Sprintf("            [%s]\n", info.Cmd.DisplayPath(sep, true)))
 		}
 	}
+
+	return
 }
 
 func CollectDepends(cc *core.Cli, flow []core.ParsedCmd, res Depends) {
@@ -60,4 +88,9 @@ func CollectDepends(cc *core.Cli, flow []core.ParsedCmd, res Depends) {
 		subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
 		CollectDepends(cc, subFlow.Cmds, res)
 	}
+}
+
+func isOsCmdExists(cmd string) bool {
+	path, err := exec.LookPath(cmd)
+	return err == nil && len(path) > 0
 }

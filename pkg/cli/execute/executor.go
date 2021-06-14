@@ -27,6 +27,7 @@ func NewExecutor(sessionFileName string) *Executor {
 			// TODO: implement and add functions: flowFlatten, mockModInject
 			filterEmptyCmdsAndReorderByPriority,
 			verifyEnvOps,
+			verifyOsDepCmds,
 		},
 		sessionFileName,
 	}
@@ -294,6 +295,18 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	}
 	display.DumpEnvOpsCheckResult(cc.Screen, env, result, cc.Cmds.Strs.PathSep)
 	return false
+}
+
+func verifyOsDepCmds(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
+	deps := display.Depends{}
+	display.CollectDepends(cc, flow.Cmds, deps)
+	screen := display.NewCacheScreen()
+	hasMissedOsCmds := display.DumpDepends(screen, env, deps)
+	if hasMissedOsCmds {
+		screen.WriteTo(cc.Screen)
+		return false
+	}
+	return true
 }
 
 // Borrow abbrs from cmds to env

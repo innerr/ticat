@@ -82,21 +82,21 @@ func (self *TipBoxPrinter) Print(msg string) {
 		var tipLen int
 		utf8 := self.env.GetBool("display.utf8.symbols")
 		if self.isErr {
-			tip = "<ERR>"
+			tip = " <ERR>"
 			tipLen = len(tip)
 			if utf8 {
-				tip = "🛑"
-				tipLen = 2
+				tip = self.env.GetRaw("display.utf8.symbols.err")
+				tipLen = self.env.GetInt("display.utf8.symbols.err.len")
 			}
 		} else {
-			tip = "<TIP>"
+			tip = " <TIP>"
 			tipLen = len(tip)
 			if utf8 {
-				tip = "💡"
-				tipLen = 2
+				tip = self.env.GetRaw("display.utf8.symbols.tip")
+				tipLen = self.env.GetInt("display.utf8.symbols.tip.len")
 			}
 		}
-		self.buf.PrintEx(tip+" "+msg, len(msg)+1+tipLen)
+		self.buf.PrintEx(tip+msg, len(msg)+tipLen)
 		self.inited = true
 	} else {
 		self.buf.Print("   " + msg)

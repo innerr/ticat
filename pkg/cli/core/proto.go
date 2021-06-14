@@ -14,6 +14,7 @@ func EnvOutput(env *Env, writer io.Writer, sep string) error {
 	filtered := []string{
 		"session",
 		"strs.",
+		"display.height",
 	}
 	flatten := env.Flatten(true, filtered, false)
 	var keys []string

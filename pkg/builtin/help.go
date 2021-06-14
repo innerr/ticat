@@ -79,7 +79,20 @@ func globalHelpLessMoreInfo(
 	return dumpMoreLessFindResult(flow, cc.Screen, env, "", cc.Cmds, skeleton, findStrs...)
 }
 
-func DumpTellTailCmd(
+func DumpTailCmdInfo(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+	dumpArgs := display.NewDumpCmdArgs().NoFlatten().NoRecursive()
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
+	return clearFlow(flow)
+}
+
+func DumpTailCmdSub(
 	_ core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -87,11 +100,14 @@ func DumpTellTailCmd(
 	currCmdIdx int) (int, bool) {
 
 	if len(flow.Cmds) < 2 {
-		return clearFlow(flow)
+		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+		dumpArgs := display.NewDumpCmdArgs().NoFlatten().NoRecursive()
+		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
+	} else {
+		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+		dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
+		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	}
-	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-	dumpArgs := display.NewDumpCmdArgs().NoFlatten().NoRecursive()
-	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	return clearFlow(flow)
 }
 

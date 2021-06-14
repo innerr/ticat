@@ -138,11 +138,13 @@ func dumpFlowCmd(
 		}
 	}
 
-	if len(cic.CmdLine()) != 0 && cic.Type() != core.CmdTypeNormal &&
-		cic.Type() != core.CmdTypePower {
+	if (len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0) &&
+		cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
 		if cic.Type() == core.CmdTypeFlow {
 			prt(1, "- flow:")
-			prt(2, cic.CmdLine())
+			for _, flowStr := range cic.FlowStrs() {
+				prt(2, flowStr)
+			}
 		} else if !args.Simple && !args.Skeleton {
 			if cic.Type() == core.CmdTypeEmptyDir {
 				prt(1, "- dir:")

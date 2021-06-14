@@ -621,25 +621,18 @@ func repoDisplayName(info meta.RepoInfo) string {
 
 func disabledStr(env *core.Env) string {
 	if env.GetBool("display.utf8.symbols") {
-		return "🛑(disabled)"
+		errStr := env.GetRaw("display.utf8.symbols.err")
+		return errStr + "(disabled)"
 	} else {
 		return " (disabled)"
 	}
 }
 
 func enabledStr(env *core.Env, str bool) string {
-	if env.GetBool("display.utf8.symbols") {
-		if str {
-			return "✅(enabled)"
-		} else {
-			return "✅"
-		}
+	if str {
+		return " (enabled)"
 	} else {
-		if str {
-			return " (enabled)"
-		} else {
-			return ""
-		}
+		return ""
 	}
 }
 
