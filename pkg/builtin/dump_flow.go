@@ -78,9 +78,9 @@ func DumpFlowDepends(
 	display.CollectDepends(cc, flow.Cmds[currCmdIdx+1:], deps)
 
 	if len(deps) != 0 {
-		display.DumpDepends(cc, env, deps)
+		display.DumpDepends(cc.Screen, env, deps)
 	} else {
-		cc.Screen.Print("no depended os commands\n")
+		display.PrintTipTitle(cc.Screen, env, "no depended os commands")
 	}
 	return clearFlow(flow)
 }
@@ -123,7 +123,7 @@ func dumpFlowAll(
 
 	if len(deps) != 0 {
 		cc.Screen.Print("\n")
-		display.DumpDepends(cc, env, deps)
+		display.DumpDepends(cc.Screen, env, deps)
 	}
 
 	checker := &core.EnvOpsChecker{}
