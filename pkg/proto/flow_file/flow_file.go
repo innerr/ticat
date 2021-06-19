@@ -1,74 +1,29 @@
 package flow_file
 
 import (
-	"bufio"
-	"fmt"
-	"io"
-	"os"
-	"strings"
+	"github.com/pingcap/ticat/pkg/proto/meta_file"
 )
 
-// TODO: handle "'\"" in flow
-
 func LoadFlowFile(path string) (flow []string, help string, abbrs string) {
-	file, err := os.Open(path)
-	if err != nil {
-		panic(fmt.Errorf("[LoadFlowFile] open flow file '%s' failed: %v", path, err))
-	}
-	defer file.Close()
-	return LoadFlow(file)
-}
-
-func LoadFlow(reader io.Reader) (flow []string, help string, abbrs string) {
-	const kvSep = " =\t"
-	scanner := bufio.NewScanner(reader)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		text := strings.TrimSpace(scanner.Text())
-		if !strings.HasPrefix(text, "#") {
-			flow = append(flow, text)
-			continue
-		}
-		text = strings.TrimSpace(strings.TrimLeft(text, "#"))
-		if strings.HasPrefix(text, "help") {
-			help = strings.Trim(strings.TrimLeft(text, "help"), kvSep)
-			continue
-		}
-		if strings.HasPrefix(text, "abbrs") {
-			abbrs = strings.Trim(strings.TrimLeft(text, "abbrs"), kvSep)
-			continue
-		}
-		if strings.HasPrefix(text, "abbr") {
-			abbrs = strings.Trim(strings.TrimLeft(text, "abbr"), kvSep)
-			continue
-		}
-	}
+	meta := meta_file.NewMetaFile(path)
+	section := meta.GetGlobalSection()
+	help = section.Get("help")
+	abbrs = section.Get("abbrs")
+	flow = section.GetMultiLineVal("flow", false)
 	return
 }
 
 func SaveFlowFile(path string, flow []string, help string, abbrs string) {
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		panic(fmt.Errorf("[SaveFlowFile] open flow file '%s' failed: %v", path, err))
-	}
-	defer file.Close()
-	SaveFlow(file, flow, help, abbrs)
-}
-
-func SaveFlow(w io.Writer, flow []string, help string, abbrs string) {
-	if len(help) != 0 || len(abbrs) != 0 {
-		fmt.Fprintf(w, "#\n")
-	}
+	meta := meta_file.CreateMetaFile(path)
+	section := meta.GetGlobalSection()
 	if len(help) != 0 {
-		fmt.Fprintf(w, "# help = %s\n", help)
+		section.Set("help", help)
 	}
 	if len(abbrs) != 0 {
-		fmt.Fprintf(w, "# abbrs = %s\n", abbrs)
+		section.Set("abbrs", abbrs)
 	}
-	if len(help) != 0 || len(abbrs) != 0 {
-		fmt.Fprintf(w, "#\n")
+	if len(flow) != 0 {
+		section.SetMultiLineVal("flow", flow)
 	}
-	for _, line := range flow {
-		fmt.Fprintf(w, "%s\n", line)
-	}
+	meta.Save()
 }
