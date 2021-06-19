@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -171,30 +170,21 @@ func SaveFlow(
 
 	w := bytes.NewBuffer(nil)
 	flow.RemoveLeadingCmds(1)
-	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
+
 	// TODO: wrap line if too long
+	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
 	data := w.String()
 
 	screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
 	screen.Print("    - flow:\n")
-	screen.Print(fmt.Sprintf("        %s", data))
+	screen.Print(fmt.Sprintf("        %s\n", data))
 	screen.Print("    - executable:\n")
 	screen.Print(fmt.Sprintf("        %s\n", filePath))
 
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
 
-	tmp := filePath + ".tmp"
-	err = ioutil.WriteFile(tmp, []byte(data), 0644)
-	if err != nil {
-		panic(fmt.Errorf("[SaveFlow] write flow file '%s' failed: %v", tmp, err))
-	}
-
-	err = os.Rename(tmp, filePath)
-	if err != nil {
-		panic(fmt.Errorf("[SaveFlow] rename flow file from '%s' to '%s' failed: %v",
-			tmp, filePath, err))
-	}
+	flow_file.SaveFlowFile(filePath, []string{data}, "", "")
 
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+cmdPath+"' is saved, can be used as a command")
@@ -353,7 +343,6 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 				!cmdHasEnv && j == len(cmd.Segments)-1)
 		}
 	}
-	fmt.Fprintf(w, "\n")
 }
 
 func saveFlowEnv(

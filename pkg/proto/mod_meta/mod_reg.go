@@ -27,7 +27,7 @@ func RegMod(
 	}()
 
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
-	meta := meta_file.NewModMeta(metaPath)
+	meta := meta_file.NewMetaFile(metaPath)
 
 	// 'cmd' should be a relative path base on this file
 	cmdLine := meta.Get("cmd")
@@ -73,9 +73,9 @@ func RegMod(
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
 
-	args := meta.GetSession("args")
+	args := meta.GetSection("args")
 	if args == nil {
-		args = meta.GetSession("arg")
+		args = meta.GetSection("arg")
 	}
 	if args != nil {
 		for _, names := range args.Keys() {
@@ -90,9 +90,9 @@ func RegMod(
 		}
 	}
 
-	deps := meta.GetSession("deps")
+	deps := meta.GetSection("deps")
 	if deps == nil {
-		deps = meta.GetSession("dep")
+		deps = meta.GetSection("dep")
 	}
 	if deps != nil {
 		for _, dep := range deps.Keys() {
@@ -101,7 +101,7 @@ func RegMod(
 		}
 	}
 
-	envOps := meta.GetSession("env")
+	envOps := meta.GetSection("env")
 	if envOps != nil {
 		for _, names := range envOps.Keys() {
 			op := envOps.Get(names)
