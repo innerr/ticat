@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/proto/meta_file"
 )
 
 func RegMod(
@@ -26,7 +27,7 @@ func RegMod(
 	}()
 
 	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
-	meta := NewModMeta(metaPath)
+	meta := meta_file.NewModMeta(metaPath)
 
 	// 'cmd' should be a relative path base on this file
 	cmdLine := meta.Get("cmd")
