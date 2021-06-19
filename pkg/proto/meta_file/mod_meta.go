@@ -1,4 +1,4 @@
-package mod_meta
+package meta_file
 
 import (
 	"bytes"
@@ -12,15 +12,23 @@ type ModMeta struct {
 }
 
 func NewModMeta(path string) *ModMeta {
-	meta := &ModMeta{
-		sections: make(SectionMap),
-	}
-	contents, err := ioutil.ReadFile(path)
+	meta, err := NewModMetaEx(path)
 	if err != nil {
 		panic(fmt.Errorf("[NewModMeta] open mod meta file '%s' failed: %v", path, err))
 	}
-	meta.parse(contents, "\n", "=")
 	return meta
+}
+
+func NewModMetaEx(path string) (meta *ModMeta, err error) {
+	meta = &ModMeta{
+		sections: make(SectionMap),
+	}
+	var contents []byte
+	contents, err = ioutil.ReadFile(path)
+	if err == nil {
+		meta.parse(contents, "\n", "=")
+	}
+	return
 }
 
 func (self *ModMeta) Get(key string) string {

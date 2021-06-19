@@ -139,7 +139,7 @@ const (
 	MetaExt               string = "." + SelfName
 	FlowExt               string = ".flow." + SelfName
 	HubFileName           string = "repos.hub"
-	ReposFileName         string = "README.md"
+	ReposFileName         string = "hub.ticat"
 	SessionEnvFileName    string = "env"
 	TagOutOfTheBox        string = "@ready"
 	TagProvider           string = "@provider"

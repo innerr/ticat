@@ -1,7 +1,6 @@
 package builtin
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -56,8 +55,9 @@ func loadLocalMods(
 
 		info, err = os.Stat(target)
 		if os.IsNotExist(err) {
-			panic(fmt.Errorf("[LoadLocalMods] target '%s' of meta file '%s' not exists",
-				target, metaPath))
+			// Allow this
+			//panic(fmt.Errorf("[LoadLocalMods] target '%s' of meta file '%s' not exists",
+			//	target, metaPath))
 			return nil
 		}
 
