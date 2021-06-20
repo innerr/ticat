@@ -39,6 +39,11 @@ func (self Env) GetBool(name string) bool {
 	return StrToBool(self.Get(name).Raw)
 }
 
+type EnvVal struct {
+	Raw   string
+	IsArg bool
+}
+
 type EnvValErrWrongType struct {
 	Str        string
 	Key        string

@@ -68,7 +68,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	desc.AddSub("depth", "d", "D").
+	desc.AddSub("depth").
 		RegCmd(SetDumpFlowDepth,
 			"setup display stack depth of flow desc").
 		SetQuiet().
@@ -205,14 +205,17 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	abbrsCmdHelpStr := "enable borrowing commands' abbrs when setting KVs"
 	abbrsCmd := abbrs.AddSub("cmd")
-	abbrsCmd.RegCmd(EnvAbbrsBorrowFromCmdsEnable,
-		abbrsCmdHelpStr)
+	abbrsCmd.RegEmptyCmd(
+		abbrsCmdHelpStr).
+		AddVal2Env("sys.env.use-cmd-abbrs", "true")
 	abbrsCmd.AddSub("on", "yes", "y", "Y", "1", "+").
-		RegCmd(EnvAbbrsBorrowFromCmdsEnable,
-			abbrsCmdHelpStr)
+		RegEmptyCmd(
+			abbrsCmdHelpStr).
+		AddVal2Env("sys.env.use-cmd-abbrs", "true")
 	abbrsCmd.AddSub("off", "no", "n", "N", "0", "-").
-		RegCmd(EnvAbbrsBorrowFromCmdsDisable,
-			abbrsCmdHelpStr)
+		RegEmptyCmd(
+			"disable borrowing commands' abbrs when setting KVs").
+		AddVal2Env("sys.env.use-cmd-abbrs", "false")
 }
 
 func RegisterVerbCmds(cmds *core.CmdTree) {
@@ -376,16 +379,19 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		AddArg("message", "", "msg", "m", "M")
 
 	step := cmds.AddSub("step-by-step", "step", "s", "S")
-	step.RegCmd(DbgStepOn,
+	step.RegEmptyCmd(
 		"enable step by step").
+		AddVal2Env("sys.step-by-step", "true").
 		SetQuiet()
 	step.AddSub("on", "yes", "y", "Y", "1", "+").
-		RegCmd(DbgStepOn,
+		RegEmptyCmd(
 			"enable step by step").
+		AddVal2Env("sys.step-by-step", "true").
 		SetQuiet()
 	step.AddSub("off", "no", "n", "N", "0", "-").
-		RegCmd(DbgStepOff,
+		RegEmptyCmd(
 			"disable step by step").
+		AddVal2Env("sys.step-by-step", "false").
 		SetQuiet()
 
 	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
@@ -401,16 +407,22 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {
 	utf8 := cmds.AddSub("utf8", "utf")
-	utf8.RegCmd(DisplayUtf8On,
+	utf8.RegEmptyCmd(
 		"enable utf8 display").
+		AddVal2Env("display.utf8", "true").
+		AddVal2Env("display.utf8.symbols", "true").
 		SetQuiet()
 	utf8.AddSub("on", "yes", "y", "Y", "1", "+").
-		RegCmd(DisplayUtf8On,
+		RegEmptyCmd(
 			"enable utf8 display").
+		AddVal2Env("display.utf8", "true").
+		AddVal2Env("display.utf8.symbols", "true").
 		SetQuiet()
 	utf8.AddSub("off", "no", "n", "N", "0", "-").
-		RegCmd(DisplayUtf8Off,
+		RegEmptyCmd(
 			"disable utf8 display").
+		AddVal2Env("display.utf8", "false").
+		AddVal2Env("display.utf8.symbols", "false").
 		SetQuiet()
 }
 

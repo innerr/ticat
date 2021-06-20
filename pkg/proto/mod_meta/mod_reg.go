@@ -13,7 +13,7 @@ import (
 func RegMod(
 	cc *core.Cli,
 	metaPath string,
-	path string,
+	executablePath string,
 	isDir bool,
 	cmdPath string,
 	abbrsSep string,
@@ -37,34 +37,57 @@ func RegMod(
 			cmdPath, metaPath))
 	}
 
-	if len(cmdLine) != 0 {
-		if !isDir {
-			path = filepath.Dir(path)
-		}
-		var err error
-		path, err = filepath.Abs(filepath.Join(path, cmdLine))
-		if err != nil {
-			panic(fmt.Errorf("[regMod] cmd '%s' get abs path of '%s' failed",
-				cmdPath, path))
-		}
-		if !fileExists(path) {
-			panic(fmt.Errorf("[regMod] cmd '%s' point to a not existed file '%s'",
-				cmdPath, path))
-		}
-	}
-
-	var cmd *core.Cmd
-	if isDir {
-		if len(cmdLine) != 0 {
-			cmd = mod.RegDirWithCmd(path, strings.TrimSpace(help))
-		} else {
-			cmd = mod.RegEmptyDirCmd(path, strings.TrimSpace(help))
-		}
-	} else {
-		cmd = mod.RegFileCmd(path, strings.TrimSpace(help))
-	}
+	cmd := regMod(mod, executablePath, isDir, cmdPath, cmdLine, help)
 	cmd.SetSource(source).SetMetaFile(metaPath)
 
+	regAbbrs(meta, mod, abbrsSep)
+	regArgs(meta, cmd, abbrsSep)
+	regDeps(meta, cmd)
+	regEnvOps(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
+	regVal2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
+}
+
+func regMod(
+	mod *core.CmdTree,
+	executablePath string,
+	isDir bool,
+	cmdPath string,
+	cmdLine string,
+	help string) *core.Cmd {
+
+	if len(executablePath) == 0 {
+		return mod.RegEmptyCmd(strings.TrimSpace(help))
+	}
+
+	// Adjust 'executablePath'
+	if len(cmdLine) != 0 {
+		if !isDir {
+			executablePath = filepath.Dir(executablePath)
+		}
+		var err error
+		executablePath, err = filepath.Abs(filepath.Join(executablePath, cmdLine))
+		if err != nil {
+			panic(fmt.Errorf("[regMod] cmd '%s' get abs path of '%s' failed",
+				cmdPath, executablePath))
+		}
+		if !fileExists(executablePath) {
+			panic(fmt.Errorf("[regMod] cmd '%s' point to a not existed file '%s'",
+				cmdPath, executablePath))
+		}
+	}
+
+	if isDir {
+		if len(cmdLine) != 0 {
+			return mod.RegDirWithCmd(executablePath, strings.TrimSpace(help))
+		} else {
+			return mod.RegEmptyDirCmd(executablePath, strings.TrimSpace(help))
+		}
+	} else {
+		return mod.RegFileCmd(executablePath, strings.TrimSpace(help))
+	}
+}
+
+func regAbbrs(meta *meta_file.MetaFile, mod *core.CmdTree, abbrsSep string) {
 	abbrs := meta.Get("abbrs")
 	if len(abbrs) == 0 {
 		abbrs = meta.Get("abbr")
@@ -72,24 +95,29 @@ func RegMod(
 	if len(abbrs) != 0 {
 		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
 	}
+}
 
+func regArgs(meta *meta_file.MetaFile, cmd *core.Cmd, abbrsSep string) {
 	args := meta.GetSection("args")
 	if args == nil {
 		args = meta.GetSection("arg")
 	}
-	if args != nil {
-		for _, names := range args.Keys() {
-			defVal := args.Get(names)
-			nameAndAbbrs := strings.Split(names, abbrsSep)
-			name := strings.TrimSpace(nameAndAbbrs[0])
-			var argAbbrs []string
-			for _, abbr := range nameAndAbbrs[1:] {
-				argAbbrs = append(argAbbrs, strings.TrimSpace(abbr))
-			}
-			cmd.AddArg(name, defVal, argAbbrs...)
-		}
+	if args == nil {
+		return
 	}
+	for _, names := range args.Keys() {
+		defVal := args.Get(names)
+		nameAndAbbrs := strings.Split(names, abbrsSep)
+		name := strings.TrimSpace(nameAndAbbrs[0])
+		var argAbbrs []string
+		for _, abbr := range nameAndAbbrs[1:] {
+			argAbbrs = append(argAbbrs, strings.TrimSpace(abbr))
+		}
+		cmd.AddArg(name, defVal, argAbbrs...)
+	}
+}
 
+func regDeps(meta *meta_file.MetaFile, cmd *core.Cmd) {
 	deps := meta.GetSection("deps")
 	if deps == nil {
 		deps = meta.GetSection("dep")
@@ -100,63 +128,104 @@ func RegMod(
 			cmd.AddDepend(dep, reason)
 		}
 	}
+}
+
+func regEnvOps(
+	envAbbrs *core.EnvAbbrs,
+	meta *meta_file.MetaFile,
+	cmd *core.Cmd,
+	abbrsSep string,
+	envPathSep string) {
 
 	envOps := meta.GetSection("env")
-	if envOps != nil {
-		for _, names := range envOps.Keys() {
-			op := envOps.Get(names)
-			segs := strings.Split(names, envPathSep)
-			envAbbrs := cc.EnvAbbrs
-			var path []string
-			for _, seg := range segs {
-				var abbrs []string
-				fields := strings.Split(seg, abbrsSep)
-				if len(fields) == 1 {
-					fields = strings.Split(seg, ":")
-				}
-				for _, abbr := range fields {
-					abbrs = append(abbrs, strings.TrimSpace(abbr))
-				}
-				name := abbrs[0]
-				abbrs = abbrs[1:]
-				subEnvAbbrs := envAbbrs.GetOrAddSub(name)
-				if len(abbrs) > 0 {
-					envAbbrs.AddSubAbbrs(name, abbrs...)
-				}
-				envAbbrs = subEnvAbbrs
-				path = append(path, name)
-			}
+	if envOps == nil {
+		return
+	}
 
-			key := strings.Join(path, envPathSep)
-			opFields := strings.Split(op, abbrsSep)
-			if len(opFields) == 1 {
-				opFields = strings.Split(op, ":")
-			}
-			for _, it := range opFields {
-				field := strings.ToLower(it)
-				may := strings.Index(field, "may") >= 0 || strings.Index(field, "opt") >= 0
-				write := strings.Index(field, "w") >= 0
-				read := strings.Index(field, "rd") >= 0 ||
-					strings.Index(field, "read") >= 0 || field == "r"
-				if write && read {
-					panic(fmt.Errorf("[LoadLocalMods.regMod] "+
-						"parse env r|w definition failed: %v", it))
-				}
-				if write {
-					if may {
-						cmd.AddEnvOp(key, core.EnvOpTypeMayWrite)
-					} else {
-						cmd.AddEnvOp(key, core.EnvOpTypeWrite)
-					}
-				}
-				if read {
-					if may {
-						cmd.AddEnvOp(key, core.EnvOpTypeMayRead)
-					} else {
-						cmd.AddEnvOp(key, core.EnvOpTypeRead)
-					}
-				}
-			}
+	for _, envKey := range envOps.Keys() {
+		op := envOps.Get(envKey)
+		key := regEnvKeyAbbrs(envAbbrs, envKey, abbrsSep, envPathSep)
+		opFields := strings.Split(op, abbrsSep)
+		if len(opFields) == 1 {
+			opFields = strings.Split(op, ":")
+		}
+		for _, it := range opFields {
+			regEnvOp(cmd, key, it)
+		}
+	}
+}
+
+func regVal2Env(
+	envAbbrs *core.EnvAbbrs,
+	meta *meta_file.MetaFile,
+	cmd *core.Cmd,
+	abbrsSep string,
+	envPathSep string) {
+
+	writes := meta.GetSection("env.write")
+	if writes == nil {
+		return
+	}
+
+	for _, envKey := range writes.Keys() {
+		val := writes.Get(envKey)
+		key := regEnvKeyAbbrs(envAbbrs, envKey, abbrsSep, envPathSep)
+		cmd.AddVal2Env(key, val)
+	}
+}
+
+func regEnvKeyAbbrs(
+	envAbbrs *core.EnvAbbrs,
+	envKeyWithAbbrs string,
+	abbrsSep string,
+	envPathSep string) (key string) {
+
+	var path []string
+	segs := strings.Split(envKeyWithAbbrs, envPathSep)
+	for _, seg := range segs {
+		var abbrs []string
+		fields := strings.Split(seg, abbrsSep)
+		if len(fields) == 1 {
+			fields = strings.Split(seg, ":")
+		}
+		for _, abbr := range fields {
+			abbrs = append(abbrs, strings.TrimSpace(abbr))
+		}
+		name := abbrs[0]
+		abbrs = abbrs[1:]
+		subEnvAbbrs := envAbbrs.GetOrAddSub(name)
+		if len(abbrs) > 0 {
+			envAbbrs.AddSubAbbrs(name, abbrs...)
+		}
+		envAbbrs = subEnvAbbrs
+		path = append(path, name)
+	}
+
+	return strings.Join(path, envPathSep)
+}
+
+func regEnvOp(cmd *core.Cmd, key string, opOrigin string) {
+	op := strings.ToLower(opOrigin)
+	may := strings.Index(op, "may") >= 0 || strings.Index(op, "opt") >= 0
+	write := strings.Index(op, "w") >= 0
+	read := strings.Index(op, "rd") >= 0 ||
+		strings.Index(op, "read") >= 0 || op == "r"
+	if write && read {
+		panic(fmt.Errorf("[LoadLocalMods.regEnvOp] "+
+			"parse env r|w definition failed: %v", opOrigin))
+	}
+	if write {
+		if may {
+			cmd.AddEnvOp(key, core.EnvOpTypeMayWrite)
+		} else {
+			cmd.AddEnvOp(key, core.EnvOpTypeWrite)
+		}
+	}
+	if read {
+		if may {
+			cmd.AddEnvOp(key, core.EnvOpTypeMayRead)
+		} else {
+			cmd.AddEnvOp(key, core.EnvOpTypeRead)
 		}
 	}
 }

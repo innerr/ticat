@@ -10,15 +10,22 @@ import (
 )
 
 func EnvOutput(env *Env, writer io.Writer, sep string) error {
-	// TODO: move to config?
+	// TODO: move to default config
 	filtered := []string{
 		"session",
 		"strs.",
 		"display.height",
+		"sys.stack-depth",
 	}
+
+	defEnv := env.GetLayer(EnvLayerDefault)
+
 	flatten := env.Flatten(true, filtered, false)
 	var keys []string
-	for k, _ := range flatten {
+	for k, v := range flatten {
+		if defEnv.GetRaw(k) == v {
+			continue
+		}
 		keys = append(keys, k)
 	}
 

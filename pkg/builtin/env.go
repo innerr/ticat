@@ -161,16 +161,6 @@ func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.Parsed
 	return true
 }
 
-func EnvAbbrsBorrowFromCmdsEnable(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	env.GetLayer(core.EnvLayerSession).SetBool("sys.env.use-cmd-abbrs", true)
-	return true
-}
-
-func EnvAbbrsBorrowFromCmdsDisable(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	env.GetLayer(core.EnvLayerSession).SetBool("sys.env.use-cmd-abbrs", false)
-	return true
-}
-
 func getEnvLocalFilePath(env *core.Env) string {
 	path := env.GetRaw("sys.paths.data")
 	file := env.GetRaw("strs.env-file-name")

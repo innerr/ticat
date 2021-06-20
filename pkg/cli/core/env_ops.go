@@ -72,6 +72,15 @@ func (self EnvOpsChecker) OnCallCmd(
 	ignoreMaybe bool,
 	displayPath string) (result []EnvOpsCheckResult) {
 
+	val2env := cmd.GetVal2Env()
+	for _, key := range val2env.EnvKeys() {
+		before, _ := self[key]
+		if val2env.Has(key) {
+			before.val = before.val | EnvOpTypeWrite
+			self[key] = before
+		}
+	}
+
 	ops := cmd.EnvOps()
 	for _, key := range ops.EnvKeys() {
 		for _, curr := range ops.Ops(key) {

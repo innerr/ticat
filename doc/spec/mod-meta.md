@@ -47,6 +47,11 @@ env-key-1 = <env-op>
 env-key-2 = <env-op> : <env-op> : ...
 ...
 
+[env.write]
+env-key-1 = <value>
+env-key-2 = <value>
+...
+
 [dep]
 os-cmd-1 = <why this command depends on this os-cmd>
 os-cmd-2 = <why this command depends on this os-cmd>
@@ -62,6 +67,9 @@ The `[env]` section defines which keys will read or write in the command's code.
 "env-op" value could be: "read", "write", "may-read", "may-write".
 The sequence of "env-op" could be one or more value with orders, seperated by ":".
 Abbrs definition are also allowed in every path segment of the keys.
+
+The `[env.write]` section defines keys will be written values automatically.
+This is convenient for writing "on|off" switch commands.
 
 ## Example
 Dir struct:

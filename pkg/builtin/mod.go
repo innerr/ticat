@@ -22,6 +22,7 @@ func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) b
 func loadLocalMods(
 	cc *core.Cli,
 	root string,
+	reposFileName string,
 	metaExt string,
 	flowExt string,
 	abbrsSep string,
@@ -42,6 +43,10 @@ func loadLocalMods(
 			}
 			return nil
 		}
+		if filepath.Base(path) == reposFileName {
+			return nil
+		}
+
 		if strings.HasSuffix(path, flowExt) {
 			loadFlow(cc, root, path, flowExt, source)
 			return nil
@@ -50,19 +55,11 @@ func loadLocalMods(
 		if ext != metaExt {
 			return nil
 		}
-		target := path[0 : len(path)-len(ext)]
+		targetPath := path[0 : len(path)-len(ext)]
 		metaPath := path
 
-		info, err = os.Stat(target)
-		if os.IsNotExist(err) {
-			// Allow this
-			//panic(fmt.Errorf("[LoadLocalMods] target '%s' of meta file '%s' not exists",
-			//	target, metaPath))
-			return nil
-		}
-
-		// Strip all ext from cmd-path
-		cmdPath := target[len(root)+1:]
+		// Note: strip all ext(s) from cmd-path
+		cmdPath := targetPath[len(root)+1:]
 		for {
 			ext := filepath.Ext(cmdPath)
 			if len(ext) == 0 {
@@ -72,7 +69,15 @@ func loadLocalMods(
 			}
 		}
 
-		mod_meta.RegMod(cc, metaPath, target, info.IsDir(), cmdPath, abbrsSep, envPathSep, source)
+		isDir := false
+		info, err = os.Stat(targetPath)
+		if os.IsNotExist(err) {
+			targetPath = ""
+		} else if err == nil {
+			isDir = info.IsDir()
+		}
+
+		mod_meta.RegMod(cc, metaPath, targetPath, isDir, cmdPath, abbrsSep, envPathSep, source)
 		return nil
 	})
 }
