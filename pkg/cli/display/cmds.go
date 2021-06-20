@@ -221,6 +221,14 @@ func dumpCmd(
 				prt(2, nameStr+" = "+mayQuoteStr(val))
 			}
 
+			val2env := cic.GetVal2Env()
+			if len(val2env.EnvKeys()) != 0 {
+				prt(1, "- env-ops: (write)")
+			}
+			for _, k := range val2env.EnvKeys() {
+				prt(2, k+" = "+mayQuoteStr(val2env.Val(k)))
+			}
+
 			envOps := cic.EnvOps()
 			envOpKeys := envOps.EnvKeys()
 			if len(envOpKeys) != 0 {

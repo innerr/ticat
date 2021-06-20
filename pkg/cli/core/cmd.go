@@ -14,12 +14,14 @@ import (
 type CmdType string
 
 const (
+	CmdTypeUninited   CmdType = "uninited"
 	CmdTypeNormal     CmdType = "normal"
 	CmdTypePower      CmdType = "power"
-	CmdTypeFile       CmdType = "file"
-	CmdTypeEmptyDir   CmdType = "empty"
-	CmdTypeDirWithCmd CmdType = "dir"
 	CmdTypeFlow       CmdType = "flow"
+	CmdTypeEmpty      CmdType = "no-executable"
+	CmdTypeFile       CmdType = "executable-file"
+	CmdTypeEmptyDir   CmdType = "dir-with-no-executable"
+	CmdTypeDirWithCmd CmdType = "dir-with-executable-file"
 )
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env, cmd ParsedCmd) (succeeded bool)
@@ -44,50 +46,89 @@ func (self CmdError) Error() string {
 }
 
 type Cmd struct {
-	owner    *CmdTree
-	help     string
-	ty       CmdType
-	quiet    bool
-	priority bool
-	args     Args
-	normal   NormalCmd
-	power    PowerCmd
-	cmdLine  string
-	flow     []string
-	envOps   EnvOps
-	source   string
-	depends  []Depend
-	metaFile string
+	owner        *CmdTree
+	help         string
+	ty           CmdType
+	quiet        bool
+	priority     bool
+	args         Args
+	normal       NormalCmd
+	power        PowerCmd
+	cmdLine      string
+	flow         []string
+	envOps       EnvOps
+	source       string
+	depends      []Depend
+	metaFilePath string
+	val2env      *Val2Env
+}
+
+func defaultCmd(owner *CmdTree, help string) *Cmd {
+	return &Cmd{
+		owner:        owner,
+		help:         help,
+		ty:           CmdTypeUninited,
+		quiet:        false,
+		priority:     false,
+		args:         newArgs(),
+		normal:       nil,
+		power:        nil,
+		cmdLine:      "",
+		flow:         nil,
+		envOps:       newEnvOps(),
+		source:       "",
+		depends:      nil,
+		metaFilePath: "",
+		val2env:      newVal2Env(),
+	}
 }
 
 func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
-	return &Cmd{owner, help, CmdTypeNormal, false, false,
-		newArgs(), cmd, nil, "", nil, newEnvOps(), "", nil, ""}
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeNormal
+	c.normal = cmd
+	return c
+}
+
+func NewEmptyCmd(owner *CmdTree, help string) *Cmd {
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeEmpty
+	return c
 }
 
 func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
-	return &Cmd{owner, help, CmdTypePower, false, false,
-		newArgs(), nil, cmd, "", nil, newEnvOps(), "", nil, ""}
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypePower
+	c.power = cmd
+	return c
 }
 
 func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
-	return &Cmd{owner, help, CmdTypeFile, false, false,
-		newArgs(), nil, nil, cmd, nil, newEnvOps(), "", nil, ""}
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeFile
+	c.cmdLine = cmd
+	return c
 }
 
 func NewEmptyDirCmd(owner *CmdTree, help string, dir string) *Cmd {
-	return &Cmd{owner, help, CmdTypeEmptyDir, false, false,
-		newArgs(), nil, nil, dir, nil, newEnvOps(), "", nil, ""}
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeEmptyDir
+	c.cmdLine = dir
+	return c
 }
 
 func NewDirWithCmd(owner *CmdTree, help string, cmd string) *Cmd {
-	return &Cmd{owner, help, CmdTypeDirWithCmd, false, false,
-		newArgs(), nil, nil, cmd, nil, newEnvOps(), "", nil, ""}
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeDirWithCmd
+	c.cmdLine = cmd
+	return c
 }
 
 func NewFlowCmd(owner *CmdTree, help string, flow []string) *Cmd {
-	return &Cmd{owner, help, CmdTypeFlow, false, false,
-		newArgs(), nil, nil, "", flow, newEnvOps(), "", nil, ""}
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeFlow
+	c.flow = flow
+	return c
 }
 
 func (self *Cmd) Execute(
@@ -96,6 +137,11 @@ func (self *Cmd) Execute(
 	env *Env,
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	sessionEnv := env.GetLayer(EnvLayerSession)
+	for _, envKey := range self.val2env.EnvKeys() {
+		sessionEnv.Set(envKey, self.val2env.Val(envKey))
+	}
 
 	switch self.ty {
 	case CmdTypePower:
@@ -110,19 +156,11 @@ func (self *Cmd) Execute(
 		return currCmdIdx, self.executeFile(argv, cc, env)
 	case CmdTypeFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env)
+	case CmdTypeEmpty:
+		return currCmdIdx, true
 	default:
 		panic(fmt.Errorf("[Cmd.Execute] unknown cmd executable type: %v", self.ty))
 	}
-}
-
-func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
-	self.args.AddArg(self.owner, name, defVal, abbrs...)
-	return self
-}
-
-func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
-	self.envOps.AddOp(name, op)
-	return self
 }
 
 func (self *Cmd) MatchFind(findStr string) bool {
@@ -136,6 +174,9 @@ func (self *Cmd) MatchFind(findStr string) bool {
 		return true
 	}
 	if self.args.MatchFind(findStr) {
+		return true
+	}
+	if self.val2env.MatchFind(findStr) {
 		return true
 	}
 	if self.envOps.MatchFind(findStr) {
@@ -173,6 +214,16 @@ func (self *Cmd) MatchFind(findStr string) bool {
 	return false
 }
 
+func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
+	self.args.AddArg(self.owner, name, defVal, abbrs...)
+	return self
+}
+
+func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
+	self.envOps.AddOp(name, op)
+	return self
+}
+
 func (self *Cmd) AddSub(name string, abbrs ...string) *CmdTree {
 	return self.owner.AddSub(name, abbrs...)
 }
@@ -183,21 +234,13 @@ func (self *Cmd) SetSource(s string) *Cmd {
 }
 
 func (self *Cmd) SetMetaFile(path string) *Cmd {
-	self.metaFile = path
+	self.metaFilePath = path
 	return self
-}
-
-func (self *Cmd) MetaFile() string {
-	return self.metaFile
 }
 
 func (self *Cmd) AddDepend(dep string, reason string) *Cmd {
 	self.depends = append(self.depends, Depend{dep, reason})
 	return self
-}
-
-func (self *Cmd) GetDepends() []Depend {
-	return self.depends
 }
 
 func (self *Cmd) SetQuiet() *Cmd {
@@ -208,6 +251,23 @@ func (self *Cmd) SetQuiet() *Cmd {
 func (self *Cmd) SetPriority() *Cmd {
 	self.priority = true
 	return self
+}
+
+func (self *Cmd) AddVal2Env(envKey string, val string) *Cmd {
+	self.val2env.Add(envKey, val)
+	return self
+}
+
+func (self *Cmd) GetVal2Env() *Val2Env {
+	return self.val2env
+}
+
+func (self *Cmd) GetDepends() []Depend {
+	return self.depends
+}
+
+func (self *Cmd) MetaFile() string {
+	return self.metaFilePath
 }
 
 func (self *Cmd) Owner() *CmdTree {

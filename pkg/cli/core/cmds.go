@@ -114,6 +114,12 @@ func (self *CmdTree) RegEmptyDirCmd(dir string, help string) *Cmd {
 	return self.cmd
 }
 
+func (self *CmdTree) RegEmptyCmd(help string) *Cmd {
+	self.cmdConflictCheck(help, "RegEmptyCmd")
+	self.cmd = NewEmptyCmd(self, help)
+	return self.cmd
+}
+
 func (self *CmdTree) RegFlowCmd(flow []string, help string) *Cmd {
 	self.cmdConflictCheck(help, "RegFlowCmd")
 	self.cmd = NewFlowCmd(self, help, flow)

@@ -19,12 +19,6 @@ func EnvLayerName(ty EnvLayerType) string {
 	return string(ty)
 }
 
-type EnvVal struct {
-	Raw      string
-	IsArg    bool
-	ValCache interface{}
-}
-
 type Env struct {
 	pairs  map[string]EnvVal
 	parent *Env
@@ -99,7 +93,7 @@ func (self Env) DeleteEx(name string, stopLayer EnvLayerType) {
 
 func (self *Env) Merge(x *Env) {
 	for k, v := range x.pairs {
-		self.pairs[k] = EnvVal{v.Raw, false, nil}
+		self.pairs[k] = EnvVal{v.Raw, false}
 	}
 }
 
@@ -125,7 +119,7 @@ func (self *Env) SetIfEmpty(name string, val string) (old EnvVal) {
 	if exists {
 		return
 	}
-	self.pairs[name] = EnvVal{val, false, nil}
+	self.pairs[name] = EnvVal{val, false}
 	return
 }
 
@@ -139,7 +133,7 @@ func (self *Env) SetEx(name string, val string, isArg bool) (old EnvVal) {
 	if exists && old.Raw == val {
 		return
 	}
-	self.pairs[name] = EnvVal{val, isArg, nil}
+	self.pairs[name] = EnvVal{val, isArg}
 	return
 }
 

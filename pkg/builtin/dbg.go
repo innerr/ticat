@@ -25,16 +25,6 @@ func DbgExecBash(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bo
 	return true
 }
 
-func DbgStepOn(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	env.GetLayer(core.EnvLayerSession).SetBool("sys.step-by-step", true)
-	return true
-}
-
-func DbgStepOff(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	env.GetLayer(core.EnvLayerSession).SetBool("sys.step-by-step", false)
-	return true
-}
-
 func DbgDelayExecute(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec", argv.GetInt("seconds"))
 	return true
