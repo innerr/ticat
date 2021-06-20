@@ -15,7 +15,7 @@ func RegMod(
 	metaPath string,
 	executablePath string,
 	isDir bool,
-	cmdPath string,
+	cmdPath []string,
 	abbrsSep string,
 	envPathSep string,
 	source string) {
@@ -26,37 +26,52 @@ func RegMod(
 		}
 	}()
 
-	mod := cc.Cmds.GetOrAddSub(strings.Split(cmdPath, string(filepath.Separator))...)
+	mod := cc.Cmds.GetOrAddSub(cmdPath...)
 	meta := meta_file.NewMetaFile(metaPath)
 
-	// 'cmd' should be a relative path base on this file
-	cmdLine := meta.Get("cmd")
-	help := meta.Get("help")
-	if len(help) == 0 && (!isDir || len(cmdLine) != 0) {
-		panic(fmt.Errorf("[regMod] cmd '%s' has no help string in '%s'",
-			cmdPath, metaPath))
-	}
-
-	cmd := regMod(mod, executablePath, isDir, cmdPath, cmdLine, help)
+	cmd := regMod(meta, mod, executablePath, isDir)
 	cmd.SetSource(source).SetMetaFile(metaPath)
 
-	regAbbrs(meta, mod, abbrsSep)
+	if cmd.Type() == core.CmdTypeFlow {
+		regFlowAbbrs(meta, cc.Cmds, cmdPath)
+	} else {
+		regModAbbrs(meta, mod)
+	}
+
 	regArgs(meta, cmd, abbrsSep)
 	regDeps(meta, cmd)
 	regEnvOps(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regVal2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
+	regArg2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 }
 
 func regMod(
+	meta *meta_file.MetaFile,
 	mod *core.CmdTree,
 	executablePath string,
-	isDir bool,
-	cmdPath string,
-	cmdLine string,
-	help string) *core.Cmd {
+	isDir bool) *core.Cmd {
+
+	cmdPath := mod.DisplayPath()
+
+	globalSection := meta.GetGlobalSection()
+	flow := globalSection.GetMultiLineVal("flow", false)
+
+	// 'cmd' should be a relative path base on this file when 'isDir'
+	cmdLine := meta.Get("cmd")
+
+	help := meta.Get("help")
+	// If has executable file, it need to have help string, a flow can have not
+	if len(help) == 0 && (!isDir && len(flow) == 0 || len(cmdLine) != 0) {
+		panic(fmt.Errorf("[regMod] cmd '%s' has no help string in '%s', %s",
+			cmdPath, meta.Path(), cmdLine))
+	}
+
+	if len(flow) != 0 {
+		return mod.RegFlowCmd(flow, help)
+	}
 
 	if len(executablePath) == 0 {
-		return mod.RegEmptyCmd(strings.TrimSpace(help))
+		return mod.RegEmptyCmd(help)
 	}
 
 	// Adjust 'executablePath'
@@ -78,22 +93,51 @@ func regMod(
 
 	if isDir {
 		if len(cmdLine) != 0 {
-			return mod.RegDirWithCmd(executablePath, strings.TrimSpace(help))
+			return mod.RegDirWithCmd(executablePath, help)
 		} else {
-			return mod.RegEmptyDirCmd(executablePath, strings.TrimSpace(help))
+			return mod.RegEmptyDirCmd(executablePath, help)
 		}
 	} else {
-		return mod.RegFileCmd(executablePath, strings.TrimSpace(help))
+		return mod.RegFileCmd(executablePath, help)
 	}
 }
 
-func regAbbrs(meta *meta_file.MetaFile, mod *core.CmdTree, abbrsSep string) {
+func regModAbbrs(meta *meta_file.MetaFile, mod *core.CmdTree) {
 	abbrs := meta.Get("abbrs")
 	if len(abbrs) == 0 {
 		abbrs = meta.Get("abbr")
 	}
-	if len(abbrs) != 0 {
-		mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
+	if len(abbrs) == 0 {
+		return
+	}
+	abbrsSep := mod.Strs.AbbrsSep
+	mod.AddAbbrs(strings.Split(abbrs, abbrsSep)...)
+}
+
+func regFlowAbbrs(meta *meta_file.MetaFile, cmds *core.CmdTree, cmdPath []string) {
+	abbrsStr := meta.Get("abbrs")
+	if len(abbrsStr) == 0 {
+		abbrsStr = meta.Get("abbr")
+	}
+	if len(abbrsStr) == 0 {
+		return
+	}
+
+	pathSep := cmds.Strs.PathSep
+	abbrsSep := cmds.Strs.AbbrsSep
+
+	var abbrs [][]string
+	for _, abbrSeg := range strings.Split(abbrsStr, pathSep) {
+		abbrList := strings.Split(abbrSeg, abbrsSep)
+		abbrs = append(abbrs, abbrList)
+	}
+
+	mod := cmds
+	for i, cmd := range cmdPath {
+		mod = mod.GetOrAddSub(cmd)
+		if i < len(abbrs) {
+			mod.AddAbbrs(abbrs[i]...)
+		}
 	}
 }
 
@@ -164,6 +208,9 @@ func regVal2Env(
 
 	writes := meta.GetSection("env.write")
 	if writes == nil {
+		writes = meta.GetSection("val2env")
+	}
+	if writes == nil {
 		return
 	}
 
@@ -171,6 +218,31 @@ func regVal2Env(
 		val := writes.Get(envKey)
 		key := regEnvKeyAbbrs(envAbbrs, envKey, abbrsSep, envPathSep)
 		cmd.AddVal2Env(key, val)
+	}
+}
+
+func regArg2Env(
+	envAbbrs *core.EnvAbbrs,
+	meta *meta_file.MetaFile,
+	cmd *core.Cmd,
+	abbrsSep string,
+	envPathSep string) {
+
+	writes := meta.GetSection("env.from-arg")
+	if writes == nil {
+		writes = meta.GetSection("env.arg")
+	}
+	if writes == nil {
+		writes = meta.GetSection("arg2env")
+	}
+	if writes == nil {
+		return
+	}
+
+	for _, envKey := range writes.Keys() {
+		argName := writes.Get(envKey)
+		key := regEnvKeyAbbrs(envAbbrs, envKey, abbrsSep, envPathSep)
+		cmd.AddArg2Env(key, argName)
 	}
 }
 

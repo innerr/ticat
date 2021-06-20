@@ -28,23 +28,6 @@ type NormalCmd func(argv ArgVals, cc *Cli, env *Env, cmd ParsedCmd) (succeeded b
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
-type CmdError struct {
-	Cmd ParsedCmd
-	Err error
-}
-
-func WrapCmdError(cmd ParsedCmd, err error) *CmdError {
-	return &CmdError{cmd, err}
-}
-
-func NewCmdError(cmd ParsedCmd, err string) *CmdError {
-	return &CmdError{cmd, fmt.Errorf(err)}
-}
-
-func (self CmdError) Error() string {
-	return self.Err.Error()
-}
-
 type Cmd struct {
 	owner        *CmdTree
 	help         string
@@ -61,6 +44,7 @@ type Cmd struct {
 	depends      []Depend
 	metaFilePath string
 	val2env      *Val2Env
+	arg2env      *Arg2Env
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
@@ -80,6 +64,7 @@ func defaultCmd(owner *CmdTree, help string) *Cmd {
 		depends:      nil,
 		metaFilePath: "",
 		val2env:      newVal2Env(),
+		arg2env:      newArg2Env(),
 	}
 }
 
@@ -142,6 +127,12 @@ func (self *Cmd) Execute(
 	for _, envKey := range self.val2env.EnvKeys() {
 		sessionEnv.Set(envKey, self.val2env.Val(envKey))
 	}
+	for name, val := range argv {
+		envKey, ok := self.arg2env.GetEnvKey(name)
+		if ok {
+			sessionEnv.Set(envKey, val.Raw)
+		}
+	}
 
 	switch self.ty {
 	case CmdTypePower:
@@ -177,6 +168,9 @@ func (self *Cmd) MatchFind(findStr string) bool {
 		return true
 	}
 	if self.val2env.MatchFind(findStr) {
+		return true
+	}
+	if self.arg2env.MatchFind(findStr) {
 		return true
 	}
 	if self.envOps.MatchFind(findStr) {
@@ -258,8 +252,17 @@ func (self *Cmd) AddVal2Env(envKey string, val string) *Cmd {
 	return self
 }
 
+func (self *Cmd) AddArg2Env(envKey string, argName string) *Cmd {
+	self.arg2env.Add(envKey, argName)
+	return self
+}
+
 func (self *Cmd) GetVal2Env() *Val2Env {
 	return self.val2env
+}
+
+func (self *Cmd) GetArg2Env() *Arg2Env {
+	return self.arg2env
 }
 
 func (self *Cmd) GetDepends() []Depend {
@@ -447,4 +450,21 @@ func mayQuoteStr(origin string) string {
 type Depend struct {
 	OsCmd  string
 	Reason string
+}
+
+type CmdError struct {
+	Cmd ParsedCmd
+	Err error
+}
+
+func WrapCmdError(cmd ParsedCmd, err error) *CmdError {
+	return &CmdError{cmd, err}
+}
+
+func NewCmdError(cmd ParsedCmd, err string) *CmdError {
+	return &CmdError{cmd, fmt.Errorf(err)}
+}
+
+func (self CmdError) Error() string {
+	return self.Err.Error()
 }

@@ -34,29 +34,31 @@ func loadLocalMods(
 	}
 
 	// TODO: return filepath.SkipDir to avoid some non-sense scanning
-	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+	filepath.Walk(root, func(metaPath string, info fs.FileInfo, err error) error {
 		if info != nil && info.IsDir() {
 			// Skip hidden file or dir
-			base := filepath.Base(path)
+			base := filepath.Base(metaPath)
 			if len(base) > 0 && base[0] == '.' {
 				return filepath.SkipDir
 			}
 			return nil
 		}
-		if filepath.Base(path) == reposFileName {
+		if filepath.Base(metaPath) == reposFileName {
 			return nil
 		}
 
-		if strings.HasSuffix(path, flowExt) {
-			loadFlow(cc, root, path, flowExt, source)
+		if strings.HasSuffix(metaPath, flowExt) {
+			cmdPath := filepath.Base(metaPath[0 : len(metaPath)-len(flowExt)])
+			cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
+			mod_meta.RegMod(cc, metaPath, "", false, cmdPaths, abbrsSep, envPathSep, source)
 			return nil
 		}
-		ext := filepath.Ext(path)
+
+		ext := filepath.Ext(metaPath)
 		if ext != metaExt {
 			return nil
 		}
-		targetPath := path[0 : len(path)-len(ext)]
-		metaPath := path
+		targetPath := metaPath[0 : len(metaPath)-len(ext)]
 
 		// Note: strip all ext(s) from cmd-path
 		cmdPath := targetPath[len(root)+1:]
@@ -77,7 +79,8 @@ func loadLocalMods(
 			isDir = info.IsDir()
 		}
 
-		mod_meta.RegMod(cc, metaPath, targetPath, isDir, cmdPath, abbrsSep, envPathSep, source)
+		cmdPaths := strings.Split(cmdPath, string(filepath.Separator))
+		mod_meta.RegMod(cc, metaPath, targetPath, isDir, cmdPaths, abbrsSep, envPathSep, source)
 		return nil
 	})
 }

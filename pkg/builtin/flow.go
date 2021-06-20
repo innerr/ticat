@@ -12,6 +12,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 	"github.com/pingcap/ticat/pkg/proto/flow_file"
+	"github.com/pingcap/ticat/pkg/proto/mod_meta"
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
@@ -252,6 +253,7 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 	}
 
 	flowExt := env.GetRaw("strs.flow-ext")
+	envPathSep := env.GetRaw("strs.env-path-sep")
 
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -263,41 +265,12 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 		if !strings.HasSuffix(path, flowExt) {
 			return nil
 		}
-		loadFlow(cc, root, path, flowExt, source)
+		cmdPath := filepath.Base(path[0 : len(path)-len(flowExt)])
+		cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
+		mod_meta.RegMod(cc, path, "", false, cmdPaths, cc.Cmds.Strs.AbbrsSep, envPathSep, source)
 		return nil
 	})
 	return true
-}
-
-func loadFlow(cc *core.Cli, root string, path string, flowExt string, source string) {
-	var cmdPathStr string
-	defer func() {
-		if err := recover(); err != nil {
-			cc.TolerableErrs.OnErr(err, source, "flow loading failed")
-		}
-	}()
-
-	flowStrs, help, abbrsStr := flow_file.LoadFlowFile(path)
-
-	pathSep := cc.Cmds.Strs.PathSep
-	abbrsSep := cc.Cmds.Strs.AbbrsSep
-	var abbrs [][]string
-	for _, abbrSeg := range strings.Split(abbrsStr, pathSep) {
-		abbrList := strings.Split(abbrSeg, abbrsSep)
-		abbrs = append(abbrs, abbrList)
-	}
-
-	cmdPathStr = getCmdPath(path, flowExt)
-	cmdPath := strings.Split(cmdPathStr, pathSep)
-	flow := cc.Cmds
-	for i, cmd := range cmdPath {
-		flow = flow.GetOrAddSub(cmd)
-		if i < len(abbrs) {
-			flow.AddAbbrs(abbrs[i]...)
-		}
-	}
-
-	flow.RegFlowCmd(flowStrs, help).SetSource(source)
 }
 
 func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.Env) {

@@ -119,6 +119,14 @@ func dumpFlowCmd(
 			prt(2, k+" = "+mayQuoteStr(val2env.Val(k)))
 		}
 
+		arg2env := cic.GetArg2Env()
+		if len(arg2env.EnvKeys()) != 0 {
+			prt(1, "- env-ops: (map-arg-to-env)")
+		}
+		for _, k := range arg2env.EnvKeys() {
+			prt(2, k+" <- "+mayQuoteStr(arg2env.ArgName(k)))
+		}
+
 		envOps := cic.EnvOps()
 		envOpKeys := envOps.EnvKeys()
 		if len(envOpKeys) != 0 {
