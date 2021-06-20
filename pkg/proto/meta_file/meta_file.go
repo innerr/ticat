@@ -46,6 +46,10 @@ func CreateMetaFile(path string) (meta *MetaFile) {
 	return
 }
 
+func (self *MetaFile) Path() string {
+	return self.path
+}
+
 func (self *MetaFile) Get(key string) string {
 	return self.SectionGet(GlobalSectionName, key)
 }
@@ -232,11 +236,14 @@ func (self *Section) GetUnTrim(key string) string {
 }
 
 func (self *Section) GetMultiLineVal(key string, trim bool) []string {
-	if trim {
-		return strings.Split(self.Get(key), LineSep)
-	} else {
-		return strings.Split(self.GetUnTrim(key), LineSep)
+	val, ok := self.pairs[key]
+	if !ok {
+		return nil
 	}
+	if trim {
+		val = strings.Trim(val, ValTrimChars)
+	}
+	return strings.Split(val, LineSep)
 }
 
 func (self *Section) Keys() []string {

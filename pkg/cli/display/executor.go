@@ -89,6 +89,7 @@ func PrintCmdStack(
 		filterPrefixs := []string{
 			"session",
 			"strs" + strs.EnvPathSep,
+			"display.utf8" + strs.EnvPathSep,
 			strings.Join(cmd.Path(), strs.PathSep) + strs.PathSep,
 		}
 		if !env.GetBool("display.env.sys.paths") {

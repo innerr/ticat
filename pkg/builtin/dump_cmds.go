@@ -15,7 +15,7 @@ func DumpCmdListSimple(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.Pa
 }
 
 func DumpCmdList(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(getFindStrsFromArgv(argv)...)
+	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(getFindStrsFromArgv(argv)...)
 	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
 	return true
 }

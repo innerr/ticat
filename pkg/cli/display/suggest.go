@@ -172,6 +172,13 @@ func SuggestFlowsFilter(env *core.Env) []string {
 	}
 }
 
+func SuggestTailInfo(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" cmd :=", indent) + "- show command's detail info",
+	}
+}
+
 func getSuggestArgs(env *core.Env) (selfName string, explainIndent int) {
 	selfName = env.GetRaw("strs.self-name")
 	explainIndent = env.GetInt("display.hint.indent.2rd")

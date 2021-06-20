@@ -47,9 +47,13 @@ env-key-1 = <env-op>
 env-key-2 = <env-op> : <env-op> : ...
 ...
 
-[env.write]
+[val2env]
 env-key-1 = <value>
 env-key-2 = <value>
+...
+
+[arg2env]
+env-key-1 = arg-1
 ...
 
 [dep]
@@ -68,8 +72,12 @@ The `[env]` section defines which keys will read or write in the command's code.
 The sequence of "env-op" could be one or more value with orders, seperated by ":".
 Abbrs definition are also allowed in every path segment of the keys.
 
-The `[env.write]` section defines keys will be written values automatically.
+The `[val2env]` section defines keys will be written values automatically.
 This is convenient for writing "on|off" switch commands.
+
+The `[arg2env]` section defines keys will be written automatically with specify arg's value.
+This is convenient for deliver commands with args any without any env manipulating,
+so non-ticat-users could use them easily.
 
 ## Example
 Dir struct:

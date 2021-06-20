@@ -69,6 +69,7 @@ func (self EnvOpsChecker) OnCallCmd(
 	matched ParsedCmd,
 	pathSep string,
 	cmd *Cmd,
+	argv ArgVals,
 	ignoreMaybe bool,
 	displayPath string) (result []EnvOpsCheckResult) {
 
@@ -76,6 +77,17 @@ func (self EnvOpsChecker) OnCallCmd(
 	for _, key := range val2env.EnvKeys() {
 		before, _ := self[key]
 		if val2env.Has(key) {
+			before.val = before.val | EnvOpTypeWrite
+			self[key] = before
+		}
+	}
+
+	// TODO: need a way to define and treat 'null'(no provied) args
+	arg2env := cmd.GetArg2Env()
+	for name, val := range argv {
+		key, ok := arg2env.GetEnvKey(name)
+		if ok && len(val.Raw) != 0 {
+			before, _ := self[key]
 			before.val = before.val | EnvOpTypeWrite
 			self[key] = before
 		}
@@ -158,7 +170,8 @@ func CheckEnvOps(
 		}
 		displayPath := cmd.DisplayPath(sep, true)
 		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
-		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, ignoreMaybe, displayPath)
+		argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
+		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, argv, ignoreMaybe, displayPath)
 
 		*result = append(*result, res...)
 

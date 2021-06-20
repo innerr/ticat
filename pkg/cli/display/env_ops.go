@@ -7,7 +7,13 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvOpsCheckResult, sep string) {
+func DumpEnvOpsCheckResult(
+	screen core.Screen,
+	cmds []core.ParsedCmd,
+	env *core.Env,
+	result []core.EnvOpsCheckResult,
+	sep string) {
+
 	if len(result) == 0 {
 		return
 	}
@@ -22,22 +28,48 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 		}
 	}
 
+	isArg2EnvCanFixAllFatals := (len(cmds) == 1 && len(fatals.result) != 0)
+	if isArg2EnvCanFixAllFatals {
+		cmd := cmds[0].Last().Matched.Cmd
+		if cmd == nil || cmd.Cmd() == nil {
+			isArg2EnvCanFixAllFatals = false
+		} else {
+			cic := cmd.Cmd()
+			arg2env := cic.GetArg2Env()
+			for _, it := range fatals.result {
+				if !arg2env.Has(it.Key) {
+					isArg2EnvCanFixAllFatals = false
+					break
+				}
+			}
+		}
+	}
+
 	if !env.GetBool("display.flow.simplified") {
 		if len(fatals.result) != 0 {
-			PrintErrTitle(screen, env,
-				"this flow has 'read before write' on env keys, so it can't execute.",
-				"",
-				"search which commands write these keys and concate them in front of the flow:",
-				"",
-				SuggestFindProvider(env),
-				"",
-				"some configuring-flows will provide a batch env keys by calling providing commands,",
-				"use these two tags to find them:",
-				"",
-				SuggestFindConfigFlows(env),
-				"",
-				"or provide keys by putting '{key=value}' in front of the flow.",
-				"")
+			if isArg2EnvCanFixAllFatals {
+				PrintErrTitle(screen, env,
+					"pass args properly to this command to run it.",
+					"",
+					"check the args by:",
+					"",
+					SuggestTailInfo(env))
+			} else {
+				PrintErrTitle(screen, env,
+					"this flow has 'read before write' on env keys, so it can't execute.",
+					"",
+					"search which commands write these keys and concate them in front of the flow:",
+					"",
+					SuggestFindProvider(env),
+					"",
+					"some configuring-flows will provide a batch env keys by calling providing commands,",
+					"use these two tags to find them:",
+					"",
+					SuggestFindConfigFlows(env),
+					"",
+					"or provide keys by putting '{key=value}' in front of the flow.",
+					"")
+			}
 		} else {
 			PrintTipTitle(screen, env,
 				"this flow has 'read before write' risks on env keys.",
@@ -85,7 +117,7 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 		}
 	}
 
-	if len(fatals.result) != 0 {
+	if len(fatals.result) != 0 && !isArg2EnvCanFixAllFatals {
 		for i, it := range fatals.result {
 			if i != 0 {
 				screen.Print("\n")
@@ -98,10 +130,7 @@ func DumpEnvOpsCheckResult(screen core.Screen, env *core.Env, result []core.EnvO
 			prti("- but not provided", 7)
 		}
 
-		// TODO: hint
-		// User should know how to search commands, so no need to display the hint
-		// screen.Print("\n<HINT>   to find key provider:\n")
-		// prti("- ticat cmds.ls <key> write <other-find-str> <more-find-str> ..", 7)
+		// TODO: hint ?
 	}
 }
 

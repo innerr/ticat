@@ -97,9 +97,10 @@ func DumpFlowEnvOpsCheckResult(
 	core.CheckEnvOps(cc, flow, env, checker, false, &result)
 
 	if len(result) != 0 {
-		display.DumpEnvOpsCheckResult(cc.Screen, env, result, cc.Cmds.Strs.PathSep)
+		cmds := flow.Cmds[currCmdIdx+1:]
+		display.DumpEnvOpsCheckResult(cc.Screen, cmds, env, result, cc.Cmds.Strs.PathSep)
 	} else {
-		cc.Screen.Print("all env-ops are satisfied, can directly run\n")
+		display.PrintTipTitle(cc.Screen, env, "all env-ops are satisfied, can directly run")
 	}
 
 	return clearFlow(flow)
@@ -119,7 +120,7 @@ func dumpFlowAll(
 	display.DumpFlow(cc, env, cmds, dumpArgs)
 
 	deps := display.Depends{}
-	display.CollectDepends(cc, flow.Cmds[currCmdIdx+1:], deps)
+	display.CollectDepends(cc, cmds, deps)
 
 	if len(deps) != 0 {
 		cc.Screen.Print("\n")
@@ -132,7 +133,7 @@ func dumpFlowAll(
 
 	if len(result) != 0 {
 		cc.Screen.Print("\n")
-		display.DumpEnvOpsCheckResult(cc.Screen, env, result, cc.Cmds.Strs.PathSep)
+		display.DumpEnvOpsCheckResult(cc.Screen, cmds, env, result, cc.Cmds.Strs.PathSep)
 	}
 
 	return clearFlow(flow)
