@@ -101,3 +101,8 @@ func (self *Arg2Env) MatchFind(findStr string) bool {
 	}
 	return false
 }
+
+func (self *Arg2Env) Has(envKey string) bool {
+	_, ok := self.keyNames[envKey]
+	return ok
+}

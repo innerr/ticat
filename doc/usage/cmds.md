@@ -377,3 +377,14 @@ $> ticat cmds:+ tree
     - args:
         cmd-path|path|p|P = ''
 ```
+
+Use `=` and `$` if the result of `+` or `-` is not what we want.
+```
+$> ticat cmds $
+[tail-sub|$]
+     'display commands on the branch of the last command'
+
+$> ticat cmds =
+[tail-info|=]
+     'display the last command info, sub tree commands will not show'
+```
