@@ -49,8 +49,6 @@ $> ticat cmd -
         2nd-str = ''
         3rh-str = ''
         4th-str = ''
-        5th-str = ''
-        6th-str = ''
     - cmd-type:
         power (quiet) (priority)
     - from:
@@ -74,8 +72,6 @@ $> ticat cmd +
         2nd-str = ''
         3rh-str = ''
         4th-str = ''
-        5th-str = ''
-        6th-str = ''
     - cmd-type:
         power (quiet) (priority)
     - from:

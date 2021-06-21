@@ -16,8 +16,6 @@ func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
 		"2nd-str",
 		"3rd-str",
 		"4th-str",
-		"5th-str",
-		"6th-str",
 	}
 	for _, name := range names {
 		val := argv.GetRaw(name)
@@ -32,9 +30,7 @@ func addFindStrArgs(cmd *core.Cmd) {
 	cmd.AddArg("1st-str", "", "find-str").
 		AddArg("2nd-str", "").
 		AddArg("3rh-str", "").
-		AddArg("4th-str", "").
-		AddArg("5th-str", "").
-		AddArg("6th-str", "")
+		AddArg("4th-str", "")
 }
 
 func normalizeCmdPath(path string, sep string, alterSeps string) string {

@@ -60,7 +60,7 @@ If the command source is irrelevant, remove it from the keyword list(so does for
 ```
 $> ticat - <keyword> <keyworkd> <keyword>...
 ```
-The keyword number is up to 6, sould be enough
+The keyword number is up to 4, sould be enough
 
 ### The `-` and `+`
 
@@ -90,8 +90,6 @@ $> ticat cmds +
         2nd-str = ''
         3rh-str = ''
         4th-str = ''
-        5th-str = ''
-        6th-str = ''
     - cmd-type:
         power (quiet) (priority)
 ```
@@ -114,8 +112,6 @@ $> ticat cmds -
         2nd-str = ''
         3rh-str = ''
         4th-str = ''
-        5th-str = ''
-        6th-str = ''
     - cmd-type:
         power (quiet) (priority)
 ```
@@ -262,7 +258,7 @@ $> ticat c.f
 Using `cmds.flat` without args are barely useless because the output is way too long.
 `grep` might helps but we have better way to looking for commands.
 
-Filter(find) by strings, up to 6 strings, the finding strings could be anything:
+Filter(find) by strings, up to 4 strings, the finding strings could be anything:
 ```
 $> ticat c.f <str>
 $> ticat c.f <str> <str> ...

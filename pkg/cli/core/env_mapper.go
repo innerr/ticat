@@ -78,7 +78,7 @@ func (self *Arg2Env) EnvKeys() []string {
 	return self.orderedKeys
 }
 
-func (self *Arg2Env) ArgName(envKey string) string {
+func (self *Arg2Env) GetArgName(envKey string) string {
 	return self.keyNames[envKey]
 }
 

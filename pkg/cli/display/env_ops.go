@@ -28,6 +28,7 @@ func DumpEnvOpsCheckResult(
 		}
 	}
 
+	var arg2env *core.Arg2Env
 	isArg2EnvCanFixAllFatals := (len(cmds) == 1 && len(fatals.result) != 0)
 	if isArg2EnvCanFixAllFatals {
 		cmd := cmds[0].Last().Matched.Cmd
@@ -35,7 +36,7 @@ func DumpEnvOpsCheckResult(
 			isArg2EnvCanFixAllFatals = false
 		} else {
 			cic := cmd.Cmd()
-			arg2env := cic.GetArg2Env()
+			arg2env = cic.GetArg2Env()
 			for _, it := range fatals.result {
 				if !arg2env.Has(it.Key) {
 					isArg2EnvCanFixAllFatals = false
@@ -47,29 +48,26 @@ func DumpEnvOpsCheckResult(
 
 	if !env.GetBool("display.flow.simplified") {
 		if len(fatals.result) != 0 {
-			if isArg2EnvCanFixAllFatals {
-				PrintErrTitle(screen, env,
-					"pass args properly to this command to run it.",
-					"",
-					"check the args by:",
-					"",
-					SuggestTailInfo(env))
-			} else {
-				PrintErrTitle(screen, env,
-					"this flow has 'read before write' on env keys, so it can't execute.",
-					"",
-					"search which commands write these keys and concate them in front of the flow:",
-					"",
-					SuggestFindProvider(env),
-					"",
-					"some configuring-flows will provide a batch env keys by calling providing commands,",
-					"use these two tags to find them:",
-					"",
-					SuggestFindConfigFlows(env),
-					"",
-					"or provide keys by putting '{key=value}' in front of the flow.",
-					"")
+			helpStr := []interface{}{
+				"this flow has 'read before write' on env keys, so it can't execute.",
+				"",
+				"search which commands write these keys and concate them in front of the flow:",
+				"",
+				SuggestFindProvider(env),
+				"",
+				"some configuring-flows will provide a batch env keys by calling providing commands,",
+				"use these two tags to find them:",
+				"",
+				SuggestFindConfigFlows(env),
+				"",
+				"or provide keys by putting '{key=value}' in front of the flow.",
+				"",
 			}
+			if isArg2EnvCanFixAllFatals {
+				helpStr = append(helpStr,
+					"pass args properly to this command could solve all errors.")
+			}
+			PrintErrTitle(screen, env, helpStr...)
 		} else {
 			PrintTipTitle(screen, env,
 				"this flow has 'read before write' risks on env keys.",
@@ -109,15 +107,15 @@ func DumpEnvOpsCheckResult(
 				}
 			} else {
 				if it.MayReadNotExist {
-					prti("- but not provided", 7)
+					prti("- but not provided.", 7)
 				} else {
-					prti("- but may not provided", 7)
+					prti("- but may not provided.", 7)
 				}
 			}
 		}
 	}
 
-	if len(fatals.result) != 0 && !isArg2EnvCanFixAllFatals {
+	if len(fatals.result) != 0 {
 		for i, it := range fatals.result {
 			if i != 0 {
 				screen.Print("\n")
@@ -127,7 +125,11 @@ func DumpEnvOpsCheckResult(
 			for _, cmd := range it.Cmds {
 				prti("["+cmd+"]", 12)
 			}
-			prti("- but not provided", 7)
+			prti("- but not provided.", 7)
+			if arg2env != nil && arg2env.Has(it.Key) {
+				prti("- the arg below is mapped to this key, pass it to solve this error:", 7)
+				prti("'"+arg2env.GetArgName(it.Key)+"'", 12)
+			}
 		}
 
 		// TODO: hint ?
