@@ -234,7 +234,7 @@ func dumpCmd(
 				prt(1, "- env-ops: (map-arg-to-env)")
 			}
 			for _, k := range arg2env.EnvKeys() {
-				prt(2, k+" <- "+mayQuoteStr(arg2env.ArgName(k)))
+				prt(2, k+" <- "+mayQuoteStr(arg2env.GetArgName(k)))
 			}
 
 			envOps := cic.EnvOps()

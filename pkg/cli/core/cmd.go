@@ -127,9 +127,11 @@ func (self *Cmd) Execute(
 	for _, envKey := range self.val2env.EnvKeys() {
 		sessionEnv.Set(envKey, self.val2env.Val(envKey))
 	}
+
+	// TODO: fix it by adding 'null' value type
 	for name, val := range argv {
 		envKey, ok := self.arg2env.GetEnvKey(name)
-		if ok {
+		if ok && len(val.Raw) != 0 {
 			sessionEnv.Set(envKey, val.Raw)
 		}
 	}
