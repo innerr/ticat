@@ -141,6 +141,9 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 	return
 }
 
+// TODO: this should be a readonly method, but it will change session layer in env
+//   * Why: need to apply val2env and arg2env, so template-flow could be rendered
+//   * It (duplicatly) write env more than once in one execution
 func (self ParsedCmd) GenEnvAndArgv(
 	originEnv *Env,
 	valDelAllMark string,

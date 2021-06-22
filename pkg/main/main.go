@@ -103,6 +103,9 @@ func main() {
 
 	// TODO: handle error by types
 	defer func() {
+		if !cc.GlobalEnv.GetBool("sys.panic.recover") {
+			return
+		}
 		if r := recover(); r != nil {
 			display.PrintError(cc, cc.GlobalEnv, r.(error))
 			os.Exit(-1)

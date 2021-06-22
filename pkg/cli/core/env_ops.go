@@ -154,12 +154,13 @@ func CheckEnvOps(
 		*result = append(*result, res...)
 
 		if last.Type() == CmdTypeFlow {
-			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, last.Flow(cmdEnv)...)
-			if subFlow.GlobalEnv != nil {
+			subFlow, _ := last.Flow(cmdEnv, false)
+			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+			if parsedFlow.GlobalEnv != nil {
 				env = env.GetOrNewLayer(EnvLayerTmp)
-				subFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+				parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 			}
-			CheckEnvOps(cc, subFlow, env, checker, ignoreMaybe, result)
+			CheckEnvOps(cc, parsedFlow, env, checker, ignoreMaybe, result)
 		}
 	}
 }

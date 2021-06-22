@@ -323,8 +323,8 @@ func (self *Cmd) FlowStrs() []string {
 	return self.flow
 }
 
-// TODO: move to parser
-func (self *Cmd) RenderedFlowStrs(env *Env) (flow []string) {
+// TODO: move to parser ?
+func (self *Cmd) RenderedFlowStrs(env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
 	templBracketLeft := self.owner.Strs.FlowTemplateBracketLeft
 	templBracketRight := self.owner.Strs.FlowTemplateBracketRight
 	for _, it := range self.flow {
@@ -340,24 +340,33 @@ func (self *Cmd) RenderedFlowStrs(env *Env) (flow []string) {
 			}
 			key := tail[0:j]
 			if env == nil {
-				return self.flow
+				return self.flow, false
 			}
 			val, ok := env.GetEx(key)
 			if !ok {
-				panic(fmt.Errorf("[%s] render flow template failed, missed env value '%v'",
-					self.owner.DisplayPath(), key))
+				if allowFlowTemplateRenderError {
+					return self.flow, false
+				}
+				err := CmdMissedEnvValWhenRenderFlow{
+					"render flow template failed, env value missed.",
+					self.owner.DisplayPath(),
+					self.metaFilePath,
+					self.source,
+					key}
+				panic(err)
 			}
 			it = it[0:i] + val.Raw + tail[j+len(templBracketRight):]
 		}
 		flow = append(flow, it)
 	}
+	rendered = true
 	return
 }
 
-func (self *Cmd) Flow(env *Env) []string {
-	flow := self.RenderedFlowStrs(env)
-	if len(flow) == 0 {
-		return flow
+func (self *Cmd) Flow(env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
+	flow, rendered = self.RenderedFlowStrs(env, allowFlowTemplateRenderError)
+	if !rendered || len(flow) == 0 {
+		return
 	}
 	flowStr := strings.Join(flow, " ")
 	flow, err := shellwords.Parse(flowStr)
@@ -366,7 +375,7 @@ func (self *Cmd) Flow(env *Env) []string {
 		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
 			self.cmdLine, err))
 	}
-	return flow
+	return
 }
 
 func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
@@ -387,7 +396,7 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 }
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
-	flow := self.Flow(env)
+	flow, _ := self.Flow(env, false)
 	return cc.Executor.Execute(cc, flow...)
 }
 

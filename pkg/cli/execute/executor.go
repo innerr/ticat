@@ -261,6 +261,7 @@ func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *co
 	}
 	kvSep := env.GetRaw("strs.proto-sep")
 	path := filepath.Join(sessionDir, self.sessionFileName)
+	// TODO: not save env when it's at the most outter stack
 	core.SaveEnvToFile(env, path, kvSep)
 	return true
 }
@@ -285,7 +286,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 
 func verifyOsDepCmds(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	deps := display.Depends{}
-	display.CollectDepends(cc, env, flow.Cmds, deps)
+	display.CollectDepends(cc, env, flow.Cmds, deps, true)
 	screen := display.NewCacheScreen()
 	hasMissedOsCmds := display.DumpDepends(screen, env, deps)
 	if hasMissedOsCmds {

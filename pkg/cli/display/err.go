@@ -24,6 +24,17 @@ func PrintEmptyDirCmdHint(screen core.Screen, env *core.Env, cmd core.ParsedCmd)
 
 func PrintError(cc *core.Cli, env *core.Env, err error) {
 	switch err.(type) {
+	case core.CmdMissedEnvValWhenRenderFlow:
+		e := err.(core.CmdMissedEnvValWhenRenderFlow)
+		PrintErrTitle(cc.Screen, env,
+			e.Error()+" from repo/dir:",
+			"    - '"+e.Source+"'",
+			"command:",
+			"    - '"+e.CmdPath+"'",
+			"file:",
+			"    - '"+e.MetaFilePath+"'",
+			"missed-key:",
+			"    - "+e.MissedKey)
 	case *core.CmdError:
 		e := err.(*core.CmdError)
 		sep := cc.Cmds.Strs.PathSep
@@ -32,7 +43,9 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
 		printer.Prints("", "command detail:", "")
 		dumpArgs := NewDumpFlowArgs().SetSimple()
-		dumpFlowCmd(cc, printer, env, e.Cmd, dumpArgs, 0, 0)
+		metFlows := map[string]bool{}
+		// TODO: use DumpCmds here
+		dumpFlowCmd(cc, printer, env, e.Cmd, dumpArgs, 0, 0, metFlows)
 		printer.Finish()
 	default:
 		PrintErrTitle(cc.Screen, env, err.Error())

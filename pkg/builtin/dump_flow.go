@@ -75,7 +75,7 @@ func DumpFlowDepends(
 	currCmdIdx int) (int, bool) {
 
 	deps := display.Depends{}
-	display.CollectDepends(cc, env, flow.Cmds[currCmdIdx+1:], deps)
+	display.CollectDepends(cc, env, flow.Cmds[currCmdIdx+1:], deps, false)
 
 	if len(deps) != 0 {
 		display.DumpDepends(cc.Screen, env, deps)
@@ -120,7 +120,7 @@ func dumpFlowAll(
 	display.DumpFlow(cc, env, cmds, dumpArgs)
 
 	deps := display.Depends{}
-	display.CollectDepends(cc, env, cmds, deps)
+	display.CollectDepends(cc, env, cmds, deps, false)
 
 	if len(deps) != 0 {
 		cc.Screen.Print("\n")

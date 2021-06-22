@@ -33,10 +33,11 @@ func dumpFlow(
 	maxDepth int,
 	indentAdjust int) {
 
+	metFlows := map[string]bool{}
 	for _, cmd := range flow {
 		if !cmd.IsEmpty() {
 			dumpFlowCmd(cc, cc.Screen, env, cmd, args,
-				maxDepth, indentAdjust)
+				maxDepth, indentAdjust, metFlows)
 		}
 	}
 }
@@ -48,7 +49,8 @@ func dumpFlowCmd(
 	parsedCmd core.ParsedCmd,
 	args *DumpFlowArgs,
 	maxDepth int,
-	indentAdjust int) {
+	indentAdjust int,
+	metFlows map[string]bool) {
 
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
@@ -158,7 +160,8 @@ func dumpFlowCmd(
 		cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
 		if cic.Type() == core.CmdTypeFlow {
 			prt(1, "- flow:")
-			for _, flowStr := range cic.RenderedFlowStrs(cmdEnv) {
+			flowStrs, _ := cic.RenderedFlowStrs(cmdEnv, true)
+			for _, flowStr := range flowStrs {
 				prt(2, flowStr)
 			}
 		} else if !args.Simple && !args.Skeleton {
@@ -175,13 +178,19 @@ func dumpFlowCmd(
 			}
 		}
 		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 {
-			subFlow := cic.Flow(cmdEnv)
+			subFlow, rendered := cic.Flow(cmdEnv, true)
 			// TODO: use a map to reduce lines of duplicated flow
-			if len(subFlow) != 0 {
-				prt(2, "--->>>")
-				parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-				dumpFlow(cc, env, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
-				prt(2, "<<<---")
+			if rendered && len(subFlow) != 0 {
+				flowStr := strings.Join(subFlow, " ")
+				if metFlows[flowStr] {
+					prt(2, "(same as before)")
+				} else {
+					prt(2, "--->>>")
+					metFlows[flowStr] = true
+					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+					dumpFlow(cc, env, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
+					prt(2, "<<<---")
+				}
 			}
 		}
 	}

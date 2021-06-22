@@ -104,3 +104,15 @@ func (self CmdTreeErrSubAbbrConflicted) GetOldSource() string {
 func (self CmdTreeErrSubAbbrConflicted) GetConflictedCmdPath() []string {
 	return append(self.ParentCmdPath, self.Abbr)
 }
+
+type CmdMissedEnvValWhenRenderFlow struct {
+	Str          string
+	CmdPath      string
+	MetaFilePath string
+	Source       string
+	MissedKey    string
+}
+
+func (self CmdMissedEnvValWhenRenderFlow) Error() string {
+	return self.Str
+}
