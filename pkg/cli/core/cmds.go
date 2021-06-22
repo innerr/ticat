@@ -8,16 +8,18 @@ import (
 // TODO: share some code with EnvAbbrs
 
 type CmdTreeStrs struct {
-	RootDisplayName    string
-	BuiltinDisplayName string
-	PathSep            string
-	PathAlterSeps      string
-	AbbrsSep           string
-	EnvOpSep           string
-	EnvValDelAllMark   string
-	EnvKeyValSep       string
-	EnvPathSep         string
-	ProtoSep           string
+	RootDisplayName          string
+	BuiltinDisplayName       string
+	PathSep                  string
+	PathAlterSeps            string
+	AbbrsSep                 string
+	EnvOpSep                 string
+	EnvValDelAllMark         string
+	EnvKeyValSep             string
+	EnvPathSep               string
+	ProtoSep                 string
+	FlowTemplateBracketLeft  string
+	FlowTemplateBracketRight string
 }
 
 type CmdTree struct {

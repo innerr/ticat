@@ -191,6 +191,10 @@ func (self Env) LayerTypeName() string {
 	return EnvLayerName(self.ty)
 }
 
+func (self Env) FlattenAll() map[string]string {
+	return self.Flatten(true, nil, false)
+}
+
 func (self Env) Flatten(
 	includeDefault bool,
 	filterPrefixs []string,

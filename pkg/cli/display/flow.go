@@ -81,6 +81,7 @@ func dumpFlowCmd(
 	}
 
 	cmdEnv := parsedCmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
+
 	if !args.Skeleton {
 		args := parsedCmd.Args()
 		argv := cmdEnv.GetArgv(parsedCmd.Path(), sep, args)
@@ -95,8 +96,8 @@ func dumpFlowCmd(
 
 	if !args.Skeleton {
 		// TODO: missed kvs in GlobalEnv
-		cmdEnv = parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelAllMark)
-		flatten := cmdEnv.Flatten(false, nil, true)
+		cmdEssEnv := parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelAllMark)
+		flatten := cmdEssEnv.Flatten(false, nil, true)
 		if len(flatten) != 0 {
 			prt(1, "- env-values:")
 			var keys []string
@@ -158,7 +159,7 @@ func dumpFlowCmd(
 		cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
 		if cic.Type() == core.CmdTypeFlow {
 			prt(1, "- flow:")
-			for _, flowStr := range cic.FlowStrs() {
+			for _, flowStr := range cic.RenderedFlowStrs(cmdEnv) {
 				prt(2, flowStr)
 			}
 		} else if !args.Simple && !args.Skeleton {
@@ -175,10 +176,13 @@ func dumpFlowCmd(
 			}
 		}
 		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 {
-			prt(2, "--->>>")
-			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
-			dumpFlow(cc, env, subFlow.Cmds, args, maxDepth-1, indentAdjust+2)
-			prt(2, "<<<---")
+			subFlow := cic.Flow(cmdEnv)
+			if len(subFlow) != 0 {
+				prt(2, "--->>>")
+				parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+				dumpFlow(cc, env, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
+				prt(2, "<<<---")
+			}
 		}
 	}
 }

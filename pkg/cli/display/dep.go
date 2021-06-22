@@ -67,7 +67,7 @@ func DumpDepends(
 	return
 }
 
-func CollectDepends(cc *core.Cli, flow []core.ParsedCmd, res Depends) {
+func CollectDepends(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, res Depends) {
 	for _, it := range flow {
 		cic := it.LastCmd()
 		if cic == nil {
@@ -85,8 +85,8 @@ func CollectDepends(cc *core.Cli, flow []core.ParsedCmd, res Depends) {
 		if cic.Type() != core.CmdTypeFlow {
 			continue
 		}
-		subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow()...)
-		CollectDepends(cc, subFlow.Cmds, res)
+		subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow(env)...)
+		CollectDepends(cc, env, subFlow.Cmds, res)
 	}
 }
 

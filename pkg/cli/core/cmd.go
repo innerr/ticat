@@ -326,8 +326,42 @@ func (self *Cmd) FlowStrs() []string {
 	return self.flow
 }
 
-func (self *Cmd) Flow() []string {
-	flowStr := strings.Join(self.flow, " ")
+func (self *Cmd) RenderedFlowStrs(env *Env) (flow []string) {
+	templBracketLeft := self.owner.Strs.FlowTemplateBracketLeft
+	templBracketRight := self.owner.Strs.FlowTemplateBracketRight
+	for _, it := range self.flow {
+		for {
+			i := strings.Index(it, templBracketLeft)
+			if i < 0 {
+				break
+			}
+			tail := it[i+len(templBracketLeft):]
+			j := strings.Index(tail, templBracketRight)
+			if j < 0 {
+				break
+			}
+			key := tail[0:j]
+			if env == nil {
+				return self.flow
+			}
+			val, ok := env.GetEx(key)
+			if !ok {
+				panic(fmt.Errorf("[%s] render flow template failed, missed env value '%v'",
+					self.owner.DisplayPath(), key))
+			}
+			it = it[0:i] + val.Raw + tail[j+len(templBracketRight):]
+		}
+		flow = append(flow, it)
+	}
+	return
+}
+
+func (self *Cmd) Flow(env *Env) []string {
+	flow := self.RenderedFlowStrs(env)
+	if len(flow) == 0 {
+		return flow
+	}
+	flowStr := strings.Join(flow, " ")
 	flow, err := shellwords.Parse(flowStr)
 	if err != nil {
 		// TODO: better display
@@ -355,7 +389,7 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 }
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
-	flow := self.Flow()
+	flow := self.Flow(env)
 	return cc.Executor.Execute(cc, flow...)
 }
 
