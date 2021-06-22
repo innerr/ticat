@@ -58,6 +58,8 @@ func DumpDepends(
 		}
 		cmds := deps[osCmd]
 		screen.Print(fmt.Sprintf("[%s]\n", osCmd))
+
+		// TODO: sort cmds
 		for _, info := range cmds {
 			screen.Print(fmt.Sprintf("        '%s'\n", info.Reason))
 			screen.Print(fmt.Sprintf("            [%s]\n", info.Cmd.DisplayPath(sep, true)))

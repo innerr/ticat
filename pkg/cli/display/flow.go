@@ -158,9 +158,17 @@ func dumpFlowCmd(
 
 	if (len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0) &&
 		cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
+		metFlow := false
 		if cic.Type() == core.CmdTypeFlow {
-			prt(1, "- flow:")
 			flowStrs, _ := cic.RenderedFlowStrs(cmdEnv, true)
+			flowStr := strings.Join(flowStrs, " ")
+			metFlow = metFlows[flowStr]
+			if metFlow {
+				prt(1, "- flow (duplicated):")
+			} else {
+				metFlows[flowStr] = true
+				prt(1, "- flow:")
+			}
 			for _, flowStr := range flowStrs {
 				prt(2, flowStr)
 			}
@@ -179,14 +187,9 @@ func dumpFlowCmd(
 		}
 		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 {
 			subFlow, rendered := cic.Flow(cmdEnv, true)
-			// TODO: use a map to reduce lines of duplicated flow
 			if rendered && len(subFlow) != 0 {
-				flowStr := strings.Join(subFlow, " ")
-				if metFlows[flowStr] {
-					prt(2, "(same as before)")
-				} else {
+				if !metFlow {
 					prt(2, "--->>>")
-					metFlows[flowStr] = true
 					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 					dumpFlow(cc, env, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
 					prt(2, "<<<---")
