@@ -326,6 +326,7 @@ func (self *Cmd) FlowStrs() []string {
 	return self.flow
 }
 
+// TODO: move to parser
 func (self *Cmd) RenderedFlowStrs(env *Env) (flow []string) {
 	templBracketLeft := self.owner.Strs.FlowTemplateBracketLeft
 	templBracketRight := self.owner.Strs.FlowTemplateBracketRight
