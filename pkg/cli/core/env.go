@@ -146,11 +146,11 @@ func (self *Env) GetArgv(path []string, sep string, args Args) ArgVals {
 	list := args.Names()
 	for _, it := range list {
 		key := strings.Join(append(path, it), sep)
-		val := self.Get(key)
-		if len(val.Raw) != 0 {
-			argv[it] = ArgVal{val.Raw}
+		val, ok := self.GetEx(key)
+		if ok {
+			argv[it] = ArgVal{val.Raw, true}
 		} else {
-			argv[it] = ArgVal{args.DefVal(it)}
+			argv[it] = ArgVal{args.DefVal(it), false}
 		}
 	}
 	if len(argv) == 0 {

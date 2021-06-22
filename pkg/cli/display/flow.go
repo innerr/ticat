@@ -33,10 +33,11 @@ func dumpFlow(
 	maxDepth int,
 	indentAdjust int) {
 
+	metFlows := map[string]bool{}
 	for _, cmd := range flow {
 		if !cmd.IsEmpty() {
 			dumpFlowCmd(cc, cc.Screen, env, cmd, args,
-				maxDepth, indentAdjust)
+				maxDepth, indentAdjust, metFlows)
 		}
 	}
 }
@@ -48,7 +49,8 @@ func dumpFlowCmd(
 	parsedCmd core.ParsedCmd,
 	args *DumpFlowArgs,
 	maxDepth int,
-	indentAdjust int) {
+	indentAdjust int,
+	metFlows map[string]bool) {
 
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
@@ -80,11 +82,10 @@ func dumpFlowCmd(
 		prt(1, " '"+cic.Help()+"'")
 	}
 
-	cmdEnv := parsedCmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
+	cmdEnv, argv := parsedCmd.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
 
 	if !args.Skeleton {
 		args := parsedCmd.Args()
-		argv := cmdEnv.GetArgv(parsedCmd.Path(), sep, args)
 		argLines := DumpArgs(&args, argv, true)
 		if len(argLines) != 0 {
 			prt(1, "- args:")
@@ -95,7 +96,7 @@ func dumpFlowCmd(
 	}
 
 	if !args.Skeleton {
-		// TODO: missed kvs in GlobalEnv
+		// TODO BUG: missed kvs in GlobalEnv
 		cmdEssEnv := parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelAllMark)
 		flatten := cmdEssEnv.Flatten(false, nil, true)
 		if len(flatten) != 0 {
@@ -114,7 +115,7 @@ func dumpFlowCmd(
 	if !args.Skeleton {
 		val2env := cic.GetVal2Env()
 		if len(val2env.EnvKeys()) != 0 {
-			prt(1, "- env-ops: (write)")
+			prt(1, "- env-direct-write:")
 		}
 		for _, k := range val2env.EnvKeys() {
 			prt(2, k+" = "+mayQuoteStr(val2env.Val(k)))
@@ -122,7 +123,7 @@ func dumpFlowCmd(
 
 		arg2env := cic.GetArg2Env()
 		if len(arg2env.EnvKeys()) != 0 {
-			prt(1, "- env-ops: (map-arg-to-env)")
+			prt(1, "- env-from-argv:")
 		}
 		for _, k := range arg2env.EnvKeys() {
 			prt(2, k+" <- "+mayQuoteStr(arg2env.GetArgName(k)))
@@ -157,9 +158,18 @@ func dumpFlowCmd(
 
 	if (len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0) &&
 		cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
+		metFlow := false
 		if cic.Type() == core.CmdTypeFlow {
-			prt(1, "- flow:")
-			for _, flowStr := range cic.RenderedFlowStrs(cmdEnv) {
+			flowStrs, _ := cic.RenderedFlowStrs(cmdEnv, true)
+			flowStr := strings.Join(flowStrs, " ")
+			metFlow = metFlows[flowStr]
+			if metFlow {
+				prt(1, "- flow (duplicated):")
+			} else {
+				metFlows[flowStr] = true
+				prt(1, "- flow:")
+			}
+			for _, flowStr := range flowStrs {
 				prt(2, flowStr)
 			}
 		} else if !args.Simple && !args.Skeleton {
@@ -176,12 +186,14 @@ func dumpFlowCmd(
 			}
 		}
 		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 {
-			subFlow := cic.Flow(cmdEnv)
-			if len(subFlow) != 0 {
-				prt(2, "--->>>")
-				parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-				dumpFlow(cc, env, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
-				prt(2, "<<<---")
+			subFlow, rendered := cic.Flow(cmdEnv, true)
+			if rendered && len(subFlow) != 0 {
+				if !metFlow {
+					prt(2, "--->>>")
+					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+					dumpFlow(cc, env, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
+					prt(2, "<<<---")
+				}
 			}
 		}
 	}

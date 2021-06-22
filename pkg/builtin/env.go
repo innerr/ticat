@@ -17,6 +17,7 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.stack-depth", 0)
 
 	env.SetBool("sys.step-by-step", false)
+	env.SetBool("sys.panic.recover", true)
 	env.SetInt("sys.execute-delay-sec", 0)
 	env.SetBool("sys.interact", true)
 

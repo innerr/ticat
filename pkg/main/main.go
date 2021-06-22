@@ -103,6 +103,9 @@ func main() {
 
 	// TODO: handle error by types
 	defer func() {
+		if !cc.GlobalEnv.GetBool("sys.panic.recover") {
+			return
+		}
 		if r := recover(); r != nil {
 			display.PrintError(cc, cc.GlobalEnv, r.(error))
 			os.Exit(-1)
@@ -141,7 +144,7 @@ const (
 	ProtoSep                 string = "\t"
 	ModsRepoExt              string = "." + SelfName
 	MetaExt                  string = "." + SelfName
-	FlowExt                  string = ".flow." + SelfName
+	FlowExt                  string = ".tiflow"
 	HubFileName              string = "repos.hub"
 	ReposFileName            string = "hub.ticat"
 	SessionEnvFileName       string = "env"

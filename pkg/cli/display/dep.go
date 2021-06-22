@@ -58,6 +58,8 @@ func DumpDepends(
 		}
 		cmds := deps[osCmd]
 		screen.Print(fmt.Sprintf("[%s]\n", osCmd))
+
+		// TODO: sort cmds
 		for _, info := range cmds {
 			screen.Print(fmt.Sprintf("        '%s'\n", info.Reason))
 			screen.Print(fmt.Sprintf("            [%s]\n", info.Cmd.DisplayPath(sep, true)))
@@ -67,7 +69,13 @@ func DumpDepends(
 	return
 }
 
-func CollectDepends(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, res Depends) {
+func CollectDepends(
+	cc *core.Cli,
+	env *core.Env,
+	flow []core.ParsedCmd,
+	res Depends,
+	allowFlowTemplateRenderError bool) {
+
 	for _, it := range flow {
 		cic := it.LastCmd()
 		if cic == nil {
@@ -82,11 +90,15 @@ func CollectDepends(cc *core.Cli, env *core.Env, flow []core.ParsedCmd, res Depe
 				res[dep.OsCmd] = map[*core.Cmd]DependInfo{cic: DependInfo{dep.Reason, it}}
 			}
 		}
+		cmdEnv, _ := it.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 		if cic.Type() != core.CmdTypeFlow {
 			continue
 		}
-		subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cic.Flow(env)...)
-		CollectDepends(cc, env, subFlow.Cmds, res)
+		subFlow, rendered := cic.Flow(cmdEnv, allowFlowTemplateRenderError)
+		if rendered && len(subFlow) != 0 {
+			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+			CollectDepends(cc, cmdEnv, parsedFlow.Cmds, res, allowFlowTemplateRenderError)
+		}
 	}
 }
 

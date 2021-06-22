@@ -8,13 +8,15 @@ import (
 	"unsafe"
 )
 
-func UserConfirm() (line string) {
+func UserConfirm() (yes bool) {
 	buf := bufio.NewReader(os.Stdin)
-	text, err := buf.ReadBytes('\n')
+	line, err := buf.ReadBytes('\n')
 	if err != nil {
 		panic(fmt.Errorf("[readFromStdin] read from stdin failed: %v", err))
 	}
-	line = string(text)
+	if len(line) > 0 && (line[0] == 'y' || line[0] == 'Y') {
+		yes = true
+	}
 	return
 }
 
