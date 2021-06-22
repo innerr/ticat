@@ -299,7 +299,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 
 func verifyOsDepCmds(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	deps := display.Depends{}
-	display.CollectDepends(cc, flow.Cmds, deps)
+	display.CollectDepends(cc, env, flow.Cmds, deps)
 	screen := display.NewCacheScreen()
 	hasMissedOsCmds := display.DumpDepends(screen, env, deps)
 	if hasMissedOsCmds {

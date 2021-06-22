@@ -39,12 +39,10 @@ $> ticat flow.help dummy.2 "just a simple test of flow"
 The saved file dir is defined by env key "sys.paths.flows",
 the file name is `<command-path>` plus suffix `.flow.ticat`.
 
-The format is:
-* the comment lines start with "#"
-* the special comment lines start with "# help = " is for help string definition.
-* the special comment lines start with "# abbrs = " is for abbrs definition.
-    - abbrs format: `<path-segment>.<path-segment>...`, for each segment: `<abbr-1>|<abbr-2>|...`
-* the lines without "#" is the sequence, if there are more than one line, they will concate into one when being executed.
+The file format:
+* Share the same format with `mod meta` file except.
+* Use key `flow` instead of `cmd` in meta file, the value is the content of flow.
+* Template format `[[env-key]]` can be used in the content of flow, will be rendered into env value when executing.
 
 ## Flow commands overview
 ```
