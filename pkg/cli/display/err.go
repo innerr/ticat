@@ -49,6 +49,8 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 		PrintErrTitle(screen, env,
 			err.Reason+", from repo/dir:",
 			"    - '"+err.Source+"'",
+			"file:",
+			"    - '"+err.File+"'",
 			"detail:",
 			"    - "+err.Err.(error).Error())
 	}

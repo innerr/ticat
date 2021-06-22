@@ -15,6 +15,7 @@ func RegMod(
 	metaPath string,
 	executablePath string,
 	isDir bool,
+	isFlow bool,
 	cmdPath []string,
 	abbrsSep string,
 	envPathSep string,
@@ -22,7 +23,7 @@ func RegMod(
 
 	defer func() {
 		if err := recover(); err != nil {
-			cc.TolerableErrs.OnErr(err, source, "module loading failed")
+			cc.TolerableErrs.OnErr(err, source, metaPath, "module loading failed")
 		}
 	}()
 
@@ -32,7 +33,8 @@ func RegMod(
 	cmd := regMod(meta, mod, executablePath, isDir)
 	cmd.SetSource(source).SetMetaFile(metaPath)
 
-	if cmd.Type() == core.CmdTypeFlow {
+	// Reg by isFlow, not 'cmd.Type()'
+	if isFlow {
 		regFlowAbbrs(meta, cc.Cmds, cmdPath)
 	} else {
 		regModAbbrs(meta, mod)
@@ -66,6 +68,7 @@ func regMod(
 			cmdPath, meta.Path()))
 	}
 
+	// Even if 'isFlow' is true, if it does not have 'flow' content, it can't reg as flow
 	if len(flow) != 0 {
 		return mod.RegFlowCmd(flow, help)
 	}

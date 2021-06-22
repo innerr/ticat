@@ -24,8 +24,8 @@ type Executor struct {
 func NewExecutor(sessionFileName string) *Executor {
 	return &Executor{
 		[]ExecFunc{
-			// TODO: implement and add functions: flowFlatten, mockModInject
-			filterEmptyCmdsAndReorderByPriority,
+			// TODO: functions: flowFlatten, mockModInject
+			reorderByPriority,
 			verifyEnvOps,
 			verifyOsDepCmds,
 		},
@@ -129,8 +129,7 @@ func (self *Executor) executeCmd(
 
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
-	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
-	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
+	cmdEnv, argv := cmd.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 
 	ln := cc.Screen.OutputNum()
 
@@ -139,13 +138,16 @@ func (self *Executor) executeCmd(
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
-		tryDelayAndStepByStep(cc, env)
+		succeeded = tryDelayAndStepByStep(cc, env)
+		if !succeeded {
+			return
+		}
 	}
 
 	last := cmd.LastCmdNode()
 	start := time.Now()
 	if last != nil {
-		if last.IsEmptyDirCmd() {
+		if last.IsNoExecutableCmd() {
 			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
@@ -169,17 +171,13 @@ func (self *Executor) executeCmd(
 	return
 }
 
-// 1. remove the cmds only have cmd-level env definication but have no executable
-// 2. move priority cmds to the head
+// Move priority cmds to the front
 // TODO: sort commands by priority-value, not just a bool flag, so '+' '-' can have the top priority
 // TODO: move to core
-func filterEmptyCmdsAndReorderByPriority(
+func reorderByPriority(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
 	_ *core.Env) bool {
-
-	// TODO: clean up this code
-	//notFilterEmpty := doNotFilterEmptyCmds(flow)
 
 	var unfiltered []core.ParsedCmd
 	unfilteredGlobalCmdIdx := -1
@@ -187,18 +185,6 @@ func filterEmptyCmdsAndReorderByPriority(
 	prioritiesGlobalCmdIdx := -1
 
 	for i, cmd := range flow.Cmds {
-		// TODO: seems filter empty cmds don't have much help, remove it
-		/*
-			if cmd.IsAllEmptySegments() {
-				if notFilterEmpty {
-					unfiltered = append(unfiltered, cmd)
-					if i == flow.GlobalCmdIdx {
-						unfilteredGlobalCmdIdx = len(unfiltered) - 1
-					}
-				}
-				continue
-			}
-		*/
 		if cmd.IsPriority() {
 			priorities = append(priorities, cmd)
 			if i == flow.GlobalCmdIdx {
@@ -336,7 +322,7 @@ func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
 	}
 }
 
-func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) {
+func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) bool {
 	delaySec := env.GetInt("sys.execute-delay-sec")
 	if delaySec > 0 {
 		for i := 0; i < delaySec; i++ {
@@ -346,7 +332,8 @@ func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) {
 		cc.Screen.Print("\n")
 	}
 	if env.GetBool("sys.step-by-step") {
-		cc.Screen.Print("[confirm] press enter to run")
-		utils.UserConfirm()
+		cc.Screen.Print("[confirm] type 'y' and press enter:\n")
+		return utils.UserConfirm()
 	}
+	return true
 }

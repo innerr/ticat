@@ -2,6 +2,7 @@ package core
 
 type TolerableErr struct {
 	Err    interface{}
+	File   string
 	Source string
 	Reason string
 }
@@ -22,10 +23,10 @@ func NewTolerableErrs() *TolerableErrs {
 	}
 }
 
-func (self *TolerableErrs) OnErr(err interface{}, source string, reason string) {
+func (self *TolerableErrs) OnErr(err interface{}, source string, file string, reason string) {
 	conflicted, ok := err.(ErrConflicted)
 	if !ok {
-		self.Uncatalogeds = append(self.Uncatalogeds, TolerableErr{err, source, reason})
+		self.Uncatalogeds = append(self.Uncatalogeds, TolerableErr{err, file, source, reason})
 		return
 	}
 
@@ -42,7 +43,7 @@ func (self *TolerableErrs) OnErr(err interface{}, source string, reason string) 
 	}
 
 	list, _ := conflictedMap[source]
-	list = append(list, TolerableErr{err, source, reason})
+	list = append(list, TolerableErr{err, file, source, reason})
 	conflictedMap[source] = list
 }
 

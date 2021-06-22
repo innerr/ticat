@@ -123,19 +123,6 @@ func (self *Cmd) Execute(
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	sessionEnv := env.GetLayer(EnvLayerSession)
-	for _, envKey := range self.val2env.EnvKeys() {
-		sessionEnv.Set(envKey, self.val2env.Val(envKey))
-	}
-
-	// TODO: fix it by adding 'null' value type
-	for name, val := range argv {
-		envKey, ok := self.arg2env.GetEnvKey(name)
-		if ok && len(val.Raw) != 0 {
-			sessionEnv.Set(envKey, val.Raw)
-		}
-	}
-
 	switch self.ty {
 	case CmdTypePower:
 		return self.power(argv, cc, env, flow, currCmdIdx)
@@ -292,6 +279,16 @@ func (self *Cmd) DisplayHelpStr() string {
 		return self.cmdLine
 	}
 	return self.help
+}
+
+func (self *Cmd) IsNoExecutableCmd() bool {
+	if len(self.val2env.EnvKeys()) > 0 {
+		return false
+	}
+	if len(self.arg2env.EnvKeys()) > 0 {
+		return false
+	}
+	return self.ty == CmdTypeUninited || self.ty == CmdTypeEmpty || self.ty == CmdTypeEmptyDir
 }
 
 func (self *Cmd) IsPowerCmd() bool {

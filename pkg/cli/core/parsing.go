@@ -141,6 +141,44 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 	return
 }
 
+func (self ParsedCmd) GenEnvAndArgv(
+	originEnv *Env,
+	valDelAllMark string,
+	cmdPathSep string) (env *Env, argv ArgVals) {
+
+	env = self.GenEnv(originEnv, valDelAllMark)
+	argv = env.GetArgv(self.Path(), cmdPathSep, self.Args())
+
+	last := self.LastCmd()
+	if last == nil {
+		return
+	}
+	sessionEnv := env.GetLayer(EnvLayerSession)
+	applyVal2Env(sessionEnv, last)
+	applyArg2Env(sessionEnv, last, argv)
+	return
+}
+
+func applyVal2Env(env *Env, cmd *Cmd) {
+	val2env := cmd.GetVal2Env()
+	for _, key := range val2env.EnvKeys() {
+		env.Set(key, val2env.Val(key))
+	}
+}
+
+func applyArg2Env(env *Env, cmd *Cmd, argv ArgVals) {
+	arg2env := cmd.GetArg2Env()
+	for name, val := range argv {
+		if !val.Provided && len(val.Raw) == 0 {
+			continue
+		}
+		key, ok := arg2env.GetEnvKey(name)
+		if ok {
+			env.Set(key, val.Raw)
+		}
+	}
+}
+
 func (self ParsedCmd) GenEnv(env *Env, valDelAllMark string) *Env {
 	env = env.NewLayer(EnvLayerCmd)
 	for _, seg := range self.Segments {

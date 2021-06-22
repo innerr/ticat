@@ -177,8 +177,11 @@ func (self *CmdTree) IsQuiet() bool {
 	return self.cmd != nil && self.cmd.IsQuiet()
 }
 
-func (self *CmdTree) IsEmptyDirCmd() bool {
-	return self.cmd == nil || self.cmd.Type() == CmdTypeEmptyDir
+func (self *CmdTree) IsNoExecutableCmd() bool {
+	if self.cmd == nil {
+		return true
+	}
+	return self.cmd.IsNoExecutableCmd()
 }
 
 func (self *CmdTree) IsPowerCmd() bool {
