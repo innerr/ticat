@@ -45,7 +45,7 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		dumpArgs := NewDumpFlowArgs().SetSimple()
 		metFlows := map[string]bool{}
 		// TODO: use DumpCmds here
-		dumpFlowCmd(cc, printer, env, e.Cmd, dumpArgs, 0, 0, metFlows)
+		dumpFlowCmd(cc, printer, env.Clone(), e.Cmd, dumpArgs, 0, 0, metFlows)
 		printer.Finish()
 	default:
 		PrintErrTitle(cc.Screen, env, err.Error())

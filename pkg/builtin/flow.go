@@ -164,7 +164,7 @@ func SaveFlow(
 			panic(fmt.Errorf("[SaveFlow] path '%s' exists", filePath))
 		} else {
 			cc.Screen.Print(fmt.Sprintf("[confirm] flow file of '%s' exists, "+
-				"press enter to overwrite\n", cmdPath))
+				"type 'y' and press enter to overwrite:\n", cmdPath))
 			utils.UserConfirm()
 		}
 	}

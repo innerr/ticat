@@ -38,29 +38,29 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	if len(overWriteBootstrap) != 0 {
 		bootstrap = overWriteBootstrap
 	}
-	if !self.execute(cc, true, bootstrap) {
+	if !self.execute(cc, true, false, bootstrap) {
 		return false
 	}
-	return self.execute(cc, false, input...)
+	return self.execute(cc, false, false, input...)
 }
 
 // Implement core.Executor
 func (self *Executor) Execute(cc *core.Cli, input ...string) bool {
-	return self.execute(cc, false, input...)
+	return self.execute(cc, false, true, input...)
 }
 
-func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) bool {
-	if cc.GlobalEnv.GetBool("sys.env.use-cmd-abbrs") {
+func (self *Executor) execute(cc *core.Cli, bootstrap bool, innerCall bool, input ...string) bool {
+	if !innerCall && cc.GlobalEnv.GetBool("sys.env.use-cmd-abbrs") {
 		useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	}
 	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
 
-	if len(input) == 0 {
+	if !innerCall && len(input) == 0 {
 		display.PrintGlobalHelp(cc.Screen, env)
 		return true
 	}
 
-	if !bootstrap {
+	if !innerCall && !bootstrap {
 		useEnvAbbrs(cc.EnvAbbrs, env, cc.Cmds.Strs.EnvPathSep)
 	}
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
@@ -75,13 +75,15 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
-	for _, function := range self.funcs {
-		if !function(cc, flow, env) {
-			return false
+	if !innerCall && !bootstrap {
+		for _, function := range self.funcs {
+			if !function(cc, flow, env) {
+				return false
+			}
 		}
 	}
 
-	if !bootstrap && !self.sessionInit(cc, flow, env) {
+	if !innerCall && !bootstrap && !self.sessionInit(cc, flow, env) {
 		return false
 	}
 
@@ -93,10 +95,6 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 	}
 	if !bootstrap {
 		env.PlusInt("sys.stack-depth", -1)
-	}
-
-	if !self.sessionFinish(cc, flow, env) {
-		return false
 	}
 	return true
 }
@@ -129,7 +127,7 @@ func (self *Executor) executeCmd(
 
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
-	cmdEnv, argv := cmd.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
 
 	ln := cc.Screen.OutputNum()
 
@@ -151,6 +149,8 @@ func (self *Executor) executeCmd(
 			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
+			// This cmdEnv is different, it included values from 'val2env' and 'arg2env'
+			cmdEnv, argv := cmd.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
 		}
 	} else {
@@ -254,6 +254,8 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core
 	return true
 }
 
+// TODO: clean ti
+// Seems not very useful, no user now.
 func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	sessionDir := env.GetRaw("session")
 	if len(sessionDir) == 0 {
@@ -261,7 +263,6 @@ func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *co
 	}
 	kvSep := env.GetRaw("strs.proto-sep")
 	path := filepath.Join(sessionDir, self.sessionFileName)
-	// TODO: not save env when it's at the most outter stack
 	core.SaveEnvToFile(env, path, kvSep)
 	return true
 }
@@ -276,6 +277,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	}
 	checker := &core.EnvOpsChecker{}
 	result := []core.EnvOpsCheckResult{}
+	env = env.Clone()
 	core.CheckEnvOps(cc, flow, env, checker, true, &result)
 	if len(result) == 0 {
 		return true
@@ -286,6 +288,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 
 func verifyOsDepCmds(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	deps := display.Depends{}
+	env = env.Clone()
 	display.CollectDepends(cc, env, flow.Cmds, deps, true)
 	screen := display.NewCacheScreen()
 	hasMissedOsCmds := display.DumpDepends(screen, env, deps)

@@ -97,6 +97,7 @@ func CollectDepends(
 		subFlow, rendered := cic.Flow(cmdEnv, allowFlowTemplateRenderError)
 		if rendered && len(subFlow) != 0 {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+			// Allow parse errors here
 			CollectDepends(cc, cmdEnv, parsedFlow.Cmds, res, allowFlowTemplateRenderError)
 		}
 	}

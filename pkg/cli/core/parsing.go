@@ -26,6 +26,15 @@ type ParsedCmds struct {
 
 type ParsedCmdSeq []ParsedCmd
 
+func (self *ParsedCmds) FirstErr() *ParseResult {
+	for _, cmd := range self.Cmds {
+		if cmd.ParseResult.Error != nil {
+			return &cmd.ParseResult
+		}
+	}
+	return nil
+}
+
 func (self *ParsedCmds) Last() (last ParsedCmd) {
 	return self.Cmds[len(self.Cmds)-1]
 }
@@ -141,9 +150,6 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 	return
 }
 
-// TODO: this should be a readonly method, but it will change session layer in env
-//   * Why: need to apply val2env and arg2env, so template-flow could be rendered
-//   * It (duplicatly) write env more than once in one execution
 func (self ParsedCmd) GenEnvAndArgv(
 	originEnv *Env,
 	valDelAllMark string,

@@ -156,6 +156,10 @@ func CheckEnvOps(
 		if last.Type() == CmdTypeFlow {
 			subFlow, _ := last.Flow(cmdEnv, false)
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+			err := parsedFlow.FirstErr()
+			if err != nil {
+				panic(err.Error)
+			}
 			if parsedFlow.GlobalEnv != nil {
 				env = env.GetOrNewLayer(EnvLayerTmp)
 				parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
