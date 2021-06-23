@@ -14,7 +14,7 @@ func SetQuietMode(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedC
 	env.SetBool("display.env.sys", false)
 	env.SetBool("display.mod.quiet", false)
 	env.SetBool("display.mod.realname", false)
-	env.SetInt("display.max-cmd-cnt", 7)
+	env.SetInt("display.max-cmd-cnt", 14)
 	return true
 }
 
@@ -44,7 +44,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	if !env.SetBool("display.executor", true) {
 		volume -= 1
 	}
-	env.SetInt("display.max-cmd-cnt", 8)
+	env.SetInt("display.max-cmd-cnt", 15)
 	env.SetBool("display.mod.realname", true)
 	env.SetBool("display.one-cmd", true)
 	if volume <= 0 {
@@ -54,7 +54,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	if !env.SetBool("display.env", true) {
 		volume -= 1
 	}
-	env.SetInt("display.max-cmd-cnt", 9)
+	env.SetInt("display.max-cmd-cnt", 16)
 	if volume <= 0 {
 		return true
 	}
@@ -63,7 +63,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 		volume -= 1
 	}
 	env.SetBool("display.executor.end", true)
-	env.SetInt("display.max-cmd-cnt", 10)
+	env.SetInt("display.max-cmd-cnt", 17)
 	if volume <= 0 {
 		return true
 	}
@@ -72,7 +72,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 		volume -= 1
 	}
 	env.SetBool("display.env.display", true)
-	env.SetInt("display.max-cmd-cnt", 11)
+	env.SetInt("display.max-cmd-cnt", 18)
 	if volume <= 0 {
 		return true
 	}
@@ -80,7 +80,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	if !env.SetBool("display.mod.quiet", true) {
 		volume -= 1
 	}
-	env.SetInt("display.max-cmd-cnt", 12)
+	env.SetInt("display.max-cmd-cnt", 19)
 	if volume <= 0 {
 		return true
 	}
@@ -88,7 +88,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	if !env.SetBool("display.env.sys", true) {
 		volume -= 1
 	}
-	env.SetInt("display.max-cmd-cnt", 13)
+	env.SetInt("display.max-cmd-cnt", 20)
 	if volume <= 0 {
 		return true
 	}
@@ -105,12 +105,12 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 		return true
 	}
 
-	env.SetInt("display.max-cmd-cnt", 13)
+	env.SetInt("display.max-cmd-cnt", 20)
 
 	if env.SetBool("display.env.sys", false) {
 		volume -= 1
 	}
-	env.SetInt("display.max-cmd-cnt", 12)
+	env.SetInt("display.max-cmd-cnt", 19)
 	if volume <= 0 {
 		return true
 	}
@@ -118,7 +118,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	if env.SetBool("display.mod.quiet", false) {
 		volume -= 1
 	}
-	env.SetInt("display.max-cmd-cnt", 11)
+	env.SetInt("display.max-cmd-cnt", 18)
 	if volume <= 0 {
 		return true
 	}
@@ -127,7 +127,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 		volume -= 1
 	}
 	env.SetBool("display.env.display", false)
-	env.SetInt("display.max-cmd-cnt", 10)
+	env.SetInt("display.max-cmd-cnt", 17)
 	if volume <= 0 {
 		return true
 	}
@@ -136,7 +136,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 		volume -= 1
 	}
 	env.SetBool("display.executor.end", false)
-	env.SetInt("display.max-cmd-cnt", 9)
+	env.SetInt("display.max-cmd-cnt", 16)
 	if volume <= 0 {
 		return true
 	}
@@ -144,7 +144,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	if env.SetBool("display.env", false) {
 		volume -= 1
 	}
-	env.SetInt("display.max-cmd-cnt", 8)
+	env.SetInt("display.max-cmd-cnt", 15)
 	if volume <= 0 {
 		return true
 	}
@@ -152,7 +152,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	if env.SetBool("display.executor", false) {
 		volume -= 1
 	}
-	env.SetInt("display.max-cmd-cnt", 7)
+	env.SetInt("display.max-cmd-cnt", 14)
 
 	env.SetBool("display.one-cmd", false)
 	env.SetBool("display.mod.realname", false)

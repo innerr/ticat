@@ -29,6 +29,19 @@ func NewEnv() *Env {
 	return &Env{map[string]EnvVal{}, nil, EnvLayerDefault}
 }
 
+// TODO: COW ?
+func (self *Env) Clone() (env *Env) {
+	pairs := map[string]EnvVal{}
+	for k, v := range self.pairs {
+		pairs[k] = EnvVal{v.Raw, v.IsArg}
+	}
+	var parent *Env
+	if self.parent != nil {
+		parent = self.parent.Clone()
+	}
+	return &Env{pairs, parent, self.ty}
+}
+
 func (self *Env) NewLayer(ty EnvLayerType) *Env {
 	env := NewEnv()
 	env.parent = self

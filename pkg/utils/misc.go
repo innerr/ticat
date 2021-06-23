@@ -10,12 +10,14 @@ import (
 
 func UserConfirm() (yes bool) {
 	buf := bufio.NewReader(os.Stdin)
-	line, err := buf.ReadBytes('\n')
-	if err != nil {
-		panic(fmt.Errorf("[readFromStdin] read from stdin failed: %v", err))
-	}
-	if len(line) > 0 && (line[0] == 'y' || line[0] == 'Y') {
-		yes = true
+	for {
+		line, err := buf.ReadBytes('\n')
+		if err != nil {
+			panic(fmt.Errorf("[readFromStdin] read from stdin failed: %v", err))
+		}
+		if len(line) > 0 && (line[0] == 'y' || line[0] == 'Y') {
+			return true
+		}
 	}
 	return
 }

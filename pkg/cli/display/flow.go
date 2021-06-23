@@ -17,6 +17,7 @@ func DumpFlow(
 		return
 	}
 
+	env = env.Clone()
 	maxDepth := env.GetInt("display.flow.depth")
 
 	PrintTipTitle(cc.Screen, env, "flow executing description:")
@@ -191,6 +192,10 @@ func dumpFlowCmd(
 				if !metFlow {
 					prt(2, "--->>>")
 					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+					err := parsedFlow.FirstErr()
+					if err != nil {
+						panic(err.Error)
+					}
 					dumpFlow(cc, env, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
 					prt(2, "<<<---")
 				}

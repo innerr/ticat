@@ -433,16 +433,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	sep := cc.Cmds.Strs.ProtoSep
 
-	sessionDir := env.GetRaw("session")
-	if len(sessionDir) == 0 {
-		panic(fmt.Errorf("[Cmd.executeFile] session dir not found in env"))
-	}
-	sessionFileName := env.GetRaw("strs.session-env-file")
-	if len(sessionFileName) == 0 {
-		panic(fmt.Errorf("[Cmd.executeFile] session env file name not found in env"))
-	}
-	sessionPath := filepath.Join(sessionDir, sessionFileName)
-	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
+	sessionDir, sessionPath := saveEnvToSessionFile(cc, env)
 
 	args = append(args, self.cmdLine)
 	args = append(args, sessionDir)
@@ -476,6 +467,22 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
 	return true
+}
+
+func saveEnvToSessionFile(cc *Cli, env *Env) (sessionDir string, sessionPath string) {
+	sep := cc.Cmds.Strs.ProtoSep
+
+	sessionDir = env.GetRaw("session")
+	if len(sessionDir) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session dir not found in env"))
+	}
+	sessionFileName := env.GetRaw("strs.session-env-file")
+	if len(sessionFileName) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session env file name not found in env"))
+	}
+	sessionPath = filepath.Join(sessionDir, sessionFileName)
+	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
+	return
 }
 
 func mayQuoteStr(origin string) string {
