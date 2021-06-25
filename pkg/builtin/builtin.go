@@ -398,7 +398,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		RegCmd(DbgDelayExecute,
 			"wait for a while before executing a command").
 		SetQuiet().
-		AddArg("seconds", "5", "second", "sec", "s", "S")
+		AddArg("seconds", "3", "second", "sec", "s", "S")
 
 	cmds.AddSub("exec").SetHidden().
 		RegCmd(DbgExecBash,

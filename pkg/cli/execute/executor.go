@@ -24,8 +24,8 @@ type Executor struct {
 func NewExecutor(sessionFileName string) *Executor {
 	return &Executor{
 		[]ExecFunc{
-			// TODO: implement and add functions: flowFlatten, mockModInject
-			filterEmptyCmdsAndReorderByPriority,
+			// TODO: functions: flowFlatten, mockModInject
+			reorderByPriority,
 			verifyEnvOps,
 			verifyOsDepCmds,
 		},
@@ -38,29 +38,29 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	if len(overWriteBootstrap) != 0 {
 		bootstrap = overWriteBootstrap
 	}
-	if !self.execute(cc, true, bootstrap) {
+	if !self.execute(cc, true, false, bootstrap) {
 		return false
 	}
-	return self.execute(cc, false, input...)
+	return self.execute(cc, false, false, input...)
 }
 
 // Implement core.Executor
 func (self *Executor) Execute(cc *core.Cli, input ...string) bool {
-	return self.execute(cc, false, input...)
+	return self.execute(cc, false, true, input...)
 }
 
-func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) bool {
-	if cc.GlobalEnv.GetBool("sys.env.use-cmd-abbrs") {
+func (self *Executor) execute(cc *core.Cli, bootstrap bool, innerCall bool, input ...string) bool {
+	if !innerCall && cc.GlobalEnv.GetBool("sys.env.use-cmd-abbrs") {
 		useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	}
 	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
 
-	if len(input) == 0 {
+	if !innerCall && len(input) == 0 {
 		display.PrintGlobalHelp(cc.Screen, env)
 		return true
 	}
 
-	if !bootstrap {
+	if !innerCall && !bootstrap {
 		useEnvAbbrs(cc.EnvAbbrs, env, cc.Cmds.Strs.EnvPathSep)
 	}
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
@@ -75,13 +75,15 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
-	for _, function := range self.funcs {
-		if !function(cc, flow, env) {
-			return false
+	if !innerCall && !bootstrap {
+		for _, function := range self.funcs {
+			if !function(cc, flow, env) {
+				return false
+			}
 		}
 	}
 
-	if !bootstrap && !self.sessionInit(cc, flow, env) {
+	if !innerCall && !bootstrap && !self.sessionInit(cc, flow, env) {
 		return false
 	}
 
@@ -93,10 +95,6 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, input ...string) boo
 	}
 	if !bootstrap {
 		env.PlusInt("sys.stack-depth", -1)
-	}
-
-	if !self.sessionFinish(cc, flow, env) {
-		return false
 	}
 	return true
 }
@@ -130,7 +128,6 @@ func (self *Executor) executeCmd(
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
 	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
-	argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
 
 	ln := cc.Screen.OutputNum()
 
@@ -139,16 +136,21 @@ func (self *Executor) executeCmd(
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
-		tryDelayAndStepByStep(cc, env)
+		succeeded = tryDelayAndStepByStep(cc, env)
+		if !succeeded {
+			return
+		}
 	}
 
 	last := cmd.LastCmdNode()
 	start := time.Now()
 	if last != nil {
-		if last.IsEmptyDirCmd() {
+		if last.IsNoExecutableCmd() {
 			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
+			// This cmdEnv is different, it included values from 'val2env' and 'arg2env'
+			cmdEnv, argv := cmd.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
 		}
 	} else {
@@ -169,17 +171,13 @@ func (self *Executor) executeCmd(
 	return
 }
 
-// 1. remove the cmds only have cmd-level env definication but have no executable
-// 2. move priority cmds to the head
+// Move priority cmds to the front
 // TODO: sort commands by priority-value, not just a bool flag, so '+' '-' can have the top priority
 // TODO: move to core
-func filterEmptyCmdsAndReorderByPriority(
+func reorderByPriority(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
 	_ *core.Env) bool {
-
-	// TODO: clean up this code
-	//notFilterEmpty := doNotFilterEmptyCmds(flow)
 
 	var unfiltered []core.ParsedCmd
 	unfilteredGlobalCmdIdx := -1
@@ -187,18 +185,6 @@ func filterEmptyCmdsAndReorderByPriority(
 	prioritiesGlobalCmdIdx := -1
 
 	for i, cmd := range flow.Cmds {
-		// TODO: seems filter empty cmds don't have much help, remove it
-		/*
-			if cmd.IsAllEmptySegments() {
-				if notFilterEmpty {
-					unfiltered = append(unfiltered, cmd)
-					if i == flow.GlobalCmdIdx {
-						unfilteredGlobalCmdIdx = len(unfiltered) - 1
-					}
-				}
-				continue
-			}
-		*/
 		if cmd.IsPriority() {
 			priorities = append(priorities, cmd)
 			if i == flow.GlobalCmdIdx {
@@ -268,6 +254,8 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core
 	return true
 }
 
+// TODO: clean ti
+// Seems not very useful, no user now.
 func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	sessionDir := env.GetRaw("session")
 	if len(sessionDir) == 0 {
@@ -289,6 +277,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	}
 	checker := &core.EnvOpsChecker{}
 	result := []core.EnvOpsCheckResult{}
+	env = env.Clone()
 	core.CheckEnvOps(cc, flow, env, checker, true, &result)
 	if len(result) == 0 {
 		return true
@@ -299,7 +288,8 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 
 func verifyOsDepCmds(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	deps := display.Depends{}
-	display.CollectDepends(cc, flow.Cmds, deps)
+	env = env.Clone()
+	display.CollectDepends(cc, env, flow.Cmds, deps, true)
 	screen := display.NewCacheScreen()
 	hasMissedOsCmds := display.DumpDepends(screen, env, deps)
 	if hasMissedOsCmds {
@@ -336,7 +326,7 @@ func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
 	}
 }
 
-func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) {
+func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) bool {
 	delaySec := env.GetInt("sys.execute-delay-sec")
 	if delaySec > 0 {
 		for i := 0; i < delaySec; i++ {
@@ -346,7 +336,8 @@ func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) {
 		cc.Screen.Print("\n")
 	}
 	if env.GetBool("sys.step-by-step") {
-		cc.Screen.Print("[confirm] press enter to run")
-		utils.UserConfirm()
+		cc.Screen.Print("[confirm] type 'y' and press enter:\n")
+		return utils.UserConfirm()
 	}
+	return true
 }

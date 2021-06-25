@@ -69,29 +69,8 @@ func (self EnvOpsChecker) OnCallCmd(
 	matched ParsedCmd,
 	pathSep string,
 	cmd *Cmd,
-	argv ArgVals,
 	ignoreMaybe bool,
 	displayPath string) (result []EnvOpsCheckResult) {
-
-	val2env := cmd.GetVal2Env()
-	for _, key := range val2env.EnvKeys() {
-		before, _ := self[key]
-		if val2env.Has(key) {
-			before.val = before.val | EnvOpTypeWrite
-			self[key] = before
-		}
-	}
-
-	// TODO: need a way to define and treat 'null'(no provied) args
-	arg2env := cmd.GetArg2Env()
-	for name, val := range argv {
-		key, ok := arg2env.GetEnvKey(name)
-		if ok && len(val.Raw) != 0 {
-			before, _ := self[key]
-			before.val = before.val | EnvOpTypeWrite
-			self[key] = before
-		}
-	}
 
 	ops := cmd.EnvOps()
 	for _, key := range ops.EnvKeys() {
@@ -169,19 +148,23 @@ func CheckEnvOps(
 			continue
 		}
 		displayPath := cmd.DisplayPath(sep, true)
-		cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
-		argv := cmdEnv.GetArgv(cmd.Path(), cc.Cmds.Strs.PathSep, cmd.Args())
-		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, argv, ignoreMaybe, displayPath)
+		cmdEnv, _ := cmd.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, ignoreMaybe, displayPath)
 
 		*result = append(*result, res...)
 
 		if last.Type() == CmdTypeFlow {
-			subFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, last.Flow()...)
-			if subFlow.GlobalEnv != nil {
-				env = env.GetOrNewLayer(EnvLayerTmp)
-				subFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+			subFlow, _ := last.Flow(cmdEnv, false)
+			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+			err := parsedFlow.FirstErr()
+			if err != nil {
+				panic(err.Error)
 			}
-			CheckEnvOps(cc, subFlow, env, checker, ignoreMaybe, result)
+			if parsedFlow.GlobalEnv != nil {
+				env = env.GetOrNewLayer(EnvLayerTmp)
+				parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+			}
+			CheckEnvOps(cc, parsedFlow, env, checker, ignoreMaybe, result)
 		}
 	}
 }

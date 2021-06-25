@@ -123,19 +123,6 @@ func (self *Cmd) Execute(
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	sessionEnv := env.GetLayer(EnvLayerSession)
-	for _, envKey := range self.val2env.EnvKeys() {
-		sessionEnv.Set(envKey, self.val2env.Val(envKey))
-	}
-
-	// TODO: fix it by adding 'null' value type
-	for name, val := range argv {
-		envKey, ok := self.arg2env.GetEnvKey(name)
-		if ok && len(val.Raw) != 0 {
-			sessionEnv.Set(envKey, val.Raw)
-		}
-	}
-
 	switch self.ty {
 	case CmdTypePower:
 		return self.power(argv, cc, env, flow, currCmdIdx)
@@ -294,6 +281,16 @@ func (self *Cmd) DisplayHelpStr() string {
 	return self.help
 }
 
+func (self *Cmd) IsNoExecutableCmd() bool {
+	if len(self.val2env.EnvKeys()) > 0 {
+		return false
+	}
+	if len(self.arg2env.EnvKeys()) > 0 {
+		return false
+	}
+	return self.ty == CmdTypeUninited || self.ty == CmdTypeEmpty || self.ty == CmdTypeEmptyDir
+}
+
 func (self *Cmd) IsPowerCmd() bool {
 	return self.ty == CmdTypePower
 }
@@ -326,15 +323,59 @@ func (self *Cmd) FlowStrs() []string {
 	return self.flow
 }
 
-func (self *Cmd) Flow() []string {
-	flowStr := strings.Join(self.flow, " ")
+// TODO: move to parser ?
+func (self *Cmd) RenderedFlowStrs(env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
+	templBracketLeft := self.owner.Strs.FlowTemplateBracketLeft
+	templBracketRight := self.owner.Strs.FlowTemplateBracketRight
+	for _, it := range self.flow {
+		for {
+			i := strings.Index(it, templBracketLeft)
+			if i < 0 {
+				break
+			}
+			tail := it[i+len(templBracketLeft):]
+			j := strings.Index(tail, templBracketRight)
+			if j < 0 {
+				break
+			}
+			key := tail[0:j]
+			if env == nil {
+				return self.flow, false
+			}
+			val, ok := env.GetEx(key)
+			if !ok {
+				if allowFlowTemplateRenderError {
+					return self.flow, false
+				}
+				err := CmdMissedEnvValWhenRenderFlow{
+					"render flow template failed, env value missed.",
+					self.owner.DisplayPath(),
+					self.metaFilePath,
+					self.source,
+					key}
+				panic(err)
+			}
+			it = it[0:i] + val.Raw + tail[j+len(templBracketRight):]
+		}
+		flow = append(flow, it)
+	}
+	rendered = true
+	return
+}
+
+func (self *Cmd) Flow(env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
+	flow, rendered = self.RenderedFlowStrs(env, allowFlowTemplateRenderError)
+	if !rendered || len(flow) == 0 {
+		return
+	}
+	flowStr := strings.Join(flow, " ")
 	flow, err := shellwords.Parse(flowStr)
 	if err != nil {
 		// TODO: better display
 		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
 			self.cmdLine, err))
 	}
-	return flow
+	return
 }
 
 func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
@@ -355,7 +396,7 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 }
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
-	flow := self.Flow()
+	flow, _ := self.Flow(env, false)
 	return cc.Executor.Execute(cc, flow...)
 }
 
@@ -392,16 +433,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	sep := cc.Cmds.Strs.ProtoSep
 
-	sessionDir := env.GetRaw("session")
-	if len(sessionDir) == 0 {
-		panic(fmt.Errorf("[Cmd.executeFile] session dir not found in env"))
-	}
-	sessionFileName := env.GetRaw("strs.session-env-file")
-	if len(sessionFileName) == 0 {
-		panic(fmt.Errorf("[Cmd.executeFile] session env file name not found in env"))
-	}
-	sessionPath := filepath.Join(sessionDir, sessionFileName)
-	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
+	sessionDir, sessionPath := saveEnvToSessionFile(cc, env)
 
 	args = append(args, self.cmdLine)
 	args = append(args, sessionDir)
@@ -435,6 +467,22 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
 	return true
+}
+
+func saveEnvToSessionFile(cc *Cli, env *Env) (sessionDir string, sessionPath string) {
+	sep := cc.Cmds.Strs.ProtoSep
+
+	sessionDir = env.GetRaw("session")
+	if len(sessionDir) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session dir not found in env"))
+	}
+	sessionFileName := env.GetRaw("strs.session-env-file")
+	if len(sessionFileName) == 0 {
+		panic(fmt.Errorf("[Cmd.executeFile] session env file name not found in env"))
+	}
+	sessionPath = filepath.Join(sessionDir, sessionFileName)
+	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
+	return
 }
 
 func mayQuoteStr(origin string) string {

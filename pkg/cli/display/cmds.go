@@ -223,7 +223,7 @@ func dumpCmd(
 
 			val2env := cic.GetVal2Env()
 			if len(val2env.EnvKeys()) != 0 {
-				prt(1, "- env-ops: (write)")
+				prt(1, "- env-direct-write:")
 			}
 			for _, k := range val2env.EnvKeys() {
 				prt(2, k+" = "+mayQuoteStr(val2env.Val(k)))
@@ -231,7 +231,7 @@ func dumpCmd(
 
 			arg2env := cic.GetArg2Env()
 			if len(arg2env.EnvKeys()) != 0 {
-				prt(1, "- env-ops: (map-arg-to-env)")
+				prt(1, "- env-from-argv:")
 			}
 			for _, k := range arg2env.EnvKeys() {
 				prt(2, k+" <- "+mayQuoteStr(arg2env.GetArgName(k)))

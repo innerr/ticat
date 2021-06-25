@@ -28,6 +28,8 @@ func PrintCmdStack(
 	currCmdIdx int,
 	strs *core.CmdTreeStrs) (lines CmdStackLines) {
 
+	env = env.Clone()
+
 	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
 		return
 	}
@@ -111,7 +113,8 @@ func PrintCmdStack(
 			continue
 		}
 		var line string
-		if (i == displayIdxStart && i != 0) || (i+1 == displayIdxEnd && i+1 != len(flow)) {
+		endOmitting := (i+1 == displayIdxEnd && i+1 != len(flow))
+		if (i == displayIdxStart && i != 0) || endOmitting {
 			line += "   ..."
 		} else {
 			if i == currCmdIdx {
@@ -123,15 +126,30 @@ func PrintCmdStack(
 		}
 		lines.Flow = append(lines.Flow, line)
 		lines.FlowLen = append(lines.FlowLen, len(line))
-
-		cmdEnv := cmd.GenEnv(env.GetLayer(core.EnvLayerSession),
-			strs.EnvValDelAllMark)
+		if endOmitting {
+			continue
+		}
+		_, argv := cmd.GenEnvAndArgv(
+			env.GetLayer(core.EnvLayerSession), strs.EnvValDelAllMark, strs.PathSep)
 		args := cmd.Args()
-		argv := cmdEnv.GetArgv(cmd.Path(), strs.PathSep, cmd.Args())
 		for _, line := range DumpArgs(&args, argv, false) {
 			line := strings.Repeat(" ", 3+4) + line
 			lines.Flow = append(lines.Flow, line)
 			lines.FlowLen = append(lines.FlowLen, len(line))
+		}
+
+		cic := cmd.LastCmd()
+		if cic != nil && cic.Type() == core.CmdTypeFlow {
+			if i+1 == currCmdIdx || i == currCmdIdx {
+				line := "       --->>>"
+				lines.Flow = append(lines.Flow, line)
+				lines.FlowLen = append(lines.FlowLen, len(line))
+			}
+			if i+1 == currCmdIdx {
+				line := "       <<<---"
+				lines.Flow = append(lines.Flow, line)
+				lines.FlowLen = append(lines.FlowLen, len(line))
+			}
 		}
 	}
 

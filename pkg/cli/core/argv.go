@@ -8,7 +8,8 @@ import (
 type ArgVals map[string]ArgVal
 
 type ArgVal struct {
-	Raw string
+	Raw      string
+	Provided bool
 }
 
 func (self ArgVals) GetRaw(name string) (raw string) {

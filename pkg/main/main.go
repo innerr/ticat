@@ -43,6 +43,8 @@ func main() {
 	defEnv.Set("strs.tag-out-of-the-box", TagOutOfTheBox)
 	defEnv.Set("strs.tag-provider", TagProvider)
 	defEnv.Set("strs.tag-self-test", TagSelfTest)
+	defEnv.Set("strs.flow-template-bracket-left", FlowTemplateBracketLeft)
+	defEnv.Set("strs.flow-template-bracket-right", FlowTemplateBracketRight)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -56,6 +58,8 @@ func main() {
 		EnvKeyValSep,
 		EnvPathSep,
 		ProtoSep,
+		FlowTemplateBracketLeft,
+		FlowTemplateBracketRight,
 	})
 	builtin.RegisterCmds(tree)
 
@@ -99,6 +103,9 @@ func main() {
 
 	// TODO: handle error by types
 	defer func() {
+		if !cc.GlobalEnv.GetBool("sys.panic.recover") {
+			return
+		}
 		if r := recover(); r != nil {
 			display.PrintError(cc, cc.GlobalEnv, r.(error))
 			os.Exit(-1)
@@ -117,31 +124,33 @@ func main() {
 }
 
 const (
-	SelfName              string = "ticat"
-	CmdRootDisplayName    string = "<root>"
-	CmdBuiltinDisplayName string = "<builtin>"
-	Spaces                string = "\t\n\r "
-	AbbrsSep              string = "|"
-	EnvOpSep              string = ":"
-	SequenceSep           string = ":"
-	CmdPathSep            string = "."
-	CmdPathAlterSeps      string = "./"
-	EnvBracketLeft        string = "{"
-	EnvBracketRight       string = "}"
-	EnvKeyValSep          string = "="
-	EnvPathSep            string = "."
-	EnvValDelAllMark      string = "--"
-	EnvRuntimeSysPrefix   string = "sys"
-	EnvStrsPrefix         string = "strs"
-	EnvFileName           string = "bootstrap.env"
-	ProtoSep              string = "\t"
-	ModsRepoExt           string = "." + SelfName
-	MetaExt               string = "." + SelfName
-	FlowExt               string = ".flow." + SelfName
-	HubFileName           string = "repos.hub"
-	ReposFileName         string = "hub.ticat"
-	SessionEnvFileName    string = "env"
-	TagOutOfTheBox        string = "@ready"
-	TagProvider           string = "@provider"
-	TagSelfTest           string = "@selftest"
+	SelfName                 string = "ticat"
+	CmdRootDisplayName       string = "<root>"
+	CmdBuiltinDisplayName    string = "<builtin>"
+	Spaces                   string = "\t\n\r "
+	AbbrsSep                 string = "|"
+	EnvOpSep                 string = ":"
+	SequenceSep              string = ":"
+	CmdPathSep               string = "."
+	CmdPathAlterSeps         string = "./"
+	EnvBracketLeft           string = "{"
+	EnvBracketRight          string = "}"
+	EnvKeyValSep             string = "="
+	EnvPathSep               string = "."
+	EnvValDelAllMark         string = "--"
+	EnvRuntimeSysPrefix      string = "sys"
+	EnvStrsPrefix            string = "strs"
+	EnvFileName              string = "bootstrap.env"
+	ProtoSep                 string = "\t"
+	ModsRepoExt              string = "." + SelfName
+	MetaExt                  string = "." + SelfName
+	FlowExt                  string = ".tiflow"
+	HubFileName              string = "repos.hub"
+	ReposFileName            string = "hub.ticat"
+	SessionEnvFileName       string = "env"
+	TagOutOfTheBox           string = "@ready"
+	TagProvider              string = "@provider"
+	TagSelfTest              string = "@selftest"
+	FlowTemplateBracketLeft  string = "[["
+	FlowTemplateBracketRight string = "]]"
 )

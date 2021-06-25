@@ -29,6 +29,19 @@ func NewEnv() *Env {
 	return &Env{map[string]EnvVal{}, nil, EnvLayerDefault}
 }
 
+// TODO: COW ?
+func (self *Env) Clone() (env *Env) {
+	pairs := map[string]EnvVal{}
+	for k, v := range self.pairs {
+		pairs[k] = EnvVal{v.Raw, v.IsArg}
+	}
+	var parent *Env
+	if self.parent != nil {
+		parent = self.parent.Clone()
+	}
+	return &Env{pairs, parent, self.ty}
+}
+
 func (self *Env) NewLayer(ty EnvLayerType) *Env {
 	env := NewEnv()
 	env.parent = self
@@ -146,11 +159,11 @@ func (self *Env) GetArgv(path []string, sep string, args Args) ArgVals {
 	list := args.Names()
 	for _, it := range list {
 		key := strings.Join(append(path, it), sep)
-		val := self.Get(key)
-		if len(val.Raw) != 0 {
-			argv[it] = ArgVal{val.Raw}
+		val, ok := self.GetEx(key)
+		if ok {
+			argv[it] = ArgVal{val.Raw, true}
 		} else {
-			argv[it] = ArgVal{args.DefVal(it)}
+			argv[it] = ArgVal{args.DefVal(it), false}
 		}
 	}
 	if len(argv) == 0 {
@@ -189,6 +202,10 @@ func (self Env) LayerType() EnvLayerType {
 
 func (self Env) LayerTypeName() string {
 	return EnvLayerName(self.ty)
+}
+
+func (self Env) FlattenAll() map[string]string {
+	return self.Flatten(true, nil, false)
 }
 
 func (self Env) Flatten(

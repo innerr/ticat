@@ -164,7 +164,7 @@ func SaveFlow(
 			panic(fmt.Errorf("[SaveFlow] path '%s' exists", filePath))
 		} else {
 			cc.Screen.Print(fmt.Sprintf("[confirm] flow file of '%s' exists, "+
-				"press enter to overwrite\n", cmdPath))
+				"type 'y' and press enter to overwrite:\n", cmdPath))
 			utils.UserConfirm()
 		}
 	}
@@ -267,7 +267,7 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 		}
 		cmdPath := filepath.Base(path[0 : len(path)-len(flowExt)])
 		cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
-		mod_meta.RegMod(cc, path, "", false, cmdPaths, cc.Cmds.Strs.AbbrsSep, envPathSep, source)
+		mod_meta.RegMod(cc, path, "", false, true, cmdPaths, cc.Cmds.Strs.AbbrsSep, envPathSep, source)
 		return nil
 	})
 	return true

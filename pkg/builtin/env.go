@@ -17,6 +17,7 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.stack-depth", 0)
 
 	env.SetBool("sys.step-by-step", false)
+	env.SetBool("sys.panic.recover", true)
 	env.SetInt("sys.execute-delay-sec", 0)
 	env.SetBool("sys.interact", true)
 
@@ -188,5 +189,5 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.mod.realname", true)
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.flow.depth", 6)
-	env.SetInt("display.max-cmd-cnt", 7)
+	env.SetInt("display.max-cmd-cnt", 14)
 }
