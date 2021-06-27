@@ -63,12 +63,22 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd)
 
 	listHub(screen, env, infos, findStrs...)
 	if screen.OutputNum() <= 0 {
-		display.PrintTipTitle(cc.Screen, env,
-			"'hub' manages all added git repos, now it's empty.",
-			"",
-			"add more git repos to get more avaialable commands:",
-			"",
-			display.SuggestHubAddShort(env))
+		if len(findStrs) == 0 {
+			display.PrintTipTitle(cc.Screen, env,
+				"'hub' manages all added git repos, now it's empty.",
+				"",
+				"add more git repos to get more avaialable commands:",
+				"",
+				display.SuggestHubAddShort(env))
+		} else {
+			var displayFindStrs []string
+			for _, str := range findStrs {
+				displayFindStrs = append(displayFindStrs, "'"+str+"'")
+			}
+			display.PrintTipTitle(cc.Screen, env,
+				"can't find any repo/dir in hub by these keywords:",
+				displayFindStrs)
+		}
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "repo list in hub:")
 		screen.WriteTo(cc.Screen)
@@ -301,6 +311,7 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 }
 
 func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+	// TODO: do accurate matching before search
 	path := argv.GetRaw("path")
 	if len(path) != 0 {
 		stat, err := os.Stat(path)
