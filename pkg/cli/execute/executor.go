@@ -68,9 +68,11 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, innerCall bool, inpu
 		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 	}
 
-	isSearch, isLess, isMore := isEndWithSearchCmd(flow)
-	if !display.HandleParseResult(cc, flow, env, isSearch, isLess, isMore) {
-		return false
+	if !allowParseError(flow) {
+		isSearch, isLess, isMore := isEndWithSearchCmd(flow)
+		if !display.HandleParseResult(cc, flow, env, isSearch, isLess, isMore) {
+			return false
+		}
 	}
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)

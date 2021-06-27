@@ -37,24 +37,6 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	return false
 }
 
-func doNotFilterEmptyCmds(flow *core.ParsedCmds) bool {
-	last := flow.Cmds[len(flow.Cmds)-1].LastCmd()
-	if last == nil {
-		return false
-	}
-	allows := []interface{}{
-		builtin.GlobalHelp,
-		builtin.GlobalHelpMoreInfo,
-		builtin.GlobalHelpLessInfo,
-	}
-	for _, allow := range allows {
-		if last.IsTheSameFunc(allow) {
-			return true
-		}
-	}
-	return false
-}
-
 func isEndWithSearchCmd(flow *core.ParsedCmds) (isSearch, isLess, isMore bool) {
 	if len(flow.Cmds) == 0 {
 		return
@@ -75,4 +57,19 @@ func isEndWithSearchCmd(flow *core.ParsedCmds) (isSearch, isLess, isMore bool) {
 		isSearch = true
 	}
 	return
+}
+
+func allowParseError(flow *core.ParsedCmds) bool {
+	if len(flow.Cmds) == 0 {
+		return false
+	}
+	cmd := flow.Cmds.LastCmd()
+	last := cmd.LastCmd()
+	if last == nil {
+		return false
+	}
+	if last.IsTheSameFunc(builtin.SaveFlow) {
+		return true
+	}
+	return false
 }

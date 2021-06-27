@@ -200,7 +200,7 @@ func (self *MetaFile) save(w io.Writer) {
 			fmt.Fprintf(w, "%c%s%c\n", SectionBracketLeft, name, SectionBracketRight)
 		}
 		for j, key := range keys {
-			multiLine := saveKey(key, section.Get(key))
+			multiLine := saveKey(key, section.GetUnTrim(key))
 			if multiLine && j != len(keys)-1 {
 				fmt.Fprintf(w, "\n")
 			}
