@@ -324,42 +324,52 @@ func (self *Cmd) FlowStrs() []string {
 }
 
 // TODO: move to parser ?
-func (self *Cmd) RenderedFlowStrs(env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
+func (self *Cmd) RenderedFlowStrs(
+	env *Env,
+	allowFlowTemplateRenderError bool) (flow []string, fullyRendered bool) {
+
 	templBracketLeft := self.owner.Strs.FlowTemplateBracketLeft
 	templBracketRight := self.owner.Strs.FlowTemplateBracketRight
+	hasError := false
 	for _, it := range self.flow {
+		findPos := 0
 		for {
-			i := strings.Index(it, templBracketLeft)
+			str := it[findPos:]
+			i := strings.Index(str, templBracketLeft)
 			if i < 0 {
 				break
 			}
-			tail := it[i+len(templBracketLeft):]
+			tail := str[i+len(templBracketLeft):]
 			j := strings.Index(tail, templBracketRight)
 			if j < 0 {
 				break
 			}
 			key := tail[0:j]
+			// TODO: remove this, not allow env is nil
 			if env == nil {
 				return self.flow, false
 			}
 			val, ok := env.GetEx(key)
 			if !ok {
 				if allowFlowTemplateRenderError {
-					return self.flow, false
+					hasError = true
+					findPos += j+len(templBracketRight)
+					continue
 				}
 				err := CmdMissedEnvValWhenRenderFlow{
 					"render flow template failed, env value missed.",
 					self.owner.DisplayPath(),
 					self.metaFilePath,
 					self.source,
-					key}
+					key,
+				}
 				panic(err)
 			}
-			it = it[0:i] + val.Raw + tail[j+len(templBracketRight):]
+			it = it[:findPos] + str[0:i] + val.Raw + tail[j+len(templBracketRight):]
 		}
 		flow = append(flow, it)
 	}
-	rendered = true
+	fullyRendered = !hasError
 	return
 }
 
