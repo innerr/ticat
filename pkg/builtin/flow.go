@@ -172,6 +172,10 @@ func SaveFlow(
 	w := bytes.NewBuffer(nil)
 	flow.RemoveLeadingCmds(1)
 
+	if !checkAndConfirmIfFlowHasParseError(cc.Screen, flow) {
+		return currCmdIdx, false
+	}
+
 	// TODO: wrap line if too long
 	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
 	data := w.String()
@@ -295,6 +299,11 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 			}
 		}
 
+		if cmd.ParseResult.Error != nil {
+			fmt.Fprint(w, strings.Join(cmd.ParseResult.Input, " "))
+			continue
+		}
+
 		var path []string
 		var lastSegHasNoCmd bool
 		var cmdHasEnv bool
@@ -396,4 +405,17 @@ func getFlowCmdPath(
 		panic(fmt.Errorf("[%s] flow '%s' file '%s' not exists", funcName, cmdPath, filePath))
 	}
 	return
+}
+
+func checkAndConfirmIfFlowHasParseError(screen core.Screen, flow *core.ParsedCmds) bool {
+	for _, cmd := range flow.Cmds {
+		if cmd.ParseResult.Error == nil {
+			continue
+		}
+		screen.Print("[confirm] flow has parse error, " +
+			"type 'y' and press enter to force save:\n")
+		utils.UserConfirm()
+		break
+	}
+	return true
 }

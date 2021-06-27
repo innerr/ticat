@@ -353,7 +353,7 @@ func (self *Cmd) RenderedFlowStrs(
 			if !ok {
 				if allowFlowTemplateRenderError {
 					hasError = true
-					findPos += j+len(templBracketRight)
+					findPos += j + len(templBracketRight)
 					continue
 				}
 				err := CmdMissedEnvValWhenRenderFlow{
