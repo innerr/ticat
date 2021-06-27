@@ -181,10 +181,17 @@ func applyArg2Env(env *Env, cmd *Cmd, argv ArgVals) {
 		if !val.Provided && len(val.Raw) == 0 {
 			continue
 		}
-		key, ok := arg2env.GetEnvKey(name)
-		if ok {
-			env.Set(key, val.Raw)
+		key, hasMapping := arg2env.GetEnvKey(name)
+		if !hasMapping {
+			continue
 		}
+		// If arg is not provided and env has the key, do not mapping,
+		// even the default val of arg is not empty.
+		_, inEnv := env.GetEx(key)
+		if !val.Provided && inEnv {
+			continue
+		}
+		env.Set(key, val.Raw)
 	}
 }
 
