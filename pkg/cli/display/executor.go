@@ -129,7 +129,7 @@ func PrintCmdStack(
 		if endOmitting {
 			continue
 		}
-		_, argv := cmd.GenEnvAndArgv(
+		_, argv := cmd.ApplyMappingGenEnvAndArgv(
 			env.GetLayer(core.EnvLayerSession), strs.EnvValDelAllMark, strs.PathSep)
 		args := cmd.Args()
 		for _, line := range DumpArgs(&args, argv, false) {

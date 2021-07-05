@@ -86,11 +86,14 @@ func dumpFlowCmd(
 		prt(1, " '"+cic.Help()+"'")
 	}
 
-	cmdEnv, argv := parsedCmd.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
+	// TODO: this is slow
+	originEnv := env.Clone()
+	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
 
-	if !args.Skeleton {
+	if !args.Skeleton && cic.Type() != core.CmdTypeFlow && cic.Type() != core.CmdTypeEmpty &&
+		cic.Type() != core.CmdTypeEmptyDir {
 		args := parsedCmd.Args()
-		argLines := DumpArgs(&args, argv, true)
+		argLines := DumpArgs(&args, argv, false)
 		if len(argLines) != 0 {
 			prt(1, "- args:")
 		}
@@ -100,7 +103,7 @@ func dumpFlowCmd(
 	}
 
 	if !args.Skeleton {
-		keys, kvs := dumpFlowEnv(cc, cmdEnv, parsedGlobalEnv, parsedCmd, cmd, argv)
+		keys, kvs := dumpFlowEnv(cc, originEnv, parsedGlobalEnv, parsedCmd, cmd, argv)
 		if len(keys) != 0 {
 			prt(1, "- env-values:")
 		}
@@ -206,12 +209,12 @@ func dumpFlowEnv(
 	cmdEssEnv := parsedCmd.GenEnv(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
 	val2env := cic.GetVal2Env()
 	for _, k := range val2env.EnvKeys() {
-		kvs[k] = flowEnvVal{val2env.Val(k), "(from mod)"}
+		kvs[k] = flowEnvVal{val2env.Val(k), "<-mod"}
 	}
 
 	flatten := cmdEssEnv.Flatten(true, nil, true)
 	for k, v := range flatten {
-		kvs[k] = flowEnvVal{v, "(from flow)"}
+		kvs[k] = flowEnvVal{v, "<-flow"}
 	}
 
 	arg2env := cic.GetArg2Env()
@@ -227,7 +230,7 @@ func dumpFlowEnv(
 		if !val.Provided && inEnv {
 			continue
 		}
-		kvs[key] = flowEnvVal{val.Raw, "<- arg '" + name + "'"}
+		kvs[key] = flowEnvVal{val.Raw, "<-arg '" + name + "'"}
 	}
 
 	for k, _ := range kvs {

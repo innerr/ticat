@@ -148,7 +148,7 @@ func CheckEnvOps(
 			continue
 		}
 		displayPath := cmd.DisplayPath(sep, true)
-		cmdEnv, _ := cmd.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		cmdEnv, _ := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, ignoreMaybe, displayPath)
 
 		*result = append(*result, res...)

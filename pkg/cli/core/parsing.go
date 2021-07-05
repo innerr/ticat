@@ -150,7 +150,7 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 	return
 }
 
-func (self ParsedCmd) GenEnvAndArgv(
+func (self ParsedCmd) ApplyMappingGenEnvAndArgv(
 	originEnv *Env,
 	valDelAllMark string,
 	cmdPathSep string) (env *Env, argv ArgVals) {
