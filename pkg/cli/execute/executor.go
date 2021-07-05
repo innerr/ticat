@@ -108,7 +108,6 @@ func (self *Executor) executeFlow(
 	env *core.Env,
 	input []string) bool {
 
-	fmt.Printf("----------------%v\n", input)
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool

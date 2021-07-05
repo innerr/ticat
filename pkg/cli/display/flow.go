@@ -100,40 +100,17 @@ func dumpFlowCmd(
 	}
 
 	if !args.Skeleton {
-		tempEnv := core.NewEnv()
-		parsedGlobalEnv.WriteNotArgTo(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
-		cmdEssEnv := parsedCmd.GenEnv(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
-		flatten := cmdEssEnv.Flatten(true, nil, true)
-		if len(flatten) != 0 {
+		keys, kvs := dumpFlowEnv(cc, cmdEnv, parsedGlobalEnv, parsedCmd, cmd, argv)
+		if len(keys) != 0 {
 			prt(1, "- env-values:")
-			var keys []string
-			for k, _ := range flatten {
-				keys = append(keys, k)
-			}
-			sort.Strings(keys)
-			for _, k := range keys {
-				prt(2, k+" = "+flatten[k])
-			}
+		}
+		for _, k := range keys {
+			v := kvs[k]
+			prt(2, k+" = "+mayQuoteStr(v.Val)+" "+v.Source+"")
 		}
 	}
 
 	if !args.Skeleton {
-		val2env := cic.GetVal2Env()
-		if len(val2env.EnvKeys()) != 0 {
-			prt(1, "- env-direct-write:")
-		}
-		for _, k := range val2env.EnvKeys() {
-			prt(2, k+" = "+mayQuoteStr(val2env.Val(k)))
-		}
-
-		arg2env := cic.GetArg2Env()
-		if len(arg2env.EnvKeys()) != 0 {
-			prt(1, "- env-from-argv:")
-		}
-		for _, k := range arg2env.EnvKeys() {
-			prt(2, k+" <- "+mayQuoteStr(arg2env.GetArgName(k)))
-		}
-
 		envOps := cic.EnvOps()
 		envOpKeys := envOps.EnvKeys()
 		if len(envOpKeys) != 0 {
@@ -206,6 +183,58 @@ func dumpFlowCmd(
 			}
 		}
 	}
+}
+
+type flowEnvVal struct {
+	Val    string
+	Source string
+}
+
+func dumpFlowEnv(
+	cc *core.Cli,
+	env *core.Env,
+	parsedGlobalEnv core.ParsedEnv,
+	parsedCmd core.ParsedCmd,
+	cmd *core.CmdTree,
+	argv core.ArgVals) (keys []string, kvs map[string]flowEnvVal) {
+
+	kvs = map[string]flowEnvVal{}
+	cic := cmd.Cmd()
+
+	tempEnv := core.NewEnv()
+	parsedGlobalEnv.WriteNotArgTo(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
+	cmdEssEnv := parsedCmd.GenEnv(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
+	val2env := cic.GetVal2Env()
+	for _, k := range val2env.EnvKeys() {
+		kvs[k] = flowEnvVal{val2env.Val(k), "(from mod)"}
+	}
+
+	flatten := cmdEssEnv.Flatten(true, nil, true)
+	for k, v := range flatten {
+		kvs[k] = flowEnvVal{v, "(from flow)"}
+	}
+
+	arg2env := cic.GetArg2Env()
+	for name, val := range argv {
+		if !val.Provided && len(val.Raw) == 0 {
+			continue
+		}
+		key, hasMapping := arg2env.GetEnvKey(name)
+		if !hasMapping {
+			continue
+		}
+		_, inEnv := env.GetEx(key)
+		if !val.Provided && inEnv {
+			continue
+		}
+		kvs[key] = flowEnvVal{val.Raw, "<- arg '" + name + "'"}
+	}
+
+	for k, _ := range kvs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return
 }
 
 type DumpFlowArgs struct {
