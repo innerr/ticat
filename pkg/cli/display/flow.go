@@ -10,6 +10,7 @@ import (
 func DumpFlow(
 	cc *core.Cli,
 	env *core.Env,
+	parsedGlobalEnv core.ParsedEnv,
 	flow []core.ParsedCmd,
 	args *DumpFlowArgs) {
 
@@ -22,13 +23,14 @@ func DumpFlow(
 
 	PrintTipTitle(cc.Screen, env, "flow executing description:")
 	cc.Screen.Print("--->>>\n")
-	dumpFlow(cc, env, flow, args, maxDepth, 0)
+	dumpFlow(cc, env, parsedGlobalEnv, flow, args, maxDepth, 0)
 	cc.Screen.Print("<<<---\n")
 }
 
 func dumpFlow(
 	cc *core.Cli,
 	env *core.Env,
+	parsedGlobalEnv core.ParsedEnv,
 	flow []core.ParsedCmd,
 	args *DumpFlowArgs,
 	maxDepth int,
@@ -37,7 +39,7 @@ func dumpFlow(
 	metFlows := map[string]bool{}
 	for _, cmd := range flow {
 		if !cmd.IsEmpty() {
-			dumpFlowCmd(cc, cc.Screen, env, cmd, args,
+			dumpFlowCmd(cc, cc.Screen, env, parsedGlobalEnv, cmd, args,
 				maxDepth, indentAdjust, metFlows)
 		}
 	}
@@ -47,6 +49,7 @@ func dumpFlowCmd(
 	cc *core.Cli,
 	screen core.Screen,
 	env *core.Env,
+	parsedGlobalEnv core.ParsedEnv,
 	parsedCmd core.ParsedCmd,
 	args *DumpFlowArgs,
 	maxDepth int,
@@ -97,9 +100,10 @@ func dumpFlowCmd(
 	}
 
 	if !args.Skeleton {
-		// TODO BUG: missed kvs in GlobalEnv
-		cmdEssEnv := parsedCmd.GenEnv(core.NewEnv(), cc.Cmds.Strs.EnvValDelAllMark)
-		flatten := cmdEssEnv.Flatten(false, nil, true)
+		tempEnv := core.NewEnv()
+		parsedGlobalEnv.WriteNotArgTo(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
+		cmdEssEnv := parsedCmd.GenEnv(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
+		flatten := cmdEssEnv.Flatten(true, nil, true)
 		if len(flatten) != 0 {
 			prt(1, "- env-values:")
 			var keys []string
@@ -196,7 +200,7 @@ func dumpFlowCmd(
 					if err != nil {
 						panic(err.Error)
 					}
-					dumpFlow(cc, env, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
+					dumpFlow(cc, env, parsedGlobalEnv, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
 					prt(2, "<<<---")
 				}
 			}

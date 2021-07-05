@@ -39,7 +39,7 @@ func DumpFlow(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpFlowArgs()
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 	return clearFlow(flow)
 }
 
@@ -51,7 +51,7 @@ func DumpFlowSimple(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpFlowArgs().SetSimple()
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 	return clearFlow(flow)
 }
 
@@ -63,7 +63,7 @@ func DumpFlowSkeleton(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton()
-	display.DumpFlow(cc, env, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 	return clearFlow(flow)
 }
 
@@ -120,7 +120,7 @@ func dumpFlowAll(
 
 	dumpArgs := display.NewDumpFlowArgs()
 	dumpArgs.Simple = simple
-	display.DumpFlow(cc, env, cmds, dumpArgs)
+	display.DumpFlow(cc, env, flow.GlobalEnv, cmds, dumpArgs)
 
 	deps := display.Depends{}
 	display.CollectDepends(cc, env, cmds, deps, false)

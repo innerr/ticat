@@ -108,6 +108,7 @@ func (self *Executor) executeFlow(
 	env *core.Env,
 	input []string) bool {
 
+	fmt.Printf("----------------%v\n", input)
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool
@@ -156,7 +157,8 @@ func (self *Executor) executeCmd(
 			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
 		}
 	} else {
-		newCurrCmdIdx, succeeded = currCmdIdx, false
+		// Maybe a empty global-env definition
+		newCurrCmdIdx, succeeded = currCmdIdx, true
 	}
 	elapsed := time.Now().Sub(start)
 
