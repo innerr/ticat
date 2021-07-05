@@ -156,7 +156,8 @@ func (self *Executor) executeCmd(
 			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
 		}
 	} else {
-		newCurrCmdIdx, succeeded = currCmdIdx, false
+		// Maybe a empty global-env definition
+		newCurrCmdIdx, succeeded = currCmdIdx, true
 	}
 	elapsed := time.Now().Sub(start)
 
