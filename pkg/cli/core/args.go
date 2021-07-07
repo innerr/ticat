@@ -6,8 +6,9 @@ import (
 )
 
 type Args struct {
-	// Use a map as a set
-	names map[string]bool
+	// map[arg-name]arg-index
+	names map[string]int
+
 	// Not support no-default-value arg yet, so names could be insteaded by defVals now
 	defVals map[string]string
 
@@ -18,7 +19,7 @@ type Args struct {
 
 func newArgs() Args {
 	return Args{
-		map[string]bool{},
+		map[string]int{},
 		map[string]string{},
 		[]string{},
 		map[string][]string{},
@@ -44,7 +45,7 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 		self.abbrsRevIdx[abbr] = name
 	}
 	self.abbrs[name] = abbrs
-	self.names[name] = true
+	self.names[name] = len(self.names)
 	self.defVals[name] = defVal
 	self.orderedList = append(self.orderedList, name)
 }
@@ -74,4 +75,12 @@ func (self *Args) Realname(nameOrAbbr string) string {
 func (self *Args) Abbrs(name string) (abbrs []string) {
 	abbrs, _ = self.abbrs[name]
 	return
+}
+
+func (self *Args) Index(name string) int {
+	index, ok := self.names[name]
+	if !ok {
+		return -1
+	}
+	return index
 }
