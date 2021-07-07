@@ -71,13 +71,13 @@ func SaveEnvToFile(env *Env, path string, sep string) {
 
 	err = EnvOutput(env, file, sep)
 	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToLocal] write env file '%s' failed: %v", tmp, err))
+		panic(fmt.Errorf("[SaveEnvToFile] write env file '%s' failed: %v", tmp, err))
 	}
 	file.Close()
 
 	err = os.Rename(tmp, path)
 	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToLocal] rename env file '%s' to '%s' failed: %v",
+		panic(fmt.Errorf("[SaveEnvToFile] rename env file '%s' to '%s' failed: %v",
 			tmp, path, err))
 	}
 }

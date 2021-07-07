@@ -148,4 +148,4 @@ The saved file dir is defined by env key "sys.paths.data",
 the file name is defined by env key "strs.env-file-name".
 
 The format is multi lines,
-each line is a key-value pair seperated by a string defined by env key "strs.proto-sep"(default: \t).
+each line is a key-value pair seperated by a string defined by env key "strs.env-kv-sep"(default: =).

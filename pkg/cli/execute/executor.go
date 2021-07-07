@@ -214,7 +214,7 @@ func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core
 	sessionDir := env.GetRaw("session")
 	sessionPath := filepath.Join(sessionDir, self.sessionFileName)
 	if len(sessionDir) != 0 {
-		core.LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.ProtoSep)
+		core.LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep)
 		return true
 	}
 
@@ -264,9 +264,8 @@ func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *co
 	if len(sessionDir) == 0 {
 		return true
 	}
-	kvSep := env.GetRaw("strs.proto-sep")
 	path := filepath.Join(sessionDir, self.sessionFileName)
-	core.SaveEnvToFile(env, path, kvSep)
+	core.SaveEnvToFile(env, path, cc.Cmds.Strs.EnvKeyValSep)
 	return true
 }
 

@@ -132,6 +132,7 @@ func PrintCmdStack(
 		_, argv := cmd.ApplyMappingGenEnvAndArgv(
 			env.GetLayer(core.EnvLayerSession), strs.EnvValDelAllMark, strs.PathSep)
 		args := cmd.Args()
+		// TODO: use DumpEffectedArgs instead of DumpProvidedArgs
 		for _, line := range DumpProvidedArgs(&args, argv) {
 			line := strings.Repeat(" ", 3+4) + line
 			lines.Flow = append(lines.Flow, line)

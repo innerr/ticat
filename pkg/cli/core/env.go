@@ -166,9 +166,6 @@ func (self *Env) GetArgv(path []string, sep string, args Args) ArgVals {
 			argv[it] = ArgVal{args.DefVal(it), false}
 		}
 	}
-	if len(argv) == 0 {
-		return nil
-	}
 	return argv
 }
 

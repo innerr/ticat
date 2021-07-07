@@ -441,7 +441,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 		bin = "bash"
 	}
 
-	sep := cc.Cmds.Strs.ProtoSep
+	sep := cc.Cmds.Strs.EnvKeyValSep
 
 	sessionDir, sessionPath := saveEnvToSessionFile(cc, env)
 
@@ -480,7 +480,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 }
 
 func saveEnvToSessionFile(cc *Cli, env *Env) (sessionDir string, sessionPath string) {
-	sep := cc.Cmds.Strs.ProtoSep
+	sep := cc.Cmds.Strs.EnvKeyValSep
 
 	sessionDir = env.GetRaw("session")
 	if len(sessionDir) == 0 {
