@@ -90,7 +90,6 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	test([]string{"aa=A, BB=B"}, core.ParsedEnv{"aa": a("A, BB=B")}, nil)
 	test([]string{"aa=A, x, BB=B"}, core.ParsedEnv{"aa": a("A, x, BB=B")}, nil)
 	test([]string{"aa=A, x, BB=B", "bb=C"}, core.ParsedEnv{"aa": a("A, x, BB=B"), "bb": a("C")}, nil)
-	test([]string{"aa", "A"}, core.ParsedEnv{"aa": a("A")}, nil)
 	test([]string{"A", "B"}, core.ParsedEnv{"aa": a("A"), "bb": a("B")}, nil)
 	test([]string{"aa", "A", "bb", "B"}, core.ParsedEnv{"aa": a("A"), "bb": a("B")}, nil)
 	test([]string{"aa", "A", "BB", "B"}, core.ParsedEnv{"aa": a("A"), "bb": a("B")}, nil)
@@ -101,7 +100,6 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	test([]string{" aa = A ", " x ", " BB = B "}, core.ParsedEnv{"aa": a("A")}, []string{" x ", " BB = B "})
 	test([]string{"aa = A, x, BB=B"}, core.ParsedEnv{"aa": a("A, x, BB=B")}, nil)
 	test([]string{"aa = A, x, BB=B", "bb=C"}, core.ParsedEnv{"aa": a("A, x, BB=B"), "bb": a("C")}, nil)
-	test([]string{" aa ", " A "}, core.ParsedEnv{"aa": a("A")}, nil)
 	test([]string{" A ", "", " B "}, core.ParsedEnv{"aa": a("A"), "bb": a("B")}, nil)
 	test([]string{" aa ", "", " A ", "", " bb ", "", " B "}, core.ParsedEnv{"aa": a("A"), "bb": a("B")}, nil)
 }

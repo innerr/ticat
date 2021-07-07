@@ -157,17 +157,14 @@ func (self *Env) Parent() *Env {
 func (self *Env) GetArgv(path []string, sep string, args Args) ArgVals {
 	argv := ArgVals{}
 	list := args.Names()
-	for _, it := range list {
+	for i, it := range list {
 		key := strings.Join(append(path, it), sep)
 		val, ok := self.GetEx(key)
 		if ok {
-			argv[it] = ArgVal{val.Raw, true}
+			argv[it] = ArgVal{val.Raw, true, i}
 		} else {
-			argv[it] = ArgVal{args.DefVal(it), false}
+			argv[it] = ArgVal{args.DefVal(it), false, i}
 		}
-	}
-	if len(argv) == 0 {
-		return nil
 	}
 	return argv
 }

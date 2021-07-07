@@ -52,7 +52,7 @@ shift
 msg=$1
 
 # pass message to env, format: "key \t value"
-echo -e "mymsg\t$msg" >> $env
+echo "mymsg=$msg" >> $env
 echo "Sent: $msg"
 ```
 

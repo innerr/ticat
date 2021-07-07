@@ -10,6 +10,7 @@ type ArgVals map[string]ArgVal
 type ArgVal struct {
 	Raw      string
 	Provided bool
+	Index    int
 }
 
 func (self ArgVals) GetRaw(name string) (raw string) {

@@ -111,7 +111,11 @@ func (self *EnvParser) TryParseRaw(
 	if !foundKvSep {
 		names := args.Names()
 		curr := 0
-		if len(rest) > len(names) || (len(rest) > 0 && len(args.Realname(rest[0])) != 0) {
+
+		// This could lead to mistakely args parsing
+		//if len(rest) > len(names) || (len(rest) > 0 && len(args.Realname(rest[0])) != 0) {
+
+		if len(rest) > len(names) && len(args.Realname(rest[0])) != 0 {
 			for ; i+1 < len(rest); i += 2 {
 				key := args.Realname(rest[i])
 				if len(key) == 0 {

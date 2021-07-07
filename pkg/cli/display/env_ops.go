@@ -28,14 +28,17 @@ func DumpEnvOpsCheckResult(
 		}
 	}
 
+	var cic *core.Cmd
 	var arg2env *core.Arg2Env
+	var matchedCmdPath string
 	isArg2EnvCanFixAllFatals := (len(cmds) == 1 && len(fatals.result) != 0)
 	if isArg2EnvCanFixAllFatals {
+		matchedCmdPath = cmds[0].DisplayPath(sep, false)
 		cmd := cmds[0].Last().Matched.Cmd
 		if cmd == nil || cmd.Cmd() == nil {
 			isArg2EnvCanFixAllFatals = false
 		} else {
-			cic := cmd.Cmd()
+			cic = cmd.Cmd()
 			arg2env = cic.GetArg2Env()
 			for _, it := range fatals.result {
 				if !arg2env.Has(it.Key) {
@@ -115,6 +118,8 @@ func DumpEnvOpsCheckResult(
 		}
 	}
 
+	abbrsSep := env.GetRaw("strs.abbrs-sep")
+
 	if len(fatals.result) != 0 {
 		for i, it := range fatals.result {
 			if i != 0 {
@@ -127,8 +132,20 @@ func DumpEnvOpsCheckResult(
 			}
 			prti("- but not provided.", 7)
 			if arg2env != nil && arg2env.Has(it.Key) {
-				prti("- the arg below is mapped to this key, pass it to solve this error:", 7)
-				prti("'"+arg2env.GetArgName(it.Key)+"'", 12)
+				prti("- an arg of ["+matchedCmdPath+"] is mapped to this key, pass it to solve the error:", 7)
+				argName := arg2env.GetArgName(it.Key)
+				argInfo := "'" + argName + "'"
+				args := cic.Args()
+				argInfo = fmt.Sprintf("%s #%d", argInfo, args.Index(argName))
+				abbrs := args.Abbrs(argName)
+				if len(abbrs) > 1 {
+					abbrTerm := "abbr"
+					if len(abbrs) > 2 {
+						abbrTerm = "abbrs"
+					}
+					argInfo += " (" + abbrTerm + ": " + strings.Join(abbrs[1:], abbrsSep) + ")"
+				}
+				prti(argInfo, 12)
 			}
 		}
 

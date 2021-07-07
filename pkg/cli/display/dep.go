@@ -90,7 +90,7 @@ func CollectDepends(
 				res[dep.OsCmd] = map[*core.Cmd]DependInfo{cic: DependInfo{dep.Reason, it}}
 			}
 		}
-		cmdEnv, _ := it.GenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		cmdEnv, _ := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 		if cic.Type() != core.CmdTypeFlow {
 			continue
 		}
