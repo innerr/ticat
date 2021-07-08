@@ -20,32 +20,15 @@ func DumpEnvOpsCheckResult(
 
 	fatals := newEnvOpsCheckResultAgg()
 	risks := newEnvOpsCheckResultAgg()
+	isArg2EnvCanFixAllFatals := true
 	for _, it := range result {
 		if it.ReadNotExist {
 			fatals.Append(it)
+			if it.FirstArg2Env == nil {
+				isArg2EnvCanFixAllFatals = false
+			}
 		} else {
 			risks.Append(it)
-		}
-	}
-
-	var cic *core.Cmd
-	var arg2env *core.Arg2Env
-	var matchedCmdPath string
-	isArg2EnvCanFixAllFatals := (len(cmds) == 1 && len(fatals.result) != 0)
-	if isArg2EnvCanFixAllFatals {
-		matchedCmdPath = cmds[0].DisplayPath(sep, false)
-		cmd := cmds[0].Last().Matched.Cmd
-		if cmd == nil || cmd.Cmd() == nil {
-			isArg2EnvCanFixAllFatals = false
-		} else {
-			cic = cmd.Cmd()
-			arg2env = cic.GetArg2Env()
-			for _, it := range fatals.result {
-				if !arg2env.Has(it.Key) {
-					isArg2EnvCanFixAllFatals = false
-					break
-				}
-			}
 		}
 	}
 
@@ -58,17 +41,17 @@ func DumpEnvOpsCheckResult(
 				"",
 				SuggestFindProvider(env),
 				"",
-				"some configuring-flows will provide a batch env keys by calling providing commands,",
-				"use these two tags to find them:",
-				"",
-				SuggestFindConfigFlows(env),
-				"",
+				//"some configuring-flows will provide a batch env keys by calling providing commands,",
+				//"use these two tags to find them:",
+				//"",
+				//SuggestFindConfigFlows(env),
+				//"",
 				"or provide keys by putting '{key=value}' in front of the flow.",
-				"",
 			}
 			if isArg2EnvCanFixAllFatals {
 				helpStr = append(helpStr,
-					"pass args properly to this command could solve all errors.")
+					"",
+					"pass args properly to commands could solve all errors.")
 			}
 			PrintErrTitle(screen, env, helpStr...)
 		} else {
@@ -131,7 +114,12 @@ func DumpEnvOpsCheckResult(
 				prti("["+cmd+"]", 12)
 			}
 			prti("- but not provided.", 7)
-			if arg2env != nil && arg2env.Has(it.Key) {
+
+			if it.FirstArg2Env != nil {
+				matched := it.FirstArg2Env
+				matchedCmdPath := matched.DisplayPath(sep, false)
+				cic := matched.LastCmd()
+				arg2env := cic.GetArg2Env()
 				prti("- an arg of ["+matchedCmdPath+"] is mapped to this key, pass it to solve the error:", 7)
 				argName := arg2env.GetArgName(it.Key)
 				argInfo := "'" + argName + "'"
@@ -162,8 +150,9 @@ func dumpEnvOps(ops []uint, sep string) (str string) {
 }
 
 type envOpsCheckResult struct {
-	Cmds               []string
 	Key                string
+	Cmds               []string
+	FirstArg2Env       *core.ParsedCmd
 	MayWriteCmdsBefore []core.MayWriteCmd
 	ReadMayWrite       bool
 	MayReadMayWrite    bool
@@ -188,8 +177,9 @@ func (self *envOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
 	if !ok {
 		idx = len(self.result)
 		self.result = append(self.result, envOpsCheckResult{
-			[]string{res.CmdDisplayPath},
 			res.Key,
+			[]string{res.CmdDisplayPath},
+			res.FirstArg2Env,
 			res.MayWriteCmdsBefore,
 			res.ReadMayWrite,
 			res.MayReadMayWrite,

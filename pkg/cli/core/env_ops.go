@@ -54,14 +54,35 @@ func (self EnvOps) Ops(name string) []uint {
 type EnvOpsChecker map[string]envOpsCheckerKeyInfo
 
 type EnvOpsCheckResult struct {
+	Key                string
 	Cmd                *CmdTree
 	CmdDisplayPath     string
-	Key                string
 	MayWriteCmdsBefore []MayWriteCmd
 	ReadMayWrite       bool
 	MayReadMayWrite    bool
 	MayReadNotExist    bool
 	ReadNotExist       bool
+	FirstArg2Env       *ParsedCmd
+}
+
+type FirstArg2EnvProviders map[string]*ParsedCmd
+
+func (self FirstArg2EnvProviders) Add(matched ParsedCmd) {
+	cic := matched.LastCmd()
+	arg2env := cic.GetArg2Env()
+	keys := arg2env.EnvKeys()
+	for _, key := range keys {
+		_, ok := self[key]
+		if ok {
+			continue
+		}
+		self[key] = &matched
+	}
+}
+
+func (self FirstArg2EnvProviders) Get(key string) (matched *ParsedCmd) {
+	matched, _ = self[key]
+	return
 }
 
 func (self EnvOpsChecker) OnCallCmd(
@@ -70,7 +91,10 @@ func (self EnvOpsChecker) OnCallCmd(
 	pathSep string,
 	cmd *Cmd,
 	ignoreMaybe bool,
-	displayPath string) (result []EnvOpsCheckResult) {
+	displayPath string,
+	arg2envs FirstArg2EnvProviders) (result []EnvOpsCheckResult) {
+
+	arg2envs.Add(matched)
 
 	ops := cmd.EnvOps()
 	for _, key := range ops.EnvKeys() {
@@ -84,9 +108,9 @@ func (self EnvOpsChecker) OnCallCmd(
 			self[key] = before
 
 			var res EnvOpsCheckResult
+			res.Key = key
 			res.CmdDisplayPath = displayPath
 			res.Cmd = cmd.Owner()
-			res.Key = key
 			if (before.val&EnvOpTypeWrite) == 0 &&
 				(before.val&EnvOpTypeMayWrite) == 0 {
 				if (before.val & EnvOpTypeRead) != 0 {
@@ -111,6 +135,7 @@ func (self EnvOpsChecker) OnCallCmd(
 					res.MayReadNotExist || res.ReadNotExist)
 			}
 			if !passCheck && len(env.GetRaw(res.Key)) == 0 {
+				res.FirstArg2Env = arg2envs.Get(res.Key)
 				result = append(result, res)
 			}
 		}
@@ -136,6 +161,19 @@ func CheckEnvOps(
 	ignoreMaybe bool,
 	result *[]EnvOpsCheckResult) {
 
+	arg2envs := FirstArg2EnvProviders{}
+	checkEnvOps(cc, flow, env, checker, ignoreMaybe, result, arg2envs)
+}
+
+func checkEnvOps(
+	cc *Cli,
+	flow *ParsedCmds,
+	env *Env,
+	checker *EnvOpsChecker,
+	ignoreMaybe bool,
+	result *[]EnvOpsCheckResult,
+	arg2envs FirstArg2EnvProviders) {
+
 	if len(flow.Cmds) == 0 {
 		return
 	}
@@ -149,7 +187,7 @@ func CheckEnvOps(
 		}
 		displayPath := cmd.DisplayPath(sep, true)
 		cmdEnv, _ := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, ignoreMaybe, displayPath)
+		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, ignoreMaybe, displayPath, arg2envs)
 
 		*result = append(*result, res...)
 
@@ -164,7 +202,7 @@ func CheckEnvOps(
 				env = env.GetOrNewLayer(EnvLayerTmp)
 				parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 			}
-			CheckEnvOps(cc, parsedFlow, env, checker, ignoreMaybe, result)
+			checkEnvOps(cc, parsedFlow, env, checker, ignoreMaybe, result, arg2envs)
 		}
 	}
 }

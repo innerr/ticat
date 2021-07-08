@@ -126,7 +126,7 @@ func (self *EnvParser) TryParseRaw(
 				curr += 1
 			}
 		} else {
-			for ; i < len(rest); i += 1 {
+			for ; i < len(rest) && i < len(names); i += 1 {
 				key := names[i]
 				value := rest[i]
 				env[key] = core.NewParsedEnvArgv(key, value)
