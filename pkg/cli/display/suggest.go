@@ -151,7 +151,7 @@ func SuggestFindConfigFlows(env *core.Env) []string {
 	explain := "- find configuring flows"
 	return []string{
 		padR(prefix+"-", indent) + explain,
-		padR(prefix+"-", indent) + explain + ", with details",
+		padR(prefix+"+", indent) + explain + ", with details",
 	}
 }
 

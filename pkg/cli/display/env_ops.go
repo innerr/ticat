@@ -58,17 +58,17 @@ func DumpEnvOpsCheckResult(
 				"",
 				SuggestFindProvider(env),
 				"",
-				"some configuring-flows will provide a batch env keys by calling providing commands,",
-				"use these two tags to find them:",
-				"",
-				SuggestFindConfigFlows(env),
-				"",
+				//"some configuring-flows will provide a batch env keys by calling providing commands,",
+				//"use these two tags to find them:",
+				//"",
+				//SuggestFindConfigFlows(env),
+				//"",
 				"or provide keys by putting '{key=value}' in front of the flow.",
 				"",
 			}
 			if isArg2EnvCanFixAllFatals {
 				helpStr = append(helpStr,
-					"pass args properly to this command could solve all errors.")
+					"pass args properly to commands could solve all errors.")
 			}
 			PrintErrTitle(screen, env, helpStr...)
 		} else {
