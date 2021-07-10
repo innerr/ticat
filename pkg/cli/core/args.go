@@ -77,6 +77,11 @@ func (self *Args) Abbrs(name string) (abbrs []string) {
 	return
 }
 
+func (self *Args) Has(name string) bool {
+	_, ok := self.names[name]
+	return ok
+}
+
 func (self *Args) Index(name string) int {
 	index, ok := self.names[name]
 	if !ok {

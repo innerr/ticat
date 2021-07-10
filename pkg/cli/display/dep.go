@@ -90,11 +90,11 @@ func CollectDepends(
 				res[dep.OsCmd] = map[*core.Cmd]DependInfo{cic: DependInfo{dep.Reason, it}}
 			}
 		}
-		cmdEnv, _ := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 		if cic.Type() != core.CmdTypeFlow {
 			continue
 		}
-		subFlow, rendered := cic.Flow(cmdEnv, allowFlowTemplateRenderError)
+		subFlow, rendered := cic.Flow(argv, cmdEnv, allowFlowTemplateRenderError)
 		if rendered && len(subFlow) != 0 {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 			// Allow parse errors here

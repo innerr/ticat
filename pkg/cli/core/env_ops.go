@@ -186,13 +186,13 @@ func checkEnvOps(
 			continue
 		}
 		displayPath := cmd.DisplayPath(sep, true)
-		cmdEnv, _ := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, ignoreMaybe, displayPath, arg2envs)
 
 		*result = append(*result, res...)
 
 		if last.Type() == CmdTypeFlow {
-			subFlow, _ := last.Flow(cmdEnv, false)
+			subFlow, _ := last.Flow(argv, cmdEnv, false)
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 			err := parsedFlow.FirstErr()
 			if err != nil {

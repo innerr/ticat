@@ -145,7 +145,7 @@ func dumpFlowCmd(
 		cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
 		metFlow := false
 		if cic.Type() == core.CmdTypeFlow {
-			flowStrs, _ := cic.RenderedFlowStrs(cmdEnv, true)
+			flowStrs, _ := cic.RenderedFlowStrs(argv, cmdEnv, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
 			if metFlow {
@@ -171,7 +171,7 @@ func dumpFlowCmd(
 			}
 		}
 		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 {
-			subFlow, rendered := cic.Flow(cmdEnv, true)
+			subFlow, rendered := cic.Flow(argv, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow {
 					prt(2, "--->>>")

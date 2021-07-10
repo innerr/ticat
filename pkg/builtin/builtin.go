@@ -14,6 +14,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterFlowCmds(cmds)
 	RegisterHubCmds(cmds)
 	RegisterDbgCmds(cmds.AddSub("dbg"))
+	RegisterMiscCmds(cmds)
 	RegisterDisplayCmds(cmds.AddSub("display", "disp", "dis", "di"))
 	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B").SetHidden())
 }
@@ -369,6 +370,13 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 		RegCmd(Sleep,
 			"sleep for specific duration").
 		AddArg("duration", "1s", "dur", "d", "D")
+}
+
+func RegisterMiscCmds(cmds *core.CmdTree) {
+	cmds.AddSub("time").
+		RegCmd(Time,
+			"set current timestamp to the specified key").
+		AddArg("write-to-key", "key", "k", "K")
 }
 
 // This cmds are for debug
