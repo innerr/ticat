@@ -325,6 +325,7 @@ func (self *Cmd) FlowStrs() []string {
 
 // TODO: move to parser ?
 func (self *Cmd) RenderedFlowStrs(
+	argv ArgVals,
 	env *Env,
 	allowFlowTemplateRenderError bool) (flow []string, fullyRendered bool) {
 
@@ -349,23 +350,41 @@ func (self *Cmd) RenderedFlowStrs(
 			if env == nil {
 				return self.flow, false
 			}
+			var valStr string
 			val, ok := env.GetEx(key)
+			valStr = val.Raw
+			if !ok {
+				val, inArg := argv[key]
+				valStr = val.Raw
+				ok = inArg && len(valStr) != 0
+			}
 			if !ok {
 				if allowFlowTemplateRenderError {
 					hasError = true
 					findPos += j + len(templBracketRight)
 					continue
 				}
-				err := CmdMissedEnvValWhenRenderFlow{
-					"render flow template failed, env value missed.",
-					self.owner.DisplayPath(),
-					self.metaFilePath,
-					self.source,
-					key,
+				if self.args.Has(key) {
+					err := CmdMissedArgValWhenRenderFlow{
+						"render flow template failed, arg value missed.",
+						self.owner.DisplayPath(),
+						self.metaFilePath,
+						self.source,
+						key,
+					}
+					panic(err)
+				} else {
+					err := CmdMissedEnvValWhenRenderFlow{
+						"render flow template failed, env value missed.",
+						self.owner.DisplayPath(),
+						self.metaFilePath,
+						self.source,
+						key,
+					}
+					panic(err)
 				}
-				panic(err)
 			}
-			it = it[:findPos] + str[0:i] + val.Raw + tail[j+len(templBracketRight):]
+			it = it[:findPos] + str[0:i] + valStr + tail[j+len(templBracketRight):]
 		}
 		flow = append(flow, it)
 	}
@@ -373,8 +392,8 @@ func (self *Cmd) RenderedFlowStrs(
 	return
 }
 
-func (self *Cmd) Flow(env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
-	flow, rendered = self.RenderedFlowStrs(env, allowFlowTemplateRenderError)
+func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
+	flow, rendered = self.RenderedFlowStrs(argv, env, allowFlowTemplateRenderError)
 	if !rendered || len(flow) == 0 {
 		return
 	}
@@ -406,7 +425,7 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 }
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
-	flow, _ := self.Flow(env, false)
+	flow, _ := self.Flow(argv, env, false)
 	return cc.Executor.Execute(cc, flow...)
 }
 

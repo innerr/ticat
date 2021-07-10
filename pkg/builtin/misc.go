@@ -32,6 +32,13 @@ func Sleep(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool
 	return true
 }
 
+func Time(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+	key := argv.GetRaw("write-to-key")
+	env = env.GetLayer(core.EnvLayerSession)
+	env.SetInt(key, int(time.Now().Unix()))
+	return true
+}
+
 func MockStub(_ core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
 	return true
 }

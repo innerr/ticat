@@ -116,3 +116,15 @@ type CmdMissedEnvValWhenRenderFlow struct {
 func (self CmdMissedEnvValWhenRenderFlow) Error() string {
 	return self.Str
 }
+
+type CmdMissedArgValWhenRenderFlow struct {
+	Str          string
+	CmdPath      string
+	MetaFilePath string
+	Source       string
+	MissedArg    string
+}
+
+func (self CmdMissedArgValWhenRenderFlow) Error() string {
+	return self.Str
+}

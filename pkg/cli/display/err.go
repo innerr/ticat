@@ -35,6 +35,17 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			"    - '"+e.MetaFilePath+"'",
 			"missed-key:",
 			"    - "+e.MissedKey)
+	case core.CmdMissedArgValWhenRenderFlow:
+		e := err.(core.CmdMissedArgValWhenRenderFlow)
+		PrintErrTitle(cc.Screen, env,
+			e.Error()+" from repo/dir:",
+			"    - '"+e.Source+"'",
+			"command:",
+			"    - '"+e.CmdPath+"'",
+			"file:",
+			"    - '"+e.MetaFilePath+"'",
+			"missed-arg-name:",
+			"    - "+e.MissedArg)
 	case *core.CmdError:
 		e := err.(*core.CmdError)
 		sep := cc.Cmds.Strs.PathSep
