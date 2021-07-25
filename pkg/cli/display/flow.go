@@ -135,9 +135,9 @@ func dumpFlowCmd(
 		prt(1, "- cmd-type:")
 		prt(2, line)
 
-		if len(cic.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
+		if len(cmd.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cmd.Source()) {
 			prt(1, "- from:")
-			prt(2, cic.Source())
+			prt(2, cmd.Source())
 		}
 	}
 

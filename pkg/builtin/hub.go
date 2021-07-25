@@ -22,6 +22,8 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 
+	panicRecover := env.GetBool("sys.panic.recover")
+
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	for _, info := range infos {
 		if info.OnOff != "on" {
@@ -31,7 +33,7 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 		if len(source) == 0 {
 			source = info.Path
 		}
-		loadLocalMods(cc, info.Path, reposFileName, metaExt, flowExt, abbrsSep, envPathSep, source)
+		loadLocalMods(cc, info.Path, reposFileName, metaExt, flowExt, abbrsSep, envPathSep, source, panicRecover)
 	}
 	return true
 }

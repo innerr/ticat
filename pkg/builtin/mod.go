@@ -27,7 +27,8 @@ func loadLocalMods(
 	flowExt string,
 	abbrsSep string,
 	envPathSep string,
-	source string) {
+	source string,
+	panicRecover bool) {
 
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
@@ -50,7 +51,8 @@ func loadLocalMods(
 		if strings.HasSuffix(metaPath, flowExt) {
 			cmdPath := filepath.Base(metaPath[0 : len(metaPath)-len(flowExt)])
 			cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
-			mod_meta.RegMod(cc, metaPath, "", false, true, cmdPaths, abbrsSep, envPathSep, source)
+			mod_meta.RegMod(cc, metaPath, "", false, true, cmdPaths,
+				abbrsSep, envPathSep, source, panicRecover)
 			return nil
 		}
 
@@ -80,7 +82,8 @@ func loadLocalMods(
 		}
 
 		cmdPaths := strings.Split(cmdPath, string(filepath.Separator))
-		mod_meta.RegMod(cc, metaPath, targetPath, isDir, false, cmdPaths, abbrsSep, envPathSep, source)
+		mod_meta.RegMod(cc, metaPath, targetPath, isDir, false, cmdPaths,
+			abbrsSep, envPathSep, source, panicRecover)
 		return nil
 	})
 }

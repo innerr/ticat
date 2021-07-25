@@ -40,7 +40,6 @@ type Cmd struct {
 	cmdLine      string
 	flow         []string
 	envOps       EnvOps
-	source       string
 	depends      []Depend
 	metaFilePath string
 	val2env      *Val2Env
@@ -60,7 +59,6 @@ func defaultCmd(owner *CmdTree, help string) *Cmd {
 		cmdLine:      "",
 		flow:         nil,
 		envOps:       newEnvOps(),
-		source:       "",
 		depends:      nil,
 		metaFilePath: "",
 		val2env:      newVal2Env(),
@@ -176,15 +174,6 @@ func (self *Cmd) MatchFind(findStr string) bool {
 			return true
 		}
 	}
-	if len(self.source) == 0 {
-		if strings.Index("builtin", findStr) >= 0 {
-			return true
-		}
-	} else {
-		if strings.Index(self.source, findStr) >= 0 {
-			return true
-		}
-	}
 	if self.quiet && strings.Index("quiet", findStr) >= 0 {
 		return true
 	}
@@ -209,11 +198,6 @@ func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
 
 func (self *Cmd) AddSub(name string, abbrs ...string) *CmdTree {
 	return self.owner.AddSub(name, abbrs...)
-}
-
-func (self *Cmd) SetSource(s string) *Cmd {
-	self.source = s
-	return self
 }
 
 func (self *Cmd) SetMetaFile(path string) *Cmd {
@@ -264,10 +248,6 @@ func (self *Cmd) MetaFile() string {
 
 func (self *Cmd) Owner() *CmdTree {
 	return self.owner
-}
-
-func (self *Cmd) Source() string {
-	return self.source
 }
 
 func (self *Cmd) Help() string {
@@ -369,7 +349,7 @@ func (self *Cmd) RenderedFlowStrs(
 						"render flow template failed, arg value missed.",
 						self.owner.DisplayPath(),
 						self.metaFilePath,
-						self.source,
+						self.owner.Source(),
 						key,
 					}
 					panic(err)
@@ -378,7 +358,7 @@ func (self *Cmd) RenderedFlowStrs(
 						"render flow template failed, env value missed.",
 						self.owner.DisplayPath(),
 						self.metaFilePath,
-						self.source,
+						self.owner.Source(),
 						key,
 					}
 					panic(err)

@@ -266,12 +266,12 @@ func dumpCmd(
 				prt(2, line)
 			}
 
-			if len(cic.Source()) == 0 || !strings.HasPrefix(cic.CmdLine(), cic.Source()) {
+			if len(cmd.Source()) == 0 || !strings.HasPrefix(cic.CmdLine(), cmd.Source()) {
 				prt(1, "- from:")
-				if len(cic.Source()) == 0 {
+				if len(cmd.Source()) == 0 {
 					prt(2, builtinName)
 				} else {
-					prt(2, cic.Source())
+					prt(2, cmd.Source())
 				}
 			}
 

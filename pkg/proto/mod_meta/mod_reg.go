@@ -19,19 +19,24 @@ func RegMod(
 	cmdPath []string,
 	abbrsSep string,
 	envPathSep string,
-	source string) {
+	source string,
+	panicRecover bool) {
 
 	defer func() {
+		if !panicRecover {
+			return
+		}
 		if err := recover(); err != nil {
 			cc.TolerableErrs.OnErr(err, source, metaPath, "module loading failed")
 		}
 	}()
 
-	mod := cc.Cmds.GetOrAddSub(cmdPath...)
+	mod := cc.Cmds.GetOrAddSubEx(source, cmdPath...)
 	meta := meta_file.NewMetaFile(metaPath)
 
+	mod.SetSource(source)
 	cmd := regMod(meta, mod, executablePath, isDir)
-	cmd.SetSource(source).SetMetaFile(metaPath)
+	cmd.SetMetaFile(metaPath)
 
 	// Reg by isFlow, not 'cmd.Type()'
 	if isFlow {
