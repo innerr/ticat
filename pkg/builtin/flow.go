@@ -258,6 +258,7 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 
 	flowExt := env.GetRaw("strs.flow-ext")
 	envPathSep := env.GetRaw("strs.env-path-sep")
+	panicRecover := env.GetBool("sys.panic.recover")
 
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -271,7 +272,7 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 		}
 		cmdPath := filepath.Base(path[0 : len(path)-len(flowExt)])
 		cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
-		mod_meta.RegMod(cc, path, "", false, true, cmdPaths, cc.Cmds.Strs.AbbrsSep, envPathSep, source)
+		mod_meta.RegMod(cc, path, "", false, true, cmdPaths, cc.Cmds.Strs.AbbrsSep, envPathSep, source, panicRecover)
 		return nil
 	})
 	return true

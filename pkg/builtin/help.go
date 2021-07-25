@@ -45,10 +45,10 @@ func globalHelpLessMoreInfo(
 		cmdPathStr := ""
 		cic := cc.Cmds
 		/*
-		if !cmd.IsEmpty() {
-			cic = cmd.Last().Matched.Cmd
-			cmdPathStr = cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
-		}
+			if !cmd.IsEmpty() {
+				cic = cmd.Last().Matched.Cmd
+				cmdPathStr = cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+			}
 		*/
 		return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cic, skeleton, findStrs...)
 	}

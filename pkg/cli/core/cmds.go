@@ -32,6 +32,7 @@ type CmdTree struct {
 	subAbbrs        map[string][]string
 	subAbbrsRevIdx  map[string]string
 	hidden          bool
+	source          string
 }
 
 func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
@@ -45,6 +46,7 @@ func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
 		map[string][]string{},
 		map[string]string{},
 		false,
+		"",
 	}
 }
 
@@ -75,7 +77,7 @@ func (self *CmdTree) cmdConflictCheck(help string, funName string) {
 			strings.Split(self.cmd.Help(), "\n")[0],
 			strings.Split(help, "\n")[0]),
 		self.Path(),
-		self.cmd.Source(),
+		self.Source(),
 	}
 	panic(err)
 }
@@ -140,7 +142,7 @@ func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 			fmt.Sprintf("sub-cmd name conflicted: %s", name),
 			self.Path(),
 			name,
-			old.cmd.Source(),
+			old.Source(),
 		}
 		panic(err)
 	}
@@ -162,7 +164,11 @@ func (self *CmdTree) AddAbbrs(abbrs ...string) {
 }
 
 func (self *CmdTree) GetOrAddSub(path ...string) *CmdTree {
-	return self.getSub(true, path...)
+	return self.getOrAddSub("", true, path...)
+}
+
+func (self *CmdTree) GetOrAddSubEx(source string, path ...string) *CmdTree {
+	return self.getOrAddSub(source, true, path...)
 }
 
 func (self *CmdTree) HasSub() bool {
@@ -170,7 +176,7 @@ func (self *CmdTree) HasSub() bool {
 }
 
 func (self *CmdTree) GetSub(path ...string) *CmdTree {
-	return self.getSub(false, path...)
+	return self.getOrAddSub("", false, path...)
 }
 
 func (self *CmdTree) IsQuiet() bool {
@@ -270,6 +276,15 @@ func (self *CmdTree) matchFind(findStr string) bool {
 			}
 		}
 	}
+	if len(self.source) == 0 {
+		if strings.Index("builtin", findStr) >= 0 {
+			return true
+		}
+	} else {
+		if strings.Index(self.source, findStr) >= 0 {
+			return true
+		}
+	}
 	return false
 }
 
@@ -315,6 +330,14 @@ func (self *CmdTree) Abbrs() (abbrs []string) {
 	return self.parent.SubAbbrs(self.name)
 }
 
+func (self *CmdTree) Source() string {
+	return self.source
+}
+
+func (self *CmdTree) SetSource(s string) {
+	self.source = s
+}
+
 func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 	for _, abbr := range append([]string{name}, abbrs...) {
 		if len(abbr) == 0 {
@@ -333,7 +356,7 @@ func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 				abbr,
 				old,
 				name,
-				self.GetSub(old).cmd.Source(),
+				self.GetSub(old).Source(),
 			}
 			panic(err)
 		}
@@ -343,7 +366,7 @@ func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 	}
 }
 
-func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {
+func (self *CmdTree) getOrAddSub(source string, addIfNotExists bool, path ...string) *CmdTree {
 	if len(path) == 0 {
 		return self
 	}
@@ -357,6 +380,7 @@ func (self *CmdTree) getSub(addIfNotExists bool, path ...string) *CmdTree {
 			return nil
 		}
 		sub = self.AddSub(name)
+		sub.source = source
 	}
-	return sub.getSub(addIfNotExists, path[1:]...)
+	return sub.getOrAddSub(source, addIfNotExists, path[1:]...)
 }

@@ -80,15 +80,14 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 	}
 
 	// Conflicted error list:
-	//
-	// CmdTreeErrSubCmdConflicted
-	// CmdTreeErrSubAbbrConflicted
-	// CmdTreeErrExecutableConflicted
+	//   CmdTreeErrSubCmdConflicted
+	//   CmdTreeErrSubAbbrConflicted
+	//   CmdTreeErrExecutableConflicted
 
 	sep := env.GetRaw("strs.cmd-path-sep")
 
 	for newSource, list := range errs.ConflictedWithBuiltin {
-		if len(list) > 1 {
+		if len(list) > 8 {
 			PrintErrTitle(screen, env,
 				fmt.Sprintf("this repo/dir has too many (%v) conflicts with builtin commands:", len(list)),
 				"",
@@ -115,7 +114,7 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 
 	for oldSource, conflicteds := range errs.Conflicteds {
 		for newSource, list := range conflicteds {
-			if len(list) > 1 {
+			if len(list) > 8 {
 				PrintErrTitle(screen, env,
 					fmt.Sprintf("too many (%v) conflicts between these two repos/dirs:", len(list)),
 					"",
