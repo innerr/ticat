@@ -44,10 +44,12 @@ func globalHelpLessMoreInfo(
 		findStrs = append(cmd.ParseResult.Input, findStrs...)
 		cmdPathStr := ""
 		cic := cc.Cmds
+		/*
 		if !cmd.IsEmpty() {
 			cic = cmd.Last().Matched.Cmd
 			cmdPathStr = cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
 		}
+		*/
 		return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cic, skeleton, findStrs...)
 	}
 
