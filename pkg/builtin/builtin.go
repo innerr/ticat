@@ -373,7 +373,7 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 }
 
 func RegisterMiscCmds(cmds *core.CmdTree) {
-	cmds.AddSub("time").
+	cmds.AddSub("mark-time", "time").
 		RegCmd(Time,
 			"set current timestamp to the specified key").
 		AddArg("write-to-key", "key", "k", "K")
@@ -432,6 +432,13 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		AddVal2Env("display.utf8", "false").
 		AddVal2Env("display.utf8.symbols", "false").
 		SetQuiet()
+
+	cmds.AddSub("set-width", "width", "wid", "w", "W").
+		RegEmptyCmd(
+			"set display width").
+		SetQuiet().
+		AddArg("width", "120", "wid", "w", "W").
+		AddArg2Env("display.width", "width")
 }
 
 const LessHelpStr = "display/search info base on the current flow and args"

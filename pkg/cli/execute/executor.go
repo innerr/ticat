@@ -17,11 +17,17 @@ import (
 type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool
 
 type Executor struct {
-	funcs           []ExecFunc
-	sessionFileName string
+	funcs               []ExecFunc
+	sessionFileName     string
+	callerNameBootstrap string
+	callerNameEntry     string
 }
 
-func NewExecutor(sessionFileName string) *Executor {
+func NewExecutor(
+	sessionFileName string,
+	callerNameBootstrap string,
+	callerNameEntry string) *Executor {
+
 	return &Executor{
 		[]ExecFunc{
 			// TODO: functions: flowFlatten, mockModInject
@@ -30,6 +36,8 @@ func NewExecutor(sessionFileName string) *Executor {
 			verifyOsDepCmds,
 		},
 		sessionFileName,
+		callerNameBootstrap,
+		callerNameEntry,
 	}
 }
 
@@ -38,18 +46,18 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	if len(overWriteBootstrap) != 0 {
 		bootstrap = overWriteBootstrap
 	}
-	if !self.execute(cc, true, false, bootstrap) {
+	if !self.execute(self.callerNameBootstrap, cc, true, false, bootstrap) {
 		return false
 	}
-	return self.execute(cc, false, false, input...)
+	return self.execute(self.callerNameEntry, cc, false, false, input...)
 }
 
 // Implement core.Executor
-func (self *Executor) Execute(cc *core.Cli, input ...string) bool {
-	return self.execute(cc, false, true, input...)
+func (self *Executor) Execute(caller string, cc *core.Cli, input ...string) bool {
+	return self.execute(caller, cc, false, true, input...)
 }
 
-func (self *Executor) execute(cc *core.Cli, bootstrap bool, innerCall bool, input ...string) bool {
+func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, innerCall bool, input ...string) bool {
 	if !innerCall && cc.GlobalEnv.GetBool("sys.env.use-cmd-abbrs") {
 		useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	}
@@ -90,13 +98,13 @@ func (self *Executor) execute(cc *core.Cli, bootstrap bool, innerCall bool, inpu
 	}
 
 	if !bootstrap {
-		env.PlusInt("sys.stack-depth", 1)
+		stackStepIn(caller, env)
 	}
 	if !self.executeFlow(cc, bootstrap, flow, env, input) {
 		return false
 	}
 	if !bootstrap {
-		env.PlusInt("sys.stack-depth", -1)
+		stackStepOut(caller, self.callerNameEntry, env)
 	}
 	return true
 }
@@ -342,4 +350,32 @@ func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) bool {
 		return utils.UserConfirm()
 	}
 	return true
+}
+
+func stackStepIn(caller string, env *core.Env) {
+	env.PlusInt("sys.stack-depth", 1)
+	sep := env.GetRaw("strs.list-sep")
+	stack := env.GetRaw("sys.stack")
+	if len(stack) == 0 {
+		env.Set("sys.stack", caller)
+	} else {
+		env.Set("sys.stack", stack+sep+caller)
+	}
+}
+
+func stackStepOut(caller string, callerNameEntry string, env *core.Env) {
+	env.PlusInt("sys.stack-depth", -1)
+	sep := env.GetRaw("strs.list-sep")
+	stack := env.GetRaw("sys.stack")
+	if !strings.HasSuffix(stack, sep+caller) {
+		if stack == callerNameEntry {
+			stack = ""
+		} else {
+			panic(fmt.Errorf("stack string not match when stepping out from '%s', stack: '%s'",
+				caller, stack))
+		}
+	} else {
+		stack = stack[0 : len(stack)-len(sep)-len(caller)]
+	}
+	env.Set("sys.stack", stack)
 }

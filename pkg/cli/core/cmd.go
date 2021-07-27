@@ -404,9 +404,17 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 	return false
 }
 
+// TODO:
+//
+// The env in the sub flow is cc.GlobalEnv:
+//   1. which will loss values in EnvLayerCmd, currently we think is OK
+//      (also consider remove the concept of EnvLayerCmd)
+//   2. if we support async or parallel commands one day, this is not fit
+//   3. (consider remove concept cc.GlobalEnv)
+//
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
 	flow, _ := self.Flow(argv, env, false)
-	return cc.Executor.Execute(cc, flow...)
+	return cc.Executor.Execute(self.owner.DisplayPath(), cc, flow...)
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
