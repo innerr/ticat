@@ -373,7 +373,7 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 }
 
 func RegisterMiscCmds(cmds *core.CmdTree) {
-	cmds.AddSub("time").
+	cmds.AddSub("mark-time", "time").
 		RegCmd(Time,
 			"set current timestamp to the specified key").
 		AddArg("write-to-key", "key", "k", "K")
