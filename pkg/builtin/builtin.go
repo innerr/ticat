@@ -432,6 +432,13 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		AddVal2Env("display.utf8", "false").
 		AddVal2Env("display.utf8.symbols", "false").
 		SetQuiet()
+
+	cmds.AddSub("set-width", "width", "wid", "w", "W").
+		RegEmptyCmd(
+			"set display width").
+		SetQuiet().
+		AddArg("width", "120", "wid", "w", "W").
+		AddArg2Env("display.width", "width")
 }
 
 const LessHelpStr = "display/search info base on the current flow and args"

@@ -9,7 +9,7 @@ type Screen interface {
 }
 
 type Executor interface {
-	Execute(cc *Cli, input ...string) bool
+	Execute(caller string, cc *Cli, input ...string) bool
 }
 
 type Cli struct {

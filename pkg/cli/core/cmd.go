@@ -406,7 +406,7 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
 	flow, _ := self.Flow(argv, env, false)
-	return cc.Executor.Execute(cc, flow...)
+	return cc.Executor.Execute(self.owner.DisplayPath(), cc, flow...)
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {

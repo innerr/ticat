@@ -36,25 +36,34 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) (renderW
 	pln(titleLine + meow + rpt(" ", width-titleLineLen-meowLen-l.TimeLen) + l.Time)
 	pln(c.P4 + rpt(c.H, titleInner) + c.P8 + rpt(c.H, width-1-titleInner) + c.P3)
 
-	for i, line := range l.Env {
-		padWid := width - 1 - l.EnvLen[i]
-		if padWid >= 0 {
-			pln(c.V + " " + line + rpt(" ", padWid) + c.V)
-		} else {
-			pln(c.V + " " + line)
+	plns := func(lines []string, lens []int, name string) {
+		name = "  " + name + " "
+		for i, line := range lines {
+			padWid := width - 1 - lens[i]
+			tail := ""
+			line = c.V + " " + line
+			if i == 0 && len(lines) > 1 && padWid >= len(name) {
+				tail = name
+				padWid -= len(name)
+			}
+			if padWid >= 0 {
+				line += rpt(" ", padWid) + tail + c.V
+			}
+			pln(line)
 		}
 	}
+
+	plns(l.Env, l.EnvLen, "env")
 	if len(l.Env) != 0 {
 		pln(c.P4 + rpt(c.H, width) + c.P6)
 	}
-	for i, line := range l.Flow {
-		padWid := width - 1 - l.FlowLen[i]
-		if padWid >= 0 {
-			pln(c.V + " " + line + rpt(" ", padWid) + c.V)
-		} else {
-			pln(c.V + " " + line)
-		}
+
+	plns(l.Stack, l.StackLen, "stack")
+	if len(l.Stack) != 0 {
+		pln(c.P4 + rpt(c.H, width) + c.P6)
 	}
+
+	plns(l.Flow, l.FlowLen, "flow")
 	pln(c.P7 + rpt(c.H, width) + c.P9)
 
 	return width + 2

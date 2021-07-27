@@ -13,6 +13,8 @@ type CmdStackLines struct {
 	StackDepthLen int
 	Time          string
 	TimeLen       int
+	Stack         []string
+	StackLen      []int
 	Env           []string
 	EnvLen        []int
 	Flow          []string
@@ -45,6 +47,18 @@ func PrintCmdStack(
 	}
 
 	lines.Display = true
+
+	if env.GetBool("display.stack") {
+		listSep := env.GetRaw("strs.list-sep")
+		stack := strings.Split(env.GetRaw("sys.stack"), listSep)
+		if len(stack) > 1 {
+			for i, frame := range stack {
+				line := rpt(" ", i*4+3) + frame
+				lines.Stack = append(lines.Stack, line)
+				lines.StackLen = append(lines.StackLen, len(line))
+			}
+		}
+	}
 
 	const cmdCntKey = "display.max-cmd-cnt"
 	cmdDisplayCnt := env.GetInt(cmdCntKey)

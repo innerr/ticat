@@ -52,7 +52,6 @@ func LoadDefaultEnv(env *core.Env) {
 func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	sys := abbrs.GetOrAddSub("sys")
 	sys.GetOrAddSub("bootstrap").AddAbbrs("boot")
-	sys.GetOrAddSub("stack-depth").AddAbbrs("stack")
 	sys.GetOrAddSub("interact").AddAbbrs("ir", "i", "I")
 	sys.GetOrAddSub("step-by-step").AddAbbrs("step")
 	sys.GetOrAddSub("delay-execute").AddAbbrs("delay")
@@ -180,6 +179,7 @@ func setToDefaultVerb(env *core.Env) {
 	env.Set("display.style", "utf8")
 	env.SetBool("display.utf8", true)
 	env.SetBool("display.utf8.symbols", true)
+	env.SetBool("display.stack", true)
 	env.SetBool("display.env", true)
 	env.SetBool("display.env.sys", false)
 	env.SetBool("display.env.sys.paths", false)

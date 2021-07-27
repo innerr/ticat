@@ -15,6 +15,7 @@ func EnvOutput(env *Env, writer io.Writer, sep string) error {
 		"session",
 		"strs.",
 		"display.height",
+		"sys.stack",
 		"sys.stack-depth",
 	}
 
