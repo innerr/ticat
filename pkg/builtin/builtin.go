@@ -386,7 +386,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 			"print message from argv").
 		AddArg("message", "", "msg", "m", "M")
 
-	step := cmds.AddSub("step-by-step", "step", "s", "S")
+	step := cmds.AddSub("step-by-step", "step", "confirm", "cfm", "s", "S")
 	step.RegEmptyCmd(
 		"enable step by step").
 		AddVal2Env("sys.step-by-step", "true").
@@ -431,6 +431,38 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 			"disable utf8 display").
 		AddVal2Env("display.utf8", "false").
 		AddVal2Env("display.utf8.symbols", "false").
+		SetQuiet()
+
+	env := cmds.AddSub("env")
+	env.RegEmptyCmd(
+		"enable env display").
+		AddVal2Env("display.env", "true").
+		SetQuiet()
+	env.AddSub("on", "yes", "y", "Y", "1", "+").
+		RegEmptyCmd(
+			"enable env display").
+		AddVal2Env("display.env", "true").
+		SetQuiet()
+	env.AddSub("off", "no", "n", "N", "0", "-").
+		RegEmptyCmd(
+			"disable env display").
+		AddVal2Env("display.env", "false").
+		SetQuiet()
+
+	stack := cmds.AddSub("stack")
+	stack.RegEmptyCmd(
+		"enable stack display").
+		AddVal2Env("display.stack", "true").
+		SetQuiet()
+	stack.AddSub("on", "yes", "y", "Y", "1", "+").
+		RegEmptyCmd(
+			"enable stack display").
+		AddVal2Env("display.stack", "true").
+		SetQuiet()
+	stack.AddSub("off", "no", "n", "N", "0", "-").
+		RegEmptyCmd(
+			"disable stack display").
+		AddVal2Env("display.stack", "false").
 		SetQuiet()
 
 	cmds.AddSub("set-width", "width", "wid", "w", "W").
