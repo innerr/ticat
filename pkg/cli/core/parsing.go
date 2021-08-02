@@ -155,7 +155,7 @@ func (self ParsedCmd) ApplyMappingGenEnvAndArgv(
 	valDelAllMark string,
 	cmdPathSep string) (env *Env, argv ArgVals) {
 
-	env = self.GenEnv(originEnv, valDelAllMark)
+	env = self.GenCmdEnv(originEnv, valDelAllMark)
 	argv = env.GetArgv(self.Path(), cmdPathSep, self.Args())
 
 	last := self.LastCmd()
@@ -163,6 +163,7 @@ func (self ParsedCmd) ApplyMappingGenEnvAndArgv(
 		return
 	}
 	sessionEnv := env.GetLayer(EnvLayerSession)
+	// These apply on the origin env
 	applyVal2Env(sessionEnv, last)
 	applyArg2Env(sessionEnv, last, argv)
 	return
@@ -195,7 +196,7 @@ func applyArg2Env(env *Env, cmd *Cmd, argv ArgVals) {
 	}
 }
 
-func (self ParsedCmd) GenEnv(env *Env, valDelAllMark string) *Env {
+func (self ParsedCmd) GenCmdEnv(env *Env, valDelAllMark string) *Env {
 	env = env.NewLayer(EnvLayerCmd)
 	for _, seg := range self.Segments {
 		if seg.Env != nil {
