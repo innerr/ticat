@@ -137,7 +137,7 @@ func (self *Executor) executeCmd(
 
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
-	cmdEnv := cmd.GenEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
+	cmdEnv := cmd.GenCmdEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
 
 	ln := cc.Screen.OutputNum()
 

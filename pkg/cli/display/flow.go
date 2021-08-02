@@ -7,6 +7,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+// 'parsedGlobalEnv' + env in 'flow' = all env
 func DumpFlow(
 	cc *core.Cli,
 	env *core.Env,
@@ -18,6 +19,8 @@ func DumpFlow(
 		return
 	}
 
+	// The env will be modified during dumping (so it could show the real value)
+	// so we need to clone the env to protect it
 	env = env.Clone()
 	maxDepth := env.GetInt("display.flow.depth")
 
@@ -180,6 +183,7 @@ func dumpFlowCmd(
 					if err != nil {
 						panic(err.Error)
 					}
+					parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 					dumpFlow(cc, env, parsedGlobalEnv, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
 					prt(2, "<<<---")
 				}
@@ -206,7 +210,7 @@ func dumpFlowEnv(
 
 	tempEnv := core.NewEnv()
 	parsedGlobalEnv.WriteNotArgTo(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
-	cmdEssEnv := parsedCmd.GenEnv(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
+	cmdEssEnv := parsedCmd.GenCmdEnv(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
 	val2env := cic.GetVal2Env()
 	for _, k := range val2env.EnvKeys() {
 		kvs[k] = flowEnvVal{val2env.Val(k), "<- mod"}
