@@ -18,8 +18,10 @@ type CmdTreeStrs struct {
 	EnvKeyValSep             string
 	EnvPathSep               string
 	ProtoSep                 string
+	ListSep                  string
 	FlowTemplateBracketLeft  string
 	FlowTemplateBracketRight string
+	FlowTemplateMultiplyMark string
 }
 
 type CmdTree struct {
