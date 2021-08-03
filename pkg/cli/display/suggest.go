@@ -74,9 +74,9 @@ func SuggestFindCmds(env *core.Env) []string {
 	return append(SuggestFindCmdsLess(env), SuggestFindCmdsMore(env)...)
 }
 
-func SuggestFindRepoTag(env *core.Env) []string {
+func SuggestFindCmdsInRepo(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	prefix := selfName + " @ready repo-name str1 :"
+	prefix := selfName + " repo-name str1 str2 :"
 	explain := "- search commands in repo"
 	return []string{
 		padR(prefix+"-", indent) + explain,
@@ -128,21 +128,22 @@ func SuggestHubBranch(env *core.Env) []string {
 func SuggestFlowAdd(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" dbg.echo hi : slp 1s : f.+ xx", indent) +
-			"- create a flow 'xx' by 'f.+' for convenient",
-		padR(selfName+" xx", indent) + "- execute flow command 'xx'",
+		padR(selfName+" dbg.echo hi : slp 1s : f.+ foo", indent) +
+			"- create a flow 'foo' by 'f.+' for convenient",
+		padR(selfName+" foo", indent) + "- execute flow command 'foo'",
 	}
 }
 
 func SuggestDesc(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	explain := "- show what 'xx' will do without executing it"
+	explain := "- show what 'foo' will do without executing it"
 	return []string{
-		padR(selfName+" xx :-", indent) + explain,
-		padR(selfName+" xx :+", indent) + explain + ", with details",
+		padR(selfName+" foo :-", indent) + explain,
+		padR(selfName+" foo :+", indent) + explain + ", with details",
 	}
 }
 
+// TODO: no use by now
 func SuggestFindConfigFlows(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	tagOutOfTheBox := env.GetRaw("strs.tag-out-of-the-box")
