@@ -46,6 +46,7 @@ func main() {
 	defEnv.Set("strs.tag-self-test", TagSelfTest)
 	defEnv.Set("strs.flow-template-bracket-left", FlowTemplateBracketLeft)
 	defEnv.Set("strs.flow-template-bracket-right", FlowTemplateBracketRight)
+	defEnv.Set("strs.flow-template-multiply-mark", FlowTemplateMultiplyMark)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -59,8 +60,10 @@ func main() {
 		EnvKeyValSep,
 		EnvPathSep,
 		ProtoSep,
+		ListSep,
 		FlowTemplateBracketLeft,
 		FlowTemplateBracketRight,
+		FlowTemplateMultiplyMark,
 	})
 	builtin.RegisterCmds(tree)
 
@@ -155,4 +158,5 @@ const (
 	TagSelfTest              string = "@selftest"
 	FlowTemplateBracketLeft  string = "[["
 	FlowTemplateBracketRight string = "]]"
+	FlowTemplateMultiplyMark string = "*"
 )

@@ -303,6 +303,23 @@ func (self *Cmd) FlowStrs() []string {
 	return self.flow
 }
 
+func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
+	fr1 := reflect.ValueOf(fun)
+	if self.power != nil {
+		fr2 := reflect.ValueOf(self.power)
+		if fr1.Pointer() == fr2.Pointer() {
+			return true
+		}
+	}
+	if self.normal != nil {
+		fr2 := reflect.ValueOf(self.normal)
+		if fr1.Pointer() == fr2.Pointer() {
+			return true
+		}
+	}
+	return false
+}
+
 // TODO: move to parser ?
 func (self *Cmd) RenderedFlowStrs(
 	argv ArgVals,
@@ -311,8 +328,10 @@ func (self *Cmd) RenderedFlowStrs(
 
 	templBracketLeft := self.owner.Strs.FlowTemplateBracketLeft
 	templBracketRight := self.owner.Strs.FlowTemplateBracketRight
+	templMultiplyMark := self.owner.Strs.FlowTemplateMultiplyMark
 	hasError := false
-	for _, it := range self.flow {
+
+	renderLineAndAddToFlow := func(it string) {
 		findPos := 0
 		for {
 			str := it[findPos:]
@@ -326,9 +345,10 @@ func (self *Cmd) RenderedFlowStrs(
 				break
 			}
 			key := tail[0:j]
-			// TODO: remove this, not allow env is nil
 			if env == nil {
-				return self.flow, false
+				// TODO: remove this, not allow env is nil
+				// return self.flow, false
+				panic(fmt.Errorf("legacy code, should never happen. TODO: remove this"))
 			}
 			var valStr string
 			val, ok := env.GetEx(key)
@@ -344,29 +364,25 @@ func (self *Cmd) RenderedFlowStrs(
 					findPos += j + len(templBracketRight)
 					continue
 				}
-				if self.args.Has(key) {
-					err := CmdMissedArgValWhenRenderFlow{
-						"render flow template failed, arg value missed.",
-						self.owner.DisplayPath(),
-						self.metaFilePath,
-						self.owner.Source(),
-						key,
-					}
-					panic(err)
-				} else {
-					err := CmdMissedEnvValWhenRenderFlow{
-						"render flow template failed, env value missed.",
-						self.owner.DisplayPath(),
-						self.metaFilePath,
-						self.owner.Source(),
-						key,
-					}
-					panic(err)
-				}
+				self.flowTemplateRenderPanic(key, false)
 			}
 			it = it[:findPos] + str[0:i] + valStr + tail[j+len(templBracketRight):]
 		}
 		flow = append(flow, it)
+	}
+
+	for _, it := range self.flow {
+		var lines []string
+		lines, hasError = self.tryRenderMultiply(argv, env, it, templBracketLeft, templBracketRight,
+			templMultiplyMark, allowFlowTemplateRenderError)
+		for _, line := range lines {
+			if hasError {
+				flow = append(flow, line)
+				continue
+			} else {
+				renderLineAndAddToFlow(line)
+			}
+		}
 	}
 	fullyRendered = !hasError
 	return
@@ -385,23 +401,6 @@ func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool)
 			self.cmdLine, err))
 	}
 	return
-}
-
-func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
-	fr1 := reflect.ValueOf(fun)
-	if self.power != nil {
-		fr2 := reflect.ValueOf(self.power)
-		if fr1.Pointer() == fr2.Pointer() {
-			return true
-		}
-	}
-	if self.normal != nil {
-		fr2 := reflect.ValueOf(self.normal)
-		if fr1.Pointer() == fr2.Pointer() {
-			return true
-		}
-	}
-	return false
 }
 
 // TODO:
@@ -484,6 +483,111 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
 	return true
+}
+
+// It's slow and ugly, but it should works fine
+// only support one multiply definition in a line
+func (self *Cmd) tryRenderMultiply(
+	argv ArgVals,
+	env *Env,
+	in string,
+	templBracketLeft string,
+	templBracketRight string,
+	templMultiplyMark string,
+	allowFlowTemplateRenderError bool) (out []string, hasError bool) {
+
+	out = []string{in}
+	mm := templMultiplyMark + templMultiplyMark
+	ml := templBracketLeft + templMultiplyMark
+	mr := templMultiplyMark + templBracketRight
+
+	valBegin := strings.Index(in, ml)
+	if valBegin <= 0 {
+		return
+	}
+
+	valEnd := strings.Index(in[valBegin:], mr)
+	if valEnd <= 0 {
+		return
+	}
+	valEnd += valBegin
+
+	tempBegin := strings.Index(in[:valBegin], mm)
+	if tempBegin < 0 {
+		return
+	}
+
+	tempEnd := strings.Index(in[valEnd:], mm)
+	if tempEnd < 0 {
+		return
+	}
+	tempEnd += valEnd
+
+	key := strings.TrimSpace(in[valBegin+len(ml) : valEnd])
+
+	// TODO: duplicated code with normal flow template rendering
+	var valStr string
+	val, ok := env.GetEx(key)
+	valStr = val.Raw
+	if !ok {
+		val, inArg := argv[key]
+		valStr = val.Raw
+		ok = inArg && len(valStr) != 0
+	}
+	if !ok {
+		if allowFlowTemplateRenderError {
+			hasError = true
+			return
+		}
+		self.flowTemplateRenderPanic(key, true)
+	}
+
+	out = nil
+	if tempBegin != 0 {
+		out = append(out, strings.TrimSpace(in[:tempBegin]))
+	}
+
+	head := in[tempBegin+len(mm) : valBegin]
+	tail := in[valEnd+len(mr) : tempEnd]
+
+	listSep := self.owner.Strs.ListSep
+
+	vals := strings.Split(valStr, listSep)
+	for _, val := range vals {
+		val = strings.TrimSpace(val)
+		out = append(out, strings.TrimSpace(head+val+tail))
+	}
+
+	if tempEnd+len(mm) != len(in) {
+		out = append(out, strings.TrimSpace(in[tempEnd+len(mm):]))
+	}
+	return
+}
+
+func (self *Cmd) flowTemplateRenderPanic(key string, isMultiply bool) {
+	multiply := ""
+	if isMultiply {
+		multiply = "multiply "
+	}
+	if self.args.Has(key) {
+		err := CmdMissedArgValWhenRenderFlow{
+			"render flow " + multiply + "template failed, arg value missed.",
+			self.owner.DisplayPath(),
+			self.metaFilePath,
+			self.owner.Source(),
+			key,
+		}
+		panic(err)
+	} else {
+		err := CmdMissedEnvValWhenRenderFlow{
+			"render flow " + multiply + "template failed, env value missed.",
+			self.owner.DisplayPath(),
+			self.metaFilePath,
+			self.owner.Source(),
+			key,
+		}
+		panic(err)
+	}
 }
 
 func saveEnvToSessionFile(cc *Cli, env *Env) (sessionDir string, sessionPath string) {
