@@ -129,7 +129,7 @@ func main() {
 
 const (
 	SelfName                 string = "ticat"
-	ListSep                  string = ";"
+	ListSep                  string = ","
 	CmdRootDisplayName       string = "<root>"
 	CmdBuiltinDisplayName    string = "<builtin>"
 	Spaces                   string = "\t\n\r "
