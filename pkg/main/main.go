@@ -154,7 +154,7 @@ const (
 	ReposFileName            string = "hub.ticat"
 	SessionEnvFileName       string = "env"
 	TagOutOfTheBox           string = "@ready"
-	TagProvider              string = "@provider"
+	TagProvider              string = "@config"
 	TagSelfTest              string = "@selftest"
 	FlowTemplateBracketLeft  string = "[["
 	FlowTemplateBracketRight string = "]]"

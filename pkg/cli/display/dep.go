@@ -76,6 +76,16 @@ func CollectDepends(
 	res Depends,
 	allowFlowTemplateRenderError bool) {
 
+	collectDepends(cc, env.Clone(), flow, res, allowFlowTemplateRenderError)
+}
+
+func collectDepends(
+	cc *core.Cli,
+	env *core.Env,
+	flow []core.ParsedCmd,
+	res Depends,
+	allowFlowTemplateRenderError bool) {
+
 	for _, it := range flow {
 		cic := it.LastCmd()
 		if cic == nil {
@@ -99,7 +109,7 @@ func CollectDepends(
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 			parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 			// Allow parse errors here
-			CollectDepends(cc, env, parsedFlow.Cmds, res, allowFlowTemplateRenderError)
+			collectDepends(cc, env, parsedFlow.Cmds, res, allowFlowTemplateRenderError)
 		}
 	}
 }

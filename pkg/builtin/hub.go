@@ -612,9 +612,9 @@ func matchFindRepoInfo(info meta.RepoInfo, findStr string) bool {
 
 func showHubFindTip(screen core.Screen, env *core.Env) {
 	display.PrintTipTitle(screen, env,
-		"try to search commands by tag @ready, it means 'out-of-the-box':",
+		"try to search/show commands in this repo:",
 		"",
-		display.SuggestFindRepoTag(env))
+		display.SuggestFindCmdsInRepo(env))
 }
 
 func getReposInfoPath(env *core.Env, cmd core.ParsedCmd) string {

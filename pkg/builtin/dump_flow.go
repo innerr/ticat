@@ -115,7 +115,6 @@ func dumpFlowAll(
 	currCmdIdx int,
 	simple bool) (int, bool) {
 
-	env = env.Clone()
 	cmds := flow.Cmds[currCmdIdx+1:]
 
 	dumpArgs := display.NewDumpFlowArgs()
