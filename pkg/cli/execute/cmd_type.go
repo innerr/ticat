@@ -19,6 +19,7 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 		builtin.SaveFlow,
 		builtin.DumpTailCmdInfo,
 		builtin.DumpTailCmdSub,
+		builtin.DumpTailCmdUsage,
 		builtin.GlobalHelpMoreInfo,
 		builtin.GlobalHelpLessInfo,
 		builtin.DumpFlowAll,
