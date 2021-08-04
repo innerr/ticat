@@ -112,7 +112,7 @@ func DumpCmds(
 
 type DumpCmdArgs struct {
 	Skeleton   bool
-	ShowArgs   bool
+	ShowUsage  bool
 	Flatten    bool
 	Recursive  bool
 	FindStrs   []string
@@ -123,19 +123,19 @@ func NewDumpCmdArgs() *DumpCmdArgs {
 	return &DumpCmdArgs{false, true, true, true, nil, 4}
 }
 
-func (self *DumpCmdArgs) NoShowArgs() *DumpCmdArgs {
-	self.ShowArgs = false
+func (self *DumpCmdArgs) NoShowShowUsage() *DumpCmdArgs {
+	self.ShowUsage = false
 	return self
 }
 
-func (self *DumpCmdArgs) SetShowArgs() *DumpCmdArgs {
-	self.ShowArgs = true
+func (self *DumpCmdArgs) SetShowUsage() *DumpCmdArgs {
+	self.ShowUsage = true
 	return self
 }
 
 func (self *DumpCmdArgs) SetSkeleton() *DumpCmdArgs {
 	self.Skeleton = true
-	self.ShowArgs = false
+	self.ShowUsage = false
 	return self
 }
 
@@ -212,7 +212,7 @@ func dumpCmd(
 					prt(2, full)
 				}
 			}
-			if !args.Skeleton {
+			if !args.Skeleton || args.ShowUsage {
 				abbrs := cmd.DisplayAbbrsPath()
 				if len(abbrs) != 0 && abbrs != full {
 					prt(1, "- full-abbrs:")
@@ -221,7 +221,7 @@ func dumpCmd(
 			}
 		}
 
-		if (!args.Skeleton || args.ShowArgs) && cic != nil {
+		if (!args.Skeleton || args.ShowUsage) && cic != nil {
 			args := cic.Args()
 			argNames := args.Names()
 			if len(argNames) != 0 {

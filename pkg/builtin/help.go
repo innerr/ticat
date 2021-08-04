@@ -102,7 +102,7 @@ func DumpTailCmdArgs(
 	currCmdIdx int) (int, bool) {
 
 	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowArgs().NoFlatten().NoRecursive()
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
 	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	return clearFlow(flow)
 }
