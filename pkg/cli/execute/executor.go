@@ -30,8 +30,7 @@ func NewExecutor(
 
 	return &Executor{
 		[]ExecFunc{
-			// TODO: functions: flowFlatten, mockModInject
-			reorderByPriority,
+			moveLastPriorityCmdToFront,
 			verifyEnvOps,
 			verifyOsDepCmds,
 		},
@@ -182,9 +181,33 @@ func (self *Executor) executeCmd(
 	return
 }
 
+func moveLastPriorityCmdToFront(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	_ *core.Env) bool {
+
+	for i := len(flow.Cmds) - 1; i >= 0; i-- {
+		cmd := flow.Cmds[i]
+		if cmd.IsPriority() {
+			if i == 0 {
+				return true
+			}
+			if i == len(flow.Cmds)-1 {
+				flow.Cmds = append([]core.ParsedCmd{cmd}, flow.Cmds[:i]...)
+			} else {
+				tail := flow.Cmds[i+1:]
+				flow.Cmds = append([]core.ParsedCmd{cmd}, flow.Cmds[:i]...)
+				flow.Cmds = append(flow.Cmds, tail...)
+			}
+			flow.GlobalCmdIdx = 1
+			return true
+		}
+	}
+	return true
+}
+
+// TODO: remove this, not use anymore
 // Move priority cmds to the front
-// TODO: sort commands by priority-value, not just a bool flag, so '+' '-' can have the top priority
-// TODO: move to core
 func reorderByPriority(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
