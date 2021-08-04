@@ -112,6 +112,7 @@ func DumpCmds(
 
 type DumpCmdArgs struct {
 	Skeleton   bool
+	ShowArgs   bool
 	Flatten    bool
 	Recursive  bool
 	FindStrs   []string
@@ -119,11 +120,22 @@ type DumpCmdArgs struct {
 }
 
 func NewDumpCmdArgs() *DumpCmdArgs {
-	return &DumpCmdArgs{false, true, true, nil, 4}
+	return &DumpCmdArgs{false, true, true, true, nil, 4}
+}
+
+func (self *DumpCmdArgs) NoShowArgs() *DumpCmdArgs {
+	self.ShowArgs = false
+	return self
+}
+
+func (self *DumpCmdArgs) SetShowArgs() *DumpCmdArgs {
+	self.ShowArgs = true
+	return self
 }
 
 func (self *DumpCmdArgs) SetSkeleton() *DumpCmdArgs {
 	self.Skeleton = true
+	self.ShowArgs = false
 	return self
 }
 
@@ -209,7 +221,7 @@ func dumpCmd(
 			}
 		}
 
-		if !args.Skeleton && cic != nil {
+		if (!args.Skeleton || args.ShowArgs) && cic != nil {
 			args := cic.Args()
 			argNames := args.Names()
 			if len(argNames) != 0 {
@@ -220,7 +232,9 @@ func dumpCmd(
 				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
 				prt(2, nameStr+" = "+mayQuoteStr(val))
 			}
+		}
 
+		if !args.Skeleton && cic != nil {
 			val2env := cic.GetVal2Env()
 			if len(val2env.EnvKeys()) != 0 {
 				prt(1, "- env-direct-write:")
