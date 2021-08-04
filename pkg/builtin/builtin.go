@@ -24,7 +24,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		RegCmd(GlobalHelp,
 			"get help")
 
-	cmds.AddSub("args", "arg").
+	cmds.AddSub("args", "arg", "usage").
 		RegPowerCmd(DumpTailCmdArgs,
 			"show args of a command").
 		SetQuiet().
