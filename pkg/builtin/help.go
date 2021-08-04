@@ -94,7 +94,7 @@ func DumpTailCmdInfo(
 	return clearFlow(flow)
 }
 
-func DumpTailCmdArgs(
+func DumpTailCmdUsage(
 	_ core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,

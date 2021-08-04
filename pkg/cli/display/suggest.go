@@ -18,8 +18,8 @@ func SuggestExeCmdsWithArgs(env *core.Env) []string {
 		padR(selfName+" dbg.echo msg=hi : sleep 1s", indent) +
 			"- an example of executing commands,",
 		padR("", indent+2) + "'dbg.echo' is a command name, 'msg' is an arg",
-		padR(selfName+" dbg.echo :args", indent) + "- show args of a command",
-		padR(selfName+" dbg.echo :=", indent) + "- show full details of a command",
+		padR(selfName+" dbg.echo :=", indent) + "- show usage of the command",
+		padR(selfName+" dbg.echo :==", indent) + "- show full details of the command",
 	}
 }
 
@@ -68,7 +68,7 @@ func SuggestFindEnv(env *core.Env, subCmd string) []string {
 func SuggestFindCmdsLess(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" cmd1 :$", indent) + "- search commands in the branch of 'str1'",
+		padR(selfName+" cmd1 :--", indent) + "- search commands in the branch of 'str1'",
 		padR(selfName+" str1 str2 :-", indent) + "- search commands",
 	}
 }
@@ -179,7 +179,7 @@ func SuggestFlowsFilter(env *core.Env) []string {
 func SuggestTailInfo(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" cmd :=", indent) + "- show command's detail info",
+		padR(selfName+" cmd :==", indent) + "- show command's detail info",
 	}
 }
 
