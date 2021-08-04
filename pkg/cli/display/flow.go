@@ -24,9 +24,11 @@ func DumpFlow(
 	env = env.Clone()
 	maxDepth := env.GetInt("display.flow.depth")
 
+	writtenKeys := FlowWrittenKeys{}
+
 	PrintTipTitle(cc.Screen, env, "flow executing description:")
 	cc.Screen.Print("--->>>\n")
-	dumpFlow(cc, env, parsedGlobalEnv, flow, args, maxDepth, 0)
+	dumpFlow(cc, env, parsedGlobalEnv, flow, args, writtenKeys, maxDepth, 0)
 	cc.Screen.Print("<<<---\n")
 }
 
@@ -36,12 +38,11 @@ func dumpFlow(
 	parsedGlobalEnv core.ParsedEnv,
 	flow []core.ParsedCmd,
 	args *DumpFlowArgs,
+	writtenKeys FlowWrittenKeys,
 	maxDepth int,
 	indentAdjust int) {
 
 	metFlows := map[string]bool{}
-	writtenKeys := FlowWrittenKeys{}
-
 	for _, cmd := range flow {
 		if !cmd.IsEmpty() {
 			dumpFlowCmd(cc, cc.Screen, env, parsedGlobalEnv, cmd, args,
@@ -188,7 +189,7 @@ func dumpFlowCmd(
 						panic(err.Error)
 					}
 					parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
-					dumpFlow(cc, env, parsedGlobalEnv, parsedFlow.Cmds, args, maxDepth-1, indentAdjust+2)
+					dumpFlow(cc, env, parsedGlobalEnv, parsedFlow.Cmds, args, writtenKeys, maxDepth-1, indentAdjust+2)
 					prt(2, "<<<---")
 				}
 			}
