@@ -39,7 +39,13 @@ func DumpProvidedArgs(args *core.Args, argv core.ArgVals) (output []string) {
 	return
 }
 
-func DumpEffectedArgs(env *core.Env, arg2env *core.Arg2Env, args *core.Args, argv core.ArgVals) (output []string) {
+func DumpEffectedArgs(
+	env *core.Env,
+	arg2env *core.Arg2Env,
+	args *core.Args,
+	argv core.ArgVals,
+	writtenKeys FlowWrittenKeys) (output []string) {
+
 	for _, k := range args.Names() {
 		defV := args.DefVal(k)
 		line := k + " = "
@@ -53,6 +59,9 @@ func DumpEffectedArgs(env *core.Env, arg2env *core.Arg2Env, args *core.Args, arg
 			key, hasMapping := arg2env.GetEnvKey(k)
 			_, inEnv := env.GetEx(key)
 			if hasMapping && inEnv {
+				continue
+			}
+			if hasMapping && writtenKeys[key] {
 				continue
 			}
 			line += mayQuoteStr(defV)

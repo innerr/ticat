@@ -40,10 +40,12 @@ func dumpFlow(
 	indentAdjust int) {
 
 	metFlows := map[string]bool{}
+	writtenKeys := FlowWrittenKeys{}
+
 	for _, cmd := range flow {
 		if !cmd.IsEmpty() {
 			dumpFlowCmd(cc, cc.Screen, env, parsedGlobalEnv, cmd, args,
-				maxDepth, indentAdjust, metFlows)
+				maxDepth, indentAdjust, metFlows, writtenKeys)
 		}
 	}
 }
@@ -57,7 +59,8 @@ func dumpFlowCmd(
 	args *DumpFlowArgs,
 	maxDepth int,
 	indentAdjust int,
-	metFlows map[string]bool) {
+	metFlows map[string]bool,
+	writtenKeys FlowWrittenKeys) {
 
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
@@ -94,9 +97,9 @@ func dumpFlowCmd(
 	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
 
 	if !args.Skeleton {
-		args := parsedCmd.Args()
+		args := cic.Args()
 		arg2env := cic.GetArg2Env()
-		argLines := DumpEffectedArgs(originEnv, arg2env, &args, argv)
+		argLines := DumpEffectedArgs(originEnv, arg2env, &args, argv, writtenKeys)
 		if len(argLines) != 0 {
 			prt(1, "- args:")
 		}
@@ -106,7 +109,7 @@ func dumpFlowCmd(
 	}
 
 	if !args.Skeleton {
-		keys, kvs := dumpFlowEnv(cc, originEnv, parsedGlobalEnv, parsedCmd, cmd, argv)
+		keys, kvs := dumpFlowEnv(cc, originEnv, parsedGlobalEnv, parsedCmd, cmd, argv, writtenKeys)
 		if len(keys) != 0 {
 			prt(1, "- env-values:")
 		}
@@ -115,6 +118,7 @@ func dumpFlowCmd(
 			prt(2, k+" = "+mayQuoteStr(v.Val)+" "+v.Source+"")
 		}
 	}
+	writtenKeys.AddCmd(cic)
 
 	if !args.Skeleton {
 		envOps := cic.EnvOps()
@@ -203,7 +207,8 @@ func dumpFlowEnv(
 	parsedGlobalEnv core.ParsedEnv,
 	parsedCmd core.ParsedCmd,
 	cmd *core.CmdTree,
-	argv core.ArgVals) (keys []string, kvs map[string]flowEnvVal) {
+	argv core.ArgVals,
+	writtenKeys FlowWrittenKeys) (keys []string, kvs map[string]flowEnvVal) {
 
 	kvs = map[string]flowEnvVal{}
 	cic := cmd.Cmd()
@@ -232,6 +237,9 @@ func dumpFlowEnv(
 		}
 		_, inEnv := env.GetEx(key)
 		if !val.Provided && inEnv {
+			continue
+		}
+		if writtenKeys[key] {
 			continue
 		}
 		kvs[key] = flowEnvVal{val.Raw, "<- arg '" + name + "'"}
@@ -263,4 +271,15 @@ func (self *DumpFlowArgs) SetSkeleton() *DumpFlowArgs {
 	self.Simple = true
 	self.Skeleton = true
 	return self
+}
+
+type FlowWrittenKeys map[string]bool
+
+func (self FlowWrittenKeys) AddCmd(cic *core.Cmd) {
+	if cic == nil {
+		return
+	}
+	for _, k := range cic.EnvOps().EnvKeys() {
+		self[k] = true
+	}
 }

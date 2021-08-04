@@ -54,9 +54,12 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
 		printer.Prints("", "command detail:", "")
 		dumpArgs := NewDumpFlowArgs().SetSimple()
-		metFlows := map[string]bool{}
+
 		// TODO: use DumpCmds here
-		dumpFlowCmd(cc, printer, env.Clone(), core.ParsedEnv{}, e.Cmd, dumpArgs, 0, 0, metFlows)
+		metFlows := map[string]bool{}
+		writtenKeys := FlowWrittenKeys{}
+		dumpFlowCmd(cc, printer, env.Clone(), core.ParsedEnv{}, e.Cmd, dumpArgs, 0, 0, metFlows, writtenKeys)
+
 		printer.Finish()
 	default:
 		PrintErrTitle(cc.Screen, env, err.Error())
