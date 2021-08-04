@@ -24,6 +24,12 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		RegCmd(GlobalHelp,
 			"get help")
 
+	cmds.AddSub("args", "arg").
+		RegPowerCmd(DumpTailCmdArgs,
+			"show args of a command").
+		SetQuiet().
+		SetPriority()
+
 	more := cmds.AddSub("more", "+").
 		RegPowerCmd(GlobalHelpMoreInfo,
 			MoreHelpStr).
@@ -93,7 +99,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail-sub", "$").
+	cmds.AddSub("tail-sub", "tail-branch", "$").
 		RegPowerCmd(DumpTailCmdSub,
 			"display commands on the branch of the last command").
 		SetQuiet().

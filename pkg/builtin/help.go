@@ -94,6 +94,19 @@ func DumpTailCmdInfo(
 	return clearFlow(flow)
 }
 
+func DumpTailCmdArgs(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowArgs().NoFlatten().NoRecursive()
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
+	return clearFlow(flow)
+}
+
 func DumpTailCmdSub(
 	_ core.ArgVals,
 	cc *core.Cli,
