@@ -576,22 +576,43 @@ func (self *Cmd) flowTemplateRenderPanic(key string, isMultiply bool) {
 	if isMultiply {
 		multiply = "multiply "
 	}
+
+	findArgIdx := func(name string) int {
+		idx := -1
+		if len(name) == 0 {
+			return idx
+		}
+		for i, it := range self.args.Names() {
+			if it == name {
+				idx = i
+			}
+		}
+		return idx
+	}
+
 	if self.args.Has(key) {
 		err := CmdMissedArgValWhenRenderFlow{
 			"render flow " + multiply + "template failed, arg value missed.",
 			self.owner.DisplayPath(),
 			self.metaFilePath,
 			self.owner.Source(),
+			self,
 			key,
+			findArgIdx(key),
 		}
 		panic(err)
 	} else {
+		argName := self.arg2env.GetArgName(key)
+		argIdx := findArgIdx(argName)
 		err := CmdMissedEnvValWhenRenderFlow{
 			"render flow " + multiply + "template failed, env value missed.",
 			self.owner.DisplayPath(),
 			self.metaFilePath,
 			self.owner.Source(),
 			key,
+			self,
+			argName,
+			argIdx,
 		}
 		panic(err)
 	}

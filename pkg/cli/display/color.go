@@ -57,7 +57,7 @@ func ColorError(origin string, env *core.Env) string {
 }
 
 func ColorTipSymbol(origin string, env *core.Env) string {
-	return colorize(origin, fromColor256(202), env)
+	return colorize(origin, fromColor256(214), env)
 }
 
 func ColorSymbol(origin string, env *core.Env) string {

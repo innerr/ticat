@@ -35,6 +35,12 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			"    - '"+e.MetaFilePath+"'",
 			"missed-key:",
 			"    - "+e.MissedKey)
+		if e.ArgIdx >= 0 {
+			cc.Screen.Print("an arg of " + ColorCmd("["+e.CmdPath+"]", env) +
+				" is mapped to this key, pass it to solve the error:\n")
+			argInfo := getMissedMapperArgInfo(env, e.Cmd, e.MissedKey)
+			cc.Screen.Print(rpt(" ", 4) + argInfo + "\n")
+		}
 
 	case core.CmdMissedArgValWhenRenderFlow:
 		e := err.(core.CmdMissedArgValWhenRenderFlow)
@@ -47,6 +53,11 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			"    - '"+e.MetaFilePath+"'",
 			"missed-arg-name:",
 			"    - "+e.MissedArg)
+
+		cc.Screen.Print("pass the proper arg to " + ColorCmd("["+e.CmdPath+"]", env) +
+			" can solve the error:\n")
+		argInfo := getArgInfoLine(env, e.Cmd, e.MissedArg)
+		cc.Screen.Print(rpt(" ", 4) + argInfo + "\n")
 
 	case *core.CmdError:
 		e := err.(*core.CmdError)

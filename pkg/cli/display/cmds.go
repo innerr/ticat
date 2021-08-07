@@ -191,15 +191,16 @@ func dumpCmd(
 
 		cic := cmd.Cmd()
 		var name string
+		abbrs := cmd.Abbrs()
 		if args.Flatten {
 			name = cmd.DisplayPath()
-		} else if !args.Skeleton {
-			name = strings.Join(cmd.Abbrs(), abbrsSep)
+		} else if !args.Skeleton && len(abbrs) > 1 {
+			name = strings.Join(abbrs, abbrsSep)
 		} else {
-			name = cmd.DisplayName()
+			name = cmd.DisplayPath()
 		}
 		if len(name) == 0 {
-			name = cmd.DisplayName()
+			name = cmd.DisplayPath()
 		}
 
 		if !args.Flatten || cic != nil {
@@ -224,7 +225,7 @@ func dumpCmd(
 
 			full := cmd.DisplayPath()
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
-				if !args.Skeleton && !args.Flatten {
+				if !args.Skeleton && !args.Flatten && full != name {
 					prt(1, ColorProp("- full-cmd:", env))
 					prt(2, full)
 				}

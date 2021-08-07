@@ -99,8 +99,6 @@ func DumpEnvOpsCheckResult(
 		}
 	}
 
-	abbrsSep := env.GetRaw("strs.abbrs-sep")
-
 	if len(fatals.result) != 0 {
 		for i, it := range fatals.result {
 			if i != 0 {
@@ -116,22 +114,10 @@ func DumpEnvOpsCheckResult(
 			if it.FirstArg2Env != nil {
 				matched := it.FirstArg2Env
 				matchedCmdPath := matched.DisplayPath(sep, false)
-				cic := matched.LastCmd()
-				arg2env := cic.GetArg2Env()
 				prti(prefix+"an arg of "+ColorCmd("["+matchedCmdPath+"]", env)+
 					" is mapped to this key, pass it to solve the error:", 7)
-				argName := arg2env.GetArgName(it.Key)
-				argInfo := "'" + argName + "'"
-				args := cic.Args()
-				argInfo = ColorArg(argInfo, env) + " " + ColorSymbol(fmt.Sprintf("#%d", args.Index(argName)), env)
-				abbrs := args.Abbrs(argName)
-				if len(abbrs) > 1 {
-					abbrTerm := "abbr"
-					if len(abbrs) > 2 {
-						abbrTerm = "abbrs"
-					}
-					argInfo += ColorArg(" ("+abbrTerm+": "+strings.Join(abbrs[1:], abbrsSep)+")", env)
-				}
+				cic := matched.LastCmd()
+				argInfo := getMissedMapperArgInfo(env, cic, it.Key)
 				prti(argInfo, 12)
 			}
 		}
@@ -196,4 +182,26 @@ func (self *envOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
 			self.result[idx] = old
 		}
 	}
+}
+
+func getMissedMapperArgInfo(env *core.Env, cic *core.Cmd, key string) string {
+	arg2env := cic.GetArg2Env()
+	argName := arg2env.GetArgName(key)
+	return getArgInfoLine(env, cic, argName)
+}
+
+func getArgInfoLine(env *core.Env, cic *core.Cmd, argName string) string {
+	argInfo := "'" + argName + "'"
+	args := cic.Args()
+	argInfo = ColorArg(argInfo, env) + " " + ColorSymbol(fmt.Sprintf("#%d", args.Index(argName)), env)
+	abbrs := args.Abbrs(argName)
+	if len(abbrs) > 1 {
+		abbrTerm := "abbr"
+		if len(abbrs) > 2 {
+			abbrTerm = "abbrs"
+		}
+		abbrsSep := env.GetRaw("strs.abbrs-sep")
+		argInfo += ColorArg(" ("+abbrTerm+": "+strings.Join(abbrs[1:], abbrsSep)+")", env)
+	}
+	return argInfo
 }

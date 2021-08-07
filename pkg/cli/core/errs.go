@@ -111,6 +111,9 @@ type CmdMissedEnvValWhenRenderFlow struct {
 	MetaFilePath string
 	Source       string
 	MissedKey    string
+	Cmd          *Cmd
+	MappingArg   string
+	ArgIdx       int
 }
 
 func (self CmdMissedEnvValWhenRenderFlow) Error() string {
@@ -122,7 +125,9 @@ type CmdMissedArgValWhenRenderFlow struct {
 	CmdPath      string
 	MetaFilePath string
 	Source       string
+	Cmd          *Cmd
 	MissedArg    string
+	ArgIdx       int
 }
 
 func (self CmdMissedArgValWhenRenderFlow) Error() string {
