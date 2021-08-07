@@ -25,6 +25,7 @@ func loadLocalMods(
 	reposFileName string,
 	metaExt string,
 	flowExt string,
+	helpExt string,
 	abbrsSep string,
 	envPathSep string,
 	source string,
@@ -45,6 +46,11 @@ func loadLocalMods(
 			return nil
 		}
 		if filepath.Base(metaPath) == reposFileName {
+			return nil
+		}
+
+		if strings.HasSuffix(metaPath, helpExt) {
+			cc.Helps.RegHelpFile(metaPath)
 			return nil
 		}
 

@@ -5,9 +5,10 @@ import (
 	"strings"
 )
 
-// TODO: share some code with EnvAbbrs
+// TODO: share some code with EnvAbbrs ?
 
 type CmdTreeStrs struct {
+	SelfName                 string
 	RootDisplayName          string
 	BuiltinDisplayName       string
 	PathSep                  string
@@ -24,6 +25,11 @@ type CmdTreeStrs struct {
 	FlowTemplateMultiplyMark string
 }
 
+func CmdTreeStrsForTest() *CmdTreeStrs {
+	return &CmdTreeStrs{"self", "<root>", "<builtin>",
+		".", ".", "|", ":", "--", "=", ".", "\t", ",", "[[", "]]", "*"}
+}
+
 type CmdTree struct {
 	Strs            *CmdTreeStrs
 	name            string
@@ -35,6 +41,7 @@ type CmdTree struct {
 	subAbbrsRevIdx  map[string]string
 	hidden          bool
 	source          string
+	tags            []string
 }
 
 func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
@@ -49,6 +56,7 @@ func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
 		map[string]string{},
 		false,
 		"",
+		nil,
 	}
 }
 
@@ -91,6 +99,27 @@ func (self *CmdTree) SetHidden() *CmdTree {
 
 func (self *CmdTree) IsHidden() bool {
 	return self.hidden
+}
+
+func (self *CmdTree) AddTags(tags ...string) {
+	self.tags = append(self.tags, tags...)
+}
+
+func (self *CmdTree) Tags() []string {
+	return self.tags
+}
+
+func (self *CmdTree) MatchTags(tags ...string) bool {
+	tagSet := map[string]bool{}
+	for _, tag := range self.tags {
+		tagSet[tag] = true
+	}
+	for _, tag := range tags {
+		if !tagSet[tag] {
+			return false
+		}
+	}
+	return true
 }
 
 func (self *CmdTree) RegCmd(cmd NormalCmd, help string) *Cmd {
@@ -264,6 +293,11 @@ func (self *CmdTree) MatchFind(findStrs ...string) bool {
 func (self *CmdTree) matchFind(findStr string) bool {
 	if len(findStr) == 0 {
 		return true
+	}
+	for _, tag := range self.tags {
+		if strings.Index(tag, findStr) >= 0 {
+			return true
+		}
 	}
 	if strings.Index(self.name, findStr) >= 0 {
 		return true

@@ -137,8 +137,34 @@ func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) b
 	return true
 }
 
+func FindByTags(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	findStrs := getFindStrsFromArgv(argv)
+	for _, cmd := range flow.Cmds[1:] {
+		findStrs = append(cmd.ParseResult.Input, findStrs...)
+	}
+	if len(findStrs) == 0 {
+		// HELP
+		return clearFlow(flow)
+	}
+
+	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...).SetFindByTags().SetSkeleton()
+	display.DumpCmds(cc.Cmds, cc.Screen, env, dumpArgs)
+	return clearFlow(flow)
+}
+
 func GlobalHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	display.PrintGlobalHelp(cc.Screen, env)
+	display.PrintGlobalHelp(cc, env)
+	return true
+}
+
+func SelfHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+	display.PrintSelfHelp(cc.Screen, env)
 	return true
 }
 

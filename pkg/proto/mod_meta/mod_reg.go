@@ -45,11 +45,23 @@ func RegMod(
 		regModAbbrs(meta, mod)
 	}
 
+	regTags(meta, mod)
 	regArgs(meta, cmd, abbrsSep)
 	regDeps(meta, cmd)
 	regEnvOps(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regVal2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regArg2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
+}
+
+func regTags(meta *meta_file.MetaFile, mod *core.CmdTree) {
+	tags := meta.Get("tags")
+	if len(tags) == 0 {
+		tags = meta.Get("tag")
+	}
+	if len(tags) == 0 {
+		return
+	}
+	mod.AddTags(strings.Fields(tags)...)
 }
 
 func regMod(

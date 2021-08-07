@@ -15,6 +15,7 @@ import (
 func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
 	metaExt := env.GetRaw("strs.meta-ext")
 	flowExt := env.GetRaw("strs.flow-ext")
+	helpExt := env.GetRaw("strs.help-ext")
 	abbrsSep := env.GetRaw("strs.abbrs-sep")
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	reposFileName := env.GetRaw("strs.repos-file-name")
@@ -33,7 +34,8 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 		if len(source) == 0 {
 			source = info.Path
 		}
-		loadLocalMods(cc, info.Path, reposFileName, metaExt, flowExt, abbrsSep, envPathSep, source, panicRecover)
+		loadLocalMods(cc, info.Path, reposFileName, metaExt, flowExt, helpExt,
+			abbrsSep, envPathSep, source, panicRecover)
 	}
 	return true
 }

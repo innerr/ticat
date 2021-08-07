@@ -20,6 +20,7 @@ type Cli struct {
 	EnvAbbrs      *EnvAbbrs
 	TolerableErrs *TolerableErrs
 	Executor      Executor
+	Helps         *Helps
 }
 
 func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs) *Cli {
@@ -31,5 +32,6 @@ func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *Env
 		abbrs,
 		NewTolerableErrs(),
 		nil,
+		NewHelps(),
 	}
 }
