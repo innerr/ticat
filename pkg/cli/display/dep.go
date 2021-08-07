@@ -36,20 +36,16 @@ func DumpDepends(
 
 	sep := env.Get("strs.cmd-path-sep").Raw
 
-	if !env.GetBool("display.flow.simplified") {
-		if hasMissedOsCmd {
-			PrintErrTitle(screen, env,
-				"missed depended os-commands.",
-				"",
-				"the needed os-commands below are not installed:")
-		} else {
-			PrintTipTitle(screen, env,
-				"depended os-commands are all installed.",
-				"",
-				"this flow need these os-commands below to execute:")
-		}
+	if hasMissedOsCmd {
+		PrintErrTitle(screen, env,
+			"missed depended os-commands.",
+			"",
+			"the needed os-commands below are not installed:")
 	} else {
-		screen.Print(fmt.Sprintf("-------=<%s>=-------\n\n", "depended os-commands"))
+		PrintTipTitle(screen, env,
+			"depended os-commands are all installed.",
+			"",
+			"this flow need these os-commands below to execute:")
 	}
 
 	for _, osCmd := range osCmds {
@@ -57,12 +53,12 @@ func DumpDepends(
 			continue
 		}
 		cmds := deps[osCmd]
-		screen.Print(fmt.Sprintf("[%s]\n", osCmd))
+		screen.Print(ColorCmd(fmt.Sprintf("[%s]\n", osCmd), env))
 
 		// TODO: sort cmds
 		for _, info := range cmds {
-			screen.Print(fmt.Sprintf("        '%s'\n", info.Reason))
-			screen.Print(fmt.Sprintf("            [%s]\n", info.Cmd.DisplayPath(sep, true)))
+			screen.Print("        " + ColorHelp(fmt.Sprintf("'%s'\n", info.Reason), env))
+			screen.Print("            " + ColorCmd(fmt.Sprintf("[%s]\n", info.Cmd.DisplayPath(sep, true)), env))
 		}
 	}
 

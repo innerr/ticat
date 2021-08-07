@@ -53,9 +53,16 @@ func PrintCmdStack(
 		stack := strings.Split(env.GetRaw("sys.stack"), listSep)
 		if len(stack) > 1 {
 			for i, frame := range stack {
-				line := rpt(" ", i*4+3) + frame
+				line := rpt(" ", i*4+3)
+				extraLen := 0
+				if i == 0 {
+					line += frame
+				} else {
+					line += ColorCmd(frame, env)
+					extraLen += ColorExtraLen(env, "cmd")
+				}
 				lines.Stack = append(lines.Stack, line)
-				lines.StackLen = append(lines.StackLen, len(line))
+				lines.StackLen = append(lines.StackLen, len(line)-extraLen)
 			}
 		}
 	}
@@ -114,11 +121,16 @@ func PrintCmdStack(
 		if !env.GetBool("display.env.display") {
 			filterPrefixs = append(filterPrefixs, "display.")
 		}
-		envLines := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, false, filterPrefixs, 4)
+		// TODO: the extra color char len is ugly, handle it better
+		envLines, colored := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, false, filterPrefixs, 4)
 		for _, line := range envLines {
 			line := "   " + line
+			extraLen := 0
+			if colored {
+				extraLen += ColorExtraLen(env, "key", "symbol")
+			}
 			lines.Env = append(lines.Env, line)
-			lines.EnvLen = append(lines.EnvLen, len(line))
+			lines.EnvLen = append(lines.EnvLen, len(line)-extraLen)
 		}
 	}
 
@@ -127,43 +139,52 @@ func PrintCmdStack(
 			continue
 		}
 		var line string
+		lineExtraLen := 0
 		endOmitting := (i+1 == displayIdxEnd && i+1 != len(flow))
 		if (i == displayIdxStart && i != 0) || endOmitting {
 			line += "   ..."
 		} else {
 			if i == currCmdIdx {
-				line += ">> "
+				line += ColorCmdCurr(">> "+cmd.DisplayPath(strs.PathSep, printRealname), env)
+				lineExtraLen += ColorExtraLen(env, "cmd-curr")
+			} else if i < currCmdIdx {
+				line += "   " + ColorCmdDone(cmd.DisplayPath(strs.PathSep, printRealname), env)
+				lineExtraLen += ColorExtraLen(env, "cmd-done")
 			} else {
-				line += "   "
+				line += "   " + cmd.DisplayPath(strs.PathSep, printRealname)
 			}
-			line += cmd.DisplayPath(strs.PathSep, printRealname)
 		}
 		lines.Flow = append(lines.Flow, line)
-		lines.FlowLen = append(lines.FlowLen, len(line))
+		lines.FlowLen = append(lines.FlowLen, len(line)-lineExtraLen)
 		if endOmitting {
 			continue
 		}
-		_, argv := cmd.ApplyMappingGenEnvAndArgv(
-			env.GetLayer(core.EnvLayerSession), strs.EnvValDelAllMark, strs.PathSep)
+		_, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(core.EnvLayerSession),
+			strs.EnvValDelAllMark, strs.PathSep)
 		args := cmd.Args()
 		// TODO: use DumpEffectedArgs instead of DumpProvidedArgs
-		for _, line := range DumpProvidedArgs(&args, argv) {
+		colorizeArg := i <= currCmdIdx
+		for _, line := range DumpProvidedArgs(env, &args, argv, colorizeArg) {
 			line := strings.Repeat(" ", 3+4) + line
+			extraLen := 0
+			if i <= currCmdIdx {
+				extraLen += ColorExtraLen(env, "arg", "symbol")
+			}
 			lines.Flow = append(lines.Flow, line)
-			lines.FlowLen = append(lines.FlowLen, len(line))
+			lines.FlowLen = append(lines.FlowLen, len(line)-extraLen)
 		}
 
 		cic := cmd.LastCmd()
 		if cic != nil && cic.Type() == core.CmdTypeFlow {
 			if i+1 == currCmdIdx || i == currCmdIdx {
-				line := "       --->>>"
+				line := ColorFlowing("       --->>>", env)
 				lines.Flow = append(lines.Flow, line)
-				lines.FlowLen = append(lines.FlowLen, len(line))
+				lines.FlowLen = append(lines.FlowLen, len(line)-ColorExtraLen(env, "flowing"))
 			}
 			if i+1 == currCmdIdx {
-				line := "       <<<---"
+				line := ColorFlowing("       <<<---", env)
 				lines.Flow = append(lines.Flow, line)
-				lines.FlowLen = append(lines.FlowLen, len(line))
+				lines.FlowLen = append(lines.FlowLen, len(line)-ColorExtraLen(env, "flowing"))
 			}
 		}
 	}

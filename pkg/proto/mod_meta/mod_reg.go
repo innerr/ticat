@@ -188,7 +188,7 @@ func regDeps(meta *meta_file.MetaFile, cmd *core.Cmd) {
 	}
 	if deps != nil {
 		for _, dep := range deps.Keys() {
-			reason := deps.Get(dep)
+			reason := deps.GetUnTrim(dep)
 			cmd.AddDepend(dep, reason)
 		}
 	}

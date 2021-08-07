@@ -28,14 +28,14 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
+	env.SetBool("display.color", !utils.StdoutIsPipe())
+
 	row, col := utils.GetTerminalWidth()
 	if col > 100 {
 		col = 100
 	}
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
-
-	env.SetBool("display.flow.simplified", false)
 
 	env.Set("display.example-https-repo", "https://github.com/innerr/tidb.ticat")
 
@@ -63,6 +63,7 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	disp := abbrs.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
 	disp.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
 	disp.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
+	disp.GetOrAddSub("color").AddAbbrs("colour", "clr")
 	utf8 := disp.GetOrAddSub("utf8")
 	utf8.AddAbbrs("utf", "u", "U")
 	utf8.GetOrAddSub("symbols").AddAbbrs("symbol", "sym", "s", "S")

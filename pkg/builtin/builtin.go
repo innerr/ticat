@@ -109,9 +109,15 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail-sub", "tail-branch", "--").
-		RegPowerCmd(DumpTailCmdSub,
+	cmds.AddSub("tail-sub-less", "--").
+		RegPowerCmd(DumpTailCmdSubLess,
 			"display commands on the branch of the last command").
+		SetQuiet().
+		SetPriority()
+
+	cmds.AddSub("tail-sub-more", "++").
+		RegPowerCmd(DumpTailCmdSubMore,
+			"display commands on the branch of the last command, with details").
 		SetQuiet().
 		SetPriority()
 
@@ -401,6 +407,24 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		RegCmd(DbgEcho,
 			"print message from argv").
 		AddArg("message", "", "msg", "m", "M")
+
+	panicTest := cmds.AddSub("panic")
+	panicTest.RegCmd(DbgPanic,
+		"for panic test").
+		AddArg("random-arg-1", "arg-1").
+		AddArg("random-arg-2", "arg-2")
+
+	panicTest.AddSub("cmd").
+		RegCmd(DbgPanicCmdError,
+			"for specified-panic test").
+		AddArg("random-arg-1", "arg-1").
+		AddArg("random-arg-2", "arg-2")
+
+	cmds.AddSub("error").
+		RegCmd(DbgError,
+			"for execute error test").
+		AddArg("random-arg-1", "arg-1").
+		AddArg("random-arg-2", "arg-2")
 
 	step := cmds.AddSub("step-by-step", "step", "confirm", "cfm", "s", "S")
 	step.RegEmptyCmd(

@@ -27,9 +27,9 @@ func DumpFlow(
 	writtenKeys := FlowWrittenKeys{}
 
 	PrintTipTitle(cc.Screen, env, "flow executing description:")
-	cc.Screen.Print("--->>>\n")
+	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
 	dumpFlow(cc, env, parsedGlobalEnv, flow, args, writtenKeys, maxDepth, 0)
-	cc.Screen.Print("<<<---\n")
+	cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
 }
 
 func dumpFlow(
@@ -82,15 +82,17 @@ func dumpFlowCmd(
 	if cic == nil {
 		return
 	}
+
 	var name string
 	if args.Skeleton {
 		name = strings.Join(parsedCmd.Path(), sep)
 	} else {
 		name = parsedCmd.DisplayPath(sep, true)
 	}
-	prt(0, "["+name+"]")
+	prt(0, ColorCmd("["+name+"]", env))
+
 	if len(cic.Help()) != 0 {
-		prt(1, " '"+cic.Help()+"'")
+		prt(1, " "+ColorHelp("'"+cic.Help()+"'", env))
 	}
 
 	// TODO: this is slow
@@ -102,7 +104,7 @@ func dumpFlowCmd(
 		arg2env := cic.GetArg2Env()
 		argLines := DumpEffectedArgs(originEnv, arg2env, &args, argv, writtenKeys)
 		if len(argLines) != 0 {
-			prt(1, "- args:")
+			prt(1, ColorProp("- args:", env))
 		}
 		for _, line := range argLines {
 			prt(2, line)
@@ -112,11 +114,11 @@ func dumpFlowCmd(
 	if !args.Skeleton {
 		keys, kvs := dumpFlowEnv(cc, originEnv, parsedGlobalEnv, parsedCmd, cmd, argv, writtenKeys)
 		if len(keys) != 0 {
-			prt(1, "- env-values:")
+			prt(1, ColorProp("- env-values:", env))
 		}
 		for _, k := range keys {
 			v := kvs[k]
-			prt(2, k+" = "+mayQuoteStr(v.Val)+" "+v.Source+"")
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteStr(v.Val)+" "+v.Source+"")
 		}
 	}
 	writtenKeys.AddCmd(cic)
@@ -125,10 +127,10 @@ func dumpFlowCmd(
 		envOps := cic.EnvOps()
 		envOpKeys := envOps.EnvKeys()
 		if len(envOpKeys) != 0 {
-			prt(1, "- env-ops:")
+			prt(1, ColorProp("- env-ops:", env))
 		}
 		for _, k := range envOpKeys {
-			prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(k), envOpSep))
 		}
 	}
 
@@ -140,11 +142,11 @@ func dumpFlowCmd(
 		if cic.IsPriority() {
 			line += " (priority)"
 		}
-		prt(1, "- cmd-type:")
+		prt(1, ColorProp("- cmd-type:", env))
 		prt(2, line)
 
 		if len(cmd.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cmd.Source()) {
-			prt(1, "- from:")
+			prt(1, ColorProp("- from:", env))
 			prt(2, cmd.Source())
 		}
 	}
@@ -157,24 +159,24 @@ func dumpFlowCmd(
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
 			if metFlow {
-				prt(1, "- flow (duplicated):")
+				prt(1, ColorProp("- flow (duplicated):", env))
 			} else {
 				metFlows[flowStr] = true
-				prt(1, "- flow:")
+				prt(1, ColorProp("- flow:", env))
 			}
 			for _, flowStr := range flowStrs {
-				prt(2, flowStr)
+				prt(2, ColorFlow(flowStr, env))
 			}
 		} else if !args.Simple && !args.Skeleton {
 			if cic.Type() == core.CmdTypeEmptyDir {
-				prt(1, "- dir:")
+				prt(1, ColorProp("- dir:", env))
 				prt(2, cic.CmdLine())
 			} else {
-				prt(1, "- executable:")
+				prt(1, ColorProp("- executable:", env))
 				prt(2, cic.CmdLine())
 			}
 			if len(cic.MetaFile()) != 0 {
-				prt(1, "- meta:")
+				prt(1, ColorProp("- meta:", env))
 				prt(2, cic.MetaFile())
 			}
 		}
@@ -182,7 +184,7 @@ func dumpFlowCmd(
 			subFlow, rendered := cic.Flow(argv, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow {
-					prt(2, "--->>>")
+					prt(2, ColorFlowing("--->>>", env))
 					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 					err := parsedFlow.FirstErr()
 					if err != nil {
@@ -190,7 +192,7 @@ func dumpFlowCmd(
 					}
 					parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 					dumpFlow(cc, env, parsedGlobalEnv, parsedFlow.Cmds, args, writtenKeys, maxDepth-1, indentAdjust+2)
-					prt(2, "<<<---")
+					prt(2, ColorFlowing("<<<---", env))
 				}
 			}
 		}
@@ -219,12 +221,12 @@ func dumpFlowEnv(
 	cmdEssEnv := parsedCmd.GenCmdEnv(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
 	val2env := cic.GetVal2Env()
 	for _, k := range val2env.EnvKeys() {
-		kvs[k] = flowEnvVal{val2env.Val(k), "<- mod"}
+		kvs[k] = flowEnvVal{val2env.Val(k), ColorSymbol("<- mod", env)}
 	}
 
 	flatten := cmdEssEnv.Flatten(true, nil, true)
 	for k, v := range flatten {
-		kvs[k] = flowEnvVal{v, "<- flow"}
+		kvs[k] = flowEnvVal{v, ColorSymbol("<- flow", env)}
 	}
 
 	arg2env := cic.GetArg2Env()
@@ -243,7 +245,8 @@ func dumpFlowEnv(
 		if writtenKeys[key] {
 			continue
 		}
-		kvs[key] = flowEnvVal{val.Raw, "<- arg '" + name + "'"}
+		kvs[key] = flowEnvVal{val.Raw, ColorSymbol("<- arg", env) +
+			ColorArg(" '"+name+"'", env)}
 	}
 
 	for k, _ := range kvs {

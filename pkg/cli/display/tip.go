@@ -88,6 +88,7 @@ func (self *TipBoxPrinter) Print(msg string) {
 				tip = self.env.GetRaw("display.utf8.symbols.err")
 				tipLen = self.env.GetInt("display.utf8.symbols.err.len")
 			}
+			tip = ColorErrSymbol(tip, self.env)
 		} else {
 			tip = " <TIP> "
 			tipLen = len(tip)
@@ -95,6 +96,7 @@ func (self *TipBoxPrinter) Print(msg string) {
 				tip = self.env.GetRaw("display.utf8.symbols.tip")
 				tipLen = self.env.GetInt("display.utf8.symbols.tip.len")
 			}
+			tip = ColorTipSymbol(tip, self.env)
 		}
 		self.buf.PrintEx(tip+msg, len(msg)+tipLen)
 		self.inited = true

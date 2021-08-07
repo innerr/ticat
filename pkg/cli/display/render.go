@@ -38,13 +38,15 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) (renderW
 
 	plns := func(lines []string, lens []int, name string) {
 		name = "  " + name + " "
+		nameLen := len(name)
+		name = ColorProp(name, env)
 		for i, line := range lines {
 			padWid := width - 1 - lens[i]
 			tail := ""
 			line = c.V + " " + line
-			if i == 0 && len(lines) > 1 && padWid >= len(name) {
+			if i == 0 && len(lines) > 1 && padWid >= nameLen {
 				tail = name
-				padWid -= len(name)
+				padWid -= nameLen
 			}
 			if padWid >= 0 {
 				line += rpt(" ", padWid) + tail + c.V
