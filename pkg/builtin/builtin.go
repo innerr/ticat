@@ -434,6 +434,12 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 }
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {
+	cmds.AddSub("style").
+		RegCmd(SetDisplayStyle,
+			"set executing display style: bold, slash, corner, ascii, utf8(default)").
+		AddArg("style", "s", "S").
+		SetQuiet()
+
 	registerSimpleSwitchEx(cmds,
 		"utf8 display",
 		[]string{"display.utf8", "display.utf8.symbols"},
