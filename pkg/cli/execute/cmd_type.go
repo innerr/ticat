@@ -72,5 +72,8 @@ func allowParseError(flow *core.ParsedCmds) bool {
 	if last.IsTheSameFunc(builtin.SaveFlow) {
 		return true
 	}
+	if last.IsTheSameFunc(builtin.FindByTags) {
+		return true
+	}
 	return false
 }

@@ -20,9 +20,12 @@ func RegisterCmds(cmds *core.CmdTree) {
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
-	cmds.AddSub("-help", "-HELP", "-h", "-H").
-		RegCmd(GlobalHelp,
-			"get help")
+	help := cmds.AddSub("-help", "-HELP", "help", "-h", "-H")
+	help.RegCmd(GlobalHelp,
+		"get help")
+	help.AddSub(cmds.Strs.SelfName, "self").
+		RegCmd(SelfHelp,
+			"get "+cmds.Strs.SelfName+" usage help")
 
 	cmds.AddSub("usage", "args", "arg", "=").
 		RegPowerCmd(DumpTailCmdUsage,
@@ -48,6 +51,13 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		RegCmd(FindAny,
 			"find anything with given string")
 	addFindStrArgs(find)
+
+	findTag := cmds.AddSub("tags", "tag", "@").
+		RegPowerCmd(FindByTags,
+			"list commands having the specified tags").
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(findTag)
 
 	desc := cmds.AddSub("desc", "d", "D").
 		RegPowerCmd(DumpFlowAll,
@@ -203,7 +213,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
 		RegCmd(RemoveEnvValAndSaveToLocal,
-			"remove specific env KV and save changes to local").
+			"remove specified env KV and save changes to local").
 		AddArg("key", "", "k", "K")
 
 	env.AddSub("reset-and-save", "reset", "clear", "--").
@@ -374,7 +384,7 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 
 	cmds.AddSub("sleep", "slp").
 		RegCmd(Sleep,
-			"sleep for specific duration").
+			"sleep for specified duration").
 		AddArg("duration", "1s", "dur", "d", "D")
 }
 

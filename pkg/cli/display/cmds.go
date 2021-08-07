@@ -116,11 +116,12 @@ type DumpCmdArgs struct {
 	Flatten    bool
 	Recursive  bool
 	FindStrs   []string
+	FindByTags bool
 	IndentSize int
 }
 
 func NewDumpCmdArgs() *DumpCmdArgs {
-	return &DumpCmdArgs{false, true, true, true, nil, 4}
+	return &DumpCmdArgs{false, true, true, true, nil, false, 4}
 }
 
 func (self *DumpCmdArgs) NoShowShowUsage() *DumpCmdArgs {
@@ -136,6 +137,11 @@ func (self *DumpCmdArgs) SetShowUsage() *DumpCmdArgs {
 func (self *DumpCmdArgs) SetSkeleton() *DumpCmdArgs {
 	self.Skeleton = true
 	self.ShowUsage = false
+	return self
+}
+
+func (self *DumpCmdArgs) SetFindByTags() *DumpCmdArgs {
+	self.FindByTags = true
 	return self
 }
 
@@ -178,7 +184,10 @@ func dumpCmd(
 		screen.Print(padding + msg + "\n")
 	}
 
-	if cmd.Parent() == nil || cmd.MatchFind(args.FindStrs...) {
+	if cmd.Parent() == nil ||
+		(!args.FindByTags && cmd.MatchFind(args.FindStrs...) ||
+			cmd.MatchTags(args.FindStrs...)) {
+
 		cic := cmd.Cmd()
 		var name string
 		if args.Flatten {
@@ -194,6 +203,12 @@ func dumpCmd(
 
 		if !args.Flatten || cic != nil {
 			prt(0, "["+name+"]")
+
+			if (!args.Skeleton || args.FindByTags) && len(cmd.Tags()) != 0 {
+				prt(1, " @"+strings.Join(cmd.Tags(), " @"))
+			}
+
+			// TODO: move 'help' from core.Cmd to core.CmdTree
 			if cic != nil {
 				var helpStr string
 				if !args.Skeleton {
@@ -205,6 +220,7 @@ func dumpCmd(
 					prt(1, " '"+helpStr+"'")
 				}
 			}
+
 			full := cmd.DisplayPath()
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				if !args.Skeleton && !args.Flatten {

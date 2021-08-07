@@ -63,7 +63,7 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
 
 	if !innerCall && len(input) == 0 {
-		display.PrintGlobalHelp(cc.Screen, env)
+		display.PrintGlobalHelp(cc, env)
 		return true
 	}
 

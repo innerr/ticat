@@ -25,6 +25,7 @@ func main() {
 	defEnv.Set("strs.cmd-builtin-display-name", CmdBuiltinDisplayName)
 	defEnv.Set("strs.meta-ext", MetaExt)
 	defEnv.Set("strs.flow-ext", FlowExt)
+	defEnv.Set("strs.help-ext", HelpExt)
 	defEnv.Set("strs.abbrs-sep", AbbrsSep)
 	defEnv.Set("strs.seq-sep", SequenceSep)
 	defEnv.Set("strs.cmd-path-sep", CmdPathSep)
@@ -50,6 +51,7 @@ func main() {
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
+		SelfName,
 		CmdRootDisplayName,
 		CmdBuiltinDisplayName,
 		CmdPathSep,
@@ -150,6 +152,7 @@ const (
 	ModsRepoExt              string = "." + SelfName
 	MetaExt                  string = "." + SelfName
 	FlowExt                  string = ".tiflow"
+	HelpExt                  string = ".tihelp"
 	HubFileName              string = "repos.hub"
 	ReposFileName            string = "hub.ticat"
 	SessionEnvFileName       string = "env"
