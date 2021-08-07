@@ -107,12 +107,33 @@ func DumpTailCmdUsage(
 	return clearFlow(flow)
 }
 
-func DumpTailCmdSub(
-	_ core.ArgVals,
+func DumpTailCmdSubLess(
+	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, true)
+}
+
+func DumpTailCmdSubMore(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, false)
+}
+
+func dumpTailCmdSub(
+	_ core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	skeleton bool) (int, bool) {
 
 	if len(flow.Cmds) < 2 {
 		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
@@ -120,7 +141,10 @@ func DumpTailCmdSub(
 		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	} else {
 		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-		dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
+		dumpArgs := display.NewDumpCmdArgs()
+		if skeleton {
+			dumpArgs.SetSkeleton()
+		}
 		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	}
 	return clearFlow(flow)

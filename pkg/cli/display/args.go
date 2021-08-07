@@ -27,14 +27,19 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 	return
 }
 
-func DumpProvidedArgs(args *core.Args, argv core.ArgVals) (output []string) {
+func DumpProvidedArgs(env *core.Env, args *core.Args, argv core.ArgVals, colorize bool) (output []string) {
 	for _, k := range args.Names() {
 		v, provided := argv[k]
 		if !provided || !v.Provided {
 			continue
 		}
-		line := k + " = " + mayQuoteStr(v.Raw)
-		output = append(output, line)
+		if colorize {
+			line := ColorArg(k, env) + ColorSymbol(" = ", env) + mayQuoteStr(v.Raw)
+			output = append(output, line)
+		} else {
+			line := k + " = " + mayQuoteStr(v.Raw)
+			output = append(output, line)
+		}
 	}
 	return
 }
@@ -48,7 +53,7 @@ func DumpEffectedArgs(
 
 	for _, k := range args.Names() {
 		defV := args.DefVal(k)
-		line := k + " = "
+		line := ColorArg(k, env) + " " + ColorSymbol("=", env) + " "
 		v, provided := argv[k]
 		if provided && v.Provided {
 			line += mayQuoteStr(v.Raw)

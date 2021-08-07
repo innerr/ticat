@@ -8,7 +8,7 @@ import (
 )
 
 func DumpEnvTree(screen core.Screen, env *core.Env, indentSize int) {
-	lines := dumpEnv(env, true, true, true, true, nil, indentSize)
+	lines, _ := dumpEnv(env, true, true, true, true, nil, indentSize)
 	for _, line := range lines {
 		screen.Print(line + "\n")
 	}
@@ -62,7 +62,7 @@ func dumpEnv(
 	printRuntimeEnv bool,
 	printEnvStrs bool,
 	filterPrefixs []string,
-	indentSize int) (res []string) {
+	indentSize int) (res []string, colored bool) {
 
 	sep := env.Get("strs.env-path-sep").Raw
 	if !printRuntimeEnv {
@@ -82,8 +82,9 @@ func dumpEnv(
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			res = append(res, k+" = "+flatten[k])
+			res = append(res, ColorKey(k, env)+ColorSymbol(" = ", env)+flatten[k])
 		}
+		colored = true
 	} else {
 		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefixs, &res, indentSize, 0)
 	}

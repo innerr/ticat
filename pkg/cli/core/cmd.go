@@ -121,17 +121,31 @@ func (self *Cmd) Execute(
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	newCurrCmdIdx, ok := self.execute(argv, cc, env, flow, currCmdIdx)
+	if !ok {
+		panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
+	}
+	return newCurrCmdIdx, ok
+}
+
+func (self *Cmd) execute(
+	argv ArgVals,
+	cc *Cli,
+	env *Env,
+	flow *ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
 	switch self.ty {
 	case CmdTypePower:
 		return self.power(argv, cc, env, flow, currCmdIdx)
 	case CmdTypeNormal:
 		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx])
 	case CmdTypeFile:
-		return currCmdIdx, self.executeFile(argv, cc, env)
+		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
 	case CmdTypeEmptyDir:
 		return currCmdIdx, true
 	case CmdTypeDirWithCmd:
-		return currCmdIdx, self.executeFile(argv, cc, env)
+		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
 	case CmdTypeFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env)
 	case CmdTypeEmpty:
@@ -416,7 +430,7 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
 	return cc.Executor.Execute(self.owner.DisplayPath(), cc, flow...)
 }
 
-func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
+func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd) bool {
 	if len(self.cmdLine) == 0 {
 		return true
 	}
@@ -464,21 +478,14 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env) bool {
 
 	err := cmd.Run()
 	if err != nil {
-		indent1 := strings.Repeat(" ", 4)
-		indent2 := strings.Repeat(" ", 8)
-		cc.Screen.Print(fmt.Sprintf("\n[%s] failed:\n", self.owner.DisplayPath()))
-		if len(self.args.Names()) != 0 {
-			cc.Screen.Print(fmt.Sprintf("%s- args:\n", indent1))
-			for _, k := range self.args.Names() {
-				cc.Screen.Print(fmt.Sprintf("%s%s = %s\n", indent2,
-					strings.Join(self.args.Abbrs(k), self.owner.Strs.AbbrsSep), mayQuoteStr(argv[k].Raw)))
-			}
+		err = RunCmdFileFailed{
+			err.Error(),
+			parsedCmd,
+			argv,
+			bin,
+			sessionPath,
 		}
-		cc.Screen.Print(fmt.Sprintf("%s- bin:  %s\n", indent1, bin))
-		cc.Screen.Print(fmt.Sprintf("%s- file: %s\n", indent1, self.cmdLine))
-		cc.Screen.Print(fmt.Sprintf("%s- env:  %s\n", indent1, sessionPath))
-		cc.Screen.Print(fmt.Sprintf("%s- err:  %s\n", indent1, err))
-		return false
+		panic(err)
 	}
 
 	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)

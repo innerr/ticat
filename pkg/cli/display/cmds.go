@@ -19,7 +19,7 @@ func DumpCmdsWithTips(
 	}
 
 	buf := NewCacheScreen()
-	dumpCmd(buf, cmds, args, -cmds.Depth())
+	dumpCmd(buf, env, cmds, args, -cmds.Depth())
 
 	findStr := strings.Join(args.FindStrs, " ")
 	selfName := env.GetRaw("strs.self-name")
@@ -107,7 +107,7 @@ func DumpCmds(
 	env *core.Env,
 	args *DumpCmdArgs) {
 
-	dumpCmd(screen, cmds, args, -cmds.Depth())
+	dumpCmd(screen, env, cmds, args, -cmds.Depth())
 }
 
 type DumpCmdArgs struct {
@@ -162,6 +162,7 @@ func (self *DumpCmdArgs) AddFindStrs(findStrs ...string) *DumpCmdArgs {
 
 func dumpCmd(
 	screen core.Screen,
+	env *core.Env,
 	cmd *core.CmdTree,
 	args *DumpCmdArgs,
 	indentAdjust int) {
@@ -202,10 +203,10 @@ func dumpCmd(
 		}
 
 		if !args.Flatten || cic != nil {
-			prt(0, "["+name+"]")
+			prt(0, ColorCmd("["+name+"]", env))
 
 			if (!args.Skeleton || args.FindByTags) && len(cmd.Tags()) != 0 {
-				prt(1, " @"+strings.Join(cmd.Tags(), " @"))
+				prt(1, ColorTag(" @"+strings.Join(cmd.Tags(), " @"), env))
 			}
 
 			// TODO: move 'help' from core.Cmd to core.CmdTree
@@ -217,21 +218,21 @@ func dumpCmd(
 					helpStr = cic.DisplayHelpStr()
 				}
 				if len(helpStr) != 0 {
-					prt(1, " '"+helpStr+"'")
+					prt(1, " "+ColorHelp("'"+helpStr+"'", env))
 				}
 			}
 
 			full := cmd.DisplayPath()
 			if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 				if !args.Skeleton && !args.Flatten {
-					prt(1, "- full-cmd:")
+					prt(1, ColorProp("- full-cmd:", env))
 					prt(2, full)
 				}
 			}
 			if !args.Skeleton || args.ShowUsage {
 				abbrs := cmd.DisplayAbbrsPath()
 				if len(abbrs) != 0 && abbrs != full {
-					prt(1, "- full-abbrs:")
+					prt(1, ColorProp("- full-abbrs:", env))
 					prt(2, abbrs)
 				}
 			}
@@ -241,47 +242,47 @@ func dumpCmd(
 			args := cic.Args()
 			argNames := args.Names()
 			if len(argNames) != 0 {
-				prt(1, "- args:")
+				prt(1, ColorProp("- args:", env))
 			}
 			for _, name := range argNames {
 				val := args.DefVal(name)
 				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
-				prt(2, nameStr+" = "+mayQuoteStr(val))
+				prt(2, ColorArg(nameStr, env)+ColorSymbol(" = ", env)+mayQuoteStr(val))
 			}
 		}
 
 		if !args.Skeleton && cic != nil {
 			val2env := cic.GetVal2Env()
 			if len(val2env.EnvKeys()) != 0 {
-				prt(1, "- env-direct-write:")
+				prt(1, ColorProp("- env-direct-write:", env))
 			}
 			for _, k := range val2env.EnvKeys() {
-				prt(2, k+" = "+mayQuoteStr(val2env.Val(k)))
+				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteStr(val2env.Val(k)))
 			}
 
 			arg2env := cic.GetArg2Env()
 			if len(arg2env.EnvKeys()) != 0 {
-				prt(1, "- env-from-argv:")
+				prt(1, ColorProp("- env-from-argv:", env))
 			}
 			for _, k := range arg2env.EnvKeys() {
-				prt(2, k+" <- "+mayQuoteStr(arg2env.GetArgName(k)))
+				prt(2, ColorKey(k, env)+ColorSymbol(" <- ", env)+mayQuoteStr(arg2env.GetArgName(k)))
 			}
 
 			envOps := cic.EnvOps()
 			envOpKeys := envOps.EnvKeys()
 			if len(envOpKeys) != 0 {
-				prt(1, "- env-ops:")
+				prt(1, ColorProp("- env-ops:", env))
 			}
 			for _, k := range envOpKeys {
-				prt(2, k+" = "+dumpEnvOps(envOps.Ops(k), envOpSep))
+				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(k), envOpSep))
 			}
 
 			deps := cic.GetDepends()
 			if len(deps) != 0 {
-				prt(1, "- os-cmd-dep:")
+				prt(1, ColorProp("- os-cmd-dep:", env))
 			}
 			for _, dep := range deps {
-				prt(2, dep.OsCmd+" = '"+dep.Reason+"'")
+				prt(2, ColorCmd(dep.OsCmd, env)+ColorSymbol(" = ", env)+dep.Reason)
 			}
 
 			if cic.Type() != core.CmdTypeFlow && (cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {
@@ -292,12 +293,29 @@ func dumpCmd(
 				if cic.IsPriority() {
 					line += " (priority)"
 				}
-				prt(1, "- cmd-type:")
+				prt(1, ColorProp("- cmd-type:", env))
 				prt(2, line)
 			}
 
+			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
+				if len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0 {
+					if cic.Type() == core.CmdTypeFlow {
+						prt(1, ColorProp("- flow:", env))
+						for _, flowStr := range cic.FlowStrs() {
+							prt(2, ColorFlow(flowStr, env))
+						}
+					} else if cic.Type() == core.CmdTypeEmptyDir {
+						prt(1, ColorProp("- dir:", env))
+						prt(2, cic.CmdLine())
+					} else {
+						prt(1, ColorProp("- executable:", env))
+						prt(2, cic.CmdLine())
+					}
+				}
+			}
+
 			if len(cmd.Source()) == 0 || !strings.HasPrefix(cic.CmdLine(), cmd.Source()) {
-				prt(1, "- from:")
+				prt(1, ColorProp("- from:", env))
 				if len(cmd.Source()) == 0 {
 					prt(2, builtinName)
 				} else {
@@ -306,22 +324,8 @@ func dumpCmd(
 			}
 
 			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
-				if len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0 {
-					if cic.Type() == core.CmdTypeFlow {
-						prt(1, "- flow:")
-						for _, flowStr := range cic.FlowStrs() {
-							prt(2, flowStr)
-						}
-					} else if cic.Type() == core.CmdTypeEmptyDir {
-						prt(1, "- dir:")
-						prt(2, cic.CmdLine())
-					} else {
-						prt(1, "- executable:")
-						prt(2, cic.CmdLine())
-					}
-				}
 				if len(cic.MetaFile()) != 0 {
-					prt(1, "- meta:")
+					prt(1, ColorProp("- meta:", env))
 					prt(2, cic.MetaFile())
 				}
 			}
@@ -330,7 +334,7 @@ func dumpCmd(
 
 	if args.Recursive {
 		for _, name := range cmd.SubNames() {
-			dumpCmd(screen, cmd.GetSub(name), args, indentAdjust)
+			dumpCmd(screen, env, cmd.GetSub(name), args, indentAdjust)
 		}
 	}
 }

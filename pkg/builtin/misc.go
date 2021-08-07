@@ -43,6 +43,18 @@ func MockStub(_ core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool
 	return true
 }
 
+func DbgPanic(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
+	panic(fmt.Errorf("this is a panic test command"))
+}
+
+func DbgPanicCmdError(_ core.ArgVals, cc *core.Cli, _ *core.Env, cmd core.ParsedCmd) bool {
+	panic(core.NewCmdError(cmd, "this is a specified-panic test command"))
+}
+
+func DbgError(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
+	return false
+}
+
 func Dummy(_ core.ArgVals, cc *core.Cli, _ *core.Env, _ core.ParsedCmd) bool {
 	cc.Screen.Print("dummy command here\n")
 	return true

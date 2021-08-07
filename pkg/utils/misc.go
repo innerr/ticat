@@ -41,3 +41,8 @@ func GetTerminalWidth() (row int, col int) {
 	}
 	return int(size.Row), int(size.Col)
 }
+
+func StdoutIsPipe() bool {
+	fo, _ := os.Stdout.Stat()
+	return (fo.Mode() & os.ModeCharDevice) == 0
+}

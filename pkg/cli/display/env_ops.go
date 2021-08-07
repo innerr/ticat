@@ -32,37 +32,33 @@ func DumpEnvOpsCheckResult(
 		}
 	}
 
-	if !env.GetBool("display.flow.simplified") {
-		if len(fatals.result) != 0 {
-			helpStr := []interface{}{
-				"this flow has 'read before write' on env keys, so it can't execute.",
-				"",
-				"search which commands write these keys and concate them in front of the flow:",
-				"",
-				SuggestFindProvider(env),
-				"",
-				//"some configuring-flows will provide a batch env keys by calling providing commands,",
-				//"use these two tags to find them:",
-				//"",
-				//SuggestFindConfigFlows(env),
-				//"",
-				"or provide keys by putting '{key=value}' in front of the flow.",
-			}
-			if isArg2EnvCanFixAllFatals {
-				helpStr = append(helpStr,
-					"",
-					"pass args properly to commands could solve all errors.")
-			}
-			PrintErrTitle(screen, env, helpStr...)
-		} else {
-			PrintTipTitle(screen, env,
-				"this flow has 'read before write' risks on env keys.",
-				"",
-				"risks are caused by 'may-read' or 'may-write' on env keys,",
-				"normally modules declair these uncertain behaviors will handle them, don't worry too much.")
+	if len(fatals.result) != 0 {
+		helpStr := []interface{}{
+			"this flow has 'read before write' on env keys, so it can't execute.",
+			"",
+			"search which commands write these keys and concate them in front of the flow:",
+			"",
+			SuggestFindProvider(env),
+			"",
+			//"some configuring-flows will provide a batch env keys by calling providing commands,",
+			//"use these two tags to find them:",
+			//"",
+			//SuggestFindConfigFlows(env),
+			//"",
+			"or provide keys by putting '{key=value}' in front of the flow.",
 		}
+		if isArg2EnvCanFixAllFatals {
+			helpStr = append(helpStr,
+				"",
+				"pass args properly to commands could solve all errors.")
+		}
+		PrintErrTitle(screen, env, helpStr...)
 	} else {
-		screen.Print(fmt.Sprintf("-------=<%s>=-------\n\n", "unsatisfied env read"))
+		PrintTipTitle(screen, env,
+			"this flow has 'read before write' risks on env keys.",
+			"",
+			"risks are caused by 'may-read' or 'may-write' on env keys,",
+			"normally modules declair these uncertain behaviors will handle them, don't worry too much.")
 	}
 
 	prt0 := func(msg string) {
@@ -72,30 +68,32 @@ func DumpEnvOpsCheckResult(
 		screen.Print(strings.Repeat(" ", indent) + msg + "\n")
 	}
 
+	prefix := ColorProp("- ", env)
+
 	if len(risks.result) != 0 && len(fatals.result) == 0 {
 		for i, it := range risks.result {
 			if i != 0 {
 				screen.Print("\n")
 			}
-			prt0("<risk>  '" + it.Key + "'")
+			prt0(ColorWarn("<risk>", env) + "  " + ColorKey("'"+it.Key+"'", env))
 			if it.MayReadNotExist || it.MayReadMayWrite {
-				prti("- may-read by:", 7)
+				prti(prefix+"may-read by:", 7)
 			} else if it.ReadMayWrite {
-				prti("- read by:", 7)
+				prti(prefix+"read by:", 7)
 			}
 			for _, cmd := range it.Cmds {
-				prti("["+cmd+"]", 12)
+				prti(ColorCmd("["+cmd+"]", env), 12)
 			}
 			if len(it.MayWriteCmdsBefore) != 0 && (it.ReadMayWrite || it.MayReadMayWrite) {
-				prti("- but may not provided by:", 7)
+				prti(prefix+" but may not provided by:", 7)
 				for _, cmd := range it.MayWriteCmdsBefore {
-					prti("["+cmd.Matched.DisplayPath(sep, true)+"]", 12)
+					prti(ColorCmd("["+cmd.Matched.DisplayPath(sep, true)+"]", env), 12)
 				}
 			} else {
 				if it.MayReadNotExist {
-					prti("- but not provided.", 7)
+					prti(prefix+"but not provided.", 7)
 				} else {
-					prti("- but may not provided.", 7)
+					prti(prefix+"but may not provided.", 7)
 				}
 			}
 		}
@@ -109,18 +107,18 @@ func DumpEnvOpsCheckResult(
 				screen.Print("\n")
 			}
 			prt0("<FATAL> '" + it.Key + "'")
-			prti("- read by:", 7)
+			prti(prefix+"read by:", 7)
 			for _, cmd := range it.Cmds {
 				prti("["+cmd+"]", 12)
 			}
-			prti("- but not provided.", 7)
+			prti(prefix+"but not provided.", 7)
 
 			if it.FirstArg2Env != nil {
 				matched := it.FirstArg2Env
 				matchedCmdPath := matched.DisplayPath(sep, false)
 				cic := matched.LastCmd()
 				arg2env := cic.GetArg2Env()
-				prti("- an arg of ["+matchedCmdPath+"] is mapped to this key, pass it to solve the error:", 7)
+				prti(prefix+"an arg of ["+matchedCmdPath+"] is mapped to this key, pass it to solve the error:", 7)
 				argName := arg2env.GetArgName(it.Key)
 				argInfo := "'" + argName + "'"
 				args := cic.Args()

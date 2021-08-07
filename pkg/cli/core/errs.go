@@ -128,3 +128,15 @@ type CmdMissedArgValWhenRenderFlow struct {
 func (self CmdMissedArgValWhenRenderFlow) Error() string {
 	return self.Str
 }
+
+type RunCmdFileFailed struct {
+	Err         string
+	Cmd         ParsedCmd
+	Argv        ArgVals
+	Bin         string
+	SessionPath string
+}
+
+func (self RunCmdFileFailed) Error() string {
+	return self.Err
+}

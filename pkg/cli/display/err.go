@@ -35,6 +35,7 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			"    - '"+e.MetaFilePath+"'",
 			"missed-key:",
 			"    - "+e.MissedKey)
+
 	case core.CmdMissedArgValWhenRenderFlow:
 		e := err.(core.CmdMissedArgValWhenRenderFlow)
 		PrintErrTitle(cc.Screen, env,
@@ -46,21 +47,37 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			"    - '"+e.MetaFilePath+"'",
 			"missed-arg-name:",
 			"    - "+e.MissedArg)
+
 	case *core.CmdError:
 		e := err.(*core.CmdError)
 		sep := cc.Cmds.Strs.PathSep
 		cmdName := strings.Join(e.Cmd.MatchedPath(), sep)
 		printer := NewTipBoxPrinter(cc.Screen, env, true)
 		printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
-		printer.Prints("", "command detail:", "")
-		dumpArgs := NewDumpFlowArgs().SetSimple()
-
-		// TODO: use DumpCmds here
-		metFlows := map[string]bool{}
-		writtenKeys := FlowWrittenKeys{}
-		dumpFlowCmd(cc, printer, env.Clone(), core.ParsedEnv{}, e.Cmd, dumpArgs, 0, 0, metFlows, writtenKeys)
-
+		printer.Prints("", "command detail:")
 		printer.Finish()
+		dumpCmdWithArgv(cc, env, e.Cmd)
+
+	case core.RunCmdFileFailed:
+		e := err.(core.RunCmdFileFailed)
+		cic := e.Cmd.LastCmd()
+		sep := cc.Cmds.Strs.PathSep
+		cmdName := strings.Join(e.Cmd.MatchedPath(), sep)
+		printer := NewTipBoxPrinter(cc.Screen, env, true)
+		printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
+		printer.Prints(
+			"",
+			"execute-bin:",
+			"    - '"+e.Bin+"'",
+			"cmd-line:",
+			"    - '"+cic.CmdLine()+"'",
+			"session-path:",
+			"    - '"+e.SessionPath+"'",
+			"",
+			"command detail:")
+		printer.Finish()
+		dumpCmdWithArgv(cc, env, e.Cmd)
+
 	default:
 		PrintErrTitle(cc.Screen, env, err.Error())
 	}
@@ -144,4 +161,11 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 			}
 		}
 	}
+}
+
+func dumpCmdWithArgv(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) {
+	metFlows := map[string]bool{}
+	writtenKeys := FlowWrittenKeys{}
+	dumpArgs := NewDumpFlowArgs().SetSimple()
+	dumpFlowCmd(cc, cc.Screen, env.Clone(), core.ParsedEnv{}, cmd, dumpArgs, 0, 0, metFlows, writtenKeys)
 }

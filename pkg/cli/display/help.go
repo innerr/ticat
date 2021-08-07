@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 func PrintGlobalHelp(cc *core.Cli, env *core.Env) {
@@ -12,9 +13,10 @@ func PrintGlobalHelp(cc *core.Cli, env *core.Env) {
 		return
 	}
 
-	width := env.GetInt("display.width")
+	_, width := utils.GetTerminalWidth()
 
 	pln := func(line string) {
+		line = DecodeColor(line, env)
 		if len(line) <= width {
 			cc.Screen.Print(line + "\n")
 			return

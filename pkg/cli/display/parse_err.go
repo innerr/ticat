@@ -69,10 +69,10 @@ func PrintCmdByParseError(
 
 	printer.PrintWrap("[" + cmdName + "] parse args failed, '" +
 		strings.Join(input, " ") + "' is not valid input.")
-	printer.Prints("", "command detail:", "")
-	dumpArgs := NewDumpCmdArgs().NoFlatten().NoRecursive()
-	DumpCmds(cmd.Last().Matched.Cmd, printer, env, dumpArgs)
+	printer.Prints("", "command detail:")
 	printer.Finish()
+	dumpArgs := NewDumpCmdArgs().NoFlatten().NoRecursive()
+	DumpCmds(cmd.Last().Matched.Cmd, cc.Screen, env, dumpArgs)
 	return false
 }
 
@@ -96,14 +96,15 @@ func PrintSubCmdByParseError(
 	printer.PrintWrap("[" + cmdName + "] parse sub command failed, '" +
 		strings.Join(input, " ") + "' is not valid input.")
 	if last.HasSub() {
-		printer.Prints("", "commands on branch '"+last.DisplayPath()+"':", "")
+		printer.Prints("", "commands on branch '"+last.DisplayPath()+"':")
 		dumpArgs := NewDumpCmdArgs().SetSkeleton()
-		DumpCmds(last, printer, env, dumpArgs)
+		printer.Finish()
+		DumpCmds(last, cc.Screen, env, dumpArgs)
 	} else {
 		printer.Prints("", "command branch '"+last.DisplayPath()+"' doesn't have any sub commands.")
+		printer.Finish()
 		// TODO: search hint
 	}
-	printer.Finish()
 	return false
 }
 
