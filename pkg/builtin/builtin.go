@@ -226,19 +226,10 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		RegCmd(ResetLocalEnv,
 			"reset all local saved env KVs")
 
-	abbrsCmdHelpStr := "enable borrowing commands' abbrs when setting KVs"
-	abbrsCmd := abbrs.AddSub("cmd")
-	abbrsCmd.RegEmptyCmd(
-		abbrsCmdHelpStr).
-		AddVal2Env("sys.env.use-cmd-abbrs", "true")
-	abbrsCmd.AddSub("on", "yes", "y", "Y", "1", "+").
-		RegEmptyCmd(
-			abbrsCmdHelpStr).
-		AddVal2Env("sys.env.use-cmd-abbrs", "true")
-	abbrsCmd.AddSub("off", "no", "n", "N", "0", "-").
-		RegEmptyCmd(
-			"disable borrowing commands' abbrs when setting KVs").
-		AddVal2Env("sys.env.use-cmd-abbrs", "false")
+	registerSimpleSwitch(abbrs,
+		"borrowing commands' abbrs when setting KVs",
+		"sys.env.use-cmd-abbrs",
+		"cmd")
 }
 
 func RegisterVerbCmds(cmds *core.CmdTree) {
@@ -403,6 +394,17 @@ func RegisterMiscCmds(cmds *core.CmdTree) {
 
 // This cmds are for debug
 func RegisterDbgCmds(cmds *core.CmdTree) {
+	registerSimpleSwitch(cmds,
+		"step by step on executing",
+		"sys.step-by-step",
+		"step-by-step", "step", "confirm", "cfm")
+
+	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
+		RegCmd(DbgDelayExecute,
+			"wait for a while before executing a command").
+		SetQuiet().
+		AddArg("seconds", "3", "second", "sec", "s", "S")
+
 	cmds.AddSub("echo").
 		RegCmd(DbgEcho,
 			"print message from argv").
@@ -426,84 +428,93 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 
-	step := cmds.AddSub("step-by-step", "step", "confirm", "cfm", "s", "S")
-	step.RegEmptyCmd(
-		"enable step by step").
-		AddVal2Env("sys.step-by-step", "true").
-		SetQuiet()
-	step.AddSub("on", "yes", "y", "Y", "1", "+").
-		RegEmptyCmd(
-			"enable step by step").
-		AddVal2Env("sys.step-by-step", "true").
-		SetQuiet()
-	step.AddSub("off", "no", "n", "N", "0", "-").
-		RegEmptyCmd(
-			"disable step by step").
-		AddVal2Env("sys.step-by-step", "false").
-		SetQuiet()
-
-	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
-		RegCmd(DbgDelayExecute,
-			"wait for a while before executing a command").
-		SetQuiet().
-		AddArg("seconds", "3", "second", "sec", "s", "S")
-
 	cmds.AddSub("exec").SetHidden().
 		RegCmd(DbgExecBash,
 			"verify bash in os/exec")
 }
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {
-	utf8 := cmds.AddSub("utf8", "utf")
-	utf8.RegEmptyCmd(
-		"enable utf8 display").
-		AddVal2Env("display.utf8", "true").
-		AddVal2Env("display.utf8.symbols", "true").
-		SetQuiet()
-	utf8.AddSub("on", "yes", "y", "Y", "1", "+").
-		RegEmptyCmd(
-			"enable utf8 display").
-		AddVal2Env("display.utf8", "true").
-		AddVal2Env("display.utf8.symbols", "true").
-		SetQuiet()
-	utf8.AddSub("off", "no", "n", "N", "0", "-").
-		RegEmptyCmd(
-			"disable utf8 display").
-		AddVal2Env("display.utf8", "false").
-		AddVal2Env("display.utf8.symbols", "false").
-		SetQuiet()
+	registerSimpleSwitchEx(cmds,
+		"utf8 display",
+		[]string{"display.utf8", "display.utf8.symbols"},
+		"utf8", "utf")
 
-	env := cmds.AddSub("env")
-	env.RegEmptyCmd(
-		"enable env display").
-		AddVal2Env("display.env", "true").
-		SetQuiet()
-	env.AddSub("on", "yes", "y", "Y", "1", "+").
-		RegEmptyCmd(
-			"enable env display").
-		AddVal2Env("display.env", "true").
-		SetQuiet()
-	env.AddSub("off", "no", "n", "N", "0", "-").
-		RegEmptyCmd(
-			"disable env display").
-		AddVal2Env("display.env", "false").
-		SetQuiet()
+	registerSimpleSwitch(cmds,
+		"color display",
+		"display.color",
+		"color", "colors", "clr")
 
-	stack := cmds.AddSub("stack")
-	stack.RegEmptyCmd(
-		"enable stack display").
-		AddVal2Env("display.stack", "true").
-		SetQuiet()
-	stack.AddSub("on", "yes", "y", "Y", "1", "+").
-		RegEmptyCmd(
-			"enable stack display").
-		AddVal2Env("display.stack", "true").
-		SetQuiet()
-	stack.AddSub("off", "no", "n", "N", "0", "-").
-		RegEmptyCmd(
-			"disable stack display").
-		AddVal2Env("display.stack", "false").
-		SetQuiet()
+	env := registerSimpleSwitch(cmds,
+		"env display",
+		"display.env",
+		"env")
+
+	sys := registerSimpleSwitch(env,
+		"values of env path 'sys.*' display in executing",
+		"display.env.sys",
+		"sys")
+
+	registerSimpleSwitch(sys,
+		"values of env path 'sys.paths.*' display in executing",
+		"display.env.sys.paths",
+		"paths", "path")
+
+	registerSimpleSwitch(env,
+		"values of env path 'display.*' display in executing",
+		"display.env.sys",
+		"sys")
+
+	registerSimpleSwitch(cmds,
+		"stack display",
+		"display.stack",
+		"stack")
+
+	registerSimpleSwitch(env,
+		"env layer display in executing",
+		"display.env.layer",
+		"layer")
+
+	registerSimpleSwitch(env,
+		"env default layer display in executing",
+		"display.env.default",
+		"default", "def")
+
+	registerSimpleSwitch(cmds,
+		"meow display",
+		"display.meow",
+		"meow")
+
+	mod := cmds.AddSub("mod")
+
+	registerSimpleSwitch(mod,
+		"quiet module display in executing",
+		"display.mod.quiet",
+		"quiet")
+
+	registerSimpleSwitch(mod,
+		"display realname of module in executing",
+		"display.mod.realname",
+		"realname", "real")
+
+	registerSimpleSwitch(cmds,
+		"executor display",
+		"display.executor",
+		"executor", "executer", "exe")
+
+	registerSimpleSwitch(cmds,
+		"executor finish footer display",
+		"display.executor.end",
+		"end", "footer", "foot")
+
+	registerSimpleSwitch(cmds,
+		"bootstrap executing display",
+		"display.bootstrap",
+		"bootstrap", "boot")
+
+	registerSimpleSwitch(cmds,
+		"display executor when only executing one command",
+		"display.one-cmd",
+		"one-cmd", "one")
 
 	cmds.AddSub("set-width", "width", "wid", "w", "W").
 		RegEmptyCmd(
@@ -511,6 +522,37 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		AddArg("width", "120", "wid", "w", "W").
 		AddArg2Env("display.width", "width")
+}
+
+func registerSimpleSwitch(
+	parent *core.CmdTree,
+	function string,
+	key string,
+	name string,
+	abbrs ...string) *core.CmdTree {
+
+	return registerSimpleSwitchEx(parent, function, []string{key}, name, abbrs...)
+}
+
+func registerSimpleSwitchEx(
+	parent *core.CmdTree,
+	function string,
+	keys []string,
+	name string,
+	abbrs ...string) *core.CmdTree {
+
+	cmd := parent.AddSub(name, abbrs...)
+	self := cmd.RegEmptyCmd("enable " + function).SetQuiet()
+	on := cmd.AddSub("on", "yes", "y", "Y", "1", "+").RegEmptyCmd("enable " + function).SetQuiet()
+	off := cmd.AddSub("off", "no", "n", "N", "0", "-").RegEmptyCmd("disable " + function).SetQuiet()
+
+	for _, key := range keys {
+		self.AddVal2Env(key, "true")
+		on.AddVal2Env(key, "true")
+		off.AddVal2Env(key, "false")
+	}
+
+	return self.Owner()
 }
 
 const LessHelpStr = "display/search info base on the current flow and args"
