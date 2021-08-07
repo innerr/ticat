@@ -13,7 +13,9 @@ func PrintGlobalHelp(cc *core.Cli, env *core.Env) {
 		return
 	}
 
+	// TODO: with color output this is not right, disable it by setting to a very big value
 	_, width := utils.GetTerminalWidth()
+	width = 4096
 
 	pln := func(line string) {
 		line = DecodeColor(line, env)
@@ -60,9 +62,6 @@ func PrintGlobalHelp(cc *core.Cli, env *core.Env) {
 			pln(line)
 		}
 	}
-	cc.Screen.Print("\n")
-	selfName := cc.Cmds.Strs.SelfName
-	cc.Screen.Print("(use command 'help." + selfName + "' to show " + selfName + "'s self usage)\n")
 }
 
 func PrintSelfHelp(screen core.Screen, env *core.Env) {

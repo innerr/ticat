@@ -467,8 +467,8 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 
 	registerSimpleSwitch(env,
 		"values of env path 'display.*' display in executing",
-		"display.env.sys",
-		"sys")
+		"display.env.display",
+		"display", "disp", "dis", "di")
 
 	registerSimpleSwitch(cmds,
 		"stack display",
