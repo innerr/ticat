@@ -106,10 +106,10 @@ func DumpEnvOpsCheckResult(
 			if i != 0 {
 				screen.Print("\n")
 			}
-			prt0("<FATAL> '" + it.Key + "'")
+			prt0(ColorError("<FATAL>", env) + ColorKey(" '"+it.Key+"'", env))
 			prti(prefix+"read by:", 7)
 			for _, cmd := range it.Cmds {
-				prti("["+cmd+"]", 12)
+				prti(ColorCmd("["+cmd+"]", env), 12)
 			}
 			prti(prefix+"but not provided.", 7)
 
@@ -118,18 +118,19 @@ func DumpEnvOpsCheckResult(
 				matchedCmdPath := matched.DisplayPath(sep, false)
 				cic := matched.LastCmd()
 				arg2env := cic.GetArg2Env()
-				prti(prefix+"an arg of ["+matchedCmdPath+"] is mapped to this key, pass it to solve the error:", 7)
+				prti(prefix+"an arg of "+ColorCmd("["+matchedCmdPath+"]", env)+
+					" is mapped to this key, pass it to solve the error:", 7)
 				argName := arg2env.GetArgName(it.Key)
 				argInfo := "'" + argName + "'"
 				args := cic.Args()
-				argInfo = fmt.Sprintf("%s #%d", argInfo, args.Index(argName))
+				argInfo = ColorArg(argInfo, env) + " " + ColorSymbol(fmt.Sprintf("#%d", args.Index(argName)), env)
 				abbrs := args.Abbrs(argName)
 				if len(abbrs) > 1 {
 					abbrTerm := "abbr"
 					if len(abbrs) > 2 {
 						abbrTerm = "abbrs"
 					}
-					argInfo += " (" + abbrTerm + ": " + strings.Join(abbrs[1:], abbrsSep) + ")"
+					argInfo += ColorArg(" ("+abbrTerm+": "+strings.Join(abbrs[1:], abbrsSep)+")", env)
 				}
 				prti(argInfo, 12)
 			}

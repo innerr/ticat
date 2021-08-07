@@ -265,7 +265,7 @@ func dumpCmd(
 				prt(1, ColorProp("- env-from-argv:", env))
 			}
 			for _, k := range arg2env.EnvKeys() {
-				prt(2, ColorKey(k, env)+ColorSymbol(" <- ", env)+mayQuoteStr(arg2env.GetArgName(k)))
+				prt(2, ColorKey(k, env)+ColorSymbol(" <- ", env)+ColorArg(mayQuoteStr(arg2env.GetArgName(k)), env))
 			}
 
 			envOps := cic.EnvOps()
@@ -282,7 +282,7 @@ func dumpCmd(
 				prt(1, ColorProp("- os-cmd-dep:", env))
 			}
 			for _, dep := range deps {
-				prt(2, ColorCmd(dep.OsCmd, env)+ColorSymbol(" = ", env)+dep.Reason)
+				prt(2, ColorCmdDone(dep.OsCmd, env)+ColorSymbol(" = ", env)+dep.Reason)
 			}
 
 			if cic.Type() != core.CmdTypeFlow && (cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {

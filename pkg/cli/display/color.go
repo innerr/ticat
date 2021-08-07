@@ -15,20 +15,20 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		return 0
 	}
 	lens := map[string]int{
-		"arg":      3,
-		"key":      3,
-		"warn":     3,
-		"err-sym":  2,
-		"tip-sym":  3,
-		"symbol":   3,
-		"prop":     3,
-		"tag":      2,
-		"help":     2,
-		"flow":     2,
-		"cmd":      2,
-		"cmd-done": 2,
-		"cmd-curr": 2,
-		"flowing":  2,
+		"arg":        3,
+		"key":        3,
+		"warn":       3,
+		"error":      3,
+		"tip-symbol": 3,
+		"symbol":     3,
+		"prop":       3,
+		"tag":        2,
+		"help":       2,
+		"flow":       2,
+		"cmd":        2,
+		"cmd-done":   2,
+		"cmd-curr":   2,
+		"flowing":    2,
 	}
 	for _, it := range types {
 		extra, ok := lens[it]
@@ -41,19 +41,19 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 }
 
 func ColorArg(origin string, env *core.Env) string {
-	return colorize(origin, fromColor256(168), env)
+	return colorize(origin, fromColor256(215), env)
 }
 
 func ColorKey(origin string, env *core.Env) string {
-	return colorize(origin, fromColor256(134), env)
+	return colorize(origin, fromColor256(135), env)
 }
 
 func ColorWarn(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(202), env)
 }
 
-func ColorErrSymbol(origin string, env *core.Env) string {
-	return colorize(origin, fromColor256(88), env)
+func ColorError(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(124), env)
 }
 
 func ColorTipSymbol(origin string, env *core.Env) string {
@@ -73,7 +73,7 @@ func ColorTag(origin string, env *core.Env) string {
 }
 
 func ColorHelp(origin string, env *core.Env) string {
-	return colorize(origin, fromColor256(26), env)
+	return colorize(origin, fromColor256(27), env)
 }
 
 func ColorFlow(origin string, env *core.Env) string {
@@ -89,7 +89,7 @@ func ColorCmdCurr(origin string, env *core.Env) string {
 }
 
 func ColorCmdDone(origin string, env *core.Env) string {
-	return colorize(origin, fromColor256(28), env)
+	return colorize(origin, fromColor256(34), env)
 }
 
 func ColorFlowing(origin string, env *core.Env) string {
