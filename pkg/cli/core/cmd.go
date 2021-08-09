@@ -200,6 +200,13 @@ func (self *Cmd) MatchFind(findStr string) bool {
 	return false
 }
 
+func (self *Cmd) MatchWriteKey(key string) bool {
+	if self.envOps.MatchWriteKey(key) {
+		return true
+	}
+	return false
+}
+
 func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
 	self.args.AddArg(self.owner, name, defVal, abbrs...)
 	return self

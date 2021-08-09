@@ -28,6 +28,19 @@ func (self *EnvOps) AddOp(name string, op uint) {
 	self.ops[name] = append(old, op)
 }
 
+func (self EnvOps) MatchWriteKey(key string) bool {
+	ops, ok := self.ops[key]
+	if !ok {
+		return false
+	}
+	for _, op := range ops {
+		if (op|EnvOpTypeWrite) > 0 || (op|EnvOpTypeMayWrite) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (self EnvOps) MatchFind(findStr string) bool {
 	for _, name := range self.orderedNames {
 		if strings.Index(name, findStr) >= 0 {

@@ -226,6 +226,11 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		RegCmd(ResetLocalEnv,
 			"reset all local saved env KVs")
 
+	env.AddSub("who-write", "who", "write", "ww", "w", "W").
+		RegCmd(DumpCmdsWhoWriteKey,
+			"find which commands write the specified key").
+		AddArg("key", "", "k", "K")
+
 	registerSimpleSwitch(abbrs,
 		"borrowing commands' abbrs when setting KVs",
 		"sys.env.use-cmd-abbrs",

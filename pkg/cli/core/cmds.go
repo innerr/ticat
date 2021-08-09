@@ -123,6 +123,13 @@ func (self *CmdTree) MatchTags(tags ...string) bool {
 	return true
 }
 
+func (self *CmdTree) MatchWriteKey(key string) bool {
+	if self.cmd == nil {
+		return false
+	}
+	return self.cmd.MatchWriteKey(key)
+}
+
 func (self *CmdTree) RegCmd(cmd NormalCmd, help string) *Cmd {
 	self.cmdConflictCheck(help, "RegCmd")
 	self.cmd = NewCmd(self, help, cmd)

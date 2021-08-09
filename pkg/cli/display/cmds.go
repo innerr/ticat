@@ -24,6 +24,8 @@ func DumpCmdsWithTips(
 	findStr := strings.Join(args.FindStrs, " ")
 	selfName := env.GetRaw("strs.self-name")
 
+	// TODO: tip title of find by tag and 'MatchWriteKey'
+
 	if !args.Recursive {
 		prt("command details:")
 	} else if len(args.FindStrs) != 0 {
@@ -111,17 +113,18 @@ func DumpCmds(
 }
 
 type DumpCmdArgs struct {
-	Skeleton   bool
-	ShowUsage  bool
-	Flatten    bool
-	Recursive  bool
-	FindStrs   []string
-	FindByTags bool
-	IndentSize int
+	Skeleton      bool
+	ShowUsage     bool
+	Flatten       bool
+	Recursive     bool
+	FindStrs      []string
+	FindByTags    bool
+	IndentSize    int
+	MatchWriteKey string
 }
 
 func NewDumpCmdArgs() *DumpCmdArgs {
-	return &DumpCmdArgs{false, true, true, true, nil, false, 4}
+	return &DumpCmdArgs{false, true, true, true, nil, false, 4, ""}
 }
 
 func (self *DumpCmdArgs) NoShowShowUsage() *DumpCmdArgs {
@@ -160,6 +163,24 @@ func (self *DumpCmdArgs) AddFindStrs(findStrs ...string) *DumpCmdArgs {
 	return self
 }
 
+func (self *DumpCmdArgs) SetMatchWriteKey(key string) *DumpCmdArgs {
+	self.MatchWriteKey = key
+	return self
+}
+
+func (self *DumpCmdArgs) MatchFind(cmd *core.CmdTree) bool {
+	if self.FindByTags && cmd.MatchTags(self.FindStrs...) {
+		return true
+	}
+	if len(self.MatchWriteKey) != 0 {
+		return cmd.MatchWriteKey(self.MatchWriteKey)
+	}
+	if cmd.MatchFind(self.FindStrs...) {
+		return true
+	}
+	return false
+}
+
 func dumpCmd(
 	screen core.Screen,
 	env *core.Env,
@@ -186,10 +207,7 @@ func dumpCmd(
 		screen.Print(padding + msg + "\n")
 	}
 
-	if cmd.Parent() == nil ||
-		(!args.FindByTags && cmd.MatchFind(args.FindStrs...) ||
-			cmd.MatchTags(args.FindStrs...)) {
-
+	if cmd.Parent() == nil || args.MatchFind(cmd) {
 		cic := cmd.Cmd()
 		var name string
 		abbrs := cmd.Abbrs()

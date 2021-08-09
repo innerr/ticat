@@ -42,6 +42,17 @@ func DumpCmdTreeSkeleton(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.
 	return true
 }
 
+func DumpCmdsWhoWriteKey(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+	key := argv.GetRaw("key")
+	if len(key) == 0 {
+		panic(core.NewCmdError(cmd, "missed arg 'key'"))
+	}
+
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetMatchWriteKey(key)
+	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
+	return true
+}
+
 func dumpCmdsByPath(cc *core.Cli, env *core.Env, args *display.DumpCmdArgs, path string) {
 	if len(path) == 0 && !args.Recursive {
 		display.PrintTipTitle(cc.Screen, env,
