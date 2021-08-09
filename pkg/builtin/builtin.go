@@ -52,7 +52,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"find anything with given string")
 	addFindStrArgs(find)
 
-	findTag := cmds.AddSub("tags", "tag", "@").
+	findTag := cmds.AddSub("tags", "tag", cmds.Strs.TagMark).
 		RegPowerCmd(FindByTags,
 			"list commands having the specified tags").
 		SetQuiet().

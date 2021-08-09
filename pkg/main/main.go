@@ -48,6 +48,7 @@ func main() {
 	defEnv.Set("strs.flow-template-bracket-left", FlowTemplateBracketLeft)
 	defEnv.Set("strs.flow-template-bracket-right", FlowTemplateBracketRight)
 	defEnv.Set("strs.flow-template-multiply-mark", FlowTemplateMultiplyMark)
+	defEnv.Set("strs.tag-mark", TagMark)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -66,6 +67,7 @@ func main() {
 		FlowTemplateBracketLeft,
 		FlowTemplateBracketRight,
 		FlowTemplateMultiplyMark,
+		TagMark,
 	})
 	builtin.RegisterCmds(tree)
 
@@ -156,10 +158,11 @@ const (
 	HubFileName              string = "repos.hub"
 	ReposFileName            string = "hub.ticat"
 	SessionEnvFileName       string = "env"
-	TagOutOfTheBox           string = "@ready"
-	TagProvider              string = "@config"
-	TagSelfTest              string = "@selftest"
 	FlowTemplateBracketLeft  string = "[["
 	FlowTemplateBracketRight string = "]]"
 	FlowTemplateMultiplyMark string = "*"
+	TagMark                  string = "@"
+	TagOutOfTheBox           string = TagMark + "ready"
+	TagProvider              string = TagMark + "config"
+	TagSelfTest              string = TagMark + "selftest"
 )

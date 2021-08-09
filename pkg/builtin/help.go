@@ -173,7 +173,7 @@ func FindByTags(
 		findStrs = append(cmd.ParseResult.Input, findStrs...)
 	}
 	if len(findStrs) == 0 {
-		// HELP
+		display.ListTags(cc.Cmds, cc.Screen, env)
 		return clearFlow(flow)
 	}
 

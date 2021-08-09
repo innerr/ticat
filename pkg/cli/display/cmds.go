@@ -173,6 +173,7 @@ func dumpCmd(
 
 	builtinName := cmd.Strs.BuiltinDisplayName
 	abbrsSep := cmd.Strs.AbbrsSep
+	tagMark := cmd.Strs.TagMark
 	envOpSep := " " + cmd.Strs.EnvOpSep + " "
 	indent := cmd.Depth() + indentAdjust
 
@@ -207,7 +208,7 @@ func dumpCmd(
 			prt(0, ColorCmd("["+name+"]", env))
 
 			if (!args.Skeleton || args.FindByTags) && len(cmd.Tags()) != 0 {
-				prt(1, ColorTag(" @"+strings.Join(cmd.Tags(), " @"), env))
+				prt(1, ColorTag(" "+tagMark+strings.Join(cmd.Tags(), " "+tagMark), env))
 			}
 
 			// TODO: move 'help' from core.Cmd to core.CmdTree
