@@ -16,7 +16,13 @@ import (
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func ListFlows(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
@@ -34,7 +40,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCm
 			return nil
 		}
 
-		cmdPath := getCmdPath(path, flowExt)
+		cmdPath := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
 		flowStrs, help, abbrsStr := flow_file.LoadFlowFile(path)
 		flowStr := strings.Join(flowStrs, " ")
 
@@ -88,7 +94,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCm
 			"",
 			display.SuggestFlowsFilter(env))
 	}
-	return true
+	return currCmdIdx, true
 }
 
 func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
@@ -110,7 +116,13 @@ func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedC
 	return true
 }
 
-func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func RemoveAllFlows(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
@@ -126,7 +138,7 @@ func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.Par
 				panic(fmt.Errorf("[RemoveAllFlows] remove flow file '%s' failed: %v",
 					path, err))
 			}
-			cmdPath := getCmdPath(path, flowExt)
+			cmdPath := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
 			screen.Print(fmt.Sprintf("[%s] (removed)\n", cmdPath))
 			screen.Print(fmt.Sprintf("    %s\n", path))
 		}
@@ -144,7 +156,7 @@ func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.Par
 			display.SuggestFlowAdd(env))
 	}
 	screen.WriteTo(cc.Screen)
-	return true
+	return currCmdIdx, true
 }
 
 func SaveFlow(

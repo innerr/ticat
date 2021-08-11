@@ -77,6 +77,8 @@ func (self *TipBoxPrinter) Print(msg string) {
 		return
 	}
 
+	// TODO: put ERR TIP to env strs
+
 	if !self.inited {
 		var tip string
 		var tipLen int

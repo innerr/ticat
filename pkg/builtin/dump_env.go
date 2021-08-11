@@ -5,6 +5,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
+// TODO: this can't be colorize, because it share codes with executor display(with frame, color will break len(str))
 func DumpEnvTree(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -12,7 +13,6 @@ func DumpEnvTree(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	// TODO: this can't be colorize, because it share codes with executor display(with frame, color will break len(str))
 	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	display.PrintTipTitle(cc.Screen, env, "all env key-values:")
 	display.DumpEnvTree(cc.Screen, env, 4)

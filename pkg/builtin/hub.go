@@ -497,7 +497,7 @@ func moveSavedFlowsToLocalDir(toDir string, cc *core.Cli, env *core.Env, cmd cor
 			panic(core.WrapCmdError(cmd, fmt.Errorf("rename file '%s' to '%s' failed: %v",
 				path, destPath, err)))
 		}
-		cmdPath := getCmdPath(path, flowExt)
+		cmdPath := getCmdPath(path, flowExt, cmd)
 		cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
 		cc.Screen.Print(fmt.Sprintf("    - from: %s\n", path))
 		cc.Screen.Print(fmt.Sprintf("    - to: %s\n", destPath))

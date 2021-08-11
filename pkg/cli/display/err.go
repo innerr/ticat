@@ -175,8 +175,12 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 }
 
 func dumpCmdWithArgv(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) {
-	metFlows := map[string]bool{}
-	writtenKeys := FlowWrittenKeys{}
-	dumpArgs := NewDumpFlowArgs().SetSimple()
-	dumpFlowCmd(cc, cc.Screen, env.Clone(), core.ParsedEnv{}, cmd, dumpArgs, 0, 0, metFlows, writtenKeys)
+	/*
+		metFlows := map[string]bool{}
+		writtenKeys := FlowWrittenKeys{}
+		dumpArgs := NewDumpFlowArgs().SetSimple()
+		dumpFlowCmd(cc, cc.Screen, env.Clone(), core.ParsedEnv{}, cmd, dumpArgs, 0, 0, metFlows, writtenKeys)
+	*/
+	dumpArgs := NewDumpCmdArgs().NoRecursive()
+	DumpCmds(cmd.Last().Matched.Cmd, cc.Screen, env, dumpArgs)
 }

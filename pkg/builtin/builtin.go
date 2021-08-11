@@ -147,7 +147,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 func RegisterFlowCmds(cmds *core.CmdTree) {
 	listFlowsHelpStr := "list local saved but unlinked (to any repo) flows"
 	flow := cmds.AddSub("flow", "fl", "f", "F").
-		RegCmd(ListFlows,
+		RegPowerCmd(ListFlows,
 			listFlowsHelpStr)
 	addFindStrArgs(flow)
 
@@ -171,7 +171,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	flowList := flow.AddSub("list-local", "list", "ls", "~").
-		RegCmd(ListFlows,
+		RegPowerCmd(ListFlows,
 			listFlowsHelpStr)
 	addFindStrArgs(flowList)
 
@@ -181,7 +181,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		AddArg("path", "", "p", "P")
 
 	flow.AddSub("clear", "reset", "--").
-		RegCmd(RemoveAllFlows,
+		RegPowerCmd(RemoveAllFlows,
 			"remove all flows saved in local")
 
 	flow.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
@@ -216,16 +216,16 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		SetQuiet()
 
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
-		RegCmd(RemoveEnvValAndSaveToLocal,
+		RegPowerCmd(RemoveEnvValAndSaveToLocal,
 			"remove specified env value and save changes to local").
 		AddArg("key", "", "k", "K")
 
 	env.AddSub("reset-session", "reset", "--").
-		RegCmd(ResetSessionEnv,
+		RegPowerCmd(ResetSessionEnv,
 			"clear all session env values")
 
 	env.AddSub("reset-and-save", "clear", "---").
-		RegCmd(ResetLocalEnv,
+		RegPowerCmd(ResetLocalEnv,
 			"clear all local saved env values")
 
 	env.AddSub("who-write", "who", "write", "ww", "w", "W").

@@ -57,10 +57,10 @@ func normalizeCmdPath(path string, sep string, alterSeps string) string {
 	return strings.Join(segs, sep)
 }
 
-func getCmdPath(path string, flowExt string) string {
+func getCmdPath(path string, flowExt string, cmd core.ParsedCmd) string {
 	base := filepath.Base(path)
 	if !strings.HasSuffix(base, flowExt) {
-		panic(fmt.Errorf("[getCmdPath] flow file '%s' ext not match '%s'", path, flowExt))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("flow file '%s' ext not match '%s'", path, flowExt)))
 	}
 	return base[:len(base)-len(flowExt)]
 }
