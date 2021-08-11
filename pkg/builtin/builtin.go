@@ -86,11 +86,9 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetPriority()
 
 	desc.AddSub("depth").
-		RegCmd(SetDumpFlowDepth,
+		RegPowerCmd(SetDumpFlowDepth,
 			"setup display stack depth of flow desc").
-		SetQuiet().
-		SetPriority().
-		AddArg("depth", "8", "d", "D")
+		AddArg("depth", "", "d", "D")
 
 	descFlow := desc.AddSub("flow", "f", "F").
 		RegPowerCmd(DumpFlow,
@@ -194,26 +192,26 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
 	env := cmds.AddSub("env", "e", "E").
-		RegCmd(DumpEssentialEnvFlattenVals,
+		RegPowerCmd(DumpEssentialEnvFlattenVals,
 			"list essential env values in flatten format")
 	addFindStrArgs(env)
 
 	env.AddSub("tree", "t", "T").
-		RegCmd(DumpEnvTree,
+		RegPowerCmd(DumpEnvTree,
 			"list all env layers and values in tree format")
 
 	// TODO: add search supporting
 	abbrs := env.AddSub("abbrs", "abbr", "a", "A")
-	abbrs.RegCmd(DumpEnvAbbrs,
+	abbrs.RegPowerCmd(DumpEnvAbbrs,
 		"list env tree and abbrs")
 
 	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
-		RegCmd(DumpEnvFlattenVals,
+		RegPowerCmd(DumpEnvFlattenVals,
 			"list env values in flatten format")
 	addFindStrArgs(envList)
 
 	env.AddSub("save", "persist", "s", "S", "+").
-		RegCmd(SaveEnvToLocal,
+		RegPowerCmd(SaveEnvToLocal,
 			"save session env changes to local").
 		SetQuiet()
 
@@ -335,12 +333,12 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	envLoad := env.AddSub("load", "l", "L")
 
 	envLoad.AddSub("local", "l", "L").
-		RegCmd(LoadLocalEnv,
+		RegPowerCmd(LoadLocalEnv,
 			"load env values from local").
 		SetQuiet()
 
 	envLoad.AddSub("runtime", "rt", "r", "R").
-		RegCmd(LoadRuntimeEnv,
+		RegPowerCmd(LoadRuntimeEnv,
 			"setup runtime env values").
 		SetQuiet()
 
@@ -363,7 +361,7 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	cmds.AddSub("display", "disp", "dis", "di", "d", "D").
 		AddSub("load", "l", "L").
 		AddSub("platform", "p", "P").
-		RegCmd(LoadPlatformDisplay,
+		RegPowerCmd(LoadPlatformDisplay,
 			"load platform(OS) specialized display settings").
 		SetQuiet()
 }
@@ -409,13 +407,13 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		"step-by-step", "step", "confirm", "cfm")
 
 	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
-		RegCmd(DbgDelayExecute,
+		RegPowerCmd(DbgDelayExecute,
 			"wait for a while before executing a command").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")
 
 	cmds.AddSub("echo").
-		RegCmd(DbgEcho,
+		RegPowerCmd(DbgEcho,
 			"print message from argv").
 		AddArg("message", "", "msg", "m", "M")
 
@@ -438,13 +436,14 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		AddArg("random-arg-2", "arg-2")
 
 	cmds.AddSub("exec").SetHidden().
-		RegCmd(DbgExecBash,
-			"verify bash in os/exec")
+		RegPowerCmd(DbgExecBash,
+			"verify bash in os/exec").
+		SetQuiet()
 }
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {
 	cmds.AddSub("style").
-		RegCmd(SetDisplayStyle,
+		RegPowerCmd(SetDisplayStyle,
 			"set executing display style: bold, slash, corner, ascii, utf8(default)").
 		AddArg("style", "s", "S").
 		SetQuiet()

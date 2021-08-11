@@ -5,20 +5,45 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func DumpEnvTree(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func DumpEnvTree(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	// TODO: this can't be colorize, because it share codes with executor display(with frame, color will break len(str))
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	display.PrintTipTitle(cc.Screen, env, "all env key-values:")
 	display.DumpEnvTree(cc.Screen, env, 4)
-	return true
+	return currCmdIdx, true
 }
 
-func DumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func DumpEnvAbbrs(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	display.PrintTipTitle(cc.Screen, env, "all env key abbrs:")
-	display.DumpEnvAbbrs(cc, 4)
-	return true
+	display.DumpEnvAbbrs(cc, env, 4)
+	return currCmdIdx, true
 }
 
-func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func DumpEnvFlattenVals(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
 	findStrs := getFindStrsFromArgv(argv)
+	if flow.TailMode {
+		findStrs = append(findStrs, gatherInputsFromFlow(flow, currCmdIdx)...)
+	}
+
 	screen := display.NewCacheScreen()
 	display.DumpEnvFlattenVals(screen, env, findStrs...)
 	if screen.OutputNum() <= 0 {
@@ -35,11 +60,21 @@ func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core
 			"",
 			display.SuggestFindEnv(env, ".ls"))
 	}
-	return true
+	return currCmdIdx, true
 }
 
-func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func DumpEssentialEnvFlattenVals(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
 	findStrs := getFindStrsFromArgv(argv)
+	if flow.TailMode {
+		findStrs = append(findStrs, gatherInputsFromFlow(flow, currCmdIdx)...)
+	}
+
 	screen := display.NewCacheScreen()
 	display.DumpEssentialEnvFlattenVals(screen, env, findStrs...)
 	if screen.OutputNum() <= 0 {
@@ -72,5 +107,5 @@ func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env,
 			"",
 			display.SuggestFindEnv(env, ""))
 	}
-	return true
+	return currCmdIdx, true
 }

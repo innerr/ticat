@@ -1,14 +1,27 @@
 package builtin
 
 import (
+	"fmt"
+
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
-	depth := argv.GetInt("depth")
-	env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
-	return true
+func SetDumpFlowDepth(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	key := "display.flow.depth"
+	if len(argv.GetRaw("depth")) != 0 {
+		depth := argv.GetInt("depth")
+		env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
+	}
+	cc.Screen.Print(display.ColorKey(key, env) + display.ColorSymbol(" = ", env) + env.GetRaw(key) + "\n")
+	return currCmdIdx, true
 }
 
 func DumpFlowAll(
@@ -64,6 +77,32 @@ func DumpFlowSkeleton(
 
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton()
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
+
+	deps := display.Depends{}
+	display.CollectDepends(cc, env, flow.Cmds, deps, false)
+	_, _, missedOsCmds := display.GatherOsCmdsExistingInfo(deps)
+
+	checker := &core.EnvOpsChecker{}
+	result := []core.EnvOpsCheckResult{}
+	core.CheckEnvOps(cc, flow, env, checker, false, &result)
+	fatals, risks, _ := display.AggEnvOpsCheckResult(result)
+
+	adds := func(n int, s string) string {
+		if n > 1 {
+			return s + "s"
+		}
+		return s
+	}
+
+	errs := missedOsCmds + len(fatals.Result)
+	if errs > 0 {
+		errStr := adds(errs, "fatal")
+		cc.Screen.Print(display.ColorError(fmt.Sprintf("(%s:%d)", errStr, errs), env) + "\n")
+	} else if len(risks.Result) > 0 {
+		riskStr := adds(errs, "risk")
+		cc.Screen.Print(display.ColorWarn(fmt.Sprintf("(%s:%d)", riskStr, len(risks.Result)), env) + "\n")
+	}
+
 	return clearFlow(flow)
 }
 

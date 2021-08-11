@@ -8,6 +8,20 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func GatherOsCmdsExistingInfo(deps Depends) (foundOsCmds map[string]bool, osCmds []string, missedOsCmds int) {
+	foundOsCmds = map[string]bool{}
+	for osCmd, _ := range deps {
+		exists := isOsCmdExists(osCmd)
+		foundOsCmds[osCmd] = exists
+		if !exists {
+			missedOsCmds += 1
+		}
+		osCmds = append(osCmds, osCmd)
+	}
+	sort.Strings(osCmds)
+	return
+}
+
 type DependInfo struct {
 	Reason string
 	Cmd    core.ParsedCmd
@@ -24,19 +38,11 @@ func DumpDepends(
 		return
 	}
 
-	foundOsCmds := map[string]bool{}
-	var osCmds []string
-	for osCmd, _ := range deps {
-		exists := isOsCmdExists(osCmd)
-		foundOsCmds[osCmd] = exists
-		hasMissedOsCmd = hasMissedOsCmd || !exists
-		osCmds = append(osCmds, osCmd)
-	}
-	sort.Strings(osCmds)
+	foundOsCmds, osCmds, missedOsCmds := GatherOsCmdsExistingInfo(deps)
 
 	sep := env.Get("strs.cmd-path-sep").Raw
 
-	if hasMissedOsCmd {
+	if missedOsCmds > 0 {
 		PrintErrTitle(screen, env,
 			"missed depended os-commands.",
 			"",
@@ -49,7 +55,7 @@ func DumpDepends(
 	}
 
 	for _, osCmd := range osCmds {
-		if hasMissedOsCmd && foundOsCmds[osCmd] {
+		if missedOsCmds > 0 && foundOsCmds[osCmd] {
 			continue
 		}
 		cmds := deps[osCmd]
@@ -62,7 +68,7 @@ func DumpDepends(
 		}
 	}
 
-	return
+	return missedOsCmds > 0
 }
 
 func CollectDepends(

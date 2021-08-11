@@ -22,15 +22,15 @@ func DumpEssentialEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...
 		"display.",
 	}
 	flatten := env.Flatten(false, filterPrefixs, true)
-	dumpEnvFlattenVals(screen, flatten, findStrs...)
+	dumpEnvFlattenVals(screen, env, flatten, findStrs...)
 }
 
 func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 	flatten := env.Flatten(true, nil, true)
-	dumpEnvFlattenVals(screen, flatten, findStrs...)
+	dumpEnvFlattenVals(screen, env, flatten, findStrs...)
 }
 
-func dumpEnvFlattenVals(screen core.Screen, flatten map[string]string, findStrs ...string) {
+func dumpEnvFlattenVals(screen core.Screen, env *core.Env, flatten map[string]string, findStrs ...string) {
 	var keys []string
 	for k, _ := range flatten {
 		keys = append(keys, k)
@@ -51,7 +51,7 @@ func dumpEnvFlattenVals(screen core.Screen, flatten map[string]string, findStrs 
 				continue
 			}
 		}
-		screen.Print(k + " = " + mayQuoteStr(v) + "\n")
+		screen.Print(ColorKey(k, env) + ColorSymbol(" = ", env) + mayQuoteStr(v) + "\n")
 	}
 }
 

@@ -10,8 +10,8 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func gatherInputsFromFlow(flow []core.ParsedCmd) (inputs []string) {
-	for _, cmd := range flow {
+func gatherInputsFromFlow(flow *core.ParsedCmds, currCmdIdx int) (inputs []string) {
+	for _, cmd := range flow.Cmds[currCmdIdx+1:] {
 		inputs = append(inputs, cmd.ParseResult.Input...)
 	}
 	return
@@ -78,6 +78,12 @@ func quoteIfHasSpace(str string) string {
 		return "'" + str + "'"
 	}
 	return str
+}
+
+func assertNotTailMode(flow *core.ParsedCmds, currCmdIdx int, tailMode bool) {
+	if flow.TailMode && len(flow.Cmds) > 1 {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support"))
+	}
 }
 
 func clearFlow(flow *core.ParsedCmds) (int, bool) {

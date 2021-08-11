@@ -24,12 +24,6 @@ const (
 	CmdTypeDirWithCmd CmdType = "dir-with-executable-file"
 )
 
-type FlowCmdCtx struct {
-	TailMode  bool
-	Executing []ParsedCmd
-	GlobalEnv ParsedEnv
-}
-
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) (succeeded bool)
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
@@ -143,7 +137,12 @@ func (self *Cmd) execute(
 
 	switch self.ty {
 	case CmdTypePower:
-		return self.power(argv, cc, env, flow, currCmdIdx)
+		currCmdIdx, succeeded := self.power(argv, cc, env, flow, currCmdIdx)
+		if flow.TailMode {
+			currCmdIdx = 0
+			flow.Cmds = nil
+		}
+		return currCmdIdx, succeeded
 	case CmdTypeNormal:
 		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx:])
 	case CmdTypeFile:

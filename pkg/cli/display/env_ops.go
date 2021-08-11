@@ -18,21 +18,9 @@ func DumpEnvOpsCheckResult(
 		return
 	}
 
-	fatals := newEnvOpsCheckResultAgg()
-	risks := newEnvOpsCheckResultAgg()
-	isArg2EnvCanFixAllFatals := true
-	for _, it := range result {
-		if it.ReadNotExist {
-			fatals.Append(it)
-			if it.FirstArg2Env == nil {
-				isArg2EnvCanFixAllFatals = false
-			}
-		} else {
-			risks.Append(it)
-		}
-	}
+	fatals, risks, isArg2EnvCanFixAllFatals := AggEnvOpsCheckResult(result)
 
-	if len(fatals.result) != 0 {
+	if len(fatals.Result) != 0 {
 		helpStr := []interface{}{
 			"this flow has 'read before write' on env keys, so it can't execute.",
 			"",
@@ -70,8 +58,8 @@ func DumpEnvOpsCheckResult(
 
 	prefix := ColorProp("- ", env)
 
-	if len(risks.result) != 0 && len(fatals.result) == 0 {
-		for i, it := range risks.result {
+	if len(risks.Result) != 0 && len(fatals.Result) == 0 {
+		for i, it := range risks.Result {
 			if i != 0 {
 				screen.Print("\n")
 			}
@@ -99,8 +87,8 @@ func DumpEnvOpsCheckResult(
 		}
 	}
 
-	if len(fatals.result) != 0 {
-		for i, it := range fatals.result {
+	if len(fatals.Result) != 0 {
+		for i, it := range fatals.Result {
 			if i != 0 {
 				screen.Print("\n")
 			}
@@ -146,22 +134,42 @@ type envOpsCheckResult struct {
 	CmdMap             map[string]bool
 }
 
-type envOpsCheckResultAgg struct {
-	result []envOpsCheckResult
+func AggEnvOpsCheckResult(result []core.EnvOpsCheckResult) (fatals *EnvOpsCheckResultAgg,
+	risks *EnvOpsCheckResultAgg, isArg2EnvCanFixAllFatals bool) {
+
+	fatals = newEnvOpsCheckResultAgg()
+	risks = newEnvOpsCheckResultAgg()
+	isArg2EnvCanFixAllFatals = true
+
+	for _, it := range result {
+		if it.ReadNotExist {
+			fatals.Append(it)
+			if it.FirstArg2Env == nil {
+				isArg2EnvCanFixAllFatals = false
+			}
+		} else {
+			risks.Append(it)
+		}
+	}
+	return
+}
+
+type EnvOpsCheckResultAgg struct {
+	Result []envOpsCheckResult
 	revIdx map[string]int
 }
 
-func newEnvOpsCheckResultAgg() *envOpsCheckResultAgg {
-	return &envOpsCheckResultAgg{nil, map[string]int{}}
+func newEnvOpsCheckResultAgg() *EnvOpsCheckResultAgg {
+	return &EnvOpsCheckResultAgg{nil, map[string]int{}}
 }
 
-func (self *envOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
+func (self *EnvOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
 	hashKey := fmt.Sprintf("%s_%v_%v_%v_%v", res.Key, res.ReadMayWrite,
 		res.MayReadMayWrite, res.MayReadNotExist, res.ReadNotExist)
 	idx, ok := self.revIdx[hashKey]
 	if !ok {
-		idx = len(self.result)
-		self.result = append(self.result, envOpsCheckResult{
+		idx = len(self.Result)
+		self.Result = append(self.Result, envOpsCheckResult{
 			res.Key,
 			[]string{res.CmdDisplayPath},
 			res.FirstArg2Env,
@@ -174,12 +182,12 @@ func (self *envOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
 		})
 		self.revIdx[hashKey] = idx
 	} else {
-		old := self.result[idx]
+		old := self.Result[idx]
 		if !old.CmdMap[res.CmdDisplayPath] {
 			old.Cmds = append(old.Cmds, res.CmdDisplayPath)
 			old.CmdMap[res.CmdDisplayPath] = true
 			// Discard res.MayWriteCmdsBefore, it's not important
-			self.result[idx] = old
+			self.Result[idx] = old
 		}
 	}
 }

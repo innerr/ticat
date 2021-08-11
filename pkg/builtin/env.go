@@ -81,7 +81,15 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	mod.GetOrAddSub("realname").AddAbbrs("real", "r", "R")
 }
 
-func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func LoadRuntimeEnv(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	env = env.GetLayer(core.EnvLayerSession)
 
 	path, err := os.Executable()
@@ -106,10 +114,18 @@ func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.Parsed
 	env.Set("sys.paths.sessions", filepath.Join(data, "sessions"))
 	paths.GetOrAddSub("sessions").AddAbbrs("session", "s", "S")
 
-	return true
+	return currCmdIdx, true
 }
 
-func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func LoadLocalEnv(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep)
@@ -121,10 +137,17 @@ func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCm
 		env.GetLayer(core.EnvLayerSession).SetBool("display.color", !utils.StdoutIsPipe())
 	}
 
-	return true
+	return currCmdIdx, true
 }
 
-func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func SaveEnvToLocal(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.SaveEnvToFile(env, path, kvSep)
@@ -132,7 +155,7 @@ func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.Parsed
 		"changes of env are saved, could be listed by:",
 		"",
 		display.SuggestListEnv(env))
-	return true
+	return currCmdIdx, true
 }
 
 // TODO: support abbrs for arg 'key'

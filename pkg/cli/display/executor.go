@@ -28,10 +28,12 @@ func PrintCmdStack(
 	env *core.Env,
 	flow []core.ParsedCmd,
 	currCmdIdx int,
-	strs *core.CmdTreeStrs) (lines CmdStackLines) {
+	strs *core.CmdTreeStrs,
+	tailMode bool) (lines CmdStackLines) {
 
-	env = env.Clone()
-
+	if tailMode {
+		return
+	}
 	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
 		return
 	}
@@ -46,6 +48,7 @@ func PrintCmdStack(
 		return
 	}
 
+	env = env.Clone()
 	lines.Display = true
 
 	if env.GetBool("display.stack") {

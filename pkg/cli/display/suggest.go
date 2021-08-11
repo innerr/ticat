@@ -61,7 +61,8 @@ func SuggestListEnv(env *core.Env) []string {
 func SuggestFindEnv(env *core.Env, subCmd string) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" e"+subCmd+" str1 str2 :-", indent) + "- search env keys",
+		padR(selfName+" e"+subCmd+" str1 str2", indent) + "- search env by strings",
+		padR(selfName+" str1 str2 ::e"+subCmd, indent) + "- same as above, tail mode",
 	}
 }
 
