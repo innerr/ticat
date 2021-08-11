@@ -5,7 +5,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SetDumpFlowDepth(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	depth := argv.GetInt("depth")
 	env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
 	return true

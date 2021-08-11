@@ -28,8 +28,6 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
-	env.SetBool("display.color", !utils.StdoutIsPipe())
-
 	row, col := utils.GetTerminalWidth()
 	if col > 100 {
 		col = 100
@@ -83,7 +81,7 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	mod.GetOrAddSub("realname").AddAbbrs("real", "r", "R")
 }
 
-func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	env = env.GetLayer(core.EnvLayerSession)
 
 	path, err := os.Executable()
@@ -111,17 +109,22 @@ func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCm
 	return true
 }
 
-func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep)
 	env.GetLayer(core.EnvLayerPersisted).DeleteInSelfLayer("sys.stack-depth")
 	env.GetLayer(core.EnvLayerPersisted).Deduplicate()
 	env.GetLayer(core.EnvLayerSession).Deduplicate()
+
+	if !env.Has("display.color") {
+		env.GetLayer(core.EnvLayerSession).SetBool("display.color", !utils.StdoutIsPipe())
+	}
+
 	return true
 }
 
-func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env)
 	core.SaveEnvToFile(env, path, kvSep)
@@ -133,7 +136,7 @@ func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCm
 }
 
 // TODO: support abbrs for arg 'key'
-func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	key := argv.GetRaw("key")
 	if len(key) == 0 {
 		panic(fmt.Errorf("[RemoveEnvValAndSaveToLocal] arg 'key' is empty"))
@@ -147,7 +150,7 @@ func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env, 
 	return true
 }
 
-func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	path := getEnvLocalFilePath(env)
 	err := os.Remove(path)
 	if err != nil {
@@ -159,6 +162,12 @@ func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.Parsed
 		}
 	}
 	display.PrintTipTitle(cc.Screen, env, "all saved env changes are removed")
+	return true
+}
+
+func ResetSessionEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+	env.GetLayer(core.EnvLayerSession).Clear(false)
+	display.PrintTipTitle(cc.Screen, env, "all session env values are removed")
 	return true
 }
 

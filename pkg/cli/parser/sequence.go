@@ -79,16 +79,17 @@ func (self *SequenceParser) Parse(argv []string) (parsed [][]string, firstIsGlob
 	for _, arg := range argv {
 		if arg != self.sep {
 			arg = strings.TrimSpace(arg)
-			if len(arg) != 0 {
-				curr = append(curr, arg)
-			}
-		} else if len(curr) != 0 {
+			//if len(arg) != 0 {
+			curr = append(curr, arg)
+			//}
+			//} else if len(curr) != 0 {
+		} else {
 			parsed = append(parsed, curr)
 			curr = []string{}
 		}
 	}
-	if len(curr) != 0 {
-		parsed = append(parsed, curr)
-	}
+	//if len(curr) != 0 {
+	parsed = append(parsed, curr)
+	//}
 	return
 }

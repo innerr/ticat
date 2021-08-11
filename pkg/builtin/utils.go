@@ -10,6 +10,13 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func gatherInputsFromFlow(flow []core.ParsedCmd) (inputs []string) {
+	for _, cmd := range flow {
+		inputs = append(inputs, cmd.ParseResult.Input...)
+	}
+	return
+}
+
 func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
 	names := []string{
 		"1st-str",

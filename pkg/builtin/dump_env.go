@@ -5,19 +5,19 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func DumpEnvTree(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func DumpEnvTree(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	display.PrintTipTitle(cc.Screen, env, "all env key-values:")
 	display.DumpEnvTree(cc.Screen, env, 4)
 	return true
 }
 
-func DumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func DumpEnvAbbrs(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	display.PrintTipTitle(cc.Screen, env, "all env key abbrs:")
 	display.DumpEnvAbbrs(cc, 4)
 	return true
 }
 
-func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	findStrs := getFindStrsFromArgv(argv)
 	screen := display.NewCacheScreen()
 	display.DumpEnvFlattenVals(screen, env, findStrs...)
@@ -38,7 +38,7 @@ func DumpEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.P
 	return true
 }
 
-func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func DumpEssentialEnvFlattenVals(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	findStrs := getFindStrsFromArgv(argv)
 	screen := display.NewCacheScreen()
 	display.DumpEssentialEnvFlattenVals(screen, env, findStrs...)

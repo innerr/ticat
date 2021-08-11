@@ -200,7 +200,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	env.AddSub("tree", "t", "T").
 		RegCmd(DumpEnvTree,
-			"list all env layers and KVs in tree format")
+			"list all env layers and values in tree format")
 
 	// TODO: add search supporting
 	abbrs := env.AddSub("abbrs", "abbr", "a", "A")
@@ -219,12 +219,16 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
 		RegCmd(RemoveEnvValAndSaveToLocal,
-			"remove specified env KV and save changes to local").
+			"remove specified env value and save changes to local").
 		AddArg("key", "", "k", "K")
 
-	env.AddSub("reset-and-save", "reset", "clear", "--").
+	env.AddSub("reset-session", "reset", "--").
+		RegCmd(ResetSessionEnv,
+			"clear all session env values")
+
+	env.AddSub("reset-and-save", "clear", "---").
 		RegCmd(ResetLocalEnv,
-			"reset all local saved env KVs")
+			"clear all local saved env values")
 
 	env.AddSub("who-write", "who", "write", "ww", "w", "W").
 		RegCmd(DumpCmdsWhoWriteKey,
@@ -232,7 +236,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		AddArg("key", "", "k", "K")
 
 	registerSimpleSwitch(abbrs,
-		"borrowing commands' abbrs when setting KVs",
+		"borrowing commands' abbrs when setting env key-values",
 		"sys.env.use-cmd-abbrs",
 		"cmd")
 }
@@ -332,12 +336,12 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 
 	envLoad.AddSub("local", "l", "L").
 		RegCmd(LoadLocalEnv,
-			"load env KVs from local").
+			"load env values from local").
 		SetQuiet()
 
 	envLoad.AddSub("runtime", "rt", "r", "R").
 		RegCmd(LoadRuntimeEnv,
-			"setup runtime env KVs").
+			"setup runtime env values").
 		SetQuiet()
 
 	mod := cmds.AddSub("mod", "mods", "m", "M")
@@ -445,10 +449,15 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		AddArg("style", "s", "S").
 		SetQuiet()
 
-	registerSimpleSwitchEx(cmds,
+	utf8 := registerSimpleSwitchEx(cmds,
 		"utf8 display",
 		[]string{"display.utf8", "display.utf8.symbols"},
 		"utf8", "utf")
+
+	registerSimpleSwitch(utf8,
+		"utf8 symbols display",
+		"display.utf8.symbols",
+		"symbols", "symbol", "sym")
 
 	registerSimpleSwitch(cmds,
 		"color display",

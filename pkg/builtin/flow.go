@@ -16,7 +16,7 @@ import (
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
@@ -91,7 +91,7 @@ func ListFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 	return true
 }
 
-func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	cmdPath, filePath := getFlowCmdPath(argv, cc, env, true, "cmd-path", "RemoveFlow")
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
@@ -110,7 +110,7 @@ func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd
 	return true
 }
 
-func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func RemoveAllFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
@@ -197,7 +197,7 @@ func SaveFlow(
 	return clearFlow(flow)
 }
 
-func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	help := argv.GetRaw("help-str")
 	cmdPath, filePath := getFlowCmdPath(argv, cc, env, true, "cmd-path", "SetFlowHelpStr")
 	flowStrs, oldHelp, abbrsStr := flow_file.LoadFlowFile(filePath)
@@ -221,7 +221,7 @@ func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.Parse
 	return true
 }
 
-func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
 		panic(fmt.Errorf("[LoadFlows] env 'sys.paths.flows' is empty"))
@@ -230,7 +230,7 @@ func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd)
 	return true
 }
 
-func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	root := argv.GetRaw("path")
 	if len(root) == 0 {
 		panic(fmt.Errorf("[LoadFlowsFromDir] arg 'path' is empty"))

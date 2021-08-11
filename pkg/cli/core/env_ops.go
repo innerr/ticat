@@ -175,7 +175,7 @@ func CheckEnvOps(
 	result *[]EnvOpsCheckResult) {
 
 	arg2envs := FirstArg2EnvProviders{}
-	checkEnvOps(cc, flow, env, checker, ignoreMaybe, result, arg2envs)
+	checkEnvOps(cc, flow, env.Clone(), checker, ignoreMaybe, result, arg2envs)
 }
 
 func checkEnvOps(

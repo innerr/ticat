@@ -12,7 +12,7 @@ import (
 	meta "github.com/pingcap/ticat/pkg/proto/hub_meta"
 )
 
-func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
 	metaExt := env.GetRaw("strs.meta-ext")
 	flowExt := env.GetRaw("strs.flow-ext")
 	helpExt := env.GetRaw("strs.help-ext")
@@ -20,7 +20,7 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	reposFileName := env.GetRaw("strs.repos-file-name")
 
-	metaPath := getReposInfoPath(env, cmd)
+	metaPath := getReposInfoPath(env, flow[0])
 	fieldSep := env.GetRaw("strs.proto-sep")
 
 	panicRecover := env.GetBool("sys.panic.recover")
@@ -40,14 +40,16 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 	return true
 }
 
-func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	addr := getAndCheckArg(argv, env, cmd, "git-address")
 	addRepoToHub(addr, argv, cc.Screen, env, cmd)
 	showHubFindTip(cc.Screen, env)
 	return true
 }
 
-func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	addr := env.GetRaw("sys.hub.init-repo")
 	if len(addr) == 0 {
 		panic(core.NewCmdError(cmd, "cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
@@ -57,7 +59,8 @@ func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core
 	return true
 }
 
-func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	findStrs := getFindStrsFromArgv(argv)
@@ -97,7 +100,8 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd)
 	return true
 }
 
-func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
@@ -128,18 +132,20 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 	return true
 }
 
-func PurgeAllInactiveReposFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
-	purgeInactiveRepoFromHub("", cc, env, cmd)
+func PurgeAllInactiveReposFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	purgeInactiveRepoFromHub("", cc, env, flow[0])
 	return true
 }
 
-func PurgeInactiveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func PurgeInactiveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	findStr := getAndCheckArg(argv, env, cmd, "find-str")
 	purgeInactiveRepoFromHub(findStr, cc, env, cmd)
 	return true
 }
 
-func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	metaPath := getReposInfoPath(env, cmd)
 	listFileName := env.GetRaw("strs.repos-file-name")
 	repoExt := env.GetRaw("strs.mods-repo-ext")
@@ -183,7 +189,8 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCm
 	return true
 }
 
-func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
@@ -216,7 +223,8 @@ func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.Pa
 	return true
 }
 
-func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
@@ -250,7 +258,8 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 	return true
 }
 
-func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+	cmd := flow[0]
 	path := getAndCheckArg(argv, env, cmd, "path")
 
 	stat, err := os.Stat(path)
@@ -314,8 +323,9 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.P
 	return true
 }
 
-func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
 	// TODO: do accurate matching before search
+	cmd := flow[0]
 	path := argv.GetRaw("path")
 	if len(path) != 0 {
 		stat, err := os.Stat(path)

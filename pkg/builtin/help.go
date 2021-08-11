@@ -150,7 +150,7 @@ func dumpTailCmdSub(
 	return clearFlow(flow)
 }
 
-func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	findStrs := getFindStrsFromArgv(argv)
 	if len(findStrs) == 0 {
 		return true
@@ -182,12 +182,12 @@ func FindByTags(
 	return clearFlow(flow)
 }
 
-func GlobalHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func GlobalHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	display.PrintGlobalHelp(cc, env)
 	return true
 }
 
-func SelfHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SelfHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
 	display.PrintSelfHelp(cc.Screen, env)
 	return true
 }
