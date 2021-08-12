@@ -30,10 +30,17 @@ func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []c
 	return true
 }
 
-func DumpCmdTree(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func DumpCmdTree(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	dumpArgs := display.NewDumpCmdArgs().NoFlatten()
 	dumpCmdsByPath(cc, env, dumpArgs, argv.GetRaw("cmd-path"))
-	return true
+	return currCmdIdx, true
 }
 
 func DumpCmdTreeSkeleton(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {

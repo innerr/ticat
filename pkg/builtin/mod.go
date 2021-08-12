@@ -10,13 +10,20 @@ import (
 	"github.com/pingcap/ticat/pkg/proto/mod_meta"
 )
 
-func SetExtExec(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func SetExtExec(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	env = env.GetLayer(core.EnvLayerDefault)
 	env.Set("sys.ext.exec.bash", "bash")
 	env.Set("sys.ext.exec.sh", "sh")
 	env.Set("sys.ext.exec.py", "python")
 	env.Set("sys.ext.exec.go", "go run")
-	return true
+	return currCmdIdx, true
 }
 
 func loadLocalMods(

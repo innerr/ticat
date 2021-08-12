@@ -125,7 +125,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	tree := mods.AddSub("tree", "t", "T")
-	tree.RegCmd(DumpCmdTree,
+	tree.RegPowerCmd(DumpCmdTree,
 		"list builtin and loaded commands").
 		AddArg("cmd-path", "", "path", "p", "P")
 	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
@@ -241,29 +241,29 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 func RegisterVerbCmds(cmds *core.CmdTree) {
 	cmds.AddSub("quiet", "q", "Q").
-		RegCmd(SetQuietMode,
+		RegPowerCmd(SetQuietMode,
 			"change into quiet mode").
 		SetQuiet()
 
 	verbose := cmds.AddSub("verbose", "verb", "v", "V")
 
-	verbose.RegCmd(SetVerbMode,
+	verbose.RegPowerCmd(SetVerbMode,
 		"change into verbose mode").
 		SetQuiet()
 
 	verbose.AddSub("default", "def", "d", "D").
-		RegCmd(SetToDefaultVerb,
+		RegPowerCmd(SetToDefaultVerb,
 			"set to default verbose mode").
 		SetQuiet()
 
 	verbose.AddSub("increase", "inc", "v+", "+").
-		RegCmd(IncreaseVerb,
+		RegPowerCmd(IncreaseVerb,
 			"increase verbose").
 		SetQuiet().
 		AddArg("volume", "1", "vol", "v", "V")
 
 	verbose.AddSub("decrease", "dec", "v-", "-").
-		RegCmd(DecreaseVerb,
+		RegPowerCmd(DecreaseVerb,
 			"decrease verbose").
 		SetQuiet().
 		AddArg("volume", "1", "vol", "v", "V")
@@ -351,7 +351,7 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 			"load saved flows from local")
 
 	modLoad.AddSub("ext-exec", "ext", "e", "E").
-		RegCmd(SetExtExec,
+		RegPowerCmd(SetExtExec,
 			"load default setting of how to run a executable file by ext name")
 
 	modLoad.AddSub("hub", "h", "H").
@@ -369,32 +369,18 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 func RegisterTrivialCmds(cmds *core.CmdTree) {
 	dummy := cmds.AddSub("dummy", "dmy", "dm")
 
-	dummy.RegCmd(Dummy,
+	dummy.RegPowerCmd(Dummy,
 		"dummy command for testing")
 
-	dummy.AddSub("quiet", "q", "Q").
-		RegCmd(QuietDummy,
-			"quiet dummy command for testing").
-		SetQuiet()
-
-	dummy.AddSub("power", "p", "P").
-		RegPowerCmd(PowerDummy,
-			"power dummy command for testing")
-
-	dummy.AddSub("priority", "prior", "prio", "pri").
-		RegPowerCmd(PriorityPowerDummy,
-			"power dummy command for testing").
-		SetPriority()
-
 	cmds.AddSub("sleep", "slp").
-		RegCmd(Sleep,
+		RegPowerCmd(Sleep,
 			"sleep for specified duration").
 		AddArg("duration", "1s", "dur", "d", "D")
 }
 
 func RegisterMiscCmds(cmds *core.CmdTree) {
 	cmds.AddSub("mark-time", "time").
-		RegCmd(Time,
+		RegPowerCmd(MarkTime,
 			"set current timestamp to the specified key").
 		AddArg("write-to-key", "key", "k", "K")
 }
@@ -418,19 +404,19 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		AddArg("message", "", "msg", "m", "M")
 
 	panicTest := cmds.AddSub("panic")
-	panicTest.RegCmd(DbgPanic,
+	panicTest.RegPowerCmd(DbgPanic,
 		"for panic test").
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 
 	panicTest.AddSub("cmd").
-		RegCmd(DbgPanicCmdError,
+		RegPowerCmd(DbgPanicCmdError,
 			"for specified-panic test").
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 
 	cmds.AddSub("error").
-		RegCmd(DbgError,
+		RegPowerCmd(DbgError,
 			"for execute error test").
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
