@@ -52,7 +52,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"find anything with given string")
 	addFindStrArgs(find)
 
-	findTag := cmds.AddSub("tags", "tag", "@").
+	findTag := cmds.AddSub("tags", "tag", cmds.Strs.TagMark).
 		RegPowerCmd(FindByTags,
 			"list commands having the specified tags").
 		SetQuiet().
@@ -86,11 +86,9 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetPriority()
 
 	desc.AddSub("depth").
-		RegCmd(SetDumpFlowDepth,
+		RegPowerCmd(SetDumpFlowDepth,
 			"setup display stack depth of flow desc").
-		SetQuiet().
-		SetPriority().
-		AddArg("depth", "8", "d", "D")
+		AddArg("depth", "", "d", "D")
 
 	descFlow := desc.AddSub("flow", "f", "F").
 		RegPowerCmd(DumpFlow,
@@ -127,7 +125,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	tree := mods.AddSub("tree", "t", "T")
-	tree.RegCmd(DumpCmdTree,
+	tree.RegPowerCmd(DumpCmdTree,
 		"list builtin and loaded commands").
 		AddArg("cmd-path", "", "path", "p", "P")
 	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
@@ -149,7 +147,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 func RegisterFlowCmds(cmds *core.CmdTree) {
 	listFlowsHelpStr := "list local saved but unlinked (to any repo) flows"
 	flow := cmds.AddSub("flow", "fl", "f", "F").
-		RegCmd(ListFlows,
+		RegPowerCmd(ListFlows,
 			listFlowsHelpStr)
 	addFindStrArgs(flow)
 
@@ -173,7 +171,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	flowList := flow.AddSub("list-local", "list", "ls", "~").
-		RegCmd(ListFlows,
+		RegPowerCmd(ListFlows,
 			listFlowsHelpStr)
 	addFindStrArgs(flowList)
 
@@ -183,7 +181,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		AddArg("path", "", "p", "P")
 
 	flow.AddSub("clear", "reset", "--").
-		RegCmd(RemoveAllFlows,
+		RegPowerCmd(RemoveAllFlows,
 			"remove all flows saved in local")
 
 	flow.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
@@ -194,69 +192,78 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
 	env := cmds.AddSub("env", "e", "E").
-		RegCmd(DumpEssentialEnvFlattenVals,
+		RegPowerCmd(DumpEssentialEnvFlattenVals,
 			"list essential env values in flatten format")
 	addFindStrArgs(env)
 
 	env.AddSub("tree", "t", "T").
-		RegCmd(DumpEnvTree,
-			"list all env layers and KVs in tree format")
+		RegPowerCmd(DumpEnvTree,
+			"list all env layers and values in tree format")
 
 	// TODO: add search supporting
 	abbrs := env.AddSub("abbrs", "abbr", "a", "A")
-	abbrs.RegCmd(DumpEnvAbbrs,
+	abbrs.RegPowerCmd(DumpEnvAbbrs,
 		"list env tree and abbrs")
 
 	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
-		RegCmd(DumpEnvFlattenVals,
+		RegPowerCmd(DumpEnvFlattenVals,
 			"list env values in flatten format")
 	addFindStrArgs(envList)
 
 	env.AddSub("save", "persist", "s", "S", "+").
-		RegCmd(SaveEnvToLocal,
+		RegPowerCmd(SaveEnvToLocal,
 			"save session env changes to local").
 		SetQuiet()
 
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
-		RegCmd(RemoveEnvValAndSaveToLocal,
-			"remove specified env KV and save changes to local").
+		RegPowerCmd(RemoveEnvValAndSaveToLocal,
+			"remove specified env value and save changes to local").
 		AddArg("key", "", "k", "K")
 
-	env.AddSub("reset-and-save", "reset", "clear", "--").
-		RegCmd(ResetLocalEnv,
-			"reset all local saved env KVs")
+	env.AddSub("reset-session", "reset", "--").
+		RegPowerCmd(ResetSessionEnv,
+			"clear all session env values")
+
+	env.AddSub("reset-and-save", "clear", "---").
+		RegPowerCmd(ResetLocalEnv,
+			"clear all local saved env values")
+
+	env.AddSub("who-write", "who", "write", "ww", "w", "W").
+		RegCmd(DumpCmdsWhoWriteKey,
+			"find which commands write the specified key").
+		AddArg("key", "", "k", "K")
 
 	registerSimpleSwitch(abbrs,
-		"borrowing commands' abbrs when setting KVs",
+		"borrowing commands' abbrs when setting env key-values",
 		"sys.env.use-cmd-abbrs",
 		"cmd")
 }
 
 func RegisterVerbCmds(cmds *core.CmdTree) {
 	cmds.AddSub("quiet", "q", "Q").
-		RegCmd(SetQuietMode,
+		RegPowerCmd(SetQuietMode,
 			"change into quiet mode").
 		SetQuiet()
 
 	verbose := cmds.AddSub("verbose", "verb", "v", "V")
 
-	verbose.RegCmd(SetVerbMode,
+	verbose.RegPowerCmd(SetVerbMode,
 		"change into verbose mode").
 		SetQuiet()
 
 	verbose.AddSub("default", "def", "d", "D").
-		RegCmd(SetToDefaultVerb,
+		RegPowerCmd(SetToDefaultVerb,
 			"set to default verbose mode").
 		SetQuiet()
 
 	verbose.AddSub("increase", "inc", "v+", "+").
-		RegCmd(IncreaseVerb,
+		RegPowerCmd(IncreaseVerb,
 			"increase verbose").
 		SetQuiet().
 		AddArg("volume", "1", "vol", "v", "V")
 
 	verbose.AddSub("decrease", "dec", "v-", "-").
-		RegCmd(DecreaseVerb,
+		RegPowerCmd(DecreaseVerb,
 			"decrease verbose").
 		SetQuiet().
 		AddArg("volume", "1", "vol", "v", "V")
@@ -326,13 +333,13 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	envLoad := env.AddSub("load", "l", "L")
 
 	envLoad.AddSub("local", "l", "L").
-		RegCmd(LoadLocalEnv,
-			"load env KVs from local").
+		RegPowerCmd(LoadLocalEnv,
+			"load env values from local").
 		SetQuiet()
 
 	envLoad.AddSub("runtime", "rt", "r", "R").
-		RegCmd(LoadRuntimeEnv,
-			"setup runtime env KVs").
+		RegPowerCmd(LoadRuntimeEnv,
+			"setup runtime env values").
 		SetQuiet()
 
 	mod := cmds.AddSub("mod", "mods", "m", "M")
@@ -344,7 +351,7 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 			"load saved flows from local")
 
 	modLoad.AddSub("ext-exec", "ext", "e", "E").
-		RegCmd(SetExtExec,
+		RegPowerCmd(SetExtExec,
 			"load default setting of how to run a executable file by ext name")
 
 	modLoad.AddSub("hub", "h", "H").
@@ -354,7 +361,7 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	cmds.AddSub("display", "disp", "dis", "di", "d", "D").
 		AddSub("load", "l", "L").
 		AddSub("platform", "p", "P").
-		RegCmd(LoadPlatformDisplay,
+		RegPowerCmd(LoadPlatformDisplay,
 			"load platform(OS) specialized display settings").
 		SetQuiet()
 }
@@ -362,32 +369,18 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 func RegisterTrivialCmds(cmds *core.CmdTree) {
 	dummy := cmds.AddSub("dummy", "dmy", "dm")
 
-	dummy.RegCmd(Dummy,
+	dummy.RegPowerCmd(Dummy,
 		"dummy command for testing")
 
-	dummy.AddSub("quiet", "q", "Q").
-		RegCmd(QuietDummy,
-			"quiet dummy command for testing").
-		SetQuiet()
-
-	dummy.AddSub("power", "p", "P").
-		RegPowerCmd(PowerDummy,
-			"power dummy command for testing")
-
-	dummy.AddSub("priority", "prior", "prio", "pri").
-		RegPowerCmd(PriorityPowerDummy,
-			"power dummy command for testing").
-		SetPriority()
-
 	cmds.AddSub("sleep", "slp").
-		RegCmd(Sleep,
+		RegPowerCmd(Sleep,
 			"sleep for specified duration").
 		AddArg("duration", "1s", "dur", "d", "D")
 }
 
 func RegisterMiscCmds(cmds *core.CmdTree) {
 	cmds.AddSub("mark-time", "time").
-		RegCmd(Time,
+		RegPowerCmd(MarkTime,
 			"set current timestamp to the specified key").
 		AddArg("write-to-key", "key", "k", "K")
 }
@@ -400,50 +393,56 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		"step-by-step", "step", "confirm", "cfm")
 
 	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
-		RegCmd(DbgDelayExecute,
+		RegPowerCmd(DbgDelayExecute,
 			"wait for a while before executing a command").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")
 
 	cmds.AddSub("echo").
-		RegCmd(DbgEcho,
+		RegPowerCmd(DbgEcho,
 			"print message from argv").
 		AddArg("message", "", "msg", "m", "M")
 
 	panicTest := cmds.AddSub("panic")
-	panicTest.RegCmd(DbgPanic,
+	panicTest.RegPowerCmd(DbgPanic,
 		"for panic test").
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 
 	panicTest.AddSub("cmd").
-		RegCmd(DbgPanicCmdError,
+		RegPowerCmd(DbgPanicCmdError,
 			"for specified-panic test").
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 
 	cmds.AddSub("error").
-		RegCmd(DbgError,
+		RegPowerCmd(DbgError,
 			"for execute error test").
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 
 	cmds.AddSub("exec").SetHidden().
-		RegCmd(DbgExecBash,
-			"verify bash in os/exec")
+		RegPowerCmd(DbgExecBash,
+			"verify bash in os/exec").
+		SetQuiet()
 }
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {
 	cmds.AddSub("style").
-		RegCmd(SetDisplayStyle,
+		RegPowerCmd(SetDisplayStyle,
 			"set executing display style: bold, slash, corner, ascii, utf8(default)").
 		AddArg("style", "s", "S").
 		SetQuiet()
 
-	registerSimpleSwitchEx(cmds,
+	utf8 := registerSimpleSwitchEx(cmds,
 		"utf8 display",
 		[]string{"display.utf8", "display.utf8.symbols"},
 		"utf8", "utf")
+
+	registerSimpleSwitch(utf8,
+		"utf8 symbols display",
+		"display.utf8.symbols",
+		"symbols", "symbol", "sym")
 
 	registerSimpleSwitch(cmds,
 		"color display",

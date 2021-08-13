@@ -10,6 +10,13 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
+func gatherInputsFromFlow(flow *core.ParsedCmds, currCmdIdx int) (inputs []string) {
+	for _, cmd := range flow.Cmds[currCmdIdx+1:] {
+		inputs = append(inputs, cmd.ParseResult.Input...)
+	}
+	return
+}
+
 func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
 	names := []string{
 		"1st-str",
@@ -50,10 +57,10 @@ func normalizeCmdPath(path string, sep string, alterSeps string) string {
 	return strings.Join(segs, sep)
 }
 
-func getCmdPath(path string, flowExt string) string {
+func getCmdPath(path string, flowExt string, cmd core.ParsedCmd) string {
 	base := filepath.Base(path)
 	if !strings.HasSuffix(base, flowExt) {
-		panic(fmt.Errorf("[getCmdPath] flow file '%s' ext not match '%s'", path, flowExt))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("flow file '%s' ext not match '%s'", path, flowExt)))
 	}
 	return base[:len(base)-len(flowExt)]
 }
@@ -71,6 +78,12 @@ func quoteIfHasSpace(str string) string {
 		return "'" + str + "'"
 	}
 	return str
+}
+
+func assertNotTailMode(flow *core.ParsedCmds, currCmdIdx int, tailMode bool) {
+	if flow.TailMode && len(flow.Cmds) > 1 {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support"))
+	}
 }
 
 func clearFlow(flow *core.ParsedCmds) (int, bool) {

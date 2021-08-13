@@ -24,7 +24,7 @@ const (
 	CmdTypeDirWithCmd CmdType = "dir-with-executable-file"
 )
 
-type NormalCmd func(argv ArgVals, cc *Cli, env *Env, cmd ParsedCmd) (succeeded bool)
+type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) (succeeded bool)
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
@@ -137,9 +137,14 @@ func (self *Cmd) execute(
 
 	switch self.ty {
 	case CmdTypePower:
-		return self.power(argv, cc, env, flow, currCmdIdx)
+		currCmdIdx, succeeded := self.power(argv, cc, env, flow, currCmdIdx)
+		if flow.TailMode {
+			currCmdIdx = 0
+			flow.Cmds = nil
+		}
+		return currCmdIdx, succeeded
 	case CmdTypeNormal:
-		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx])
+		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx:])
 	case CmdTypeFile:
 		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
 	case CmdTypeEmptyDir:
@@ -151,7 +156,8 @@ func (self *Cmd) execute(
 	case CmdTypeEmpty:
 		return currCmdIdx, true
 	default:
-		panic(fmt.Errorf("[Cmd.Execute] unknown cmd executable type: %v", self.ty))
+		panic(NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("[Cmd.Execute] unknown cmd executable type: %v", self.ty)))
 	}
 }
 
@@ -195,6 +201,13 @@ func (self *Cmd) MatchFind(findStr string) bool {
 		return true
 	}
 	if self.priority && strings.Index("priority", findStr) >= 0 {
+		return true
+	}
+	return false
+}
+
+func (self *Cmd) MatchWriteKey(key string) bool {
+	if self.envOps.MatchWriteKey(key) {
 		return true
 	}
 	return false
@@ -439,7 +452,8 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 		_, err := exec.LookPath(dep.OsCmd)
 		if err != nil {
 			// TODO: better display
-			panic(fmt.Errorf("[Cmd.executeFile] %s", err))
+			panic(NewCmdError(parsedCmd,
+				fmt.Sprintf("[Cmd.executeFile] %s", err)))
 		}
 	}
 
@@ -463,7 +477,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 
 	sep := cc.Cmds.Strs.EnvKeyValSep
 
-	sessionDir, sessionPath := saveEnvToSessionFile(cc, env)
+	sessionDir, sessionPath := saveEnvToSessionFile(cc, env, parsedCmd)
 
 	args = append(args, self.cmdLine)
 	args = append(args, sessionDir)
@@ -618,16 +632,16 @@ func (self *Cmd) flowTemplateRenderPanic(key string, isMultiply bool) {
 	}
 }
 
-func saveEnvToSessionFile(cc *Cli, env *Env) (sessionDir string, sessionPath string) {
+func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd) (sessionDir string, sessionPath string) {
 	sep := cc.Cmds.Strs.EnvKeyValSep
 
 	sessionDir = env.GetRaw("session")
 	if len(sessionDir) == 0 {
-		panic(fmt.Errorf("[Cmd.executeFile] session dir not found in env"))
+		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session dir not found in env"))
 	}
 	sessionFileName := env.GetRaw("strs.session-env-file")
 	if len(sessionFileName) == 0 {
-		panic(fmt.Errorf("[Cmd.executeFile] session env file name not found in env"))
+		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session env file name not found in env"))
 	}
 	sessionPath = filepath.Join(sessionDir, sessionFileName)
 	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)

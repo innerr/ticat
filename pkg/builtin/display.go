@@ -6,17 +6,33 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func LoadPlatformDisplay(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func LoadPlatformDisplay(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	env = env.GetLayer(core.EnvLayerDefault)
 	switch runtime.GOOS {
 	case "linux":
 	}
-	return true
+	return currCmdIdx, true
 }
 
-func SetDisplayStyle(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SetDisplayStyle(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	style := argv.GetRaw("style")
 	env = env.GetLayer(core.EnvLayerSession)
 	env.Set("display.style", style)
-	return true
+	return currCmdIdx, true
 }

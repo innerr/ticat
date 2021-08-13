@@ -21,10 +21,10 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	}
 
 	v := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, false, nil}
+		return core.ParsedEnvVal{v, false, nil, ""}
 	}
 	a := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, true, nil}
+		return core.ParsedEnvVal{v, true, nil, ""}
 	}
 
 	test(nil, nil, nil)
@@ -44,7 +44,7 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	test([]string{" a = ", " A "}, core.ParsedEnv{"a": v("A")}, nil)
 	test([]string{" a ", " = A "}, core.ParsedEnv{"a": v("A")}, nil)
 
-	dummy := func(core.ArgVals, *core.Cli, *core.Env, core.ParsedCmd) bool {
+	dummy := func(core.ArgVals, *core.Cli, *core.Env, []core.ParsedCmd) bool {
 		return true
 	}
 	cmd := root.RegCmd(dummy, "")
@@ -196,7 +196,7 @@ func TestEnvParserTryParse(t *testing.T) {
 	}
 
 	v := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, false, nil}
+		return core.ParsedEnvVal{v, false, nil, ""}
 	}
 
 	test(nil, nil, nil, false, nil)

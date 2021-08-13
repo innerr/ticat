@@ -4,7 +4,15 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func SetQuietMode(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SetQuietMode(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	env = env.GetLayer(core.EnvLayerSession)
 	env.SetBool("display.executor", false)
 	env.SetBool("display.env", false)
@@ -15,10 +23,18 @@ func SetQuietMode(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedC
 	env.SetBool("display.mod.quiet", false)
 	env.SetBool("display.mod.realname", false)
 	env.SetInt("display.max-cmd-cnt", 14)
-	return true
+	return currCmdIdx, true
 }
 
-func SetVerbMode(_ core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SetVerbMode(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	env = env.GetLayer(core.EnvLayerSession)
 	env.SetBool("display.executor", true)
 	env.SetBool("display.env", true)
@@ -30,15 +46,23 @@ func SetVerbMode(_ core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) b
 	env.SetBool("display.mod.realname", true)
 	env.SetInt("display.max-cmd-cnt", 9999)
 	env.SetBool("display.executor.end", true)
-	return true
+	return currCmdIdx, true
 }
 
-func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func IncreaseVerb(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	env = env.GetLayer(core.EnvLayerSession)
 
 	volume := argv.GetInt("volume")
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if !env.SetBool("display.executor", true) {
@@ -48,7 +72,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	env.SetBool("display.mod.realname", true)
 	env.SetBool("display.one-cmd", true)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if !env.SetBool("display.env", true) {
@@ -56,7 +80,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	}
 	env.SetInt("display.max-cmd-cnt", 16)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if !env.SetBool("display.env.layer", true) {
@@ -65,7 +89,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	env.SetBool("display.executor.end", true)
 	env.SetInt("display.max-cmd-cnt", 17)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if !env.SetBool("display.env.default", true) {
@@ -74,7 +98,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	env.SetBool("display.env.display", true)
 	env.SetInt("display.max-cmd-cnt", 18)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if !env.SetBool("display.mod.quiet", true) {
@@ -82,7 +106,7 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	}
 	env.SetInt("display.max-cmd-cnt", 19)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if !env.SetBool("display.env.sys", true) {
@@ -90,19 +114,26 @@ func IncreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	}
 	env.SetInt("display.max-cmd-cnt", 20)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	env.SetInt("display.max-cmd-cnt", 9999)
-	return true
+	return currCmdIdx, true
 }
 
-func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func DecreaseVerb(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	env = env.GetLayer(core.EnvLayerSession)
 
 	volume := argv.GetInt("volume")
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	env.SetInt("display.max-cmd-cnt", 20)
@@ -112,7 +143,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	}
 	env.SetInt("display.max-cmd-cnt", 19)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if env.SetBool("display.mod.quiet", false) {
@@ -120,7 +151,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	}
 	env.SetInt("display.max-cmd-cnt", 18)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if env.SetBool("display.env.default", false) {
@@ -129,7 +160,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 17)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if env.SetBool("display.env.layer", false) {
@@ -138,7 +169,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	env.SetBool("display.executor.end", false)
 	env.SetInt("display.max-cmd-cnt", 16)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if env.SetBool("display.env", false) {
@@ -146,7 +177,7 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	}
 	env.SetInt("display.max-cmd-cnt", 15)
 	if volume <= 0 {
-		return true
+		return currCmdIdx, true
 	}
 
 	if env.SetBool("display.executor", false) {
@@ -157,11 +188,18 @@ func DecreaseVerb(argv core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCm
 	env.SetBool("display.one-cmd", false)
 	env.SetBool("display.mod.realname", false)
 
-	return true
+	return currCmdIdx, true
 }
 
-func SetToDefaultVerb(_ core.ArgVals, _ *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SetToDefaultVerb(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	env = env.GetLayer(core.EnvLayerSession)
 	setToDefaultVerb(env)
-	return true
+	return currCmdIdx, true
 }

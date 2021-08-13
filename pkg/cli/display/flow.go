@@ -137,10 +137,10 @@ func dumpFlowCmd(
 	if !args.Simple && !args.Skeleton {
 		line := string(cic.Type())
 		if cic.IsQuiet() {
-			line += " (quiet)"
+			line += " quiet"
 		}
 		if cic.IsPriority() {
-			line += " (priority)"
+			line += " priority"
 		}
 		prt(1, ColorProp("- cmd-type:", env))
 		prt(2, line)

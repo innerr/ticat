@@ -23,11 +23,12 @@ type CmdTreeStrs struct {
 	FlowTemplateBracketLeft  string
 	FlowTemplateBracketRight string
 	FlowTemplateMultiplyMark string
+	TagMark                  string
 }
 
 func CmdTreeStrsForTest() *CmdTreeStrs {
 	return &CmdTreeStrs{"self", "<root>", "<builtin>",
-		".", ".", "|", ":", "--", "=", ".", "\t", ",", "[[", "]]", "*"}
+		".", ".", "|", ":", "--", "=", ".", "\t", ",", "[[", "]]", "*", "@"}
 }
 
 type CmdTree struct {
@@ -120,6 +121,13 @@ func (self *CmdTree) MatchTags(tags ...string) bool {
 		}
 	}
 	return true
+}
+
+func (self *CmdTree) MatchWriteKey(key string) bool {
+	if self.cmd == nil {
+		return false
+	}
+	return self.cmd.MatchWriteKey(key)
 }
 
 func (self *CmdTree) RegCmd(cmd NormalCmd, help string) *Cmd {
@@ -295,7 +303,7 @@ func (self *CmdTree) matchFind(findStr string) bool {
 		return true
 	}
 	for _, tag := range self.tags {
-		if strings.Index(tag, findStr) >= 0 {
+		if strings.Index(self.Strs.TagMark+tag, findStr) >= 0 {
 			return true
 		}
 	}

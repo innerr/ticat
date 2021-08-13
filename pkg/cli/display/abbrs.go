@@ -7,13 +7,14 @@ import (
 )
 
 // TODO: dump more info, eg: full path
-func DumpEnvAbbrs(cc *core.Cli, indentSize int) {
-	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
+func DumpEnvAbbrs(cc *core.Cli, env *core.Env, indentSize int) {
+	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, env, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
 }
 
 func dumpEnvAbbrs(
 	screen core.Screen,
 	abbrs *core.EnvAbbrs,
+	env *core.Env,
 	abbrsSep string,
 	indentSize int,
 	indent int) {
@@ -28,9 +29,9 @@ func dumpEnvAbbrs(
 	}
 
 	name := strings.Join(abbrs.Abbrs(), abbrsSep)
-	prt("[" + name + "]")
+	prt(ColorKey("["+name+"]", env))
 
 	for _, name := range abbrs.SubNames() {
-		dumpEnvAbbrs(screen, abbrs.GetSub(name), abbrsSep, indentSize, indent+1)
+		dumpEnvAbbrs(screen, abbrs.GetSub(name), env, abbrsSep, indentSize, indent+1)
 	}
 }

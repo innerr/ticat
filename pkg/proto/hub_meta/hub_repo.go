@@ -48,7 +48,8 @@ func NormalizeGitAddr(addr string) string {
 	if strings.HasPrefix(strings.ToLower(addr), "git") {
 		return addr
 	}
-	return "git@github.com:" + addr
+	//return "git@github.com:" + addr
+	return "https://github.com/" + addr
 }
 
 func AddrDisplayName(addr string) string {

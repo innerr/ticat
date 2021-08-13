@@ -28,8 +28,6 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
-	env.SetBool("display.color", !utils.StdoutIsPipe())
-
 	row, col := utils.GetTerminalWidth()
 	if col > 100 {
 		col = 100
@@ -83,12 +81,21 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	mod.GetOrAddSub("realname").AddAbbrs("real", "r", "R")
 }
 
-func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func LoadRuntimeEnv(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	env = env.GetLayer(core.EnvLayerSession)
 
 	path, err := os.Executable()
 	if err != nil {
-		panic(fmt.Errorf("[LoadRuntimeEnv] get abs self-path fail: %v", err))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("get abs self-path fail: %v", err)))
 	}
 	data := path + ".data"
 
@@ -108,65 +115,136 @@ func LoadRuntimeEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCm
 	env.Set("sys.paths.sessions", filepath.Join(data, "sessions"))
 	paths.GetOrAddSub("sessions").AddAbbrs("session", "s", "S")
 
-	return true
+	return currCmdIdx, true
 }
 
-func LoadLocalEnv(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func LoadLocalEnv(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	kvSep := env.GetRaw("strs.env-kv-sep")
-	path := getEnvLocalFilePath(env)
+	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
 	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep)
 	env.GetLayer(core.EnvLayerPersisted).DeleteInSelfLayer("sys.stack-depth")
 	env.GetLayer(core.EnvLayerPersisted).Deduplicate()
 	env.GetLayer(core.EnvLayerSession).Deduplicate()
-	return true
+
+	if !env.Has("display.color") {
+		env.GetLayer(core.EnvLayerSession).SetBool("display.color", !utils.StdoutIsPipe())
+	}
+
+	return currCmdIdx, true
 }
 
-func SaveEnvToLocal(_ core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
+func SaveEnvToLocal(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
 	kvSep := env.GetRaw("strs.env-kv-sep")
-	path := getEnvLocalFilePath(env)
+	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
 	core.SaveEnvToFile(env, path, kvSep)
 	display.PrintTipTitle(cc.Screen, env,
 		"changes of env are saved, could be listed by:",
 		"",
 		display.SuggestListEnv(env))
-	return true
+	return currCmdIdx, true
 }
 
 // TODO: support abbrs for arg 'key'
-func RemoveEnvValAndSaveToLocal(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	key := argv.GetRaw("key")
-	if len(key) == 0 {
-		panic(fmt.Errorf("[RemoveEnvValAndSaveToLocal] arg 'key' is empty"))
-	}
-	env.DeleteEx(key, core.EnvLayerDefault)
+func RemoveEnvValAndSaveToLocal(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
-	kvSep := env.GetRaw("strs.env-kv-sep")
-	path := getEnvLocalFilePath(env)
-	core.SaveEnvToFile(env.GetLayer(core.EnvLayerSession), path, kvSep)
-	display.PrintTipTitle(cc.Screen, env, "key '"+key+"' removed, changes of env are saved")
-	return true
+	var keys []string
+	if flow.TailMode {
+		keys = append(keys, gatherInputsFromFlow(flow, currCmdIdx)...)
+	}
+	key := argv.GetRaw("key")
+	if len(key) != 0 {
+		keys = append(keys, key)
+	} else if !flow.TailMode {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "arg 'key' is empty"))
+	}
+	if len(keys) == 0 {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "no specified key to remove"))
+	}
+
+	deleted := 0
+	for _, key := range keys {
+		keyStr := display.ColorKey("'"+key+"'", env)
+		if env.Has(key) {
+			env.DeleteEx(key, core.EnvLayerDefault)
+			deleted += 1
+			cc.Screen.Print(keyStr + " deleted\n")
+		} else {
+			cc.Screen.Print(keyStr + " not exist, skipped deleting\n")
+		}
+	}
+
+	if deleted != 0 {
+		kvSep := env.GetRaw("strs.env-kv-sep")
+		path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
+		core.SaveEnvToFile(env.GetLayer(core.EnvLayerSession), path, kvSep)
+		display.PrintTipTitle(cc.Screen, env, "changes of env are saved")
+	}
+	return currCmdIdx, true
 }
 
-func ResetLocalEnv(argv core.ArgVals, cc *core.Cli, env *core.Env, _ core.ParsedCmd) bool {
-	path := getEnvLocalFilePath(env)
+func ResetLocalEnv(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
+	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
 	err := os.Remove(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			display.PrintTipTitle(cc.Screen, env, "there is no saved env changes, nothing to do")
-			return true
+			return currCmdIdx, true
 		} else {
-			panic(fmt.Errorf("[ResetLocalEnv] remove env file '%s' failed: %v", path, err))
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("remove env file '%s' failed: %v", path, err)))
 		}
 	}
 	display.PrintTipTitle(cc.Screen, env, "all saved env changes are removed")
-	return true
+	return currCmdIdx, true
 }
 
-func getEnvLocalFilePath(env *core.Env) string {
+func ResetSessionEnv(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
+	env.GetLayer(core.EnvLayerSession).Clear(false)
+	display.PrintTipTitle(cc.Screen, env, "all session env values are removed")
+	return currCmdIdx, true
+}
+
+func getEnvLocalFilePath(env *core.Env, cmd core.ParsedCmd) string {
 	path := env.GetRaw("sys.paths.data")
 	file := env.GetRaw("strs.env-file-name")
 	if len(path) == 0 || len(file) == 0 {
-		panic(fmt.Errorf("[getEnvLocalFilePath] can't find local data path"))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("can't find local data path")))
 	}
 	return filepath.Join(path, file)
 }

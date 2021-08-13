@@ -17,7 +17,6 @@ import (
 type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool
 
 type Executor struct {
-	funcs               []ExecFunc
 	sessionFileName     string
 	callerNameBootstrap string
 	callerNameEntry     string
@@ -29,11 +28,6 @@ func NewExecutor(
 	callerNameEntry string) *Executor {
 
 	return &Executor{
-		[]ExecFunc{
-			moveLastPriorityCmdToFront,
-			verifyEnvOps,
-			verifyOsDepCmds,
-		},
 		sessionFileName,
 		callerNameBootstrap,
 		callerNameEntry,
@@ -75,7 +69,18 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 	}
 
-	if !allowParseError(flow) {
+	if !innerCall && !bootstrap {
+		reordered, moved := moveLastPriorityCmdToFront(flow.Cmds)
+		flow.Cmds = reordered
+		flow.TailMode = moved
+		// TODO: this may not right if flow was changed in recursive process, but not big deal
+		if moved && flow.GlobalCmdIdx == 0 {
+			flow.GlobalCmdIdx = 1
+		}
+	}
+	removeEmptyCmds(flow)
+
+	if !flow.TailMode && !allowParseError(flow) {
 		isSearch, isLess, isMore := isEndWithSearchCmd(flow)
 		if !display.HandleParseResult(cc, flow, env, isSearch, isLess, isMore) {
 			return false
@@ -85,10 +90,11 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
 	if !innerCall && !bootstrap {
-		for _, function := range self.funcs {
-			if !function(cc, flow, env) {
-				return false
-			}
+		if !flow.TailMode && !verifyEnvOps(cc, flow, env) {
+			return false
+		}
+		if !flow.TailMode && !verifyOsDepCmds(cc, flow, env) {
+			return false
 		}
 	}
 
@@ -141,7 +147,7 @@ func (self *Executor) executeCmd(
 	ln := cc.Screen.OutputNum()
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
-		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
+		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, flow.TailMode)
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -181,7 +187,48 @@ func (self *Executor) executeCmd(
 	return
 }
 
-func moveLastPriorityCmdToFront(
+func removeEmptyCmds(flow *core.ParsedCmds) {
+	var cmds []core.ParsedCmd
+	for _, cmd := range flow.Cmds {
+		if !cmd.IsAllEmptySegments() {
+			cmds = append(cmds, cmd)
+		}
+	}
+	flow.Cmds = cmds
+}
+
+func moveLastPriorityCmdToFront(flow []core.ParsedCmd) (reordered []core.ParsedCmd, doMove bool) {
+	cnt := len(flow)
+	if cnt <= 1 {
+		return flow, false
+	}
+
+	last := flow[cnt-1]
+
+	trim := func(flow []core.ParsedCmd) []core.ParsedCmd {
+		for {
+			if len(flow) == 0 || !flow[len(flow)-1].IsAllEmptySegments() {
+				break
+			}
+			flow = flow[:len(flow)-1]
+		}
+		return flow
+	}
+
+	if cnt >= 2 && len(flow[cnt-2].ParseResult.Input) == 0 {
+		flow, _ = moveLastPriorityCmdToFront(trim(flow[:cnt-2]))
+	} else if last.IsPriority() {
+		flow, _ = moveLastPriorityCmdToFront(trim(flow[:cnt-1]))
+	} else {
+		return flow, false
+	}
+
+	flow = append([]core.ParsedCmd{last}, flow...)
+	return flow, true
+}
+
+// TODO: remove this, not use anymore
+func _moveLastPriorityCmdToFront(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
 	_ *core.Env) bool {
@@ -199,7 +246,9 @@ func moveLastPriorityCmdToFront(
 				flow.Cmds = append([]core.ParsedCmd{cmd}, flow.Cmds[:i]...)
 				flow.Cmds = append(flow.Cmds, tail...)
 			}
-			flow.GlobalCmdIdx = 1
+			if flow.GlobalCmdIdx == 0 {
+				flow.GlobalCmdIdx = 1
+			}
 			return true
 		}
 	}

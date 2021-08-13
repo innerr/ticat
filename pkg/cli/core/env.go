@@ -42,6 +42,20 @@ func (self *Env) Clone() (env *Env) {
 	return &Env{pairs, parent, self.ty}
 }
 
+func (self *Env) Clear(recursive bool) {
+	pairs := map[string]EnvVal{}
+	for k, v := range self.pairs {
+		// TODO: put all these special key path in one place
+		if strings.HasPrefix(k, "sys.") || k == "session" {
+			pairs[k] = EnvVal{v.Raw, v.IsArg}
+		}
+	}
+	self.pairs = pairs
+	if recursive && self.parent != nil {
+		self.parent.Clear(recursive)
+	}
+}
+
 func (self *Env) NewLayer(ty EnvLayerType) *Env {
 	env := NewEnv()
 	env.parent = self
@@ -81,6 +95,17 @@ func (self *Env) getLayer(ty EnvLayerType) *Env {
 		return nil
 	}
 	return self.parent.getLayer(ty)
+}
+
+func (self Env) Has(name string) bool {
+	_, ok := self.pairs[name]
+	if ok {
+		return true
+	}
+	if self.parent == nil {
+		return false
+	}
+	return self.parent.Has(name)
 }
 
 func (self Env) DeleteInSelfLayer(name string) {
