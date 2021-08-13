@@ -270,9 +270,26 @@ func (self ParsedEnv) AddPrefix(prefix []string, sep string) {
 	prefixPath := strings.Join(prefix, sep) + sep
 	for i, k := range keys {
 		v := vals[i]
-		self[prefixPath+k] = ParsedEnvVal{v.Val, v.IsArg, append(prefix, v.MatchedPath...)}
+
+		// Only deep copy could avoid the issue below, looks like a golang bug
+		prefixClone := []string{}
+		for _, it := range prefix {
+			prefixClone = append(prefixClone, it)
+		}
+		matchedPath := append(prefixClone, v.MatchedPath...)
+		self[prefixPath+k] = ParsedEnvVal{v.Val, v.IsArg, matchedPath, strings.Join(matchedPath, sep)}
 		delete(self, k)
+		v = self[prefixPath+k]
+
+		// If not deep copy, the v.MatchedPath will be the last value of this loop
+		// println("matched-path-slice", strings.Join(v.MatchedPath, "."), "val:", v.Val, "matched-path-str:", v.MatchedPathStr)
 	}
+
+	// If not deep copy, the v.MatchedPath will be the last value of this loop
+	// for _, k := range keys {
+	// 	v := self[prefixPath+k]
+	// 	println("matched-path-slice", strings.Join(v.MatchedPath, "."), "val:", v.Val, "matched-path-str:", v.MatchedPathStr)
+	// }
 }
 
 func (self ParsedEnv) Merge(x ParsedEnv) {
@@ -314,17 +331,18 @@ func (self ParsedEnv) WriteNotArgTo(env *Env, valDelAllMark string) {
 }
 
 type ParsedEnvVal struct {
-	Val         string
-	IsArg       bool
-	MatchedPath []string
+	Val            string
+	IsArg          bool
+	MatchedPath    []string
+	MatchedPathStr string
 }
 
 func NewParsedEnvVal(key string, val string) ParsedEnvVal {
-	return ParsedEnvVal{val, false, []string{key}}
+	return ParsedEnvVal{val, false, []string{key}, key}
 }
 
 func NewParsedEnvArgv(key string, val string) ParsedEnvVal {
-	return ParsedEnvVal{val, true, []string{key}}
+	return ParsedEnvVal{val, true, []string{key}, key}
 }
 
 type ParseErrExpectCmd struct {
