@@ -13,7 +13,7 @@ func LoadPlatformDisplay(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	env = env.GetLayer(core.EnvLayerDefault)
 	switch runtime.GOOS {
@@ -29,7 +29,7 @@ func SetDisplayStyle(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	style := argv.GetRaw("style")
 	env = env.GetLayer(core.EnvLayerSession)

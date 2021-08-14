@@ -11,7 +11,7 @@ func SetQuietMode(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	env = env.GetLayer(core.EnvLayerSession)
 	env.SetBool("display.executor", false)
@@ -33,7 +33,7 @@ func SetVerbMode(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	env = env.GetLayer(core.EnvLayerSession)
 	env.SetBool("display.executor", true)
@@ -56,7 +56,7 @@ func IncreaseVerb(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	env = env.GetLayer(core.EnvLayerSession)
 
@@ -128,7 +128,7 @@ func DecreaseVerb(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	env = env.GetLayer(core.EnvLayerSession)
 
 	volume := argv.GetInt("volume")
@@ -198,7 +198,7 @@ func SetToDefaultVerb(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	env = env.GetLayer(core.EnvLayerSession)
 	setToDefaultVerb(env)
 	return currCmdIdx, true

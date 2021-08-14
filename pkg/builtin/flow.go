@@ -211,7 +211,7 @@ func SaveFlow(
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+cmdPath+"' is saved, can be used as a command")
 	screen.WriteTo(cc.Screen)
-	return currCmdIdx, true
+	return clearFlow(flow)
 }
 
 func SetFlowHelpStr(
@@ -251,7 +251,7 @@ func LoadFlows(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
 	loadFlowsFromDir(flow, currCmdIdx, root, cc, env, root)
 	return currCmdIdx, true

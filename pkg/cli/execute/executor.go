@@ -72,7 +72,7 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	if !innerCall && !bootstrap {
 		reordered, moved := moveLastPriorityCmdToFront(flow.Cmds)
 		flow.Cmds = reordered
-		flow.TailMode = moved
+		flow.HasTailMode = moved
 		// TODO: this may not right if flow was changed in recursive process, but not big deal
 		if moved && flow.GlobalCmdIdx == 0 {
 			flow.GlobalCmdIdx = 1
@@ -80,7 +80,7 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	}
 	removeEmptyCmds(flow)
 
-	if !flow.TailMode && !allowParseError(flow) {
+	if !flow.HasTailMode && !allowParseError(flow) {
 		isSearch, isLess, isMore := isEndWithSearchCmd(flow)
 		if !display.HandleParseResult(cc, flow, env, isSearch, isLess, isMore) {
 			return false
@@ -90,10 +90,10 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
 	if !innerCall && !bootstrap {
-		if !flow.TailMode && !verifyEnvOps(cc, flow, env) {
+		if !flow.HasTailMode && !verifyEnvOps(cc, flow, env) {
 			return false
 		}
-		if !flow.TailMode && !verifyOsDepCmds(cc, flow, env) {
+		if !flow.HasTailMode && !verifyOsDepCmds(cc, flow, env) {
 			return false
 		}
 	}
@@ -147,7 +147,7 @@ func (self *Executor) executeCmd(
 	ln := cc.Screen.OutputNum()
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
-		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, flow.TailMode)
+		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, flow.HasTailMode)
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -223,6 +223,7 @@ func moveLastPriorityCmdToFront(flow []core.ParsedCmd) (reordered []core.ParsedC
 		return flow, false
 	}
 
+	last.TailMode = true
 	flow = append([]core.ParsedCmd{last}, flow...)
 	return flow, true
 }

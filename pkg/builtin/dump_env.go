@@ -13,7 +13,7 @@ func DumpEnvTree(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	display.PrintTipTitle(cc.Screen, env, "all env key-values:")
 	display.DumpEnvTree(cc.Screen, env, 4)
 	return currCmdIdx, true
@@ -26,7 +26,7 @@ func DumpEnvAbbrs(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	display.PrintTipTitle(cc.Screen, env, "all env key abbrs:")
 	display.DumpEnvAbbrs(cc, env, 4)
 	return currCmdIdx, true
@@ -69,7 +69,7 @@ func DumpEssentialEnvFlattenVals(
 	currCmdIdx int) (int, bool) {
 
 	findStrs := getFindStrsFromArgv(argv)
-	if flow.TailMode {
+	if flow.Cmds[currCmdIdx].TailMode {
 		findStrs = append(findStrs, gatherInputsFromFlow(flow, currCmdIdx)...)
 	}
 

@@ -17,7 +17,7 @@ func SetExtExec(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	env = env.GetLayer(core.EnvLayerDefault)
 	env.Set("sys.ext.exec.bash", "bash")
 	env.Set("sys.ext.exec.sh", "sh")

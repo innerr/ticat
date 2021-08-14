@@ -146,3 +146,10 @@ $> ticat db.stop
 When more than one command register to a same command path,
 or more than one abbrs for a command path segment,
 **ticat** will display conflicting errors.
+
+## TODO
+```
+[arg2env]
+[val2env]
+multiply flow template
+```

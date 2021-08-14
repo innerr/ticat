@@ -37,7 +37,7 @@ func DumpCmdTree(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	dumpArgs := display.NewDumpCmdArgs().NoFlatten()
 	dumpCmdsByPath(cc, env, dumpArgs, argv.GetRaw("cmd-path"))
 	return currCmdIdx, true

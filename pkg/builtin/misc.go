@@ -16,7 +16,7 @@ func Sleep(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	durStr := argv.GetRaw("duration")
 
@@ -48,7 +48,7 @@ func MarkTime(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	key := argv.GetRaw("write-to-key")
 	env = env.GetLayer(core.EnvLayerSession)
 	val := fmt.Sprintf("%d", int(time.Now().Unix()))
@@ -64,7 +64,7 @@ func DbgPanic(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	panic(fmt.Errorf("this is a panic test command"))
 }
 
@@ -75,7 +75,7 @@ func DbgPanicCmdError(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	panic(core.NewCmdError(flow.Cmds[currCmdIdx], "this is a specified-panic test command"))
 }
 
@@ -86,7 +86,7 @@ func DbgError(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	return currCmdIdx, false
 }
 
@@ -97,7 +97,7 @@ func Dummy(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	cc.Screen.Print("dummy command here\n")
 	return currCmdIdx, true
 }
