@@ -99,6 +99,64 @@ func getAndCheckArg(argv core.ArgVals, env *core.Env, cmd core.ParsedCmd, arg st
 	return val
 }
 
+func getArgFromFlowOrArgv(
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	argv core.ArgVals,
+	arg string) string {
+
+	args := getArgsFromFlowOrArgv(flow, currCmdIdx, argv, arg, false, false)
+	return args[0]
+}
+
+func getArgsFromFlowOrArgv(
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	argv core.ArgVals,
+	arg string,
+	allowMultiCmds bool,
+	allowMultiArgs bool) []string {
+
+	if !allowMultiArgs && allowMultiCmds {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			"should not happen: wrong usage of 'getArgsFromFlowOrArgv'"))
+	}
+
+	args := tailModeGetInput(flow, currCmdIdx, allowMultiCmds)
+	flowInputN := len(args)
+	val := argv.GetRaw(arg)
+	if len(val) != 0 {
+		args = append(args, val)
+	} else {
+		if len(args) == 0 {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty"))
+		}
+	}
+	if !allowMultiArgs && len(args) > 1 {
+		if flowInputN > 0 && len(val) != 0 {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				"mixed usage of arg '"+arg+"' and tail-mode"))
+		} else {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				"too many input of arg '"+arg+"' in tail-mode"))
+		}
+	}
+	return args
+}
+
+func tailModeGetInput(flow *core.ParsedCmds, currCmdIdx int, allowMultiCmds bool) (input []string) {
+	if !flow.TailMode {
+		return
+	}
+	if !allowMultiCmds && len(flow.Cmds) > 2 {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "too many commands in tail-mode"))
+	}
+	for _, cmd := range flow.Cmds[currCmdIdx+1:] {
+		input = append(input, cmd.ParseResult.Input...)
+	}
+	return
+}
+
 func isOsCmdExists(cmd string) bool {
 	path, err := exec.LookPath(cmd)
 	return err == nil && len(path) > 0

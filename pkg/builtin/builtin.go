@@ -185,7 +185,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 			"remove all flows saved in local")
 
 	flow.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
-		RegCmd(MoveSavedFlowsToLocalDir,
+		RegPowerCmd(MoveSavedFlowsToLocalDir,
 			MoveFlowsToDirHelpStr).
 		AddArg("path", "", "p", "P")
 }
@@ -272,57 +272,57 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 func RegisterHubCmds(cmds *core.CmdTree) {
 	listHubHelpStr := "list dir and repo info in hub"
 	hub := cmds.AddSub("hub", "h", "H").
-		RegCmd(ListHub,
+		RegPowerCmd(ListHub,
 			listHubHelpStr)
 	addFindStrArgs(hub)
 
 	hub.AddSub("clear", "reset", "--").
-		RegCmd(RemoveAllFromHub,
+		RegPowerCmd(RemoveAllFromHub,
 			"remove all repos from hub")
 
 	hub.AddSub("init", "++").
-		RegCmd(AddGitDefaultToHub,
+		RegPowerCmd(AddGitDefaultToHub,
 			"add and pull basic hub-repo to local")
 
 	add := hub.AddSub("add-and-update", "add", "a", "A", "+")
-	add.RegCmd(AddGitRepoToHub,
+	add.RegPowerCmd(AddGitRepoToHub,
 		"add and pull a git address to hub, do update if it already exists").
 		AddArg("git-address", "", "git", "address", "addr")
 
 	add.AddSub("local-dir", "local", "l", "L").
-		RegCmd(AddLocalDirToHub,
+		RegPowerCmd(AddLocalDirToHub,
 			"add a local dir (could be a git repo) to hub").
 		AddArg("path", "", "p", "P")
 
 	hubList := hub.AddSub("list", "ls", "~").
-		RegCmd(ListHub,
+		RegPowerCmd(ListHub,
 			listHubHelpStr)
 	addFindStrArgs(hubList)
 
 	purge := hub.AddSub("purge", "p", "P", "-")
-	purge.RegCmd(PurgeInactiveRepoFromHub,
+	purge.RegPowerCmd(PurgeInactiveRepoFromHub,
 		"remove an inactive repo from hub").
 		AddArg("find-str", "", "s", "S")
 	purge.AddSub("purge-all-inactive", "all", "inactive", "a", "A", "-").
-		RegCmd(PurgeAllInactiveReposFromHub,
+		RegPowerCmd(PurgeAllInactiveReposFromHub,
 			"remove all inactive repos from hub")
 
 	hub.AddSub("update-all", "update", "u", "U").
-		RegCmd(UpdateHub,
+		RegPowerCmd(UpdateHub,
 			"update all repos and mods defined in hub")
 
 	hub.AddSub("enable-repo", "enable", "ena", "en", "e", "E").
-		RegCmd(EnableRepoInHub,
+		RegPowerCmd(EnableRepoInHub,
 			"enable matched git repos in hub").
 		AddArg("find-str", "", "s", "S")
 
 	hub.AddSub("disable-repo", "disable", "dis", "d", "D").
-		RegCmd(DisableRepoInHub,
+		RegPowerCmd(DisableRepoInHub,
 			"disable matched git repos in hub").
 		AddArg("find-str", "", "s", "S")
 
 	hub.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
-		RegCmd(MoveSavedFlowsToLocalDir,
+		RegPowerCmd(MoveSavedFlowsToLocalDir,
 			MoveFlowsToDirHelpStr).
 		AddArg("path", "", "p", "P")
 }
@@ -355,7 +355,7 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 			"load default setting of how to run a executable file by ext name")
 
 	modLoad.AddSub("hub", "h", "H").
-		RegCmd(LoadModsFromHub,
+		RegPowerCmd(LoadModsFromHub,
 			"load flows and mods from local hub")
 
 	cmds.AddSub("display", "disp", "dis", "di", "d", "D").

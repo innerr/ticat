@@ -123,7 +123,8 @@ func (self *Cmd) Execute(
 
 	newCurrCmdIdx, ok := self.execute(argv, cc, env, flow, currCmdIdx)
 	if !ok {
-		panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
+		// Normally the command should print info before return false, so no need to panic
+		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
 	}
 	return newCurrCmdIdx, ok
 }

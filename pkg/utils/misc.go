@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -45,4 +47,14 @@ func GetTerminalWidth() (row int, col int) {
 func StdoutIsPipe() bool {
 	fo, _ := os.Stdout.Stat()
 	return (fo.Mode() & os.ModeCharDevice) == 0
+}
+
+func MoveFile(src string, dest string) error {
+	err := os.Rename(src, dest)
+	if strings.Index(err.Error(), "invalid cross-device link") < 0 {
+		return err
+	}
+	cmd := exec.Command("mv", src, dest)
+	_, err = cmd.Output()
+	return err
 }

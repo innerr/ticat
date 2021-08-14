@@ -8,10 +8,12 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
 func UpdateRepoAndSubRepos(
 	screen core.Screen,
+	env *core.Env,
 	finisheds map[string]bool,
 	hubPath string,
 	gitAddr string,
@@ -24,12 +26,12 @@ func UpdateRepoAndSubRepos(
 		return
 	}
 	topRepoHelpStr, addrs, helpStrs = updateRepoAndReadSubList(
-		screen, hubPath, gitAddr, listFileName, selfName, cmd)
+		screen, env, hubPath, gitAddr, listFileName, selfName, cmd)
 	finisheds[gitAddr] = true
 
 	for i, addr := range addrs {
 		subTopHelpStr, subAddrs, subHelpStrs := UpdateRepoAndSubRepos(
-			screen, finisheds, hubPath, addr, repoExt, listFileName, selfName, cmd)
+			screen, env, finisheds, hubPath, addr, repoExt, listFileName, selfName, cmd)
 		// If a repo has no help-str from hub-repo list, try to get the title from it's README
 		if len(helpStrs[i]) == 0 && len(subTopHelpStr) != 0 {
 			helpStrs[i] = subTopHelpStr
@@ -66,6 +68,7 @@ func GetRepoPath(hubPath string, gitAddr string) string {
 
 func updateRepoAndReadSubList(
 	screen core.Screen,
+	env *core.Env,
 	hubPath string,
 	gitAddr string,
 	listFileName string,
@@ -83,11 +86,13 @@ func updateRepoAndReadSubList(
 			panic(core.WrapCmdError(cmd, fmt.Errorf("repo path '%v' exists but is not dir",
 				repoPath)))
 		}
-		screen.Print(fmt.Sprintf("[%s] => git update\n", name))
+		screen.Print(fmt.Sprintf(display.ColorHub("[%s]", env)+display.ColorSymbol(" => ", env)+
+			"git update\n", name))
 		cmdStrs = []string{"git", "pull", "--recurse-submodules"}
 		pwd = repoPath
 	} else {
-		screen.Print(fmt.Sprintf("[%s] => git clone\n", name))
+		screen.Print(fmt.Sprintf(display.ColorHub("[%s]", env)+display.ColorSymbol(" => ", env)+
+			"git clone\n", name))
 		cmdStrs = []string{"git", "clone", "--recursive", gitAddr, repoPath}
 	}
 

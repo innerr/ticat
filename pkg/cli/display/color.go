@@ -15,6 +15,7 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		return 0
 	}
 	lens := map[string]int{
+		"hub":        3,
 		"arg":        3,
 		"key":        3,
 		"warn":       3,
@@ -29,6 +30,8 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"cmd-done":   2,
 		"cmd-curr":   2,
 		"flowing":    2,
+		"enabled":    2,
+		"disabled":   3,
 	}
 	for _, it := range types {
 		extra, ok := lens[it]
@@ -38,6 +41,18 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		res += extra + colorExtraLenWithoutCode
 	}
 	return
+}
+
+func ColorHub(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(220), env)
+}
+
+func ColorEnabled(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(34), env)
+}
+
+func ColorDisabled(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(202), env)
 }
 
 func ColorArg(origin string, env *core.Env) string {

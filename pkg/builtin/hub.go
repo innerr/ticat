@@ -10,9 +10,18 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 	meta "github.com/pingcap/ticat/pkg/proto/hub_meta"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+func LoadModsFromHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	metaExt := env.GetRaw("strs.meta-ext")
 	flowExt := env.GetRaw("strs.flow-ext")
 	helpExt := env.GetRaw("strs.help-ext")
@@ -20,7 +29,7 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	reposFileName := env.GetRaw("strs.repos-file-name")
 
-	metaPath := getReposInfoPath(env, flow[0])
+	metaPath := getReposInfoPath(env, flow.Cmds[currCmdIdx])
 	fieldSep := env.GetRaw("strs.proto-sep")
 
 	panicRecover := env.GetBool("sys.panic.recover")
@@ -37,35 +46,56 @@ func LoadModsFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core
 		loadLocalMods(cc, info.Path, reposFileName, metaExt, flowExt, helpExt,
 			abbrsSep, envPathSep, source, panicRecover)
 	}
-	return true
+	return currCmdIdx, true
 }
 
-func AddGitRepoToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
-	addr := getAndCheckArg(argv, env, cmd, "git-address")
-	addRepoToHub(addr, argv, cc.Screen, env, cmd)
+func AddGitRepoToHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	addr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "git-address")
+	addRepoToHub(addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 	showHubFindTip(cc.Screen, env)
-	return true
+	return currCmdIdx, true
 }
 
-func AddGitDefaultToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
+func AddGitDefaultToHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
 	addr := env.GetRaw("sys.hub.init-repo")
 	if len(addr) == 0 {
-		panic(core.NewCmdError(cmd, "cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			"cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
 	}
-	addRepoToHub(addr, argv, cc.Screen, env, cmd)
+	addRepoToHub(addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 	showHubFindTip(cc.Screen, env)
-	return true
+	return currCmdIdx, true
 }
 
-func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
+func ListHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmd := flow.Cmds[currCmdIdx]
+
+	findStrs := getFindStrsFromArgv(argv)
+	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
+
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
-	findStrs := getFindStrsFromArgv(argv)
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-
 	screen := display.NewCacheScreen()
 
 	listHub(screen, env, infos, findStrs...)
@@ -97,11 +127,19 @@ func ListHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedC
 			"",
 			display.SuggestHubBranch(env))
 	}
-	return true
+	return currCmdIdx, true
 }
 
-func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
+func RemoveAllFromHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	cmd := flow.Cmds[currCmdIdx]
+
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
@@ -110,14 +148,20 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []cor
 		if !info.IsLocal() {
 			osRemoveDir(info.Path, cmd)
 		}
-		cc.Screen.Print(fmt.Sprintf("[%s]%s\n", repoDisplayName(info), purgedStr(env, info.IsLocal())))
-		printInfoProps(cc.Screen, info)
+		cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), purgedStr(env, info.IsLocal())))
+		printInfoProps(cc.Screen, env, info)
 	}
 
 	err := os.Remove(metaPath)
 	if err != nil {
 		if os.IsNotExist(err) && len(infos) == 0 {
-			return true
+			display.PrintTipTitle(cc.Screen, env,
+				"hub is empty.",
+				"",
+				"add more git repos to get more avaialable commands:",
+				"",
+				display.SuggestHubAddShort(env))
+			return currCmdIdx, true
 		}
 		panic(core.WrapCmdError(cmd, fmt.Errorf("remove '%s' failed: %v", metaPath, err)))
 	}
@@ -129,23 +173,43 @@ func RemoveAllFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []cor
 		"",
 		display.SuggestHubAddShort(env))
 
-	return true
+	return currCmdIdx, true
 }
 
-func PurgeAllInactiveReposFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	purgeInactiveRepoFromHub("", cc, env, flow[0])
-	return true
+func PurgeAllInactiveReposFromHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	purgeInactiveRepoFromHub("", cc, env, flow.Cmds[currCmdIdx])
+	return currCmdIdx, true
 }
 
-func PurgeInactiveRepoFromHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
-	findStr := getAndCheckArg(argv, env, cmd, "find-str")
-	purgeInactiveRepoFromHub(findStr, cc, env, cmd)
-	return true
+func PurgeInactiveRepoFromHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
+	purgeInactiveRepoFromHub(findStr, cc, env, flow.Cmds[currCmdIdx])
+	return currCmdIdx, true
 }
 
-func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
+func UpdateHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+
+	cmd := flow.Cmds[currCmdIdx]
 	metaPath := getReposInfoPath(env, cmd)
 	listFileName := env.GetRaw("strs.repos-file-name")
 	repoExt := env.GetRaw("strs.mods-repo-ext")
@@ -168,7 +232,7 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.Parse
 			continue
 		}
 		_, addrs, helpStrs := meta.UpdateRepoAndSubRepos(
-			cc.Screen, finisheds, path, info.Addr, repoExt, listFileName, selfName, cmd)
+			cc.Screen, env, finisheds, path, info.Addr, repoExt, listFileName, selfName, cmd)
 		for i, addr := range addrs {
 			if oldList[addr] {
 				continue
@@ -186,15 +250,21 @@ func UpdateHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.Parse
 	display.PrintTipTitle(cc.Screen, env, fmt.Sprintf(
 		"local dir could also add to %s, use command 'h.add.local'",
 		env.GetRaw("strs.self-name")))
-	return true
+	return currCmdIdx, true
 }
 
-func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
+func EnableRepoInHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmd := flow.Cmds[currCmdIdx]
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-	findStr := getAndCheckArg(argv, env, cmd, "find-str")
+	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
 
 	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
 	checkFoundRepos(env, cmd, extracted, findStr)
@@ -205,8 +275,8 @@ func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core
 			continue
 		}
 		count += 1
-		cc.Screen.Print(fmt.Sprintf("[%s] (enabled)\n", repoDisplayName(info)))
-		printInfoProps(cc.Screen, info)
+		cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), enabledStr(env, true)))
+		printInfoProps(cc.Screen, env, info)
 		info.OnOff = "on"
 		extracted[i] = info
 	}
@@ -220,15 +290,21 @@ func EnableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core
 		display.PrintTipTitle(cc.Screen, env,
 			"no disabled repos matched find string '"+findStr+"'")
 	}
-	return true
+	return currCmdIdx, true
 }
 
-func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
+func DisableRepoInHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmd := flow.Cmds[currCmdIdx]
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-	findStr := getAndCheckArg(argv, env, cmd, "find-str")
+	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
 
 	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
 	checkFoundRepos(env, cmd, extracted, findStr)
@@ -236,8 +312,8 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []cor
 	var count int
 	for i, info := range extracted {
 		if info.OnOff == "on" {
-			cc.Screen.Print(fmt.Sprintf("[%s] (disabled)\n", repoDisplayName(info)))
-			printInfoProps(cc.Screen, info)
+			cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), disabledStr(env)))
+			printInfoProps(cc.Screen, env, info)
 			if info.OnOff != "disabled" {
 				count += 1
 			}
@@ -255,12 +331,18 @@ func DisableRepoInHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []cor
 		display.PrintTipTitle(cc.Screen, env,
 			"no enabled repos matched find string '"+findStr+"'")
 	}
-	return true
+	return currCmdIdx, true
 }
 
-func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
-	path := getAndCheckArg(argv, env, cmd, "path")
+func AddLocalDirToHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmd := flow.Cmds[currCmdIdx]
+	path := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "path")
 
 	stat, err := os.Stat(path)
 	if err != nil {
@@ -284,16 +366,16 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []cor
 	for i, info := range infos {
 		if info.Path == path {
 			if info.OnOff == "on" {
-				screen.Print(fmt.Sprintf("[%s] (exists)\n", repoDisplayName(info)))
-				printInfoProps(screen, info)
+				screen.Print(fmt.Sprintf("%s (exists)\n", repoDisplayName(info, env)))
+				printInfoProps(screen, env, info)
 				display.PrintTipTitle(cc.Screen, env,
 					"local dir already in hub, nothing to do")
-				return true
+				return currCmdIdx, true
 			}
 			info.OnOff = "on"
 			infos[i] = info
-			screen.Print(fmt.Sprintf("[%s] (enabled)\n", repoDisplayName(info)))
-			printInfoProps(screen, info)
+			screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), enabledStr(env, true)))
+			printInfoProps(screen, env, info)
 			found = true
 			break
 		}
@@ -305,8 +387,8 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []cor
 		helpStr, _, _ := meta.ReadRepoListFromFile(env.GetRaw("strs.self-name"), listFilePath)
 		info := meta.RepoInfo{"", "<local>", path, helpStr, "on"}
 		infos = append(infos, info)
-		screen.Print(fmt.Sprintf("[%s]\n", repoDisplayName(info)))
-		printInfoProps(screen, info)
+		screen.Print(fmt.Sprintf("%s\n", repoDisplayName(info, env)))
+		printInfoProps(screen, env, info)
 	}
 	meta.WriteReposInfoFile(metaPath, infos, fieldSep)
 
@@ -320,13 +402,28 @@ func AddLocalDirToHub(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []cor
 	screen.WriteTo(cc.Screen)
 
 	// TODO: load mods now?
-	return true
+	return currCmdIdx, true
 }
 
-func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
+func MoveSavedFlowsToLocalDir(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
 	// TODO: do accurate matching before search
-	cmd := flow[0]
+	cmd := flow.Cmds[currCmdIdx]
 	path := argv.GetRaw("path")
+	if len(path) == 0 {
+		args := tailModeGetInput(flow, currCmdIdx, false)
+		if len(args) > 1 {
+			panic(core.NewCmdError(cmd, "too many input of arg 'path' in tail-mode"))
+		} else if len(args) == 1 {
+			path = args[0]
+		}
+	}
+
 	if len(path) != 0 {
 		stat, err := os.Stat(path)
 		if err != nil && !os.IsNotExist(err) {
@@ -340,7 +437,7 @@ func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, fl
 			moveSavedFlowsToLocalDir(path, cc, env, cmd)
 			display.PrintTipTitle(cc.Screen, env,
 				"all saved flow moved to '"+path+"'.")
-			return true
+			return currCmdIdx, true
 		}
 	}
 
@@ -369,25 +466,46 @@ func MoveSavedFlowsToLocalDir(argv core.ArgVals, cc *core.Cli, env *core.Env, fl
 	}
 
 	if len(locals) == 0 {
-		display.PrintTipTitle(cc.Screen, env,
-			fmt.Sprintf("cant't find matched dir by string '%s'.", path),
-			"notice this command only search added local dirs, not repos")
-		return false
+		if len(path) != 0 {
+			display.PrintErrTitle(cc.Screen, env,
+				fmt.Sprintf("can't find matched dir by string '%s'.", path),
+				"notice this command only search added local dirs, not repos")
+		} else {
+			display.PrintErrTitle(cc.Screen, env,
+				"no local dirs to move flows into.",
+				"notice this command only search added local dirs, not repos")
+		}
+		return currCmdIdx, false
 	}
 	if len(locals) > 1 {
-		display.PrintErrTitle(cc.Screen, env,
-			"cant't determine which dir by string '"+path+"'.",
-			"only could move to the one and only matched dir.",
-			"", "current matcheds:")
+		if len(path) != 0 {
+			display.PrintErrTitle(cc.Screen, env,
+				"can't determine which dir by string '"+path+"'.",
+				"only could move to the one and only matched dir.",
+				"", "current matcheds:")
+		} else {
+			display.PrintErrTitle(cc.Screen, env,
+				"can't determine which dir, only could move to the one and only matched dir.",
+				"",
+				"add more find-str to filter it:",
+				"",
+				display.SuggestFilterRepoInMove(env),
+				"", "current matcheds:")
+		}
 		listHub(cc.Screen, env, locals)
-		return false
+		return currCmdIdx, false
 	}
 
-	moveSavedFlowsToLocalDir(locals[0].Path, cc, env, cmd)
+	cnt := moveSavedFlowsToLocalDir(locals[0].Path, cc, env, cmd)
 
-	display.PrintTipTitle(cc.Screen, env,
-		"all saved flow moved to '"+locals[0].Path+"', it's the only local dir in hub")
-	return true
+	if cnt > 0 {
+		display.PrintTipTitle(cc.Screen, env,
+			"all saved flow are moved to '"+locals[0].Path+"', it's the only matched local dir in hub")
+	} else {
+		display.PrintTipTitle(cc.Screen, env,
+			"not saved flow to move")
+	}
+	return currCmdIdx, true
 }
 
 func listHub(screen core.Screen, env *core.Env, infos []meta.RepoInfo, filterStrs ...string) {
@@ -404,8 +522,8 @@ func listHub(screen core.Screen, env *core.Env, infos []meta.RepoInfo, filterStr
 				continue
 			}
 		}
-		name := repoDisplayName(info)
-		screen.Print(fmt.Sprintf("[%s]", name))
+		name := repoDisplayName(info, env)
+		screen.Print(name)
 		if info.OnOff != "on" {
 			screen.Print(disabledStr(env))
 		} else {
@@ -413,13 +531,13 @@ func listHub(screen core.Screen, env *core.Env, infos []meta.RepoInfo, filterStr
 		}
 		screen.Print("\n")
 		if len(info.HelpStr) > 0 {
-			screen.Print(fmt.Sprintf("     '%s'\n", info.HelpStr))
+			screen.Print(fmt.Sprintf(display.ColorHelp("     '%s'\n", env), info.HelpStr))
 		}
 		if len(info.Addr) != 0 && name != info.Addr {
-			screen.Print(fmt.Sprintf("    - addr: %s\n", info.Addr))
+			screen.Print(fmt.Sprintf(display.ColorProp("    - addr: ", env)+"%s\n", info.Addr))
 		}
-		screen.Print(fmt.Sprintf("    - from: %s\n", getDisplayReason(info)))
-		screen.Print(fmt.Sprintf("    - path: %s\n", info.Path))
+		screen.Print(fmt.Sprintf(display.ColorProp("    - from: ", env)+"%s\n", getDisplayReason(info)))
+		screen.Print(fmt.Sprintf(display.ColorProp("    - path: ", env)+"%s\n", info.Path))
 	}
 }
 
@@ -449,8 +567,8 @@ func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env, cmd c
 		} else {
 			unlinkeds += 1
 		}
-		cc.Screen.Print(fmt.Sprintf("[%s]%s\n", repoDisplayName(info), purgedStr(env, info.IsLocal())))
-		printInfoProps(cc.Screen, info)
+		cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), purgedStr(env, info.IsLocal())))
+		printInfoProps(cc.Screen, env, info)
 	}
 
 	if len(extracted) <= 0 {
@@ -492,15 +610,15 @@ func moveSavedFlowsToLocalDir(toDir string, cc *core.Cli, env *core.Env, cmd cor
 		// This dir is managed, so will be no sub-dir
 		destPath := filepath.Join(toDir, filepath.Base(path))
 
-		err = os.Rename(path, destPath)
+		err = utils.MoveFile(path, destPath)
 		if err != nil {
 			panic(core.WrapCmdError(cmd, fmt.Errorf("rename file '%s' to '%s' failed: %v",
 				path, destPath, err)))
 		}
 		cmdPath := getCmdPath(path, flowExt, cmd)
-		cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
-		cc.Screen.Print(fmt.Sprintf("    - from: %s\n", path))
-		cc.Screen.Print(fmt.Sprintf("    - to: %s\n", destPath))
+		cc.Screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env), cmdPath))
+		cc.Screen.Print(fmt.Sprintf(display.ColorProp("    - from:", env)+" %s\n", path))
+		cc.Screen.Print(fmt.Sprintf(display.ColorProp("    - to: ", env)+"%s\n", destPath))
 		count += 1
 		return nil
 	})
@@ -547,7 +665,7 @@ func addRepoToHub(
 	listFileName := env.GetRaw("strs.repos-file-name")
 	var topRepoHelpStr string
 	topRepoHelpStr, addrs, helpStrs = meta.UpdateRepoAndSubRepos(
-		screen, finisheds, path, gitAddr, repoExt, listFileName, selfName, cmd)
+		screen, env, finisheds, path, gitAddr, repoExt, listFileName, selfName, cmd)
 
 	addrs = append([]string{gitAddr}, addrs...)
 	helpStrs = append([]string{topRepoHelpStr}, helpStrs...)
@@ -566,12 +684,12 @@ func addRepoToHub(
 	return
 }
 
-func printInfoProps(screen core.Screen, info meta.RepoInfo) {
+func printInfoProps(screen core.Screen, env *core.Env, info meta.RepoInfo) {
 	if len(info.HelpStr) > 0 {
-		screen.Print(fmt.Sprintf("     '%s'\n", info.HelpStr))
+		screen.Print(fmt.Sprintf(display.ColorHelp("     '%s'\n", env), info.HelpStr))
 	}
-	screen.Print(fmt.Sprintf("    - from: %s\n", getDisplayReason(info)))
-	screen.Print(fmt.Sprintf("    - path: %s\n", info.Path))
+	screen.Print(fmt.Sprintf(display.ColorProp("    - from: ", env)+"%s\n", getDisplayReason(info)))
+	screen.Print(fmt.Sprintf(display.ColorProp("    - path: ", env)+"%s\n", info.Path))
 }
 
 func getDisplayReason(info meta.RepoInfo) string {
@@ -638,25 +756,23 @@ func getReposInfoPath(env *core.Env, cmd core.ParsedCmd) string {
 	return filepath.Join(path, reposInfoFileName)
 }
 
-func repoDisplayName(info meta.RepoInfo) string {
+func repoDisplayName(info meta.RepoInfo, env *core.Env) string {
+	var name string
 	if len(info.Addr) == 0 {
-		return filepath.Base(info.Path)
+		name = filepath.Base(info.Path)
+	} else {
+		name = meta.AddrDisplayName(info.Addr)
 	}
-	return meta.AddrDisplayName(info.Addr)
+	return display.ColorHub("["+name+"]", env)
 }
 
 func disabledStr(env *core.Env) string {
-	if env.GetBool("display.utf8.symbols") {
-		errStr := env.GetRaw("display.utf8.symbols.err")
-		return errStr + "(disabled)"
-	} else {
-		return " (disabled)"
-	}
+	return display.ColorDisabled(" (disabled)", env)
 }
 
 func enabledStr(env *core.Env, str bool) string {
 	if str {
-		return " (enabled)"
+		return display.ColorEnabled(" (enabled)", env)
 	} else {
 		return ""
 	}
@@ -664,8 +780,8 @@ func enabledStr(env *core.Env, str bool) string {
 
 func purgedStr(env *core.Env, isLocal bool) string {
 	if isLocal {
-		return " (unlinked)"
+		return display.ColorDisabled(" (unlinked)", env)
 	} else {
-		return " (purged)"
+		return display.ColorDisabled(" (purged)", env)
 	}
 }
