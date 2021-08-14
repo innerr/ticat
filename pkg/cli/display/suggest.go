@@ -78,13 +78,21 @@ func SuggestFindCmds(env *core.Env) []string {
 	return append(SuggestFindCmdsLess(env), SuggestFindCmdsMore(env)...)
 }
 
+func SuggestFilterRepoInMove(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" h.mv str1 str2", indent) + "- filter repos by strings then move flows to it",
+		padR(selfName+" str1 str2 ::h.mv", indent) + "- same as above, in tail-mode",
+	}
+}
+
 func SuggestFindCmdsInRepo(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	prefix := selfName + " repo-name str1 str2 :"
-	explain := "- search commands in repo"
 	return []string{
-		padR(prefix+"-", indent) + explain,
-		padR(prefix+"+", indent) + explain + ", with details",
+		padR(selfName+" repo-name str1 str2 ::cmds", indent) + "- search commands in repo",
+		"",
+		padR(selfName+" cmd  ::=", indent) + "- show command usage",
+		padR(selfName+" cmd  ::==", indent) + "- command details",
 	}
 }
 
@@ -104,9 +112,9 @@ func SuggestHubAdd(env *core.Env) []string {
 func SuggestHubAddShort(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" h.init", indent) + "- add a default git repo.",
+		padR(selfName+" h.init", indent) + "- add the default git repo.",
 		padR(selfName+" h.+ innerr/tidb."+selfName, indent) + "- add a git repo,",
-		padR("", indent+2) + "could use https address.",
+		padR("", indent+2) + "use https by default.",
 	}
 }
 
