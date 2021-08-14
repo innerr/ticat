@@ -88,7 +88,7 @@ func LoadRuntimeEnv(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	env = env.GetLayer(core.EnvLayerSession)
 
@@ -125,7 +125,7 @@ func LoadLocalEnv(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
@@ -148,7 +148,7 @@ func SaveEnvToLocal(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
 	core.SaveEnvToFile(env, path, kvSep)
@@ -167,14 +167,16 @@ func RemoveEnvValAndSaveToLocal(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	tailMode := flow.Cmds[currCmdIdx].TailMode
+
 	var keys []string
-	if flow.TailMode {
+	if tailMode {
 		keys = append(keys, gatherInputsFromFlow(flow, currCmdIdx)...)
 	}
 	key := argv.GetRaw("key")
 	if len(key) != 0 {
 		keys = append(keys, key)
-	} else if !flow.TailMode {
+	} else if !tailMode {
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "arg 'key' is empty"))
 	}
 	if len(keys) == 0 {
@@ -209,7 +211,7 @@ func ResetLocalEnv(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
 	err := os.Remove(path)
@@ -233,7 +235,7 @@ func ResetSessionEnv(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	env.GetLayer(core.EnvLayerSession).Clear(false)
 	display.PrintTipTitle(cc.Screen, env, "all session env values are removed")

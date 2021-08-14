@@ -14,7 +14,7 @@ func SetDumpFlowDepth(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	key := "display.flow.depth"
 	if len(argv.GetRaw("depth")) != 0 {
 		depth := argv.GetInt("depth")
@@ -53,7 +53,7 @@ func DumpFlow(
 
 	dumpArgs := display.NewDumpFlowArgs()
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
-	return currCmdIdx, true
+	return clearFlow(flow)
 }
 
 func DumpFlowSimple(
@@ -65,7 +65,7 @@ func DumpFlowSimple(
 
 	dumpArgs := display.NewDumpFlowArgs().SetSimple()
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
-	return currCmdIdx, true
+	return clearFlow(flow)
 }
 
 func DumpFlowSkeleton(
@@ -103,7 +103,7 @@ func DumpFlowSkeleton(
 		cc.Screen.Print(display.ColorWarn(fmt.Sprintf("(%s:%d)", riskStr, len(risks.Result)), env) + "\n")
 	}
 
-	return currCmdIdx, true
+	return clearFlow(flow)
 }
 
 func DumpFlowDepends(
@@ -122,7 +122,7 @@ func DumpFlowDepends(
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "no depended os commands")
 	}
-	return currCmdIdx, true
+	return clearFlow(flow)
 }
 
 func DumpFlowEnvOpsCheckResult(
@@ -144,7 +144,7 @@ func DumpFlowEnvOpsCheckResult(
 		display.PrintTipTitle(cc.Screen, env, "all env-ops are satisfied, can directly run")
 	}
 
-	return currCmdIdx, true
+	return clearFlow(flow)
 }
 
 func dumpFlowAll(
@@ -177,5 +177,5 @@ func dumpFlowAll(
 		display.DumpEnvOpsCheckResult(cc.Screen, cmds, env, result, cc.Cmds.Strs.PathSep)
 	}
 
-	return currCmdIdx, true
+	return clearFlow(flow)
 }

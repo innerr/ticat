@@ -20,7 +20,7 @@ func LoadModsFromHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	metaExt := env.GetRaw("strs.meta-ext")
 	flowExt := env.GetRaw("strs.flow-ext")
@@ -69,7 +69,7 @@ func AddGitDefaultToHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	addr := env.GetRaw("sys.hub.init-repo")
 	if len(addr) == 0 {
@@ -137,7 +137,7 @@ func RemoveAllFromHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	cmd := flow.Cmds[currCmdIdx]
 
 	metaPath := getReposInfoPath(env, cmd)
@@ -183,7 +183,7 @@ func PurgeAllInactiveReposFromHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	purgeInactiveRepoFromHub("", cc, env, flow.Cmds[currCmdIdx])
 	return currCmdIdx, true
 }
@@ -207,7 +207,7 @@ func UpdateHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	cmd := flow.Cmds[currCmdIdx]
 	metaPath := getReposInfoPath(env, cmd)

@@ -80,8 +80,8 @@ func quoteIfHasSpace(str string) string {
 	return str
 }
 
-func assertNotTailMode(flow *core.ParsedCmds, currCmdIdx int, tailMode bool) {
-	if flow.TailMode && len(flow.Cmds) > 1 {
+func assertNotTailMode(flow *core.ParsedCmds, currCmdIdx int) {
+	if flow.Cmds[currCmdIdx].TailMode && len(flow.Cmds) > 1 {
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support"))
 	}
 }
@@ -140,7 +140,7 @@ func getArgsFromFlowOrArgv(
 }
 
 func tailModeGetInput(flow *core.ParsedCmds, currCmdIdx int, allowMultiCmds bool) (input []string) {
-	if !flow.TailMode {
+	if !flow.Cmds[currCmdIdx].TailMode {
 		return
 	}
 	if !allowMultiCmds && len(flow.Cmds) > 2 {
@@ -150,6 +150,11 @@ func tailModeGetInput(flow *core.ParsedCmds, currCmdIdx int, allowMultiCmds bool
 		input = append(input, cmd.ParseResult.Input...)
 	}
 	return
+}
+
+func clearFlow(flow *core.ParsedCmds) (int, bool) {
+	flow.Cmds = nil
+	return 0, true
 }
 
 func isOsCmdExists(cmd string) bool {

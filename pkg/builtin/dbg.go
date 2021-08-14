@@ -16,13 +16,22 @@ func DbgEcho(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	if flow.TailMode {
+	printed := false
+	if flow.Cmds[currCmdIdx].TailMode {
 		for _, input := range gatherInputsFromFlow(flow, currCmdIdx) {
 			cc.Screen.Print(display.ColorHelp(fmt.Sprintf("(flow-content) %v\n", input), env))
+			printed = true
 		}
 	}
 
-	cc.Screen.Print(fmt.Sprintf("%v\n", argv.GetRaw("message")))
+	arg := argv.GetRaw("message")
+	if len(arg) == 0 {
+		if !printed {
+			cc.Screen.Print("(arg 'message' is empty)")
+		}
+		return currCmdIdx, true
+	}
+	cc.Screen.Print(fmt.Sprintf("%v\n", arg))
 	return currCmdIdx, true
 }
 
@@ -33,7 +42,7 @@ func DbgExecBash(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 
 	cmd := exec.Command("bash")
 	cmd.Stdin = os.Stdin
@@ -54,7 +63,7 @@ func DbgDelayExecute(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	assertNotTailMode(flow, currCmdIdx)
 	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec", argv.GetInt("seconds"))
 	return currCmdIdx, true
 }

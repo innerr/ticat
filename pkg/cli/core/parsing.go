@@ -18,12 +18,11 @@ type CliParser interface {
 	Parse(cmds *CmdTree, envAbbrs *EnvAbbrs, input ...string) *ParsedCmds
 }
 
-// TODO: each ParsedCmdSeq should have a TailMode flag
 type ParsedCmds struct {
 	GlobalEnv    ParsedEnv
 	Cmds         ParsedCmdSeq
 	GlobalCmdIdx int
-	TailMode     bool
+	HasTailMode  bool
 }
 
 type ParsedCmdSeq []ParsedCmd
@@ -64,6 +63,7 @@ type ParseResult struct {
 type ParsedCmd struct {
 	Segments    []ParsedCmdSeg
 	ParseResult ParseResult
+	TailMode    bool
 }
 
 func (self ParsedCmd) IsEmpty() bool {
