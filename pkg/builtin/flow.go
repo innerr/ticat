@@ -24,13 +24,11 @@ func ListFlows(
 	currCmdIdx int) (int, bool) {
 
 	flowExt := env.GetRaw("strs.flow-ext")
-	root := env.GetRaw("sys.paths.flows")
-	if len(root) == 0 {
-		panic(fmt.Errorf("[ListFlows] env 'sys.paths.flows' is empty"))
-	}
+	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
 
 	screen := display.NewCacheScreen()
 	findStrs := getFindStrsFromArgv(argv)
+	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
 
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if path == root {
@@ -61,19 +59,19 @@ func ListFlows(
 			return nil
 		}
 
-		screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
+		screen.Print(fmt.Sprintf(display.ColorCmd("[%s]\n", env), cmdPath))
 		if len(help) != 0 {
-			screen.Print(fmt.Sprintf("      '%s'\n", help))
+			screen.Print("     " + display.ColorHelp("'"+help+"'", env) + "\n")
 		}
 		if len(abbrsStr) != 0 {
-			screen.Print("    - abbrs:\n")
+			screen.Print("    " + display.ColorProp("- abbrs:", env) + "\n")
 			screen.Print(fmt.Sprintf("        %s\n", abbrsStr))
 		}
-		screen.Print("    - flow:\n")
+		screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
 		for _, flowStr := range flowStrs {
-			screen.Print(fmt.Sprintf("        %s\n", flowStr))
+			screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
 		}
-		screen.Print("    - executable:\n")
+		screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
 		screen.Print(fmt.Sprintf("        %s\n", path))
 		return nil
 	})
@@ -97,23 +95,31 @@ func ListFlows(
 	return currCmdIdx, true
 }
 
-func RemoveFlow(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
-	cmdPath, filePath := getFlowCmdPath(argv, cc, env, true, "cmd-path", "RemoveFlow")
+func RemoveFlow(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
-		panic(fmt.Errorf("[RemoveFlow] path '%s' does not exist", filePath))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("path '%s' does not exist", filePath)))
 	}
 	err = os.Remove(filePath)
 	if err != nil {
-		panic(fmt.Errorf("[RemoveFlow] remove flow file '%s' failed: %v",
-			filePath, err))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("remove flow file '%s' failed: %v", filePath, err)))
 	}
 
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+cmdPath+"' is removed")
-	cc.Screen.Print(fmt.Sprintf("[%s] (removed)\n", cmdPath))
+	cc.Screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
+		display.ColorDisabled(" (removed)", env)+"\n", cmdPath))
 	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
-	return true
+	return currCmdIdx, true
 }
 
 func RemoveAllFlows(
@@ -124,22 +130,19 @@ func RemoveAllFlows(
 	currCmdIdx int) (int, bool) {
 
 	flowExt := env.GetRaw("strs.flow-ext")
-	root := env.GetRaw("sys.paths.flows")
-	if len(root) == 0 {
-		panic(fmt.Errorf("[ListFlows] env 'sys.paths.flows' is empty"))
-	}
-
+	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
 	screen := display.NewCacheScreen()
 
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if path != root && strings.HasSuffix(path, flowExt) {
 			err = os.Remove(path)
 			if err != nil {
-				panic(fmt.Errorf("[RemoveAllFlows] remove flow file '%s' failed: %v",
-					path, err))
+				panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+					fmt.Sprintf("remove flow file '%s' failed: %v", path, err)))
 			}
 			cmdPath := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
-			screen.Print(fmt.Sprintf("[%s] (removed)\n", cmdPath))
+			screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
+				display.ColorDisabled(" (removed)", env)+"\n", cmdPath))
 			screen.Print(fmt.Sprintf("    %s\n", path))
 		}
 		return nil
@@ -166,17 +169,19 @@ func SaveFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	cmdPath, filePath := getFlowCmdPath(argv, cc, env, false, "to-cmd-path", "SaveFlow")
-
+	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, false, argv, cc, env, false, "to-cmd-path")
 	screen := display.NewCacheScreen()
 
 	_, err := os.Stat(filePath)
 	if !os.IsNotExist(err) {
 		if !env.GetBool("sys.interact") {
-			panic(fmt.Errorf("[SaveFlow] path '%s' exists", filePath))
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("path '%s' exists", filePath)))
 		} else {
-			cc.Screen.Print(fmt.Sprintf("[confirm] flow file of '%s' exists, "+
-				"type 'y' and press enter to overwrite:\n", cmdPath))
+			cc.Screen.Print(fmt.Sprintf(display.ColorTip("[confirm]", env)+
+				" flow file of '%s' exists, "+
+				"type "+display.ColorWarn("'y'", env)+" and press enter to "+
+				display.ColorWarn("overwrite:", env)+"\n", cmdPath))
 			utils.UserConfirm()
 		}
 	}
@@ -184,76 +189,96 @@ func SaveFlow(
 	w := bytes.NewBuffer(nil)
 	flow.RemoveLeadingCmds(1)
 
-	if !checkAndConfirmIfFlowHasParseError(cc.Screen, flow) {
+	if !checkAndConfirmIfFlowHasParseError(cc.Screen, flow, env) {
 		return currCmdIdx, false
 	}
 
 	// TODO: wrap line if too long
-	saveFlow(w, flow, cc.Cmds.Strs.PathSep, env)
-	data := w.String()
+	saveFlow(w, flow, currCmdIdx, cc.Cmds.Strs.PathSep, env)
+	flowStr := w.String()
 
-	screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
-	screen.Print("    - flow:\n")
-	screen.Print(fmt.Sprintf("        %s\n", data))
-	screen.Print("    - executable:\n")
+	screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+"\n", cmdPath))
+	screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
+	screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
+	screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
 	screen.Print(fmt.Sprintf("        %s\n", filePath))
 
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
 
-	flow_file.SaveFlowFile(filePath, []string{data}, "", "")
+	flow_file.SaveFlowFile(filePath, []string{flowStr}, "", "")
 
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+cmdPath+"' is saved, can be used as a command")
 	screen.WriteTo(cc.Screen)
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
-func SetFlowHelpStr(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func SetFlowHelpStr(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
 	help := argv.GetRaw("help-str")
-	cmdPath, filePath := getFlowCmdPath(argv, cc, env, true, "cmd-path", "SetFlowHelpStr")
+	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
 	flowStrs, oldHelp, abbrsStr := flow_file.LoadFlowFile(filePath)
 	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr)
 
 	display.PrintTipTitle(cc.Screen, env,
 		"help string of flow '"+cmdPath+"' is saved")
 
-	cc.Screen.Print(fmt.Sprintf("[%s]\n", cmdPath))
-	cc.Screen.Print(fmt.Sprintf("     '%s'\n", help))
-	cc.Screen.Print("    - flow:\n")
+	cc.Screen.Print(display.ColorCmd(fmt.Sprintf("[%s]", cmdPath), env) + "\n")
+	cc.Screen.Print("     " + display.ColorHelp("'"+help+"'", env) + "\n")
+	cc.Screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
 	for _, flowStr := range flowStrs {
-		cc.Screen.Print(fmt.Sprintf("        %s\n", flowStr))
+		cc.Screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
 	}
-	cc.Screen.Print("    - executable:\n")
+	cc.Screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
 	cc.Screen.Print(fmt.Sprintf("        %s\n", filePath))
 	if len(oldHelp) != 0 {
-		cc.Screen.Print("    - old-help:\n")
-		cc.Screen.Print(fmt.Sprintf("        %s\n", oldHelp))
+		cc.Screen.Print("    " + display.ColorProp("- old-help:", env) + "\n")
+		cc.Screen.Print("       " + display.ColorHelp("'"+help+"'", env) + "\n")
 	}
-	return true
+	return currCmdIdx, true
 }
 
-func LoadFlows(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
-	root := env.GetRaw("sys.paths.flows")
-	if len(root) == 0 {
-		panic(fmt.Errorf("[LoadFlows] env 'sys.paths.flows' is empty"))
-	}
-	loadFlowsFromDir(root, cc, env, root)
-	return true
+func LoadFlows(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx, flow.TailMode)
+	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
+	loadFlowsFromDir(flow, currCmdIdx, root, cc, env, root)
+	return currCmdIdx, true
 }
 
-func LoadFlowsFromDir(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
-	root := argv.GetRaw("path")
-	if len(root) == 0 {
-		panic(fmt.Errorf("[LoadFlowsFromDir] arg 'path' is empty"))
-	}
-	loadFlowsFromDir(root, cc, env, root)
+func LoadFlowsFromDir(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	path := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "path")
+	loadFlowsFromDir(flow, currCmdIdx, path, cc, env, path)
 	display.PrintTipTitle(cc.Screen, env,
-		"flows from '"+root+"' is loaded")
-	return true
+		"flows from '"+path+"' is loaded")
+	return currCmdIdx, true
 }
 
-func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) bool {
+func loadFlowsFromDir(
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	root string,
+	cc *core.Cli,
+	env *core.Env,
+	source string) bool {
+
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
 	}
@@ -262,10 +287,12 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 		if os.IsNotExist(err) {
 			return true
 		}
-		panic(fmt.Errorf("[LoadLocalFlows] access flows dir '%s' failed: %v", root, err))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("access flows dir '%s' failed: %v", root, err)))
 	}
 	if !info.IsDir() {
-		panic(fmt.Errorf("[LoadLocalFlows] flows dir '%s' is not dir", root))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("flows dir '%s' is not dir", root)))
 	}
 
 	flowExt := env.GetRaw("strs.flow-ext")
@@ -290,7 +317,7 @@ func loadFlowsFromDir(root string, cc *core.Cli, env *core.Env, source string) b
 	return true
 }
 
-func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.Env) {
+func saveFlow(w io.Writer, flow *core.ParsedCmds, currCmdIdx int, cmdPathSep string, env *core.Env) {
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	bracketLeft := env.GetRaw("strs.env-bracket-left")
 	bracketRight := env.GetRaw("strs.env-bracket-right")
@@ -298,7 +325,7 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, cmdPathSep string, env *core.E
 	seqSep := env.GetRaw("strs.seq-sep")
 	if len(envPathSep) == 0 || len(bracketLeft) == 0 || len(bracketRight) == 0 ||
 		len(envKeyValSep) == 0 || len(seqSep) == 0 {
-		panic("[saveFlow] some predefined strs not found")
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "some predefined strs not found"))
 	}
 
 	for i, cmd := range flow.Cmds {
@@ -381,54 +408,74 @@ func saveFlowEnv(
 }
 
 func getFlowCmdPath(
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	getArgFromFlow bool,
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	expectExists bool,
-	argName string,
-	funcName string) (cmdPath string, filePath string) {
+	argName string) (cmdPath string, filePath string) {
 
-	cmdPath = normalizeCmdPath(argv.GetRaw(argName),
+	var arg string
+	if !getArgFromFlow {
+		arg = argv.GetRaw(argName)
+		if len(arg) == 0 {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty"))
+		}
+	} else {
+		arg = getArgFromFlowOrArgv(flow, currCmdIdx, argv, argName)
+	}
+	cmdPath = normalizeCmdPath(arg,
 		cc.Cmds.Strs.PathSep, cc.Cmds.Strs.PathAlterSeps)
 	if len(cmdPath) == 0 {
 		origin := argv.GetRaw(argName)
 		if len(origin) == 0 {
-			panic(fmt.Errorf("[%s] arg '%s' is empty", funcName, argName))
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("arg '%s' is empty", argName)))
 		} else {
-			panic(fmt.Errorf("[%s] arg '%s' is empty after normalizing: %s -> %s",
-				funcName, argName, origin, cmdPath))
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("arg '%s' is empty after normalizing: %s -> %s",
+					argName, origin, cmdPath)))
 		}
 	}
 
 	flowExt := env.GetRaw("strs.flow-ext")
-	root := env.GetRaw("sys.paths.flows")
-	if len(root) == 0 {
-		panic(fmt.Errorf("[%s] env 'sys.paths.flows' is empty", funcName))
-	}
+	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
 
 	filePath = filepath.Join(root, cmdPath) + flowExt
 	if !expectExists && fileExists(filePath) {
 		if !env.GetBool("sys.interact") {
-			panic(fmt.Errorf("[%s] flow '%s' file '%s' exists", funcName, cmdPath, filePath))
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("flow '%s' file '%s' exists", cmdPath, filePath)))
 		} else {
 			return
 		}
 	}
 	if expectExists && !fileExists(filePath) {
-		panic(fmt.Errorf("[%s] flow '%s' file '%s' not exists", funcName, cmdPath, filePath))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("flow '%s' file '%s' not exists", cmdPath, filePath)))
 	}
 	return
 }
 
-func checkAndConfirmIfFlowHasParseError(screen core.Screen, flow *core.ParsedCmds) bool {
+func checkAndConfirmIfFlowHasParseError(screen core.Screen, flow *core.ParsedCmds, env *core.Env) bool {
 	for _, cmd := range flow.Cmds {
 		if cmd.ParseResult.Error == nil {
 			continue
 		}
-		screen.Print("[confirm] flow has parse error, " +
-			"type 'y' and press enter to force save:\n")
+		screen.Print(display.ColorTip("[confirm]", env) + " flow has parse error, " +
+			"type " + display.ColorWarn("'y'", env) + " and press enter to force save:\n")
 		utils.UserConfirm()
 		break
 	}
 	return true
+}
+
+func getFlowRoot(env *core.Env, cmd core.ParsedCmd) string {
+	root := env.GetRaw("sys.paths.flows")
+	if len(root) == 0 {
+		panic(core.NewCmdError(cmd, "env 'sys.paths.flows' is empty"))
+	}
+	return root
 }

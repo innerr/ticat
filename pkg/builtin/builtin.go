@@ -159,14 +159,14 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		AddArg("to-cmd-path", "", "path", "p", "P")
 
 	flow.AddSub("set-help-str", "help", "h", "H").
-		RegCmd(SetFlowHelpStr,
+		RegPowerCmd(SetFlowHelpStr,
 			"set help str to a saved flow").
 		SetQuiet().
 		AddArg("cmd-path", "", "path", "p", "P").
 		AddArg("help-str", "", "help", "h", "H")
 
 	flow.AddSub("remove", "rm", "delete", "del", "-").
-		RegCmd(RemoveFlow,
+		RegPowerCmd(RemoveFlow,
 			"remove a saved flow").
 		AddArg("cmd-path", "", "path", "p", "P")
 
@@ -176,7 +176,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 	addFindStrArgs(flowList)
 
 	flow.AddSub("load", "l", "L").
-		RegCmd(LoadFlowsFromDir,
+		RegPowerCmd(LoadFlowsFromDir,
 			"load flows from local dir").
 		AddArg("path", "", "p", "P")
 
@@ -347,7 +347,7 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	modLoad := mod.AddSub("load", "l", "L")
 
 	modLoad.AddSub("flows", "flows", "f", "F").
-		RegCmd(LoadFlows,
+		RegPowerCmd(LoadFlows,
 			"load saved flows from local")
 
 	modLoad.AddSub("ext-exec", "ext", "e", "E").

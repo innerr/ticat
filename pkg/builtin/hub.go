@@ -163,7 +163,7 @@ func RemoveAllFromHub(
 				display.SuggestHubAddShort(env))
 			return currCmdIdx, true
 		}
-		panic(core.WrapCmdError(cmd, fmt.Errorf("remove '%s' failed: %v", metaPath, err)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("remove '%s' failed: %v", metaPath, err)))
 	}
 
 	display.PrintTipTitle(cc.Screen, env,
@@ -346,15 +346,15 @@ func AddLocalDirToHub(
 
 	stat, err := os.Stat(path)
 	if err != nil {
-		panic(core.WrapCmdError(cmd, fmt.Errorf("access path '%v' failed: %v", path, err)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("access path '%v' failed: %v", path, err)))
 	}
 	if !stat.IsDir() {
-		panic(core.WrapCmdError(cmd, fmt.Errorf("path '%v' is not dir", path)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("path '%v' is not dir", path)))
 	}
 
 	path, err = filepath.Abs(path)
 	if err != nil {
-		panic(core.WrapCmdError(cmd, fmt.Errorf("get abs path of '%v' failed: %v", path, err)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("get abs path of '%v' failed: %v", path, err)))
 	}
 
 	screen := display.NewCacheScreen()
@@ -427,12 +427,12 @@ func MoveSavedFlowsToLocalDir(
 	if len(path) != 0 {
 		stat, err := os.Stat(path)
 		if err != nil && !os.IsNotExist(err) {
-			panic(core.WrapCmdError(cmd, fmt.Errorf("access path '%v' failed: %v", path, err)))
+			panic(core.NewCmdError(cmd, fmt.Sprintf("access path '%v' failed: %v", path, err)))
 		}
 
 		if !os.IsNotExist(err) {
 			if !stat.IsDir() {
-				panic(core.WrapCmdError(cmd, fmt.Errorf("path '%v' exists but is not a dir", path)))
+				panic(core.NewCmdError(cmd, fmt.Sprintf("path '%v' exists but is not a dir", path)))
 			}
 			moveSavedFlowsToLocalDir(path, cc, env, cmd)
 			display.PrintTipTitle(cc.Screen, env,
@@ -590,10 +590,7 @@ func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env, cmd c
 
 func moveSavedFlowsToLocalDir(toDir string, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) int {
 	flowExt := env.GetRaw("strs.flow-ext")
-	root := env.GetRaw("sys.paths.flows")
-	if len(root) == 0 {
-		panic(core.NewCmdError(cmd, "env 'sys.paths.flows' is empty"))
-	}
+	root := getFlowRoot(env, cmd)
 
 	var count int
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
@@ -612,7 +609,7 @@ func moveSavedFlowsToLocalDir(toDir string, cc *core.Cli, env *core.Env, cmd cor
 
 		err = utils.MoveFile(path, destPath)
 		if err != nil {
-			panic(core.WrapCmdError(cmd, fmt.Errorf("rename file '%s' to '%s' failed: %v",
+			panic(core.NewCmdError(cmd, fmt.Sprintf("rename file '%s' to '%s' failed: %v",
 				path, destPath, err)))
 		}
 		cmdPath := getCmdPath(path, flowExt, cmd)
@@ -644,7 +641,7 @@ func addRepoToHub(
 	path := getHubPath(env, cmd)
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
-		panic(core.WrapCmdError(cmd, fmt.Errorf("create hub path '%s' failed: %v", path, err)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("create hub path '%s' failed: %v", path, err)))
 	}
 
 	metaPath := getReposInfoPath(env, cmd)
@@ -701,7 +698,7 @@ func getDisplayReason(info meta.RepoInfo) string {
 
 func checkFoundRepos(env *core.Env, cmd core.ParsedCmd, infos []meta.RepoInfo, findStr string) {
 	if len(infos) == 0 {
-		panic(core.WrapCmdError(cmd, fmt.Errorf("cant't find repo by string '%s'", findStr)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("cant't find repo by string '%s'", findStr)))
 	}
 }
 

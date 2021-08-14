@@ -53,7 +53,7 @@ func DumpFlow(
 
 	dumpArgs := display.NewDumpFlowArgs()
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func DumpFlowSimple(
@@ -65,7 +65,7 @@ func DumpFlowSimple(
 
 	dumpArgs := display.NewDumpFlowArgs().SetSimple()
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func DumpFlowSkeleton(
@@ -103,7 +103,7 @@ func DumpFlowSkeleton(
 		cc.Screen.Print(display.ColorWarn(fmt.Sprintf("(%s:%d)", riskStr, len(risks.Result)), env) + "\n")
 	}
 
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func DumpFlowDepends(
@@ -122,7 +122,7 @@ func DumpFlowDepends(
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "no depended os commands")
 	}
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func DumpFlowEnvOpsCheckResult(
@@ -144,7 +144,7 @@ func DumpFlowEnvOpsCheckResult(
 		display.PrintTipTitle(cc.Screen, env, "all env-ops are satisfied, can directly run")
 	}
 
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func dumpFlowAll(
@@ -177,5 +177,5 @@ func dumpFlowAll(
 		display.DumpEnvOpsCheckResult(cc.Screen, cmds, env, result, cc.Cmds.Strs.PathSep)
 	}
 
-	return clearFlow(flow)
+	return currCmdIdx, true
 }

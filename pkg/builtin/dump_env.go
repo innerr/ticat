@@ -40,9 +40,7 @@ func DumpEnvFlattenVals(
 	currCmdIdx int) (int, bool) {
 
 	findStrs := getFindStrsFromArgv(argv)
-	if flow.TailMode {
-		findStrs = append(findStrs, gatherInputsFromFlow(flow, currCmdIdx)...)
-	}
+	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
 
 	screen := display.NewCacheScreen()
 	display.DumpEnvFlattenVals(screen, env, findStrs...)
