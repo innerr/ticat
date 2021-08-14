@@ -50,7 +50,7 @@ func globalHelpLessMoreInfo(
 				cmdPathStr = cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
 			}
 		*/
-		return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cic, skeleton, findStrs...)
+		return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cic, skeleton, findStrs...)
 	}
 
 	if len(flow.Cmds) >= 2 {
@@ -61,7 +61,7 @@ func globalHelpLessMoreInfo(
 		}
 		cmdPathStr = flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, true)
 		if len(findStrs) != 0 {
-			return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cmd, skeleton, findStrs...)
+			return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cmd, skeleton, findStrs...)
 		}
 		if len(flow.Cmds) > 2 ||
 			cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
@@ -73,12 +73,12 @@ func globalHelpLessMoreInfo(
 		}
 		input := flow.Last().ParseResult.Input
 		if len(input) > 1 {
-			return dumpMoreLessFindResult(flow, cc.Screen, env, "", cc.Cmds, skeleton, input...)
+			return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, "", cc.Cmds, skeleton, input...)
 		}
-		return dumpMoreLessFindResult(flow, cc.Screen, env, cmdPathStr, cmd, skeleton)
+		return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cmd, skeleton)
 	}
 
-	return dumpMoreLessFindResult(flow, cc.Screen, env, "", cc.Cmds, skeleton, findStrs...)
+	return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, "", cc.Cmds, skeleton, findStrs...)
 }
 
 func DumpTailCmdInfo(
@@ -91,7 +91,7 @@ func DumpTailCmdInfo(
 	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
 	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func DumpTailCmdUsage(
@@ -104,7 +104,7 @@ func DumpTailCmdUsage(
 	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
 	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func DumpTailCmdSubLess(
@@ -147,7 +147,7 @@ func dumpTailCmdSub(
 		}
 		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	}
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
@@ -174,12 +174,12 @@ func FindByTags(
 	}
 	if len(findStrs) == 0 {
 		display.ListTags(cc.Cmds, cc.Screen, env)
-		return clearFlow(flow)
+		return currCmdIdx, true
 	}
 
 	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...).SetFindByTags().SetSkeleton()
 	display.DumpCmds(cc.Cmds, cc.Screen, env, dumpArgs)
-	return clearFlow(flow)
+	return currCmdIdx, true
 }
 
 func GlobalHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
@@ -194,6 +194,7 @@ func SelfHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) b
 
 func dumpMoreLessFindResult(
 	flow *core.ParsedCmds,
+	currCmdIdx int,
 	screen core.Screen,
 	env *core.Env,
 	cmdPathStr string,
@@ -206,5 +207,5 @@ func dumpMoreLessFindResult(
 	dumpArgs.Skeleton = skeleton
 	display.DumpCmdsWithTips(cmd, printer, env, dumpArgs, cmdPathStr, true)
 	printer.WriteTo(screen)
-	return clearFlow(flow)
+	return currCmdIdx, true
 }

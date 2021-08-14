@@ -182,6 +182,7 @@ func SuggestFlowsFilter(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" h str1 str2", indent) + "- find flows matched these strings",
+		padR(selfName+" str1 str2 ::h", indent) + "- same as above, in tail-mode",
 	}
 }
 

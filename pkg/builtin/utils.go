@@ -86,11 +86,6 @@ func assertNotTailMode(flow *core.ParsedCmds, currCmdIdx int, tailMode bool) {
 	}
 }
 
-func clearFlow(flow *core.ParsedCmds) (int, bool) {
-	flow.Cmds = nil
-	return 0, true
-}
-
 func getAndCheckArg(argv core.ArgVals, env *core.Env, cmd core.ParsedCmd, arg string) string {
 	val := argv.GetRaw(arg)
 	if len(val) == 0 {
@@ -165,14 +160,14 @@ func isOsCmdExists(cmd string) bool {
 func osRemoveDir(path string, cmd core.ParsedCmd) {
 	path = strings.TrimSpace(path)
 	if len(path) <= 1 {
-		panic(core.WrapCmdError(cmd, fmt.Errorf("removing path '%v', looks not right", path)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("removing path '%v', looks not right", path)))
 	}
 	err := os.RemoveAll(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return
 		}
-		panic(core.WrapCmdError(cmd, fmt.Errorf("remove repo '%s' failed: %v", path, err)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("remove repo '%s' failed: %v", path, err)))
 	}
 }
 

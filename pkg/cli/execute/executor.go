@@ -418,7 +418,8 @@ func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) bool {
 		cc.Screen.Print("\n")
 	}
 	if env.GetBool("sys.step-by-step") {
-		cc.Screen.Print("[confirm] type 'y' and press enter:\n")
+		cc.Screen.Print(display.ColorTip("[confirm]", env) + " type " +
+			display.ColorWarn("'y'", env) + " and press enter:\n")
 		return utils.UserConfirm()
 	}
 	return true

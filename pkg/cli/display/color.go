@@ -15,23 +15,23 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		return 0
 	}
 	lens := map[string]int{
-		"hub":        3,
-		"arg":        3,
-		"key":        3,
-		"warn":       3,
-		"error":      3,
-		"tip-symbol": 3,
-		"symbol":     3,
-		"prop":       3,
-		"tag":        2,
-		"help":       2,
-		"flow":       2,
-		"cmd":        2,
-		"cmd-done":   2,
-		"cmd-curr":   2,
-		"flowing":    2,
-		"enabled":    2,
-		"disabled":   3,
+		"hub":      3,
+		"arg":      3,
+		"key":      3,
+		"warn":     3,
+		"error":    3,
+		"tip":      3,
+		"symbol":   3,
+		"prop":     3,
+		"tag":      2,
+		"help":     2,
+		"flow":     2,
+		"cmd":      2,
+		"cmd-done": 2,
+		"cmd-curr": 2,
+		"flowing":  2,
+		"enabled":  2,
+		"disabled": 3,
 	}
 	for _, it := range types {
 		extra, ok := lens[it]
@@ -71,7 +71,7 @@ func ColorError(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(124), env)
 }
 
-func ColorTipSymbol(origin string, env *core.Env) string {
+func ColorTip(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(214), env)
 }
 
