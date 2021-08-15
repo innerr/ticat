@@ -5,18 +5,16 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-// TODO: better way to do this
-
 // TODO: move to command property
-
 func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	last := flow.Cmds[0].LastCmd()
 	if last == nil {
 		return false
 	}
+	// Equal to funcs which clear flow
 	allows := []interface{}{
-		builtin.DumpCmdNoRecursive,
 		builtin.SaveFlow,
+		builtin.DumpCmdNoRecursive,
 		builtin.DumpTailCmdInfo,
 		builtin.DumpTailCmdSubLess,
 		builtin.DumpTailCmdSubMore,
@@ -39,43 +37,48 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	return false
 }
 
-func isEndWithSearchCmd(flow *core.ParsedCmds) (isSearch, isLess, isMore bool) {
+// TODO: try to remove this, it just for better display
+func isStartWithSearchCmd(flow *core.ParsedCmds) (isSearch bool) {
 	if len(flow.Cmds) == 0 {
 		return
 	}
-	cmd := flow.Cmds.LastCmd()
-	last := cmd.LastCmd()
+	last := flow.Cmds[0].LastCmd()
 	if last == nil {
 		return
 	}
-	if last.IsTheSameFunc(builtin.GlobalHelpMoreInfo) {
-		isSearch = true
-		isMore = true
-	} else if last.IsTheSameFunc(builtin.GlobalHelpLessInfo) {
-		isSearch = true
-		isLess = true
-	} else if last.IsTheSameFunc(builtin.DumpTailCmdInfo) ||
-		last.IsTheSameFunc(builtin.DumpTailCmdSubLess) ||
-		last.IsTheSameFunc(builtin.DumpTailCmdSubMore) {
-		isSearch = true
+	funcs := []interface{}{
+		builtin.GlobalHelpMoreInfo,
+		builtin.GlobalHelpLessInfo,
+		builtin.DumpTailCmdInfo,
+		builtin.DumpTailCmdSubLess,
+		builtin.DumpTailCmdSubMore,
 	}
-	return
+	for _, it := range funcs {
+		if last.IsTheSameFunc(it) {
+			return true
+		}
+	}
+	return false
 }
 
 func allowParseError(flow *core.ParsedCmds) bool {
 	if len(flow.Cmds) == 0 {
 		return false
 	}
-	cmd := flow.Cmds.LastCmd()
-	last := cmd.LastCmd()
+	if flow.TailModeCall {
+		return flow.Cmds[0].ParseResult.Error == nil
+	}
+	last := flow.Cmds[0].LastCmd()
 	if last == nil {
 		return false
 	}
-	if last.IsTheSameFunc(builtin.SaveFlow) {
-		return true
+	funcs := []interface{}{
+		builtin.SaveFlow,
 	}
-	if last.IsTheSameFunc(builtin.FindByTags) {
-		return true
+	for _, it := range funcs {
+		if last.IsTheSameFunc(it) {
+			return true
+		}
 	}
 	return false
 }

@@ -70,9 +70,10 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	}
 
 	if !innerCall && !bootstrap {
-		reordered, moved := moveLastPriorityCmdToFront(flow.Cmds)
+		reordered, moved, tailModeCall := moveLastPriorityCmdToFront(flow.Cmds)
 		flow.Cmds = reordered
 		flow.HasTailMode = moved
+		flow.TailModeCall = tailModeCall
 		// TODO: this may not right if flow was changed in recursive process, but not big deal
 		if moved && flow.GlobalCmdIdx == 0 {
 			flow.GlobalCmdIdx = 1
@@ -80,9 +81,9 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	}
 	removeEmptyCmds(flow)
 
-	if !flow.HasTailMode && !allowParseError(flow) {
-		isSearch, isLess, isMore := isEndWithSearchCmd(flow)
-		if !display.HandleParseResult(cc, flow, env, isSearch, isLess, isMore) {
+	if !allowParseError(flow) {
+		isSearch := isStartWithSearchCmd(flow)
+		if !display.HandleParseResult(cc, flow, env, isSearch) {
 			return false
 		}
 	}
@@ -197,17 +198,22 @@ func removeEmptyCmds(flow *core.ParsedCmds) {
 	flow.Cmds = cmds
 }
 
-func moveLastPriorityCmdToFront(flow []core.ParsedCmd) (reordered []core.ParsedCmd, doMove bool) {
+func moveLastPriorityCmdToFront(
+	flow []core.ParsedCmd) (reordered []core.ParsedCmd, doMove bool, tailModeCall bool) {
+
 	cnt := len(flow)
 	if cnt <= 1 {
-		return flow, false
+		return flow, false, false
 	}
 
 	last := flow[cnt-1]
 
 	trim := func(flow []core.ParsedCmd) []core.ParsedCmd {
 		for {
-			if len(flow) == 0 || !flow[len(flow)-1].IsAllEmptySegments() {
+			if len(flow) == 0 {
+				break
+			}
+			if !flow[len(flow)-1].IsAllEmptySegments() {
 				break
 			}
 			flow = flow[:len(flow)-1]
@@ -216,16 +222,18 @@ func moveLastPriorityCmdToFront(flow []core.ParsedCmd) (reordered []core.ParsedC
 	}
 
 	if cnt >= 2 && len(flow[cnt-2].ParseResult.Input) == 0 {
-		flow, _ = moveLastPriorityCmdToFront(trim(flow[:cnt-2]))
+		flow = trim(flow[:cnt-2])
 	} else if last.IsPriority() {
-		flow, _ = moveLastPriorityCmdToFront(trim(flow[:cnt-1]))
+		flow = trim(flow[:cnt-1])
 	} else {
-		return flow, false
+		return flow, false, false
 	}
+
+	flow, _, _ = moveLastPriorityCmdToFront(flow)
 
 	last.TailMode = true
 	flow = append([]core.ParsedCmd{last}, flow...)
-	return flow, true
+	return flow, true, len(flow) <= 2
 }
 
 // TODO: remove this, not use anymore
@@ -354,8 +362,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	if len(flow.Cmds) == 0 {
 		return true
 	}
-	allowFail := allowCheckEnvOpsFail(flow)
-	if allowFail {
+	if allowCheckEnvOpsFail(flow) {
 		return true
 	}
 	checker := &core.EnvOpsChecker{}

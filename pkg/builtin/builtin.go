@@ -20,7 +20,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
-	help := cmds.AddSub("-help", "-HELP", "help", "-h", "-H")
+	help := cmds.AddSub("help", "-help", "-HELP", "-h", "-H", "?")
 	help.RegCmd(GlobalHelp,
 		"get help")
 	help.AddSub(cmds.Strs.SelfName, "self").
@@ -47,10 +47,17 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetPriority()
 	addFindStrArgs(less)
 
-	find := cmds.AddSub("search", "find", "fnd", "s", "S").
-		RegCmd(FindAny,
-			"find anything with given string")
+	find := cmds.AddSub("find", "search", "fnd", "s", "S", "/").
+		RegPowerCmd(GlobalFindCmd,
+			"find commands with strings").
+		SetPriority()
 	addFindStrArgs(find)
+
+	findDetail := cmds.AddSub("find-detail", "//").
+		RegPowerCmd(GlobalFindCmdDetail,
+			"find commands with strings, with details").
+		SetPriority()
+	addFindStrArgs(findDetail)
 
 	findTag := cmds.AddSub("tags", "tag", cmds.Strs.TagMark).
 		RegPowerCmd(FindByTags,
@@ -107,13 +114,13 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail-sub-less", "--").
+	cmds.AddSub("tail-sub-less", "~").
 		RegPowerCmd(DumpTailCmdSubLess,
 			"display commands on the branch of the last command").
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail-sub-more", "++").
+	cmds.AddSub("tail-sub-more", "~~").
 		RegPowerCmd(DumpTailCmdSubMore,
 			"display commands on the branch of the last command, with details").
 		SetQuiet().

@@ -23,7 +23,7 @@ func (self *Parser) Parse(
 	input ...string) *core.ParsedCmds {
 
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
-	flow := core.ParsedCmds{core.ParsedEnv{}, nil, -1, false}
+	flow := core.ParsedCmds{core.ParsedEnv{}, nil, -1, false, false}
 	for _, seq := range seqs {
 		flow.Cmds = append(flow.Cmds, self.cmdParser.Parse(cmds, envAbbrs, seq))
 	}

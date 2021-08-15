@@ -25,7 +25,7 @@ func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []c
 	if len(cmdPath) == 0 {
 		return DumpCmdListSimple(argv, cc, env, flow)
 	}
-	dumpArgs := display.NewDumpCmdArgs().NoFlatten().NoRecursive()
+	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	return true
 }

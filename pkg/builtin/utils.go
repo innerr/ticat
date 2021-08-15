@@ -143,11 +143,16 @@ func tailModeGetInput(flow *core.ParsedCmds, currCmdIdx int, allowMultiCmds bool
 	if !flow.Cmds[currCmdIdx].TailMode {
 		return
 	}
-	if !allowMultiCmds && len(flow.Cmds) > 2 {
-		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "too many commands in tail-mode"))
+	if len(flow.Cmds) <= 1 {
+		return
 	}
-	for _, cmd := range flow.Cmds[currCmdIdx+1:] {
+	if !allowMultiCmds {
+		cmd := flow.Cmds[len(flow.Cmds)-1]
 		input = append(input, cmd.ParseResult.Input...)
+	} else {
+		for _, cmd := range flow.Cmds[currCmdIdx+1:] {
+			input = append(input, cmd.ParseResult.Input...)
+		}
 	}
 	return
 }

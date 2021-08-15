@@ -137,7 +137,7 @@ func dumpTailCmdSub(
 
 	if len(flow.Cmds) < 2 {
 		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-		dumpArgs := display.NewDumpCmdArgs().NoFlatten().NoRecursive()
+		dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	} else {
 		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
@@ -150,15 +150,48 @@ func dumpTailCmdSub(
 	return clearFlow(flow)
 }
 
-func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func GlobalFindCmd(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return globalFind(argv, cc, env, flow, currCmdIdx, false)
+}
+
+func GlobalFindCmdDetail(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return globalFind(argv, cc, env, flow, currCmdIdx, true)
+}
+
+func globalFind(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	detail bool) (int, bool) {
+
 	findStrs := getFindStrsFromArgv(argv)
-	if len(findStrs) == 0 {
-		return true
+	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(findStrs...)
+	if detail {
+		dumpArgs.SetShowUsage()
 	}
-	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
-	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
-	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
-	return true
+	buf := display.NewCacheScreen()
+	display.DumpCmds(cc.Cmds, buf, env, dumpArgs)
+	buf.WriteTo(cc.Screen)
+	if display.TooMuchOutput(env, buf) {
+		display.PrintTipTitle(cc.Screen, env,
+			"add more filter strings to narrow the result")
+	}
+	return clearFlow(flow)
 }
 
 func FindByTags(
@@ -202,10 +235,8 @@ func dumpMoreLessFindResult(
 	skeleton bool,
 	findStrs ...string) (int, bool) {
 
-	printer := display.NewCacheScreen()
 	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
 	dumpArgs.Skeleton = skeleton
-	display.DumpCmdsWithTips(cmd, printer, env, dumpArgs, cmdPathStr, true)
-	printer.WriteTo(screen)
+	display.DumpCmdsWithTips(cmd, screen, env, dumpArgs, cmdPathStr, true)
 	return clearFlow(flow)
 }
