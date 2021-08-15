@@ -19,11 +19,12 @@ type CliParser interface {
 }
 
 type ParsedCmds struct {
-	GlobalEnv    ParsedEnv
-	Cmds         ParsedCmdSeq
-	GlobalCmdIdx int
-	HasTailMode  bool
-	TailModeCall bool
+	GlobalEnv          ParsedEnv
+	Cmds               ParsedCmdSeq
+	GlobalCmdIdx       int
+	HasTailMode        bool
+	TailModeCall       bool
+	AttempTailModeCall bool
 }
 
 type ParsedCmdSeq []ParsedCmd
@@ -80,6 +81,11 @@ func (self ParsedCmd) Last() (seg ParsedCmdSeg) {
 
 func (self ParsedCmd) LastCmdNode() (cmd *CmdTree) {
 	return self.Last().Matched.Cmd
+}
+
+func (self ParsedCmd) AllowTailModeCall() bool {
+	cmd := self.LastCmdNode()
+	return cmd != nil && cmd.AllowTailModeCall()
 }
 
 func (self ParsedCmd) LastCmd() (cmd *Cmd) {

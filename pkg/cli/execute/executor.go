@@ -70,10 +70,11 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	}
 
 	if !innerCall && !bootstrap {
-		reordered, moved, tailModeCall := moveLastPriorityCmdToFront(flow.Cmds)
+		reordered, moved, tailModeCall, attempTailModeCall := moveLastPriorityCmdToFront(flow.Cmds)
 		flow.Cmds = reordered
 		flow.HasTailMode = moved
 		flow.TailModeCall = tailModeCall
+		flow.AttempTailModeCall = attempTailModeCall
 		// TODO: this may not right if flow was changed in recursive process, but not big deal
 		if moved && flow.GlobalCmdIdx == 0 {
 			flow.GlobalCmdIdx = 1
@@ -148,7 +149,7 @@ func (self *Executor) executeCmd(
 	ln := cc.Screen.OutputNum()
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
-		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, flow.HasTailMode)
+		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, flow.TailModeCall)
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -199,11 +200,11 @@ func removeEmptyCmds(flow *core.ParsedCmds) {
 }
 
 func moveLastPriorityCmdToFront(
-	flow []core.ParsedCmd) (reordered []core.ParsedCmd, doMove bool, tailModeCall bool) {
+	flow []core.ParsedCmd) (reordered []core.ParsedCmd, doMove bool, tailModeCall bool, attempTailModeCall bool) {
 
 	cnt := len(flow)
 	if cnt <= 1 {
-		return flow, false, false
+		return flow, false, false, false
 	}
 
 	last := flow[cnt-1]
@@ -226,77 +227,15 @@ func moveLastPriorityCmdToFront(
 	} else if last.IsPriority() {
 		flow = trim(flow[:cnt-1])
 	} else {
-		return flow, false, false
+		return flow, false, false, false
 	}
 
-	flow, _, _ = moveLastPriorityCmdToFront(flow)
+	flow, _, _, _ = moveLastPriorityCmdToFront(flow)
 
 	last.TailMode = true
 	flow = append([]core.ParsedCmd{last}, flow...)
-	return flow, true, len(flow) <= 2
-}
-
-// TODO: remove this, not use anymore
-func _moveLastPriorityCmdToFront(
-	cc *core.Cli,
-	flow *core.ParsedCmds,
-	_ *core.Env) bool {
-
-	for i := len(flow.Cmds) - 1; i >= 0; i-- {
-		cmd := flow.Cmds[i]
-		if cmd.IsPriority() {
-			if i == 0 {
-				return true
-			}
-			if i == len(flow.Cmds)-1 {
-				flow.Cmds = append([]core.ParsedCmd{cmd}, flow.Cmds[:i]...)
-			} else {
-				tail := flow.Cmds[i+1:]
-				flow.Cmds = append([]core.ParsedCmd{cmd}, flow.Cmds[:i]...)
-				flow.Cmds = append(flow.Cmds, tail...)
-			}
-			if flow.GlobalCmdIdx == 0 {
-				flow.GlobalCmdIdx = 1
-			}
-			return true
-		}
-	}
-	return true
-}
-
-// TODO: remove this, not use anymore
-// Move priority cmds to the front
-func reorderByPriority(
-	cc *core.Cli,
-	flow *core.ParsedCmds,
-	_ *core.Env) bool {
-
-	var unfiltered []core.ParsedCmd
-	unfilteredGlobalCmdIdx := -1
-	var priorities []core.ParsedCmd
-	prioritiesGlobalCmdIdx := -1
-
-	for i, cmd := range flow.Cmds {
-		if cmd.IsPriority() {
-			priorities = append(priorities, cmd)
-			if i == flow.GlobalCmdIdx {
-				prioritiesGlobalCmdIdx = len(priorities) - 1
-			}
-		} else {
-			unfiltered = append(unfiltered, cmd)
-			if i == flow.GlobalCmdIdx {
-				unfilteredGlobalCmdIdx = len(unfiltered) - 1
-			}
-		}
-	}
-	flow.Cmds = append(priorities, unfiltered...)
-	if prioritiesGlobalCmdIdx >= 0 {
-		flow.GlobalCmdIdx = prioritiesGlobalCmdIdx
-	}
-	if unfilteredGlobalCmdIdx >= 0 {
-		flow.GlobalCmdIdx = len(priorities) + unfilteredGlobalCmdIdx
-	}
-	return true
+	attempTailModeCall = !last.IsPriority() && !last.AllowTailModeCall() && len(flow) == 2
+	return flow, true, last.AllowTailModeCall() && len(flow) <= 2, attempTailModeCall
 }
 
 func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {

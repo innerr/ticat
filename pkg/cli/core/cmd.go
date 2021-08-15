@@ -29,40 +29,42 @@ type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
 type Cmd struct {
-	owner        *CmdTree
-	help         string
-	ty           CmdType
-	quiet        bool
-	priority     bool
-	args         Args
-	normal       NormalCmd
-	power        PowerCmd
-	cmdLine      string
-	flow         []string
-	envOps       EnvOps
-	depends      []Depend
-	metaFilePath string
-	val2env      *Val2Env
-	arg2env      *Arg2Env
+	owner             *CmdTree
+	help              string
+	ty                CmdType
+	quiet             bool
+	priority          bool
+	allowTailModeCall bool
+	args              Args
+	normal            NormalCmd
+	power             PowerCmd
+	cmdLine           string
+	flow              []string
+	envOps            EnvOps
+	depends           []Depend
+	metaFilePath      string
+	val2env           *Val2Env
+	arg2env           *Arg2Env
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
 	return &Cmd{
-		owner:        owner,
-		help:         help,
-		ty:           CmdTypeUninited,
-		quiet:        false,
-		priority:     false,
-		args:         newArgs(),
-		normal:       nil,
-		power:        nil,
-		cmdLine:      "",
-		flow:         nil,
-		envOps:       newEnvOps(),
-		depends:      nil,
-		metaFilePath: "",
-		val2env:      newVal2Env(),
-		arg2env:      newArg2Env(),
+		owner:             owner,
+		help:              help,
+		ty:                CmdTypeUninited,
+		quiet:             false,
+		priority:          false,
+		allowTailModeCall: false,
+		args:              newArgs(),
+		normal:            nil,
+		power:             nil,
+		cmdLine:           "",
+		flow:              nil,
+		envOps:            newEnvOps(),
+		depends:           nil,
+		metaFilePath:      "",
+		val2env:           newVal2Env(),
+		arg2env:           newArg2Env(),
 	}
 }
 
@@ -245,6 +247,11 @@ func (self *Cmd) SetQuiet() *Cmd {
 	return self
 }
 
+func (self *Cmd) SetAllowTailModeCall() *Cmd {
+	self.allowTailModeCall = true
+	return self
+}
+
 func (self *Cmd) SetPriority() *Cmd {
 	self.priority = true
 	return self
@@ -303,6 +310,10 @@ func (self *Cmd) IsNoExecutableCmd() bool {
 
 func (self *Cmd) IsPowerCmd() bool {
 	return self.ty == CmdTypePower
+}
+
+func (self *Cmd) AllowTailModeCall() bool {
+	return self.allowTailModeCall
 }
 
 func (self *Cmd) IsQuiet() bool {

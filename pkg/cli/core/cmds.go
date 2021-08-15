@@ -233,6 +233,10 @@ func (self *CmdTree) IsPowerCmd() bool {
 	return self.cmd != nil && self.cmd.IsPowerCmd()
 }
 
+func (self *CmdTree) AllowTailModeCall() bool {
+	return self.cmd != nil && self.cmd.AllowTailModeCall()
+}
+
 func (self *CmdTree) Parent() *CmdTree {
 	return self.parent
 }

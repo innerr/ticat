@@ -12,6 +12,16 @@ func HandleParseResult(
 	env *core.Env,
 	isSearch bool) bool {
 
+	if flow.AttempTailModeCall && len(flow.Cmds) == 2 &&
+		flow.Cmds[0].ParseResult.Error == nil && flow.Cmds[1].ParseResult.Error != nil {
+
+		PrintErrTitle(cc.Screen, env,
+			"["+flow.Cmds[0].DisplayPath(cc.Cmds.Strs.PathSep, true)+"] not support tail-mode call.",
+			"",
+			"it is using the wrong command?")
+		return false
+	}
+
 	for _, cmd := range flow.Cmds {
 		if cmd.ParseResult.Error == nil {
 			continue

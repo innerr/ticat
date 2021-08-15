@@ -169,8 +169,8 @@ func (self *DumpCmdArgs) SetMatchWriteKey(key string) *DumpCmdArgs {
 }
 
 func (self *DumpCmdArgs) MatchFind(cmd *core.CmdTree) bool {
-	if self.FindByTags && cmd.MatchTags(self.FindStrs...) {
-		return true
+	if self.FindByTags {
+		return cmd.MatchTags(self.FindStrs...)
 	}
 	if len(self.MatchWriteKey) != 0 {
 		return cmd.MatchWriteKey(self.MatchWriteKey)

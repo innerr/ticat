@@ -50,18 +50,21 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	find := cmds.AddSub("find", "search", "fnd", "s", "S", "/").
 		RegPowerCmd(GlobalFindCmd,
 			"find commands with strings").
+		SetAllowTailModeCall().
 		SetPriority()
 	addFindStrArgs(find)
 
 	findDetail := cmds.AddSub("find-detail", "//").
 		RegPowerCmd(GlobalFindCmdDetail,
 			"find commands with strings, with details").
+		SetAllowTailModeCall().
 		SetPriority()
 	addFindStrArgs(findDetail)
 
 	findTag := cmds.AddSub("tags", "tag", cmds.Strs.TagMark).
 		RegPowerCmd(FindByTags,
 			"list commands having the specified tags").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(findTag)
@@ -129,6 +132,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	mods := cmds.AddSub("cmds", "cmd", "c", "C")
 	mods.RegCmd(DumpCmdNoRecursive,
 		"display command info, sub tree commands will not show").
+		SetAllowTailModeCall().
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	tree := mods.AddSub("tree", "t", "T")
@@ -140,14 +144,16 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"list builtin and loaded commands, skeleton only").
 		AddArg("cmd-path", "", "path", "p", "P")
 
-	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
+	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegCmd(DumpCmdList,
-			"list builtin and loaded commands")
+			"list builtin and loaded commands").
+		SetAllowTailModeCall()
 	addFindStrArgs(list)
 
 	listSimple := list.AddSub("simple", "sim", "s", "S", "-").
 		RegCmd(DumpCmdListSimple,
-			"list builtin and loaded commands in lite style")
+			"list builtin and loaded commands in lite style").
+		SetAllowTailModeCall()
 	addFindStrArgs(listSimple)
 }
 
@@ -155,7 +161,8 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 	listFlowsHelpStr := "list local saved but unlinked (to any repo) flows"
 	flow := cmds.AddSub("flow", "fl", "f", "F").
 		RegPowerCmd(ListFlows,
-			listFlowsHelpStr)
+			listFlowsHelpStr).
+		SetAllowTailModeCall()
 	addFindStrArgs(flow)
 
 	flow.AddSub("save", "persist", "s", "S", "+").
@@ -175,11 +182,14 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 	flow.AddSub("remove", "rm", "delete", "del", "-").
 		RegPowerCmd(RemoveFlow,
 			"remove a saved flow").
+		SetAllowTailModeCall().
+		SetPriority().
 		AddArg("cmd-path", "", "path", "p", "P")
 
-	flowList := flow.AddSub("list-local", "list", "ls", "~").
+	flowList := flow.AddSub("list-local", "list", "ls").
 		RegPowerCmd(ListFlows,
-			listFlowsHelpStr)
+			listFlowsHelpStr).
+		SetAllowTailModeCall()
 	addFindStrArgs(flowList)
 
 	flow.AddSub("load", "l", "L").
@@ -194,13 +204,15 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 	flow.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
 		RegPowerCmd(MoveSavedFlowsToLocalDir,
 			MoveFlowsToDirHelpStr).
+		SetAllowTailModeCall().
 		AddArg("path", "", "p", "P")
 }
 
 func RegisterEnvCmds(cmds *core.CmdTree) {
 	env := cmds.AddSub("env", "e", "E").
 		RegPowerCmd(DumpEssentialEnvFlattenVals,
-			"list essential env values in flatten format")
+			"list essential env values in flatten format").
+		SetAllowTailModeCall()
 	addFindStrArgs(env)
 
 	env.AddSub("tree", "t", "T").
@@ -212,9 +224,10 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 	abbrs.RegPowerCmd(DumpEnvAbbrs,
 		"list env tree and abbrs")
 
-	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F", "~").
+	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegPowerCmd(DumpEnvFlattenVals,
-			"list env values in flatten format")
+			"list env values in flatten format").
+		SetAllowTailModeCall()
 	addFindStrArgs(envList)
 
 	env.AddSub("save", "persist", "s", "S", "+").
@@ -225,6 +238,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
 		RegPowerCmd(RemoveEnvValAndSaveToLocal,
 			"remove specified env value and save changes to local").
+		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")
 
 	env.AddSub("reset-session", "reset", "--").
@@ -235,9 +249,10 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		RegPowerCmd(ResetLocalEnv,
 			"clear all local saved env values")
 
-	env.AddSub("who-write", "who", "write", "ww", "w", "W").
+	env.AddSub("who-write", "ww").
 		RegCmd(DumpCmdsWhoWriteKey,
 			"find which commands write the specified key").
+		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")
 
 	registerSimpleSwitch(abbrs,
@@ -280,7 +295,8 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 	listHubHelpStr := "list dir and repo info in hub"
 	hub := cmds.AddSub("hub", "h", "H").
 		RegPowerCmd(ListHub,
-			listHubHelpStr)
+			listHubHelpStr).
+		SetAllowTailModeCall()
 	addFindStrArgs(hub)
 
 	hub.AddSub("clear", "reset", "--").
@@ -288,27 +304,31 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 			"remove all repos from hub")
 
 	hub.AddSub("init", "++").
-		RegPowerCmd(AddGitDefaultToHub,
+		RegPowerCmd(AddDefaultGitRepoToHub,
 			"add and pull basic hub-repo to local")
 
 	add := hub.AddSub("add-and-update", "add", "a", "A", "+")
 	add.RegPowerCmd(AddGitRepoToHub,
 		"add and pull a git address to hub, do update if it already exists").
+		SetAllowTailModeCall().
 		AddArg("git-address", "", "git", "address", "addr")
 
 	add.AddSub("local-dir", "local", "l", "L").
 		RegPowerCmd(AddLocalDirToHub,
 			"add a local dir (could be a git repo) to hub").
+		SetAllowTailModeCall().
 		AddArg("path", "", "p", "P")
 
-	hubList := hub.AddSub("list", "ls", "~").
+	hubList := hub.AddSub("list", "ls").
 		RegPowerCmd(ListHub,
-			listHubHelpStr)
+			listHubHelpStr).
+		SetAllowTailModeCall()
 	addFindStrArgs(hubList)
 
 	purge := hub.AddSub("purge", "p", "P", "-")
 	purge.RegPowerCmd(PurgeInactiveRepoFromHub,
 		"remove an inactive repo from hub").
+		SetAllowTailModeCall().
 		AddArg("find-str", "", "s", "S")
 	purge.AddSub("purge-all-inactive", "all", "inactive", "a", "A", "-").
 		RegPowerCmd(PurgeAllInactiveReposFromHub,
@@ -321,16 +341,19 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 	hub.AddSub("enable-repo", "enable", "ena", "en", "e", "E").
 		RegPowerCmd(EnableRepoInHub,
 			"enable matched git repos in hub").
+		SetAllowTailModeCall().
 		AddArg("find-str", "", "s", "S")
 
 	hub.AddSub("disable-repo", "disable", "dis", "d", "D").
 		RegPowerCmd(DisableRepoInHub,
 			"disable matched git repos in hub").
+		SetAllowTailModeCall().
 		AddArg("find-str", "", "s", "S")
 
 	hub.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
 		RegPowerCmd(MoveSavedFlowsToLocalDir,
 			MoveFlowsToDirHelpStr).
+		SetAllowTailModeCall().
 		AddArg("path", "", "p", "P")
 }
 
@@ -374,10 +397,13 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 }
 
 func RegisterTrivialCmds(cmds *core.CmdTree) {
-	dummy := cmds.AddSub("dummy", "dmy", "dm")
+	cmds.AddSub("noop").
+		RegPowerCmd(Noop,
+			"do exactly nothing")
 
-	dummy.RegPowerCmd(Dummy,
-		"dummy command for testing")
+	cmds.AddSub("dummy", "dmy", "dm").
+		RegPowerCmd(Dummy,
+			"dummy command for testing")
 
 	cmds.AddSub("sleep", "slp").
 		RegPowerCmd(Sleep,
