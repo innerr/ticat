@@ -136,6 +136,7 @@ func dumpTailCmdSub(
 	skeleton bool) (int, bool) {
 
 	if len(flow.Cmds) < 2 {
+		panic("should not happen")
 		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
 		dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)

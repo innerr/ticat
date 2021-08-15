@@ -211,9 +211,17 @@ func (self *Cmd) MatchFind(findStr string) bool {
 	return false
 }
 
+// TODO: more flags to filter the result, too much
 func (self *Cmd) MatchWriteKey(key string) bool {
 	if self.envOps.MatchWriteKey(key) {
 		return true
+	}
+	if self.val2env.Has(key) {
+		return true
+	}
+	if self.arg2env.Has(key) {
+		arg := self.arg2env.GetArgName(key)
+		return len(self.args.DefVal(arg)) != 0
 	}
 	return false
 }

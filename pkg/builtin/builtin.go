@@ -138,6 +138,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	tree := mods.AddSub("tree", "t", "T")
 	tree.RegPowerCmd(DumpCmdTree,
 		"list builtin and loaded commands").
+		SetAllowTailModeCall().
 		AddArg("cmd-path", "", "path", "p", "P")
 	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
 		RegPowerCmd(DumpCmdTreeSkeleton,
@@ -226,8 +227,8 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegPowerCmd(DumpEnvFlattenVals,
-			"list env values in flatten format")
-		//SetAllowTailModeCall()
+			"list env values in flatten format").
+		SetAllowTailModeCall()
 	addFindStrArgs(envList)
 
 	env.AddSub("save", "persist", "s", "S", "+").
@@ -250,7 +251,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 			"clear all local saved env values")
 
 	env.AddSub("who-write", "ww").
-		RegCmd(DumpCmdsWhoWriteKey,
+		RegPowerCmd(DumpCmdsWhoWriteKey,
 			"find which commands write the specified key").
 		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")

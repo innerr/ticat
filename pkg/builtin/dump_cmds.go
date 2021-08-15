@@ -73,16 +73,17 @@ func DumpCmdTreeSkeleton(
 	return currCmdIdx, true
 }
 
-func DumpCmdsWhoWriteKey(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmd := flow[0]
-	key := argv.GetRaw("key")
-	if len(key) == 0 {
-		panic(core.NewCmdError(cmd, "missed arg 'key'"))
-	}
+func DumpCmdsWhoWriteKey(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
+	key := tailModeCallArg(flow, currCmdIdx, argv, "key")
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetMatchWriteKey(key)
 	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
-	return true
+	return currCmdIdx, true
 }
 
 func dumpCmdsByPath(cc *core.Cli, env *core.Env, args *display.DumpCmdArgs, path string) {
