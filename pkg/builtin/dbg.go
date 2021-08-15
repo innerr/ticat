@@ -6,7 +6,6 @@ import (
 	"os/exec"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
-	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
 func DbgEcho(
@@ -16,19 +15,9 @@ func DbgEcho(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	printed := false
-	if flow.Cmds[currCmdIdx].TailMode {
-		for _, input := range gatherInputsFromFlow(flow, currCmdIdx) {
-			cc.Screen.Print(display.ColorHelp(fmt.Sprintf("(flow-content) %v\n", input), env))
-			printed = true
-		}
-	}
-
 	arg := argv.GetRaw("message")
 	if len(arg) == 0 {
-		if !printed {
-			cc.Screen.Print("(arg 'message' is empty)")
-		}
+		cc.Screen.Print("(arg 'message' is empty)")
 		return currCmdIdx, true
 	}
 	cc.Screen.Print(fmt.Sprintf("%v\n", arg))

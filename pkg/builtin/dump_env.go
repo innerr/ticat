@@ -39,8 +39,7 @@ func DumpEnvFlattenVals(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	findStrs := getFindStrsFromArgv(argv)
-	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
 	screen := display.NewCacheScreen()
 	display.DumpEnvFlattenVals(screen, env, findStrs...)
@@ -68,10 +67,7 @@ func DumpEssentialEnvFlattenVals(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	findStrs := getFindStrsFromArgv(argv)
-	if flow.Cmds[currCmdIdx].TailMode {
-		findStrs = append(findStrs, gatherInputsFromFlow(flow, currCmdIdx)...)
-	}
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
 	screen := display.NewCacheScreen()
 	display.DumpEssentialEnvFlattenVals(screen, env, findStrs...)

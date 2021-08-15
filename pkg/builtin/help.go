@@ -35,7 +35,7 @@ func globalHelpLessMoreInfo(
 	currCmdIdx int,
 	skeleton bool) (int, bool) {
 
-	findStrs := getFindStrsFromArgv(argv)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
 	for _, cmd := range flow.Cmds {
 		if cmd.ParseResult.Error == nil {
@@ -178,19 +178,13 @@ func globalFind(
 	currCmdIdx int,
 	detail bool) (int, bool) {
 
-	findStrs := getFindStrsFromArgv(argv)
-	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(findStrs...)
 	if detail {
 		dumpArgs.SetShowUsage()
 	}
-	buf := display.NewCacheScreen()
-	display.DumpCmds(cc.Cmds, buf, env, dumpArgs)
-	buf.WriteTo(cc.Screen)
-	if display.TooMuchOutput(env, buf) {
-		display.PrintTipTitle(cc.Screen, env,
-			"add more filter strings to narrow the result")
-	}
+	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", true)
 	return clearFlow(flow)
 }
 
@@ -201,10 +195,7 @@ func FindByTags(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	findStrs := getFindStrsFromArgv(argv)
-	for _, cmd := range flow.Cmds[1:] {
-		findStrs = append(cmd.ParseResult.Input, findStrs...)
-	}
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	if len(findStrs) == 0 {
 		display.ListTags(cc.Cmds, cc.Screen, env)
 		return clearFlow(flow)

@@ -8,26 +8,43 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func DumpCmdListSimple(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(getFindStrsFromArgv(argv)...)
+func DumpCmdListSimple(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(findStrs...)
 	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
-	return true
+	return currCmdIdx, true
 }
 
-func DumpCmdList(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
-	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(getFindStrsFromArgv(argv)...)
+func DumpCmdList(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
 	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
-	return true
+	return currCmdIdx, true
 }
 
-func DumpCmdNoRecursive(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {
-	cmdPath := argv.GetRaw("cmd-path")
-	if len(cmdPath) == 0 {
-		return DumpCmdListSimple(argv, cc, env, flow)
-	}
+func DumpCmdNoRecursive(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
 	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	return true
+	return currCmdIdx, true
 }
 
 func DumpCmdTree(
@@ -37,16 +54,23 @@ func DumpCmdTree(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
 	dumpArgs := display.NewDumpCmdArgs().NoFlatten()
-	dumpCmdsByPath(cc, env, dumpArgs, argv.GetRaw("cmd-path"))
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	return currCmdIdx, true
 }
 
-func DumpCmdTreeSkeleton(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
+func DumpCmdTreeSkeleton(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().NoFlatten()
-	dumpCmdsByPath(cc, env, dumpArgs, argv.GetRaw("cmd-path"))
-	return true
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
+	return currCmdIdx, true
 }
 
 func DumpCmdsWhoWriteKey(argv core.ArgVals, cc *core.Cli, env *core.Env, flow []core.ParsedCmd) bool {

@@ -130,7 +130,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetPriority()
 
 	mods := cmds.AddSub("cmds", "cmd", "c", "C")
-	mods.RegCmd(DumpCmdNoRecursive,
+	mods.RegPowerCmd(DumpCmdNoRecursive,
 		"display command info, sub tree commands will not show").
 		SetAllowTailModeCall().
 		AddArg("cmd-path", "", "path", "p", "P")
@@ -140,18 +140,18 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		"list builtin and loaded commands").
 		AddArg("cmd-path", "", "path", "p", "P")
 	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
-		RegCmd(DumpCmdTreeSkeleton,
+		RegPowerCmd(DumpCmdTreeSkeleton,
 			"list builtin and loaded commands, skeleton only").
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
-		RegCmd(DumpCmdList,
+		RegPowerCmd(DumpCmdList,
 			"list builtin and loaded commands").
 		SetAllowTailModeCall()
 	addFindStrArgs(list)
 
 	listSimple := list.AddSub("simple", "sim", "s", "S", "-").
-		RegCmd(DumpCmdListSimple,
+		RegPowerCmd(DumpCmdListSimple,
 			"list builtin and loaded commands in lite style").
 		SetAllowTailModeCall()
 	addFindStrArgs(listSimple)
@@ -226,8 +226,8 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegPowerCmd(DumpEnvFlattenVals,
-			"list env values in flatten format").
-		SetAllowTailModeCall()
+			"list env values in flatten format")
+		//SetAllowTailModeCall()
 	addFindStrArgs(envList)
 
 	env.AddSub("save", "persist", "s", "S", "+").

@@ -28,39 +28,37 @@ func assertNotTailModeCall(flow *core.ParsedCmds, currCmdIdx int) {
 	}
 }
 
-func gatherInputsFromFlow(flow *core.ParsedCmds, currCmdIdx int) (inputs []string) {
-	for _, cmd := range flow.Cmds[currCmdIdx+1:] {
-		inputs = append(inputs, cmd.ParseResult.Input...)
-	}
-	return
-}
-
-func getArgFromFlowOrArgv(
+func tailModeCallArg(
 	flow *core.ParsedCmds,
 	currCmdIdx int,
 	argv core.ArgVals,
 	arg string) string {
 
-	args := getArgsFromFlowOrArgv(flow, currCmdIdx, argv, arg, false, false)
+	args := tailModeCallArgs(flow, currCmdIdx, argv, arg, false)
 	return args[0]
 }
 
-func getArgsFromFlowOrArgv(
+func tailModeCallArgs(
 	flow *core.ParsedCmds,
 	currCmdIdx int,
 	argv core.ArgVals,
 	arg string,
-	allowMultiCmds bool,
 	allowMultiArgs bool) []string {
 
-	if !allowMultiArgs && allowMultiCmds {
+	val := argv.GetRaw(arg)
+	if flow.TailModeCall && !flow.Cmds[currCmdIdx].TailMode {
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
-			"should not happen: wrong usage of 'getArgsFromFlowOrArgv'"))
+			"should not happen: wrong command tail-mode flag"))
+	}
+	if !flow.TailModeCall {
+		if len(val) == 0 {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty"))
+		}
+		return []string{val}
 	}
 
-	args := tailModeGetInput(flow, currCmdIdx, allowMultiCmds)
+	args := tailModeGetInput(flow, currCmdIdx, false)
 	flowInputN := len(args)
-	val := argv.GetRaw(arg)
 	if len(val) != 0 {
 		args = append(args, val)
 	} else {
@@ -71,10 +69,10 @@ func getArgsFromFlowOrArgv(
 	if !allowMultiArgs && len(args) > 1 {
 		if flowInputN > 0 && len(val) != 0 {
 			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
-				"mixed usage of arg '"+arg+"' and tail-mode"))
+				"mixed usage of arg '"+arg+"' and tail-mode call"))
 		} else {
 			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
-				"too many input of arg '"+arg+"' in tail-mode"))
+				"too many input of arg '"+arg+"' in tail-mode call"))
 		}
 	}
 	return args
@@ -101,6 +99,14 @@ func tailModeGetInput(flow *core.ParsedCmds, currCmdIdx int, allowMultiCmds bool
 func clearFlow(flow *core.ParsedCmds) (int, bool) {
 	flow.Cmds = nil
 	return 0, true
+}
+
+func getFindStrsFromArgvAndFlow(flow *core.ParsedCmds, currCmdIdx int, argv core.ArgVals) (findStrs []string) {
+	findStrs = getFindStrsFromArgv(argv)
+	if flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode {
+		findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
+	}
+	return
 }
 
 func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {

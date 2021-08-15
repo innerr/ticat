@@ -56,7 +56,7 @@ func AddGitRepoToHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	addr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "git-address")
+	addr := tailModeCallArg(flow, currCmdIdx, argv, "git-address")
 	addRepoToHub(addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 	showHubFindTip(cc.Screen, env)
 	return currCmdIdx, true
@@ -89,9 +89,7 @@ func ListHub(
 	currCmdIdx int) (int, bool) {
 
 	cmd := flow.Cmds[currCmdIdx]
-
-	findStrs := getFindStrsFromArgv(argv)
-	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
@@ -195,7 +193,7 @@ func PurgeInactiveRepoFromHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
+	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
 	purgeInactiveRepoFromHub(findStr, cc, env, flow.Cmds[currCmdIdx])
 	return currCmdIdx, true
 }
@@ -264,7 +262,7 @@ func EnableRepoInHub(
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
+	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
 
 	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
 	checkFoundRepos(env, cmd, extracted, findStr, true)
@@ -304,7 +302,7 @@ func DisableRepoInHub(
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
+	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
 
 	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
 	checkFoundRepos(env, cmd, extracted, findStr, false)
@@ -342,7 +340,7 @@ func AddLocalDirToHub(
 	currCmdIdx int) (int, bool) {
 
 	cmd := flow.Cmds[currCmdIdx]
-	path := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "path")
+	path := tailModeCallArg(flow, currCmdIdx, argv, "path")
 
 	stat, err := os.Stat(path)
 	if err != nil {
