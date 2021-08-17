@@ -29,40 +29,42 @@ type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
 type Cmd struct {
-	owner        *CmdTree
-	help         string
-	ty           CmdType
-	quiet        bool
-	priority     bool
-	args         Args
-	normal       NormalCmd
-	power        PowerCmd
-	cmdLine      string
-	flow         []string
-	envOps       EnvOps
-	depends      []Depend
-	metaFilePath string
-	val2env      *Val2Env
-	arg2env      *Arg2Env
+	owner             *CmdTree
+	help              string
+	ty                CmdType
+	quiet             bool
+	priority          bool
+	allowTailModeCall bool
+	args              Args
+	normal            NormalCmd
+	power             PowerCmd
+	cmdLine           string
+	flow              []string
+	envOps            EnvOps
+	depends           []Depend
+	metaFilePath      string
+	val2env           *Val2Env
+	arg2env           *Arg2Env
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
 	return &Cmd{
-		owner:        owner,
-		help:         help,
-		ty:           CmdTypeUninited,
-		quiet:        false,
-		priority:     false,
-		args:         newArgs(),
-		normal:       nil,
-		power:        nil,
-		cmdLine:      "",
-		flow:         nil,
-		envOps:       newEnvOps(),
-		depends:      nil,
-		metaFilePath: "",
-		val2env:      newVal2Env(),
-		arg2env:      newArg2Env(),
+		owner:             owner,
+		help:              help,
+		ty:                CmdTypeUninited,
+		quiet:             false,
+		priority:          false,
+		allowTailModeCall: false,
+		args:              newArgs(),
+		normal:            nil,
+		power:             nil,
+		cmdLine:           "",
+		flow:              nil,
+		envOps:            newEnvOps(),
+		depends:           nil,
+		metaFilePath:      "",
+		val2env:           newVal2Env(),
+		arg2env:           newArg2Env(),
 	}
 }
 
@@ -139,11 +141,12 @@ func (self *Cmd) execute(
 	switch self.ty {
 	case CmdTypePower:
 		currCmdIdx, succeeded := self.power(argv, cc, env, flow, currCmdIdx)
-		// Let commands manually clear it, in that we could run tail-mode recursively
-		//if flow.TailMode {
-		//	currCmdIdx = 0
-		//	flow.Cmds = nil
-		//}
+		// Let commands manually clear it when it's tail-mode flow(not call),
+		// in that we could run tail-mode recursively
+		if flow.TailModeCall {
+			currCmdIdx = 0
+			flow.Cmds = nil
+		}
 		return currCmdIdx, succeeded
 	case CmdTypeNormal:
 		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx:])
@@ -208,9 +211,17 @@ func (self *Cmd) MatchFind(findStr string) bool {
 	return false
 }
 
+// TODO: more flags to filter the result, too much
 func (self *Cmd) MatchWriteKey(key string) bool {
 	if self.envOps.MatchWriteKey(key) {
 		return true
+	}
+	if self.val2env.Has(key) {
+		return true
+	}
+	if self.arg2env.Has(key) {
+		arg := self.arg2env.GetArgName(key)
+		return len(self.args.DefVal(arg)) != 0
 	}
 	return false
 }
@@ -241,6 +252,11 @@ func (self *Cmd) AddDepend(dep string, reason string) *Cmd {
 
 func (self *Cmd) SetQuiet() *Cmd {
 	self.quiet = true
+	return self
+}
+
+func (self *Cmd) SetAllowTailModeCall() *Cmd {
+	self.allowTailModeCall = true
 	return self
 }
 
@@ -302,6 +318,10 @@ func (self *Cmd) IsNoExecutableCmd() bool {
 
 func (self *Cmd) IsPowerCmd() bool {
 	return self.ty == CmdTypePower
+}
+
+func (self *Cmd) AllowTailModeCall() bool {
+	return self.allowTailModeCall
 }
 
 func (self *Cmd) IsQuiet() bool {

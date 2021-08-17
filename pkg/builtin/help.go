@@ -35,7 +35,7 @@ func globalHelpLessMoreInfo(
 	currCmdIdx int,
 	skeleton bool) (int, bool) {
 
-	findStrs := getFindStrsFromArgv(argv)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
 	for _, cmd := range flow.Cmds {
 		if cmd.ParseResult.Error == nil {
@@ -136,8 +136,9 @@ func dumpTailCmdSub(
 	skeleton bool) (int, bool) {
 
 	if len(flow.Cmds) < 2 {
+		panic("should not happen")
 		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-		dumpArgs := display.NewDumpCmdArgs().NoFlatten().NoRecursive()
+		dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	} else {
 		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
@@ -150,15 +151,42 @@ func dumpTailCmdSub(
 	return clearFlow(flow)
 }
 
-func FindAny(argv core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) bool {
-	findStrs := getFindStrsFromArgv(argv)
-	if len(findStrs) == 0 {
-		return true
+func GlobalFindCmd(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return globalFind(argv, cc, env, flow, currCmdIdx, false)
+}
+
+func GlobalFindCmdDetail(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return globalFind(argv, cc, env, flow, currCmdIdx, true)
+}
+
+func globalFind(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	detail bool) (int, bool) {
+
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(findStrs...)
+	if detail {
+		dumpArgs.SetShowUsage()
 	}
-	display.DumpEnvFlattenVals(cc.Screen, env, findStrs...)
-	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
-	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
-	return true
+	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", true)
+	return clearFlow(flow)
 }
 
 func FindByTags(
@@ -168,10 +196,7 @@ func FindByTags(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	findStrs := getFindStrsFromArgv(argv)
-	for _, cmd := range flow.Cmds[1:] {
-		findStrs = append(cmd.ParseResult.Input, findStrs...)
-	}
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	if len(findStrs) == 0 {
 		display.ListTags(cc.Cmds, cc.Screen, env)
 		return clearFlow(flow)
@@ -202,10 +227,8 @@ func dumpMoreLessFindResult(
 	skeleton bool,
 	findStrs ...string) (int, bool) {
 
-	printer := display.NewCacheScreen()
 	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
 	dumpArgs.Skeleton = skeleton
-	display.DumpCmdsWithTips(cmd, printer, env, dumpArgs, cmdPathStr, true)
-	printer.WriteTo(screen)
+	display.DumpCmdsWithTips(cmd, screen, env, dumpArgs, cmdPathStr, true)
 	return clearFlow(flow)
 }

@@ -79,7 +79,8 @@ func main() {
 	seqParser := parser.NewSequenceParser(
 		SequenceSep,
 		[]string{"http", "HTTP"},
-		[]string{"/"})
+		nil,
+	)
 	envParser := parser.NewEnvParser(
 		parser.Brackets{EnvBracketLeft, EnvBracketRight},
 		Spaces,

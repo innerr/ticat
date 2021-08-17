@@ -167,11 +167,11 @@ func RemoveEnvValAndSaveToLocal(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	tailMode := flow.Cmds[currCmdIdx].TailMode
+	tailMode := flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode
 
 	var keys []string
 	if tailMode {
-		keys = append(keys, gatherInputsFromFlow(flow, currCmdIdx)...)
+		keys = append(keys, tailModeGetInput(flow, currCmdIdx, false)...)
 	}
 	key := argv.GetRaw("key")
 	if len(key) != 0 {

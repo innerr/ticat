@@ -29,9 +29,9 @@ func PrintCmdStack(
 	flow []core.ParsedCmd,
 	currCmdIdx int,
 	strs *core.CmdTreeStrs,
-	tailMode bool) (lines CmdStackLines) {
+	tailModeCall bool) (lines CmdStackLines) {
 
-	if tailMode {
+	if tailModeCall {
 		return
 	}
 	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {

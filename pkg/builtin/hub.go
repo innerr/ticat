@@ -56,13 +56,13 @@ func AddGitRepoToHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	addr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "git-address")
+	addr := tailModeCallArg(flow, currCmdIdx, argv, "git-address")
 	addRepoToHub(addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 	showHubFindTip(cc.Screen, env)
 	return currCmdIdx, true
 }
 
-func AddGitDefaultToHub(
+func AddDefaultGitRepoToHub(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -89,9 +89,7 @@ func ListHub(
 	currCmdIdx int) (int, bool) {
 
 	cmd := flow.Cmds[currCmdIdx]
-
-	findStrs := getFindStrsFromArgv(argv)
-	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
@@ -195,7 +193,7 @@ func PurgeInactiveRepoFromHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
+	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
 	purgeInactiveRepoFromHub(findStr, cc, env, flow.Cmds[currCmdIdx])
 	return currCmdIdx, true
 }
@@ -264,10 +262,10 @@ func EnableRepoInHub(
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
+	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
 
 	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
-	checkFoundRepos(env, cmd, extracted, findStr)
+	checkFoundRepos(env, cmd, extracted, findStr, true)
 
 	var count int
 	for i, info := range extracted {
@@ -288,7 +286,7 @@ func EnableRepoInHub(
 			"add a disabled repo manually will enable it")
 	} else {
 		display.PrintTipTitle(cc.Screen, env,
-			"no disabled repos matched find string '"+findStr+"'")
+			"no disabled repo matched find string '"+findStr+"'")
 	}
 	return currCmdIdx, true
 }
@@ -304,10 +302,10 @@ func DisableRepoInHub(
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
-	findStr := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "find-str")
+	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
 
 	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
-	checkFoundRepos(env, cmd, extracted, findStr)
+	checkFoundRepos(env, cmd, extracted, findStr, false)
 
 	var count int
 	for i, info := range extracted {
@@ -329,7 +327,7 @@ func DisableRepoInHub(
 			"need two steps to remove a repo or unlink a dir: disable, purge")
 	} else {
 		display.PrintTipTitle(cc.Screen, env,
-			"no enabled repos matched find string '"+findStr+"'")
+			"no enabled repo matched find string '"+findStr+"'")
 	}
 	return currCmdIdx, true
 }
@@ -342,7 +340,7 @@ func AddLocalDirToHub(
 	currCmdIdx int) (int, bool) {
 
 	cmd := flow.Cmds[currCmdIdx]
-	path := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "path")
+	path := tailModeCallArg(flow, currCmdIdx, argv, "path")
 
 	stat, err := os.Stat(path)
 	if err != nil {
@@ -555,7 +553,7 @@ func purgeInactiveRepoFromHub(findStr string, cc *core.Cli, env *core.Env, cmd c
 			rest = append(rest, info)
 		}
 	}
-	checkFoundRepos(env, cmd, extracted, findStr)
+	checkFoundRepos(env, cmd, extracted, findStr, false)
 
 	var unlinkeds int
 	var removeds int
@@ -696,9 +694,21 @@ func getDisplayReason(info meta.RepoInfo) string {
 	return info.AddReason
 }
 
-func checkFoundRepos(env *core.Env, cmd core.ParsedCmd, infos []meta.RepoInfo, findStr string) {
+func checkFoundRepos(
+	env *core.Env,
+	cmd core.ParsedCmd,
+	infos []meta.RepoInfo,
+	findStr string,
+	expectActive bool) {
+
+	var status string
+	if expectActive {
+		status = "enabled"
+	} else {
+		status = "disabled"
+	}
 	if len(infos) == 0 {
-		panic(core.NewCmdError(cmd, fmt.Sprintf("cant't find repo by string '%s'", findStr)))
+		panic(core.NewCmdError(cmd, fmt.Sprintf("no %s repo matched find string '%s'", status, findStr)))
 	}
 }
 

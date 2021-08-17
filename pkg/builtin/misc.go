@@ -90,6 +90,17 @@ func DbgError(
 	return currCmdIdx, false
 }
 
+func Noop(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+	return currCmdIdx, true
+}
+
 func Dummy(
 	argv core.ArgVals,
 	cc *core.Cli,

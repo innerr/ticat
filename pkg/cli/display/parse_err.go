@@ -10,18 +10,23 @@ func HandleParseResult(
 	cc *core.Cli,
 	flow *core.ParsedCmds,
 	env *core.Env,
-	isSearch bool,
-	isLess bool,
-	isMore bool) bool {
+	isSearch bool) bool {
 
-	if isMore || isLess {
-		return true
+	if flow.AttempTailModeCall && len(flow.Cmds) == 2 &&
+		flow.Cmds[0].ParseResult.Error == nil && flow.Cmds[1].ParseResult.Error != nil {
+
+		PrintErrTitle(cc.Screen, env,
+			"["+flow.Cmds[0].DisplayPath(cc.Cmds.Strs.PathSep, true)+"] not support tail-mode call.",
+			"",
+			"it is using the wrong command?")
+		return false
 	}
 
 	for _, cmd := range flow.Cmds {
 		if cmd.ParseResult.Error == nil {
 			continue
 		}
+
 		// TODO: better handling: sub flow parse failed
 		/*
 			stackDepth := env.GetInt("sys.stack-depth")
@@ -35,21 +40,22 @@ func HandleParseResult(
 
 		switch cmd.ParseResult.Error.(type) {
 		case core.ParseErrExpectNoArg:
-			title := "[" + cmd.DisplayPath(cc.Cmds.Strs.PathSep, true) + "] doesn't have args."
-			return PrintFindResultByParseError(cc, cmd, env, title)
+			return PrintCmdByParseError(cc, cmd, env, "doesn't have args")
 		case core.ParseErrEnv:
-			PrintTipTitle(cc.Screen, env,
-				"["+cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)+"] parse env failed, "+
-					"'"+inputStr+"' is not valid input.",
+			PrintErrTitle(cc.Screen, env,
+				"["+cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)+"] parse env failed.",
+				"",
+				"'"+inputStr+"' is not valid input.",
 				"",
 				"env setting examples:",
 				"",
 				SuggestEnvSetting(env),
 				"")
+			return false
 		case core.ParseErrExpectArgs:
-			return PrintCmdByParseError(cc, cmd, env)
+			return PrintCmdByParseError(cc, cmd, env, "parse args failed")
 		case core.ParseErrExpectCmd:
-			return PrintSubCmdByParseError(cc, flow, cmd, env, isSearch, isMore)
+			return PrintSubCmdByParseError(cc, flow, cmd, env, isSearch)
 		default:
 			return PrintFindResultByParseError(cc, cmd, env, "")
 		}
@@ -60,15 +66,18 @@ func HandleParseResult(
 func PrintCmdByParseError(
 	cc *core.Cli,
 	cmd core.ParsedCmd,
-	env *core.Env) bool {
+	env *core.Env,
+	title string) bool {
 
 	sep := cc.Cmds.Strs.PathSep
 	cmdName := cmd.DisplayPath(sep, true)
 	printer := NewTipBoxPrinter(cc.Screen, env, true)
 	input := cmd.ParseResult.Input
 
-	printer.PrintWrap("[" + cmdName + "] parse args failed, '" +
-		strings.Join(input, " ") + "' is not valid input.")
+	printer.PrintWrap(
+		"["+cmdName+"] "+title+".",
+		"",
+		"'"+strings.Join(input, " ")+"' is not valid input.")
 	printer.Prints("", "command detail:")
 	printer.Finish()
 	dumpArgs := NewDumpCmdArgs().NoFlatten().NoRecursive()
@@ -81,8 +90,7 @@ func PrintSubCmdByParseError(
 	flow *core.ParsedCmds,
 	cmd core.ParsedCmd,
 	env *core.Env,
-	isSearch bool,
-	isMore bool) bool {
+	isSearch bool) bool {
 
 	sep := cc.Cmds.Strs.PathSep
 	cmdName := cmd.DisplayPath(sep, true)
@@ -91,19 +99,28 @@ func PrintSubCmdByParseError(
 
 	last := cmd.LastCmdNode()
 	if last == nil {
-		return PrintFreeSearchResultByParseError(cc, flow, env, isSearch, isMore, input...)
+		return PrintFreeSearchResultByParseError(cc, flow, env, isSearch, input...)
 	}
-	printer.PrintWrap("[" + cmdName + "] parse sub command failed, '" +
-		strings.Join(input, " ") + "' is not valid input.")
+	printer.PrintWrap(
+		"["+cmdName+"] parse sub command failed.",
+		"",
+		"'"+strings.Join(input, " ")+"' is not valid input.")
 	if last.HasSub() {
 		printer.Prints("", "commands on branch '"+last.DisplayPath()+"':")
 		dumpArgs := NewDumpCmdArgs().SetSkeleton()
 		printer.Finish()
 		DumpCmds(last, cc.Screen, env, dumpArgs)
 	} else {
-		printer.Prints("", "command branch '"+last.DisplayPath()+"' doesn't have any sub commands.")
+		printer.Prints(
+			"",
+			"'"+last.DisplayPath()+"' branch doesn't have any sub commands.",
+			"",
+			"search commands by:",
+			"")
+		for _, line := range SuggestFindCmds(env) {
+			printer.Prints(line)
+		}
 		printer.Finish()
-		// TODO: search hint
 	}
 	return false
 }
@@ -113,7 +130,6 @@ func PrintFreeSearchResultByParseError(
 	flow *core.ParsedCmds,
 	env *core.Env,
 	isSearch bool,
-	isMore bool,
 	findStr ...string) bool {
 
 	selfName := env.GetRaw("strs.self-name")
@@ -124,8 +140,7 @@ func PrintFreeSearchResultByParseError(
 	var lines int
 	for len(input) > 0 {
 		screen := NewCacheScreen()
-		dumpArgs := NewDumpCmdArgs().AddFindStrs(input...)
-		dumpArgs.Skeleton = !isMore
+		dumpArgs := NewDumpCmdArgs().SetSkeleton().SetShowUsage().AddFindStrs(input...)
 		DumpCmds(cc.Cmds, screen, env, dumpArgs)
 		lines = screen.OutputNum()
 		if lines <= 0 {
@@ -138,7 +153,7 @@ func PrintFreeSearchResultByParseError(
 		if !isSearch {
 			helpStr = append([]string{notValidStr, ""}, helpStr...)
 		}
-		PrintTipTitle(cc.Screen, env, helpStr)
+		PrintErrTitle(cc.Screen, env, helpStr)
 		screen.WriteTo(cc.Screen)
 		return false
 	}
@@ -152,7 +167,7 @@ func PrintFreeSearchResultByParseError(
 	if !isSearch {
 		helpStr = append([]string{notValidStr, ""}, helpStr...)
 	}
-	PrintTipTitle(cc.Screen, env, helpStr)
+	PrintErrTitle(cc.Screen, env, helpStr)
 	return false
 }
 
@@ -173,13 +188,13 @@ func PrintFindResultByParseError(
 	}
 
 	if screen.OutputNum() > 0 {
-		PrintTipTitle(cc.Screen, env,
+		PrintErrTitle(cc.Screen, env,
 			title,
 			"",
 			"'"+inputStr+"' is not valid input, found related commands by search:")
 		screen.WriteTo(cc.Screen)
 	} else {
-		PrintTipTitle(cc.Screen, env,
+		PrintErrTitle(cc.Screen, env,
 			title,
 			"",
 			"'"+inputStr+"' is not valid input and no related commands found.",

@@ -27,8 +27,7 @@ func ListFlows(
 	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
 
 	screen := display.NewCacheScreen()
-	findStrs := getFindStrsFromArgv(argv)
-	findStrs = append(findStrs, tailModeGetInput(flow, currCmdIdx, false)...)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if path == root {
@@ -264,7 +263,7 @@ func LoadFlowsFromDir(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	path := getArgFromFlowOrArgv(flow, currCmdIdx, argv, "path")
+	path := tailModeCallArg(flow, currCmdIdx, argv, "path")
 	loadFlowsFromDir(flow, currCmdIdx, path, cc, env, path)
 	display.PrintTipTitle(cc.Screen, env,
 		"flows from '"+path+"' is loaded")
@@ -424,7 +423,7 @@ func getFlowCmdPath(
 			panic(core.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty"))
 		}
 	} else {
-		arg = getArgFromFlowOrArgv(flow, currCmdIdx, argv, argName)
+		arg = tailModeCallArg(flow, currCmdIdx, argv, argName)
 	}
 	cmdPath = normalizeCmdPath(arg,
 		cc.Cmds.Strs.PathSep, cc.Cmds.Strs.PathAlterSeps)
