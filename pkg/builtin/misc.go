@@ -112,3 +112,11 @@ func Dummy(
 	cc.Screen.Print("dummy command here\n")
 	return currCmdIdx, true
 }
+
+func EnvOpCmds() []interface{} {
+	return []interface{}{
+		ResetSessionEnv,
+		ResetLocalEnv,
+		RemoveEnvValAndSaveToLocal,
+	}
+}

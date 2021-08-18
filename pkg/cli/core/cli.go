@@ -8,6 +8,21 @@ type Screen interface {
 	OutputNum() int
 }
 
+type QuietScreen struct {
+	outN int
+}
+
+func (self *QuietScreen) Print(text string) {
+	self.outN += 1
+}
+
+func (self *QuietScreen) Error(text string) {
+}
+
+func (self *QuietScreen) OutputNum() int {
+	return self.outN
+}
+
 type Executor interface {
 	Execute(caller string, cc *Cli, input ...string) bool
 }
@@ -33,5 +48,18 @@ func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *Env
 		NewTolerableErrs(),
 		nil,
 		NewHelps(),
+	}
+}
+
+func (self *Cli) Clone() *Cli {
+	return &Cli{
+		self.GlobalEnv,
+		self.Screen,
+		self.Cmds,
+		self.Parser,
+		self.EnvAbbrs,
+		self.TolerableErrs,
+		nil,
+		self.Helps,
 	}
 }
