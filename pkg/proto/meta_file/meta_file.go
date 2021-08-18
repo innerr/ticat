@@ -89,6 +89,7 @@ func (self *MetaFile) GetAll() SectionMap {
 func (self *MetaFile) parse(data []byte) {
 	var sectionName string
 	section := NewSection()
+	global := section
 	self.sections[sectionName] = section
 
 	var multiLineKey string
@@ -130,7 +131,8 @@ func (self *MetaFile) parse(data []byte) {
 
 	// TODO: convert to string too many times
 	lines := bytes.Split(data, []byte(self.lineSep))
-	for _, line := range lines {
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
 		line = bytes.TrimSpace(line)
 		size := len(line)
 		if size == 0 {
@@ -142,10 +144,30 @@ func (self *MetaFile) parse(data []byte) {
 		if line[0] == CommentPrefix {
 			continue
 		}
+
 		if line[0] == SectionBracketLeft && line[size-1] == SectionBracketRight {
-			sectionName = string(line[1 : size-1])
-			section = NewSection()
-			self.sections[sectionName] = section
+			if len(line) > 2 && line[size-2] == '/' {
+				k := string(line[1 : size-2])
+				v := []string{}
+				for i+= 1; i < len(lines); i++ {
+					line := lines[i]
+					line = bytes.TrimSpace(line)
+					if len(line) == 0 {
+						continue
+					}
+					if line[0] == SectionBracketLeft && line[size-1] == SectionBracketRight &&
+						len(line) > 2 && line[1] == '/' {
+						break
+					}
+					l := string(bytes.TrimSpace(line))
+					v = append(v, l)
+				}
+				global.SetMultiLineVal(k, v)
+			} else {
+				sectionName = string(line[1 : size-1])
+				section = NewSection()
+				self.sections[sectionName] = section
+			}
 			continue
 		}
 

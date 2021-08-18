@@ -378,6 +378,8 @@ func (self *Cmd) RenderedFlowStrs(
 	templBracketLeft := self.owner.Strs.FlowTemplateBracketLeft
 	templBracketRight := self.owner.Strs.FlowTemplateBracketRight
 	templMultiplyMark := self.owner.Strs.FlowTemplateMultiplyMark
+
+	// TODO: this flag is too 'global'
 	hasError := false
 
 	renderLineAndAddToFlow := func(it string) {
@@ -394,11 +396,6 @@ func (self *Cmd) RenderedFlowStrs(
 				break
 			}
 			key := tail[0:j]
-			if env == nil {
-				// TODO: remove this, not allow env is nil
-				// return self.flow, false
-				panic(fmt.Errorf("legacy code, should never happen. TODO: remove this"))
-			}
 			var valStr string
 			val, ok := env.GetEx(key)
 			valStr = val.Raw
@@ -408,8 +405,8 @@ func (self *Cmd) RenderedFlowStrs(
 				ok = inArg && len(valStr) != 0
 			}
 			if !ok {
+				hasError = true
 				if allowFlowTemplateRenderError {
-					hasError = true
 					findPos += j + len(templBracketRight)
 					continue
 				}
@@ -421,11 +418,10 @@ func (self *Cmd) RenderedFlowStrs(
 	}
 
 	for _, it := range self.flow {
-		var lines []string
-		lines, hasError = self.tryRenderMultiply(argv, env, it, templBracketLeft, templBracketRight,
+		lines, lineRenderError := self.tryRenderMultiply(argv, env, it, templBracketLeft, templBracketRight,
 			templMultiplyMark, allowFlowTemplateRenderError)
 		for _, line := range lines {
-			if hasError {
+			if lineRenderError {
 				flow = append(flow, line)
 				continue
 			} else {
