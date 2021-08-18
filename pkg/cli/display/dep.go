@@ -8,7 +8,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func GatherOsCmdsExistingInfo(deps Depends) (foundOsCmds map[string]bool, osCmds []string, missedOsCmds int) {
+func GatherOsCmdsExistingInfo(deps core.Depends) (foundOsCmds map[string]bool, osCmds []string, missedOsCmds int) {
 	foundOsCmds = map[string]bool{}
 	for osCmd, _ := range deps {
 		exists := isOsCmdExists(osCmd)
@@ -22,17 +22,10 @@ func GatherOsCmdsExistingInfo(deps Depends) (foundOsCmds map[string]bool, osCmds
 	return
 }
 
-type DependInfo struct {
-	Reason string
-	Cmd    core.ParsedCmd
-}
-
-type Depends map[string]map[*core.Cmd]DependInfo
-
 func DumpDepends(
 	screen core.Screen,
 	env *core.Env,
-	deps Depends) (hasMissedOsCmd bool) {
+	deps core.Depends) (hasMissedOsCmd bool) {
 
 	if len(deps) == 0 {
 		return
@@ -69,51 +62,6 @@ func DumpDepends(
 	}
 
 	return missedOsCmds > 0
-}
-
-func CollectDepends(
-	cc *core.Cli,
-	env *core.Env,
-	flow []core.ParsedCmd,
-	res Depends,
-	allowFlowTemplateRenderError bool) {
-
-	collectDepends(cc, env.Clone(), flow, res, allowFlowTemplateRenderError)
-}
-
-func collectDepends(
-	cc *core.Cli,
-	env *core.Env,
-	flow []core.ParsedCmd,
-	res Depends,
-	allowFlowTemplateRenderError bool) {
-
-	for _, it := range flow {
-		cic := it.LastCmd()
-		if cic == nil {
-			continue
-		}
-		deps := cic.GetDepends()
-		for _, dep := range deps {
-			cmds, ok := res[dep.OsCmd]
-			if ok {
-				cmds[cic] = DependInfo{dep.Reason, it}
-			} else {
-				res[dep.OsCmd] = map[*core.Cmd]DependInfo{cic: DependInfo{dep.Reason, it}}
-			}
-		}
-		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-		if cic.Type() != core.CmdTypeFlow {
-			continue
-		}
-		subFlow, rendered := cic.Flow(argv, cmdEnv, allowFlowTemplateRenderError)
-		if rendered && len(subFlow) != 0 {
-			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-			parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
-			// Allow parse errors here
-			collectDepends(cc, env, parsedFlow.Cmds, res, allowFlowTemplateRenderError)
-		}
-	}
 }
 
 func isOsCmdExists(cmd string) bool {

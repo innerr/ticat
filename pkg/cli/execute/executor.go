@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pingcap/ticat/pkg/builtin"
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 	"github.com/pingcap/ticat/pkg/utils"
@@ -307,7 +308,7 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 	checker := &core.EnvOpsChecker{}
 	result := []core.EnvOpsCheckResult{}
 	env = env.Clone()
-	core.CheckEnvOps(cc, flow, env, checker, true, &result)
+	core.CheckEnvOps(cc, flow, env, checker, true, builtin.EnvOpCmds(), &result)
 	if len(result) == 0 {
 		return true
 	}
@@ -316,9 +317,9 @@ func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
 }
 
 func verifyOsDepCmds(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
-	deps := display.Depends{}
+	deps := core.Depends{}
 	env = env.Clone()
-	display.CollectDepends(cc, env, flow.Cmds, deps, true)
+	core.CollectDepends(cc, env, flow, 0, deps, true, builtin.EnvOpCmds())
 	screen := display.NewCacheScreen()
 	hasMissedOsCmds := display.DumpDepends(screen, env, deps)
 	if hasMissedOsCmds {
