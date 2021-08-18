@@ -78,13 +78,13 @@ func DumpFlowSkeleton(
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton()
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 
-	deps := display.Depends{}
-	display.CollectDepends(cc, env, flow.Cmds, deps, false)
+	deps := core.Depends{}
+	core.CollectDepends(cc, env, flow, currCmdIdx+1, deps, false, EnvOpCmds())
 	_, _, missedOsCmds := display.GatherOsCmdsExistingInfo(deps)
 
 	checker := &core.EnvOpsChecker{}
 	result := []core.EnvOpsCheckResult{}
-	core.CheckEnvOps(cc, flow, env, checker, false, &result)
+	core.CheckEnvOps(cc, flow, env, checker, false, EnvOpCmds(), &result)
 	fatals, risks, _ := display.AggEnvOpsCheckResult(result)
 
 	adds := func(n int, s string) string {
@@ -114,8 +114,8 @@ func DumpFlowDepends(
 	currCmdIdx int) (int, bool) {
 
 	env = env.Clone()
-	deps := display.Depends{}
-	display.CollectDepends(cc, env, flow.Cmds[currCmdIdx+1:], deps, false)
+	deps := core.Depends{}
+	core.CollectDepends(cc, env, flow, currCmdIdx+1, deps, false, EnvOpCmds())
 
 	if len(deps) != 0 {
 		display.DumpDepends(cc.Screen, env, deps)
@@ -135,7 +135,7 @@ func DumpFlowEnvOpsCheckResult(
 	checker := &core.EnvOpsChecker{}
 	result := []core.EnvOpsCheckResult{}
 	env = env.Clone()
-	core.CheckEnvOps(cc, flow, env, checker, false, &result)
+	core.CheckEnvOps(cc, flow, env, checker, false, EnvOpCmds(), &result)
 
 	if len(result) != 0 {
 		cmds := flow.Cmds[currCmdIdx+1:]
@@ -154,14 +154,12 @@ func dumpFlowAll(
 	currCmdIdx int,
 	simple bool) (int, bool) {
 
-	cmds := flow.Cmds[currCmdIdx+1:]
-
 	dumpArgs := display.NewDumpFlowArgs()
 	dumpArgs.Simple = simple
-	display.DumpFlow(cc, env, flow.GlobalEnv, cmds, dumpArgs)
+	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 
-	deps := display.Depends{}
-	display.CollectDepends(cc, env, cmds, deps, false)
+	deps := core.Depends{}
+	core.CollectDepends(cc, env, flow, currCmdIdx+1, deps, false, EnvOpCmds())
 
 	if len(deps) != 0 {
 		cc.Screen.Print("\n")
@@ -170,11 +168,11 @@ func dumpFlowAll(
 
 	checker := &core.EnvOpsChecker{}
 	result := []core.EnvOpsCheckResult{}
-	core.CheckEnvOps(cc, flow, env, checker, false, &result)
+	core.CheckEnvOps(cc, flow, env, checker, false, EnvOpCmds(), &result)
 
 	if len(result) != 0 {
 		cc.Screen.Print("\n")
-		display.DumpEnvOpsCheckResult(cc.Screen, cmds, env, result, cc.Cmds.Strs.PathSep)
+		display.DumpEnvOpsCheckResult(cc.Screen, flow.Cmds[currCmdIdx+1:], env, result, cc.Cmds.Strs.PathSep)
 	}
 
 	return clearFlow(flow)

@@ -172,10 +172,11 @@ func CheckEnvOps(
 	env *Env,
 	checker *EnvOpsChecker,
 	ignoreMaybe bool,
+	envOpCmds []interface{},
 	result *[]EnvOpsCheckResult) {
 
 	arg2envs := FirstArg2EnvProviders{}
-	checkEnvOps(cc, flow, env.Clone(), checker, ignoreMaybe, result, arg2envs)
+	checkEnvOps(cc, flow, env.Clone(), checker, ignoreMaybe, envOpCmds, result, arg2envs)
 }
 
 func checkEnvOps(
@@ -184,6 +185,7 @@ func checkEnvOps(
 	env *Env,
 	checker *EnvOpsChecker,
 	ignoreMaybe bool,
+	envOpCmds []interface{},
 	result *[]EnvOpsCheckResult,
 	arg2envs FirstArg2EnvProviders) {
 
@@ -193,7 +195,7 @@ func checkEnvOps(
 
 	sep := cc.Cmds.Strs.PathSep
 
-	for _, cmd := range flow.Cmds {
+	for i, cmd := range flow.Cmds {
 		last := cmd.LastCmd()
 		if last == nil {
 			continue
@@ -204,19 +206,23 @@ func checkEnvOps(
 
 		*result = append(*result, res...)
 
-		if last.Type() == CmdTypeFlow {
-			subFlow, _ := last.Flow(argv, cmdEnv, false)
-			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-			err := parsedFlow.FirstErr()
-			if err != nil {
-				panic(err.Error)
-			}
-			if parsedFlow.GlobalEnv != nil {
-				env = env.GetOrNewLayer(EnvLayerTmp)
-				parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
-			}
-			checkEnvOps(cc, parsedFlow, env, checker, ignoreMaybe, result, arg2envs)
+		tryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds,
+			"failed to execute env-op cmd in env-ops checking")
+		if last.Type() != CmdTypeFlow {
+			continue
 		}
+
+		subFlow, _ := last.Flow(argv, cmdEnv, false)
+		parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+		err := parsedFlow.FirstErr()
+		if err != nil {
+			panic(err.Error)
+		}
+		if parsedFlow.GlobalEnv != nil {
+			env = env.GetOrNewLayer(EnvLayerTmp)
+			parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+		}
+		checkEnvOps(cc, parsedFlow, env, checker, ignoreMaybe, envOpCmds, result, arg2envs)
 	}
 }
 
