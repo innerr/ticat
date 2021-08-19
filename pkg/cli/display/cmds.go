@@ -30,7 +30,15 @@ func DumpCmdsWithTips(
 		prt("command details:")
 	} else if len(args.FindStrs) != 0 {
 		tip := "search "
-		matchStr := " commands matched '" + findStr + "'"
+		tag := ""
+		if args.FindByTags {
+			if len(args.FindStrs) > 1 {
+				tag = "tags "
+			} else {
+				tag = "tag "
+			}
+		}
+		matchStr := " commands matched " + tag + "'" + findStr + "'"
 		if !cmds.IsRoot() {
 			if buf.OutputNum() > 0 {
 				prt(tip + "branch '" + displayCmdPath + "', found" + matchStr + ":")
@@ -42,7 +50,7 @@ func DumpCmdsWithTips(
 				if args.Skeleton && buf.OutputNum() <= 6 && isLessMore {
 					prt(tip+"and found"+matchStr,
 						"",
-						"get more details by using '-' instead of '+'.")
+						"get more details by using '//' for search.")
 				} else {
 					prt(tip + "and found" + matchStr)
 				}
@@ -89,7 +97,7 @@ func DumpCmdsWithTips(
 			}
 		} else if !args.Skeleton {
 			prt(
-				"get a brief view by using '-' instead of '+'.",
+				"get a brief view by using '/' for search.",
 				"",
 				"or/and locate exact commands by adding more keywords:",
 				"",

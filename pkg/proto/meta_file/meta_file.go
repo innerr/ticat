@@ -149,7 +149,7 @@ func (self *MetaFile) parse(data []byte) {
 			if len(line) > 2 && line[size-2] == '/' {
 				k := string(line[1 : size-2])
 				v := []string{}
-				for i+= 1; i < len(lines); i++ {
+				for i += 1; i < len(lines); i++ {
 					line := lines[i]
 					line = bytes.TrimSpace(line)
 					if len(line) == 0 {

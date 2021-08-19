@@ -108,6 +108,7 @@ $> ticat dummy:dummy:dummy:dummy:dummy:dummy :desc
 ```
 Then roll up history, delete ":desc", hit "enter", done.
 
+(TODO: this two commands are simplified)
 ## The "weird" `+` and `-`
 
 As a small platform running on the user-end, **ticat** has lots of infos.
@@ -229,6 +230,7 @@ $> ticat <command>:<command>:<commad>
 ```
 
 ## Full tail editing style support
+(TODO: tail mode is enhanced a lot: recursived tail mode, tail mode call)
 
 We already discussed how we could benefit from tail editing above.
 
@@ -244,8 +246,8 @@ $> ticat <command>:<command>:<command>:<command> :-
 
 Obviously, more "priority" and "power" commands are needed to avoid long-cusor-move editing.
 
-We tentatively use `$` for "show the last command's info",
-there might be more function giving to `$` in the future,
+We tentatively use `=` for "show the last command's info",
+there might be more function giving to `=` in the future,
 but this command is not stable, maybe we would cancel it someday,
 because there are too much weird things for users already.
 

@@ -17,7 +17,7 @@
 *****      Os-command dependencies:
 -----          Auto install?
 *****      Args supporting
------          Free number args
+**---          Free number args
 *****      Mod-ticat interacting
 *****      Support mod types:
 *****          Builtin
@@ -37,7 +37,7 @@
 *****      Help and abbrs
 *****      Executing ad-hot help
 *****      Combine mods' dependencies
------      Map env operations as command
+*****      Map env operations as command
 *****  Hub framework
 *****      Mod and flow sharing
 *****      Authority control (by git for now)

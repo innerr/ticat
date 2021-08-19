@@ -42,6 +42,7 @@ $> ticat ben.scale 10 : ben.base
 ```
 
 ## Investigate a performance issue
+(TODO: better example)
 Someone talk to us that our system has preformance jitter under a type of specific workload,
 So we fetch this workload and test it:
 ```

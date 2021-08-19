@@ -1,5 +1,7 @@
 # [Spec] Ticat command sequences
 
+(TODO: tail-mode flow, and tail-mode call)
+
 ## Execute a sequence of command
 A command sequence will execute commands one by one,
 the latter one won't start untill the previous one finishes.

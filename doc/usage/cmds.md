@@ -46,23 +46,24 @@ We have some conventional tags have specific meanings:
 
 For other tags, authors will explain them in the repo `README`.
 
-So when we added a repo, the first thing will be find out what we got by searching with `-`:
+So when we added a repo, the first thing will be find out what we got by searching with `/`:
 ```
-$> ticat - <repo-name> @ready
+$> ticat / <repo-name> @ready
 ```
 
 The result might be a lot, adding more keywords could screen out what we need.
 ```
-$> ticat - <repo-name> @ready <keyword> <keyword> ...
+$> ticat / <repo-name> @ready <keyword> <keyword> ...
 ```
 
 If the command source is irrelevant, remove it from the keyword list(so does for tags):
 ```
-$> ticat - <keyword> <keyworkd> <keyword>...
+$> ticat / <keyword> <keyworkd> <keyword>...
 ```
 The keyword number is up to 4, sould be enough
 
 ### The `-` and `+`
+(TODO: this two commands are simplified)
 
 We show how to use `-` to do search above, it only shows names and helps of commands.
 Use `+` instead of `-` will shows all details.
