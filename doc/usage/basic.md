@@ -48,7 +48,7 @@ they are in the same command-branch just because users can find related commands
 
 Display a command's info:
 ```
-$> ticat dbg.echo :+
+$> ticat dbg.echo :==
 [echo]
      'print message from argv'
     - full-cmd:

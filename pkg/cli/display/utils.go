@@ -32,6 +32,10 @@ func autoPadNewLine(padding string, msg string) string {
 	return msg
 }
 
+func padCmd(str string, width int, env *core.Env) string {
+	return ColorCmd(padR(str, width), env)
+}
+
 func padR(str string, width int) string {
 	return padRight(str, " ", width)
 }

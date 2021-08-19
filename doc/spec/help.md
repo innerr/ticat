@@ -28,6 +28,7 @@ $> ticat env.abbrs
 $> ticat find <find-str> <find-str> ...
 ```
 
+(TODO: all things bellow are removed, too complicated)
 ## The commands `+` and `-`
 These two are shortcuts, could display info base on the situation:
 ```

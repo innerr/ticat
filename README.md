@@ -36,21 +36,22 @@ $> ticat hub.add innerr/quick-start-usage.ticat
 
 ### Find out what we got from the repo
 
-`+` and `-` are important commands to find and display infos, they have the same usage.
+`/` and `//` are important commands to find commands, they have the same usage.
 
-The difference is `-` shows brief messages, and `+` shows rich infos.
+The difference is `/` shows brief messages, and `//` shows rich infos.
 
-Now use `+` as search command to find out what we got by search the repo's name.
+Now use `//` as search command to find out what we got by search the repo's name.
 
-We also add `@ready` to the searching strings,
-it is a conventional tag use for "ready-to-go"(out-of-the-box) commands:
+We can use them to find commands by tags like `@ready`,
 ```
-$> ticat + @ready quick-start-usage
+$> ticat @ready quick-start-usage :/
 [bench]
-     'pretend to do bench. @ready'
+     @ready
+     'pretend to do bench.'
 ...
 ```
 From the search result we found the command `bench`.
+(what tags we should search is depend on the author, or we could use command `@` to list tags)
 
 ### Find out what command `bench` do
 
@@ -152,9 +153,11 @@ There is another command `dev.bench` in the previous search result:
 ```
 ...
 [dev.bench]
-     'build binary in pwd, then restart cluster and do benchmark. @ready'
+      @ready
+     'build binary in pwd, then restart cluster and do benchmark.'
 [bench.jitter-scan]
-     'pretend to scan jitter @ready'
+      @ready @scanner
+     'pretend to scan jitter'
 ```
 It does "build" and "restart" before bench according to the help string,
 useful for develeping.
@@ -166,6 +169,7 @@ this command also have the `@ready` tag so we found it.
 ```
 $> ticat {bench.scale=4} dev.bench : bench.jitter-scan
 ```
+(TODO: remove all things about @ready)
 
 ### Save commands to a flow for convenient
 
@@ -359,11 +363,11 @@ These builtin branchs are important:
 * `flow`: manage saved flows. abbr `f`.
 * `cmds`: manage all callable commands(modules and flows). abbr `c`.
 
-Use `+` `-` to navigate them, here are some usage examples.
+Use `~` `~~` to navigate them, here are some usage examples.
 
 Overview of branch `cmds`:
 ```
-$> ticat cmds:-
+$> ticat cmds:~
 [cmds]
      'display cmd info, sub tree cmds will not show'
     [tree]
@@ -378,7 +382,7 @@ $> ticat cmds:-
 
 Overview of branch `env`:
 ```
-[0:19] 0 ~ $ ticat env:-
+[0:19] 0 ~ $ ticat env:~
 [env]
      'list env values in flatten format'
     [tree]
@@ -397,16 +401,16 @@ Overview of branch `env`:
 
 Search "tree"(could be any string) in the branch `cmds`:
 ```
-$> ticat cmds:- tree
+$> ticat cmds:~ tree
 [cmds]
      'display cmd info, sub tree cmds will not show'
 [cmds.tree]
      'list builtin and loaded cmds'
 ```
 
-Use `+` instead of `-` to get more detail:
+Use `~~` instead of `~` to get more detail:
 ```
-$> ticat cmds:+ tree
+$> ticat cmds:~ tree
 [cmds|cmd|c|C]
      'display cmd info, no sub tree'
     - args:
@@ -424,15 +428,16 @@ $> ticat cmds:+ tree
 ## Cheat sheet
 * Use `:` to concate commands, will be executed one by one
 * Use `{key=value}` to modify env key-values
-* (With `:`) append `+` or `-`  to any command(s) we want to investigate
+* (With `:`) append `=` or `==`  to any command(s) we want to investigate
 * Search commands by:
-    - `ticat + <str> <str> ..`
-    - `ticat <command> :+ <str> <str> ..`
+    - `ticat / <str> <str> ..`
+    - `ticat <command> :/ <str> <str> ..`
 * Frequently-used commands:
     - `hub.add <repo-addr>`, abbr `h.+`
     - `flow.save`, abbr `f.+`
     - `env.save`, abbr `e.+`
 * Lots of abbrs like `[bench|ben]` in search result, use them to save typing time
+(TODO: copy the content from `ticat help.self` to here)
 
 ## User manual
 * [Usage examples](./doc/usage/user-manual.md)

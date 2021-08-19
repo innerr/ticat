@@ -149,7 +149,9 @@ or more than one abbrs for a command path segment,
 
 ## TODO
 ```
-[arg2env]
-[val2env]
-multiply flow template
+[arg2env] (only execute when env key not exists, and arg is not empty)
+
+[val2env] (always execute, and always before arg2env and comand-exe)
+
+[flow/][/flow] multiply flow template
 ```
