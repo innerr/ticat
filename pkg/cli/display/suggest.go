@@ -26,15 +26,15 @@ func SuggestExeCmdsWithArgs(env *core.Env) []string {
 func SuggestListCmds(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" -", indent) + "- list all commands",
-		padR(selfName+" +", indent) + "- list all commands with details",
+		padR(selfName+" /", indent) + "- list all commands",
+		padR(selfName+" //", indent) + "- list all commands with details",
 	}
 }
 
 func SuggestFindCmdsMore(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" str1 str2 :+", indent) + "- search commands with details",
+		padR(selfName+" str1 str2 ://", indent) + "- search commands with details",
 	}
 }
 
@@ -43,7 +43,7 @@ func SuggestAddAndSaveEnv(env *core.Env) []string {
 	res := []string{
 		padR(selfName+" {k1=v2 k2=v2} cmd1 : cmd2", indent) + "- set/change env key-values, one time only",
 		"",
-		padR(selfName+" {k1=v2 k2=v2} e.save", indent) + "- save the key-values",
+		padR(selfName+" {k1=v2 k2=v2} e.save", indent) + "- save the changed key-values",
 		padR(selfName+" cmd1 : cmd2", indent) + "- execute with saved key-values",
 		"",
 	}
@@ -69,8 +69,9 @@ func SuggestFindEnv(env *core.Env, subCmd string) []string {
 func SuggestFindCmdsLess(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" cmd1 :--", indent) + "- search commands in the branch of 'str1'",
-		padR(selfName+" str1 str2 :-", indent) + "- search commands",
+		padR(selfName+" cmd :~", indent) + "- search commands in the branch of 'cmd'",
+		padR(selfName+" cmd :~~", indent) + "- search commands in the branch of 'cmd', with details",
+		padR(selfName+" str1 str2 :/", indent) + "- search commands",
 	}
 }
 
@@ -132,8 +133,8 @@ func SuggestHubBranch(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	explain := "- branch 'hub' usage"
 	return []string{
-		padR(selfName+" h :-", indent) + explain,
-		padR(selfName+" h :+", indent) + explain + ", with details",
+		padR(selfName+" h :~", indent) + explain,
+		padR(selfName+" h :~~", indent) + explain + ", with details",
 	}
 }
 
@@ -156,6 +157,7 @@ func SuggestDesc(env *core.Env) []string {
 }
 
 // TODO: no use by now
+/*
 func SuggestFindConfigFlows(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	tagOutOfTheBox := env.GetRaw("strs.tag-out-of-the-box")
@@ -167,22 +169,23 @@ func SuggestFindConfigFlows(env *core.Env) []string {
 		padR(prefix+"+", indent) + explain + ", with details",
 	}
 }
+*/
 
 func SuggestFindProvider(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	prefix := selfName + " key-name write :"
 	explain := "- find modules will write this key"
 	return []string{
-		padR(prefix+"-", indent) + explain,
-		padR(prefix+"+", indent) + explain + ", with details",
+		padR(prefix+"/", indent) + explain,
+		padR(prefix+"//", indent) + explain + ", with details",
 	}
 }
 
 func SuggestFlowsFilter(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" h str1 str2", indent) + "- find flows matched these strings",
-		padR(selfName+" str1 str2 ::h", indent) + "- same as above, in tail-mode",
+		padR(selfName+" f str1 str2", indent) + "- find flows matched these strings",
+		padR(selfName+" str1 str2 ::f", indent) + "- same as above, in tail-mode",
 	}
 }
 

@@ -1,8 +1,6 @@
 package builtin
 
 import (
-	"strings"
-
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
@@ -14,7 +12,7 @@ func GlobalHelpMoreInfo(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	return globalHelpLessMoreInfo(argv, cc, env, flow, currCmdIdx, false)
+	return DumpFlowAllSimple(argv, cc, env, flow, currCmdIdx)
 }
 
 func GlobalHelpLessInfo(
@@ -24,61 +22,7 @@ func GlobalHelpLessInfo(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	return globalHelpLessMoreInfo(argv, cc, env, flow, currCmdIdx, true)
-}
-
-func globalHelpLessMoreInfo(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int,
-	skeleton bool) (int, bool) {
-
-	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
-
-	for _, cmd := range flow.Cmds {
-		if cmd.ParseResult.Error == nil {
-			continue
-		}
-		findStrs = append(cmd.ParseResult.Input, findStrs...)
-		cmdPathStr := ""
-		cic := cc.Cmds
-		/*
-			if !cmd.IsEmpty() {
-				cic = cmd.Last().Matched.Cmd
-				cmdPathStr = cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
-			}
-		*/
-		return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cic, skeleton, findStrs...)
-	}
-
-	if len(flow.Cmds) >= 2 {
-		cmdPathStr := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
-		if cmd == nil {
-			panic("[globalHelpLessMoreInfo] should never happen")
-		}
-		cmdPathStr = flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, true)
-		if len(findStrs) != 0 {
-			return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cmd, skeleton, findStrs...)
-		}
-		if len(flow.Cmds) > 2 ||
-			cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
-			if skeleton {
-				return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
-			} else {
-				return DumpFlowAllSimple(argv, cc, env, flow, currCmdIdx)
-			}
-		}
-		input := flow.Last().ParseResult.Input
-		if len(input) > 1 {
-			return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, "", cc.Cmds, skeleton, input...)
-		}
-		return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cmd, skeleton)
-	}
-
-	return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, "", cc.Cmds, skeleton, findStrs...)
+	return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
 }
 
 func DumpTailCmdInfo(
@@ -217,6 +161,80 @@ func SelfHelp(_ core.ArgVals, cc *core.Cli, env *core.Env, _ []core.ParsedCmd) b
 	return true
 }
 
+// This is a mess, rewrite
+/*
+func GlobalHelpMoreInfo(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return globalHelpLessMoreInfo(argv, cc, env, flow, currCmdIdx, false)
+}
+
+func GlobalHelpLessInfo(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return globalHelpLessMoreInfo(argv, cc, env, flow, currCmdIdx, true)
+}
+
+func globalHelpLessMoreInfo(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	skeleton bool) (int, bool) {
+
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+
+	for _, cmd := range flow.Cmds {
+		if cmd.ParseResult.Error == nil {
+			continue
+		}
+		findStrs = append(cmd.ParseResult.Input, findStrs...)
+		cmdPathStr := ""
+		cic := cc.Cmds
+		//	if !cmd.IsEmpty() {
+		//		cic = cmd.Last().Matched.Cmd
+		//		cmdPathStr = cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+		//	}
+		return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cic, skeleton, findStrs...)
+	}
+
+	if len(flow.Cmds) >= 2 {
+		cmdPathStr := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+		cmd := cc.Cmds.GetSub(strings.Split(cmdPathStr, cc.Cmds.Strs.PathSep)...)
+		if cmd == nil {
+			panic("[globalHelpLessMoreInfo] should never happen")
+		}
+		cmdPathStr = flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, true)
+		if len(findStrs) != 0 {
+			return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cmd, skeleton, findStrs...)
+		}
+		if len(flow.Cmds) > 2 ||
+			cmd.Cmd() != nil && cmd.Cmd().Type() == core.CmdTypeFlow {
+			if skeleton {
+				return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
+			} else {
+				return DumpFlowAllSimple(argv, cc, env, flow, currCmdIdx)
+			}
+		}
+		input := flow.Last().ParseResult.Input
+		if len(input) > 1 {
+			return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, "", cc.Cmds, skeleton, input...)
+		}
+		return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, cmdPathStr, cmd, skeleton)
+	}
+
+	return dumpMoreLessFindResult(flow, currCmdIdx, cc.Screen, env, "", cc.Cmds, skeleton, findStrs...)
+}
+
 func dumpMoreLessFindResult(
 	flow *core.ParsedCmds,
 	currCmdIdx int,
@@ -232,3 +250,4 @@ func dumpMoreLessFindResult(
 	display.DumpCmdsWithTips(cmd, screen, env, dumpArgs, cmdPathStr, true)
 	return clearFlow(flow)
 }
+*/
