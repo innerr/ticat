@@ -155,6 +155,9 @@ func (self *MetaFile) parse(data []byte) {
 					if len(line) == 0 {
 						continue
 					}
+					if line[0] == CommentPrefix {
+						continue
+					}
 					if line[0] == SectionBracketLeft && line[size-1] == SectionBracketRight &&
 						len(line) > 2 && line[1] == '/' {
 						break

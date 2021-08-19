@@ -52,7 +52,6 @@ func DbgDelayExecute(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx)
 	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec", argv.GetInt("seconds"))
 	return currCmdIdx, true
 }
