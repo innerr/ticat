@@ -302,7 +302,7 @@ func dumpCmd(
 				prt(1, ColorProp("- env-ops:", env))
 			}
 			for _, k := range envOpKeys {
-				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.RawOps(k), envOpSep))
+				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(k), envOpSep))
 			}
 
 			deps := cic.GetDepends()

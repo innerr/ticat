@@ -14,7 +14,7 @@ func CollectDepends(
 	currCmdIdx int,
 	res Depends,
 	allowFlowTemplateRenderError bool,
-	envOpCmds []interface{}) {
+	envOpCmds []EnvOpCmd) {
 
 	collectDepends(cc, env.Clone(), flow, currCmdIdx, res, allowFlowTemplateRenderError, envOpCmds)
 }
@@ -26,7 +26,7 @@ func collectDepends(
 	currCmdIdx int,
 	res Depends,
 	allowFlowTemplateRenderError bool,
-	envOpCmds []interface{}) {
+	envOpCmds []EnvOpCmd) {
 
 	for i := currCmdIdx; i < len(flow.Cmds); i++ {
 		it := flow.Cmds[i]
@@ -44,7 +44,7 @@ func collectDepends(
 			}
 		}
 		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-		tryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds,
+		tryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, nil,
 			"failed to execute env op-cmd in depends collecting")
 		if cic.Type() != CmdTypeFlow {
 			continue
@@ -65,12 +65,13 @@ func tryExeEnvOpCmds(
 	env *Env,
 	flow *ParsedCmds,
 	currCmdIdx int,
-	envOpCmds []interface{},
+	envOpCmds []EnvOpCmd,
+	checker *EnvOpsChecker,
 	errString string) {
 
 	cmd := flow.Cmds[currCmdIdx].LastCmd()
 	for _, it := range envOpCmds {
-		if !cmd.IsTheSameFunc(it) {
+		if !cmd.IsTheSameFunc(it.Func) {
 			continue
 		}
 		newCC := cc.Clone()
@@ -79,5 +80,9 @@ func tryExeEnvOpCmds(
 		if !succeeded {
 			panic(NewCmdError(flow.Cmds[currCmdIdx], errString))
 		}
+		if checker != nil {
+			it.Action(checker, argv)
+		}
+		break
 	}
 }

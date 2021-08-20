@@ -113,10 +113,21 @@ func Dummy(
 	return currCmdIdx, true
 }
 
-func EnvOpCmds() []interface{} {
-	return []interface{}{
-		ResetSessionEnv,
-		ResetLocalEnv,
-		RemoveEnvValAndSaveToLocal,
+func EnvOpCmds() []core.EnvOpCmd {
+	return []core.EnvOpCmd{
+		core.EnvOpCmd{
+			ResetSessionEnv,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
+				checker.Reset()
+			}},
+		core.EnvOpCmd{
+			ResetLocalEnv,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
+				checker.Reset()
+			}},
+		core.EnvOpCmd{RemoveEnvValAndSaveToLocal,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
+				checker.RemoveKeyStat(argv.GetRaw("key"))
+			}},
 	}
 }

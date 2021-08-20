@@ -46,7 +46,7 @@ func (self EnvOps) MatchFind(findStr string) bool {
 		if strings.Index(name, findStr) >= 0 {
 			return true
 		}
-		for _, op := range self.RawOps(name) {
+		for _, op := range self.Ops(name) {
 			if strings.Index(EnvOpStr(op), findStr) >= 0 {
 				return true
 			}
@@ -59,19 +59,28 @@ func (self EnvOps) RawEnvKeys() []string {
 	return self.orderedNames
 }
 
-func (self EnvOps) RawOps(name string) []uint {
+func (self EnvOps) Ops(name string) []uint {
 	val, _ := self.ops[name]
 	return val
 }
 
 // TODO: render too many times
-func (self EnvOps) RenderedEnvKeys(argv ArgVals, env *Env) []string {
-	return self.orderedNames
-}
+func (self EnvOps) RenderedEnvKeys(
+	argv ArgVals,
+	env *Env,
+	cmd *Cmd,
+	allowError bool) (renderedKeys []string, origins []string, fullyRendered bool) {
 
-func (self EnvOps) RenderedOps(argv ArgVals, env *Env, name string) []uint {
-	val, _ := self.ops[name]
-	return val
+	fullyRendered = true
+	for _, name := range self.orderedNames {
+		keys, keyFullyRendered := renderTemplateStr(name, "key ops", cmd, argv, env, allowError)
+		for _, key := range keys {
+			renderedKeys = append(renderedKeys, key)
+			origins = append(origins, name)
+		}
+		fullyRendered = fullyRendered && keyFullyRendered
+	}
+	return
 }
 
 type EnvOpsChecker map[string]envOpsCheckerKeyInfo
@@ -108,6 +117,19 @@ func (self FirstArg2EnvProviders) Get(key string) (matched *ParsedCmd) {
 	return
 }
 
+type EnvOpCmd struct {
+	Func   interface{}
+	Action func(*EnvOpsChecker, ArgVals)
+}
+
+func (self *EnvOpsChecker) Reset() {
+	*self = EnvOpsChecker{}
+}
+
+func (self *EnvOpsChecker) RemoveKeyStat(key string) {
+	(*self)[key] = envOpsCheckerKeyInfo{}
+}
+
 func (self EnvOpsChecker) OnCallCmd(
 	env *Env,
 	argv ArgVals,
@@ -121,8 +143,9 @@ func (self EnvOpsChecker) OnCallCmd(
 	arg2envs.Add(matched)
 
 	ops := cmd.EnvOps()
-	for _, key := range ops.RenderedEnvKeys(argv, env) {
-		for _, curr := range ops.RenderedOps(argv, env, key) {
+	keys, origins, _ := ops.RenderedEnvKeys(argv, env, cmd, false)
+	for i, key := range keys {
+		for _, curr := range ops.Ops(origins[i]) {
 			before, _ := self[key]
 
 			if (curr&EnvOpTypeWrite) == 0 && (curr&EnvOpTypeMayWrite) != 0 {
@@ -183,7 +206,7 @@ func CheckEnvOps(
 	env *Env,
 	checker *EnvOpsChecker,
 	ignoreMaybe bool,
-	envOpCmds []interface{},
+	envOpCmds []EnvOpCmd,
 	result *[]EnvOpsCheckResult) {
 
 	arg2envs := FirstArg2EnvProviders{}
@@ -196,7 +219,7 @@ func checkEnvOps(
 	env *Env,
 	checker *EnvOpsChecker,
 	ignoreMaybe bool,
-	envOpCmds []interface{},
+	envOpCmds []EnvOpCmd,
 	result *[]EnvOpsCheckResult,
 	arg2envs FirstArg2EnvProviders) {
 
@@ -217,7 +240,7 @@ func checkEnvOps(
 
 		*result = append(*result, res...)
 
-		tryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds,
+		tryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, checker,
 			"failed to execute env-op cmd in env-ops checking")
 		if last.Type() != CmdTypeFlow {
 			continue

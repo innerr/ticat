@@ -83,7 +83,7 @@ func tryRenderMultiplyTemplate(
 		if allowError {
 			return
 		}
-		templateRenderPanic(cmd, targetName, key, true)
+		templateRenderPanic(in, cmd, targetName, key, true)
 	}
 
 	out = nil
@@ -144,14 +144,14 @@ func tryRenderTemplate(
 				findPos += j + len(templBracketRight)
 				continue
 			}
-			templateRenderPanic(cmd, targetName, key, false)
+			templateRenderPanic(in, cmd, targetName, key, false)
 		}
 		in = in[:findPos] + str[0:i] + valStr + tail[j+len(templBracketRight):]
 	}
 	return in, hasError
 }
 
-func templateRenderPanic(cmd *Cmd, targetName string, key string, isMultiply bool) {
+func templateRenderPanic(in string, cmd *Cmd, targetName string, key string, isMultiply bool) {
 	multiply := ""
 	if isMultiply {
 		multiply = "multiply "
@@ -172,10 +172,11 @@ func templateRenderPanic(cmd *Cmd, targetName string, key string, isMultiply boo
 
 	if cmd.args.Has(key) {
 		err := CmdMissedArgValWhenRenderFlow{
-			"render " + targetName + " " + multiply + "template failed, arg value missed.",
+			"render template of '" + targetName + "' " + multiply + "failed, arg value missed.",
 			cmd.owner.DisplayPath(),
 			cmd.metaFilePath,
 			cmd.owner.Source(),
+			in,
 			cmd,
 			key,
 			findArgIdx(key),
@@ -185,11 +186,12 @@ func templateRenderPanic(cmd *Cmd, targetName string, key string, isMultiply boo
 		argName := cmd.arg2env.GetArgName(key)
 		argIdx := findArgIdx(argName)
 		err := CmdMissedEnvValWhenRenderFlow{
-			"render " + targetName + " " + multiply + "template failed, env value missed.",
+			"render template of '" + targetName + "' " + multiply + "failed, env value missed.",
 			cmd.owner.DisplayPath(),
 			cmd.metaFilePath,
 			cmd.owner.Source(),
 			key,
+			in,
 			cmd,
 			argName,
 			argIdx,

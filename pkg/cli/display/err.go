@@ -27,12 +27,16 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 	case core.CmdMissedEnvValWhenRenderFlow:
 		e := err.(core.CmdMissedEnvValWhenRenderFlow)
 		PrintErrTitle(cc.Screen, env,
-			e.Error()+" from repo/dir:",
-			"    - '"+e.Source+"'",
-			"command:",
-			"    - '"+e.CmdPath+"'",
+			e.Error(),
+			"",
+			"from repo|dir:",
+			"    - "+e.Source,
 			"file:",
-			"    - '"+e.MetaFilePath+"'",
+			"    - "+e.MetaFilePath,
+			"command:",
+			"    - "+e.CmdPath,
+			"error-line:",
+			"    - "+e.RenderingLine,
 			"missed-key:",
 			"    - "+e.MissedKey)
 		if e.ArgIdx >= 0 {
@@ -45,12 +49,16 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 	case core.CmdMissedArgValWhenRenderFlow:
 		e := err.(core.CmdMissedArgValWhenRenderFlow)
 		PrintErrTitle(cc.Screen, env,
-			e.Error()+" from repo/dir:",
-			"    - '"+e.Source+"'",
-			"command:",
-			"    - '"+e.CmdPath+"'",
+			e.Error(),
+			"",
+			"from repo|dir:",
+			"    - "+e.Source,
 			"file:",
-			"    - '"+e.MetaFilePath+"'",
+			"    - "+e.MetaFilePath,
+			"command:",
+			"    - "+e.CmdPath,
+			"error-line:",
+			"    - "+e.RenderingLine,
 			"missed-arg-name:",
 			"    - "+e.MissedArg)
 

@@ -127,14 +127,15 @@ func (self CmdTreeErrSubAbbrConflicted) GetConflictedCmdPath() []string {
 }
 
 type CmdMissedEnvValWhenRenderFlow struct {
-	Str          string
-	CmdPath      string
-	MetaFilePath string
-	Source       string
-	MissedKey    string
-	Cmd          *Cmd
-	MappingArg   string
-	ArgIdx       int
+	Str           string
+	CmdPath       string
+	MetaFilePath  string
+	Source        string
+	MissedKey     string
+	RenderingLine string
+	Cmd           *Cmd
+	MappingArg    string
+	ArgIdx        int
 }
 
 func (self CmdMissedEnvValWhenRenderFlow) Error() string {
@@ -142,13 +143,14 @@ func (self CmdMissedEnvValWhenRenderFlow) Error() string {
 }
 
 type CmdMissedArgValWhenRenderFlow struct {
-	Str          string
-	CmdPath      string
-	MetaFilePath string
-	Source       string
-	Cmd          *Cmd
-	MissedArg    string
-	ArgIdx       int
+	Str           string
+	CmdPath       string
+	MetaFilePath  string
+	Source        string
+	RenderingLine string
+	Cmd           *Cmd
+	MissedArg     string
+	ArgIdx        int
 }
 
 func (self CmdMissedArgValWhenRenderFlow) Error() string {
