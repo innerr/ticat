@@ -85,17 +85,23 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		RegPowerCmd(DumpFlowAll,
 			"desc the flow about to execute").
 		SetQuiet().
-		SetPriority()
+		SetPriority().
+		AddArg("trivial", "1", "t", "T").
+		AddArg("depth", "32", "d", "D")
 	desc.AddSub("simple", "sim", "s", "S").
 		RegPowerCmd(DumpFlowAllSimple,
 			"desc the flow about to execute in lite style").
 		SetQuiet().
-		SetPriority()
+		SetPriority().
+		AddArg("trivial", "1", "t", "T").
+		AddArg("depth", "32", "d", "D")
 	desc.AddSub("skeleton", "sk", "sl", "st", "-").
 		RegPowerCmd(DumpFlowSkeleton,
 			"desc the flow about to execute, skeleton only").
 		SetQuiet().
-		SetPriority()
+		SetPriority().
+		AddArg("trivial", "1", "t", "T").
+		AddArg("depth", "32", "d", "D")
 	desc.AddSub("dependencies", "depends", "depend", "dep", "os-cmd", "os").
 		RegPowerCmd(DumpFlowDepends,
 			"list the depended os-commands of the flow").
@@ -111,12 +117,16 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		RegPowerCmd(DumpFlow,
 			"desc the flow execution").
 		SetQuiet().
-		SetPriority()
+		SetPriority().
+		AddArg("trivial", "1", "t", "T").
+		AddArg("depth", "32", "d", "D")
 	descFlow.AddSub("simple", "sim", "s", "S", "-").
 		RegPowerCmd(DumpFlowSimple,
 			"desc the flow execution in lite style").
 		SetQuiet().
-		SetPriority()
+		SetPriority().
+		AddArg("trivial", "1", "t", "T").
+		AddArg("depth", "32", "d", "D")
 
 	cmds.AddSub("tail-info", "==").
 		RegPowerCmd(DumpTailCmdInfo,
