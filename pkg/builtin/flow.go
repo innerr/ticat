@@ -192,8 +192,10 @@ func SaveFlow(
 		return currCmdIdx, false
 	}
 
+	trivialMark := env.GetRaw("strs.trivial-mark")
+
 	// TODO: wrap line if too long
-	saveFlow(w, flow, currCmdIdx, cc.Cmds.Strs.PathSep, env)
+	saveFlow(w, flow, currCmdIdx, cc.Cmds.Strs.PathSep, trivialMark, env)
 	flowStr := w.String()
 
 	screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+"\n", cmdPath))
@@ -316,7 +318,7 @@ func loadFlowsFromDir(
 	return true
 }
 
-func saveFlow(w io.Writer, flow *core.ParsedCmds, currCmdIdx int, cmdPathSep string, env *core.Env) {
+func saveFlow(w io.Writer, flow *core.ParsedCmds, currCmdIdx int, cmdPathSep string, trivialMark string, env *core.Env) {
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	bracketLeft := env.GetRaw("strs.env-bracket-left")
 	bracketRight := env.GetRaw("strs.env-bracket-right")
@@ -346,6 +348,10 @@ func saveFlow(w io.Writer, flow *core.ParsedCmds, currCmdIdx int, cmdPathSep str
 		var path []string
 		var lastSegHasNoCmd bool
 		var cmdHasEnv bool
+
+		for i := 0; i < cmd.TrivialLvl; i++ {
+			fmt.Fprint(w, trivialMark)
+		}
 
 		for j, seg := range cmd.Segments {
 			if len(cmd.Segments) > 1 && j != 0 && !lastSegHasNoCmd {

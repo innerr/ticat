@@ -33,19 +33,21 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	more := cmds.AddSub("more", "+").
+	cmds.AddSub("more", "+").
 		RegPowerCmd(GlobalHelpMoreInfo,
 			MoreHelpStr).
 		SetQuiet().
-		SetPriority()
-	addFindStrArgs(more)
+		SetPriority().
+		AddArg("trivial", "32", "t", "T").
+		AddArg("depth", "32", "d", "D")
 
-	less := cmds.AddSub("less", "-").
+	cmds.AddSub("less", "-").
 		RegPowerCmd(GlobalHelpLessInfo,
 			LessHelpStr).
 		SetQuiet().
-		SetPriority()
-	addFindStrArgs(less)
+		SetPriority().
+		AddArg("trivial", "32", "t", "T").
+		AddArg("depth", "32", "d", "D")
 
 	find := cmds.AddSub("find", "search", "fnd", "s", "S", "/").
 		RegPowerCmd(GlobalFindCmd,
@@ -94,11 +96,6 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"desc the env-ops check result of the flow").
 		SetQuiet().
 		SetPriority()
-
-	desc.AddSub("depth").
-		RegPowerCmd(SetDumpFlowDepth,
-			"setup display stack depth of flow desc").
-		AddArg("depth", "", "d", "D")
 
 	descFlow := desc.AddSub("flow", "f", "F").
 		RegPowerCmd(DumpFlow,
@@ -313,6 +310,10 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 		"add and pull a git address to hub, do update if it already exists").
 		SetAllowTailModeCall().
 		AddArg("git-address", "", "git", "address", "addr")
+
+	hub.AddSub("git-status", "status").
+		RegPowerCmd(CheckGitRepoStatus,
+			"check git status for all repos")
 
 	add.AddSub("local-dir", "local", "l", "L").
 		RegPowerCmd(AddLocalDirToHub,
@@ -594,7 +595,7 @@ func registerSimpleSwitchEx(
 	return self.Owner()
 }
 
-const LessHelpStr = "display/search info base on the current flow and args"
+const LessHelpStr = "desc the flow about to execute"
 const MoreHelpStr = LessHelpStr + ", with details"
 
 const MoveFlowsToDirHelpStr = `move all saved flows to a local dir (could be a git repo).

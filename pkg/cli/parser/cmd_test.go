@@ -44,7 +44,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 
 	parser := &CmdParser{
 		&EnvParser{Brackets{"{", "}"}, "\t ", "=", "."},
-		".", "./", "\t ", "<root>",
+		".", "./", "\t ", "<root>", "^",
 	}
 
 	sep := parsedSeg{parsedSegTypeSep, nil}
@@ -61,7 +61,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	}
 
 	test := func(a []string, b []parsedSeg) {
-		parsed, _ := parser.parse(root, nil, a)
+		parsed, _, _ := parser.parse(root, nil, a)
 		assertEq(a, parsed, b)
 	}
 
@@ -129,7 +129,7 @@ func TestCmdParserParse(t *testing.T) {
 
 	parser := &CmdParser{
 		&EnvParser{Brackets{"{", "}"}, "\t ", "=", "."},
-		".", "./", "\t ", "<root>",
+		".", "./", "\t ", "<root>", "^",
 	}
 
 	seg := func(cmdName string, envKeyNames ...string) core.ParsedCmdSeg {
@@ -144,7 +144,7 @@ func TestCmdParserParse(t *testing.T) {
 	}
 
 	cmd := func(segs ...core.ParsedCmdSeg) core.ParsedCmd {
-		return core.ParsedCmd{segs, core.ParseResult{nil, nil}, false}
+		return core.ParsedCmd{segs, core.ParseResult{nil, nil}, 0, false}
 	}
 
 	test := func(a []string, b core.ParsedCmd) {
