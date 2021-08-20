@@ -1,5 +1,26 @@
 package core
 
+import (
+	"fmt"
+)
+
+type CmdError struct {
+	Cmd ParsedCmd
+	Err error
+}
+
+func WrapCmdError(cmd ParsedCmd, err error) *CmdError {
+	return &CmdError{cmd, err}
+}
+
+func NewCmdError(cmd ParsedCmd, err string) *CmdError {
+	return &CmdError{cmd, fmt.Errorf(err)}
+}
+
+func (self CmdError) Error() string {
+	return self.Err.Error()
+}
+
 type TolerableErr struct {
 	Err    interface{}
 	File   string

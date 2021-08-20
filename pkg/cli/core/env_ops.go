@@ -46,7 +46,7 @@ func (self EnvOps) MatchFind(findStr string) bool {
 		if strings.Index(name, findStr) >= 0 {
 			return true
 		}
-		for _, op := range self.Ops(name) {
+		for _, op := range self.RawOps(name) {
 			if strings.Index(EnvOpStr(op), findStr) >= 0 {
 				return true
 			}
@@ -55,11 +55,21 @@ func (self EnvOps) MatchFind(findStr string) bool {
 	return false
 }
 
-func (self EnvOps) EnvKeys() []string {
+func (self EnvOps) RawEnvKeys() []string {
 	return self.orderedNames
 }
 
-func (self EnvOps) Ops(name string) []uint {
+func (self EnvOps) RawOps(name string) []uint {
+	val, _ := self.ops[name]
+	return val
+}
+
+// TODO: render too many times
+func (self EnvOps) RenderedEnvKeys(argv ArgVals, env *Env) []string {
+	return self.orderedNames
+}
+
+func (self EnvOps) RenderedOps(argv ArgVals, env *Env, name string) []uint {
 	val, _ := self.ops[name]
 	return val
 }
@@ -100,6 +110,7 @@ func (self FirstArg2EnvProviders) Get(key string) (matched *ParsedCmd) {
 
 func (self EnvOpsChecker) OnCallCmd(
 	env *Env,
+	argv ArgVals,
 	matched ParsedCmd,
 	pathSep string,
 	cmd *Cmd,
@@ -110,8 +121,8 @@ func (self EnvOpsChecker) OnCallCmd(
 	arg2envs.Add(matched)
 
 	ops := cmd.EnvOps()
-	for _, key := range ops.EnvKeys() {
-		for _, curr := range ops.Ops(key) {
+	for _, key := range ops.RenderedEnvKeys(argv, env) {
+		for _, curr := range ops.RenderedOps(argv, env, key) {
 			before, _ := self[key]
 
 			if (curr&EnvOpTypeWrite) == 0 && (curr&EnvOpTypeMayWrite) != 0 {
@@ -202,7 +213,7 @@ func checkEnvOps(
 		}
 		displayPath := cmd.DisplayPath(sep, true)
 		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-		res := checker.OnCallCmd(cmdEnv, cmd, sep, last, ignoreMaybe, displayPath, arg2envs)
+		res := checker.OnCallCmd(cmdEnv, argv, cmd, sep, last, ignoreMaybe, displayPath, arg2envs)
 
 		*result = append(*result, res...)
 
