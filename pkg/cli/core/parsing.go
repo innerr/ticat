@@ -65,6 +65,7 @@ type ParseResult struct {
 type ParsedCmd struct {
 	Segments    []ParsedCmdSeg
 	ParseResult ParseResult
+	TrivialLvl  int
 	TailMode    bool
 }
 

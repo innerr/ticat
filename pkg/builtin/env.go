@@ -269,6 +269,5 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.mod.quiet", false)
 	env.SetBool("display.mod.realname", true)
 	env.SetBool("display.env.display", false)
-	env.SetInt("display.flow.depth", 6)
 	env.SetInt("display.max-cmd-cnt", 14)
 }

@@ -43,6 +43,7 @@ type CmdTree struct {
 	hidden          bool
 	source          string
 	tags            []string
+	trivial         int
 }
 
 func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
@@ -58,6 +59,7 @@ func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
 		false,
 		"",
 		nil,
+		0,
 	}
 }
 
@@ -98,6 +100,11 @@ func (self *CmdTree) SetHidden() *CmdTree {
 	return self
 }
 
+func (self *CmdTree) SetTrivial(val int) *CmdTree {
+	self.trivial = val
+	return self
+}
+
 func (self *CmdTree) IsHidden() bool {
 	return self.hidden
 }
@@ -108,6 +115,10 @@ func (self *CmdTree) AddTags(tags ...string) {
 
 func (self *CmdTree) Tags() []string {
 	return self.tags
+}
+
+func (self *CmdTree) Trivial() int {
+	return self.trivial
 }
 
 func (self *CmdTree) MatchTags(tags ...string) bool {

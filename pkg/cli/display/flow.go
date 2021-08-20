@@ -22,13 +22,12 @@ func DumpFlow(
 	// The env will be modified during dumping (so it could show the real value)
 	// so we need to clone the env to protect it
 	env = env.Clone()
-	maxDepth := env.GetInt("display.flow.depth")
 
 	writtenKeys := FlowWrittenKeys{}
 
 	PrintTipTitle(cc.Screen, env, "flow executing description:")
 	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
-	dumpFlow(cc, env, parsedGlobalEnv, flow, args, writtenKeys, maxDepth, 0)
+	dumpFlow(cc, env, parsedGlobalEnv, flow, args, writtenKeys, args.MaxDepth, args.MaxTrivial, 0)
 	cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
 }
 
@@ -40,13 +39,14 @@ func dumpFlow(
 	args *DumpFlowArgs,
 	writtenKeys FlowWrittenKeys,
 	maxDepth int,
+	maxTrivial int,
 	indentAdjust int) {
 
 	metFlows := map[string]bool{}
 	for _, cmd := range flow {
 		if !cmd.IsEmpty() {
 			dumpFlowCmd(cc, cc.Screen, env, parsedGlobalEnv, cmd, args,
-				maxDepth, indentAdjust, metFlows, writtenKeys)
+				maxDepth, maxTrivial, indentAdjust, metFlows, writtenKeys)
 		}
 	}
 }
@@ -59,6 +59,7 @@ func dumpFlowCmd(
 	parsedCmd core.ParsedCmd,
 	args *DumpFlowArgs,
 	maxDepth int,
+	maxTrivial int,
 	indentAdjust int,
 	metFlows map[string]bool,
 	writtenKeys FlowWrittenKeys) {
@@ -67,6 +68,8 @@ func dumpFlowCmd(
 	if cmd == nil {
 		return
 	}
+
+	trivialMark := env.GetRaw("strs.trivial-mark")
 
 	sep := cmd.Strs.PathSep
 	envOpSep := " " + cmd.Strs.EnvOpSep + " "
@@ -83,16 +86,29 @@ func dumpFlowCmd(
 		return
 	}
 
+	trivial := maxTrivial - cmd.Trivial()
+	if parsedCmd.TrivialLvl != 0 {
+		trivial = maxTrivial - parsedCmd.TrivialLvl
+	}
+
 	var name string
 	if args.Skeleton {
 		name = strings.Join(parsedCmd.Path(), sep)
 	} else {
 		name = parsedCmd.DisplayPath(sep, true)
 	}
-	prt(0, ColorCmd("["+name+"]", env))
+	name = ColorCmd("["+name+"]", env)
+	if trivial <= 0 {
+		name += ColorProp(trivialMark, env)
+	}
+	prt(0, name)
 
 	if len(cic.Help()) != 0 {
 		prt(1, " "+ColorHelp("'"+cic.Help()+"'", env))
+	}
+
+	if trivial <= 0 {
+		return
 	}
 
 	// TODO: this is slow
@@ -162,7 +178,11 @@ func dumpFlowCmd(
 				prt(1, ColorProp("- flow (duplicated):", env))
 			} else {
 				metFlows[flowStr] = true
-				prt(1, ColorProp("- flow:", env))
+				if maxDepth <= 1 {
+					prt(1, ColorProp("- flow (folded):", env))
+				} else {
+					prt(1, ColorProp("- flow:", env))
+				}
 			}
 			for _, flowStr := range flowStrs {
 				prt(2, ColorFlow(flowStr, env))
@@ -180,7 +200,7 @@ func dumpFlowCmd(
 				prt(2, cic.MetaFile())
 			}
 		}
-		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 {
+		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 && trivial > 0 {
 			subFlow, rendered := cic.Flow(argv, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow {
@@ -191,7 +211,8 @@ func dumpFlowCmd(
 						panic(err.Error)
 					}
 					parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
-					dumpFlow(cc, env, parsedGlobalEnv, parsedFlow.Cmds, args, writtenKeys, maxDepth-1, indentAdjust+2)
+					dumpFlow(cc, env, parsedGlobalEnv, parsedFlow.Cmds, args, writtenKeys,
+						maxDepth-1, trivial, indentAdjust+2)
 					prt(2, ColorFlowing("<<<---", env))
 				}
 			}
@@ -260,14 +281,26 @@ type DumpFlowArgs struct {
 	Simple     bool
 	Skeleton   bool
 	IndentSize int
+	MaxDepth   int
+	MaxTrivial int
 }
 
 func NewDumpFlowArgs() *DumpFlowArgs {
-	return &DumpFlowArgs{false, false, 4}
+	return &DumpFlowArgs{false, false, 4, 32, 1}
 }
 
 func (self *DumpFlowArgs) SetSimple() *DumpFlowArgs {
 	self.Simple = true
+	return self
+}
+
+func (self *DumpFlowArgs) SetMaxDepth(val int) *DumpFlowArgs {
+	self.MaxDepth = val
+	return self
+}
+
+func (self *DumpFlowArgs) SetMaxTrivial(val int) *DumpFlowArgs {
+	self.MaxTrivial = val
 	return self
 }
 

@@ -13,6 +13,7 @@ type CmdParser struct {
 	cmdAlterSeps    string
 	cmdSpaces       string
 	cmdRootNodeName string
+	TrivialMark     string
 }
 
 func NewCmdParser(
@@ -20,7 +21,8 @@ func NewCmdParser(
 	cmdSep string,
 	cmdAlterSeps string,
 	cmdSpaces string,
-	cmdRootNodeName string) *CmdParser {
+	cmdRootNodeName string,
+	TrivialMark string) *CmdParser {
 
 	return &CmdParser{
 		envParser,
@@ -28,6 +30,7 @@ func NewCmdParser(
 		cmdAlterSeps,
 		cmdSpaces,
 		cmdRootNodeName,
+		TrivialMark,
 	}
 }
 
@@ -37,7 +40,7 @@ func (self *CmdParser) Parse(
 	input []string) (parsed core.ParsedCmd) {
 
 	// Delay err check
-	segs, err := self.parse(cmds, envAbbrs, input)
+	segs, trivialLvl, err := self.parse(cmds, envAbbrs, input)
 
 	curr := core.ParsedCmdSeg{nil, core.MatchedCmd{}}
 	var path []string
@@ -70,13 +73,14 @@ func (self *CmdParser) Parse(
 	}
 
 	parsed.ParseResult = core.ParseResult{input, err}
+	parsed.TrivialLvl = trivialLvl
 	return parsed
 }
 
 func (self *CmdParser) parse(
 	cmds *core.CmdTree,
 	envAbbrs *core.EnvAbbrs,
-	input []string) (parsed []parsedSeg, err error) {
+	input []string) (parsed []parsedSeg, trivialLvl int, err error) {
 
 	var matchedCmdPath []string
 	var curr = cmds
@@ -89,11 +93,23 @@ func (self *CmdParser) parse(
 		var err error
 		var succeeded bool
 
+		// Try to parse trivial level
+		for len(input) != 0 {
+			stripped := strings.TrimLeft(input[0], "^")
+			trivialLvl += len(input[0]) - len(stripped)
+			if len(stripped) == 0 {
+				input = input[1:]
+			} else {
+				input[0] = stripped
+				break
+			}
+		}
+
 		// Try to parse input to env
 		env, input, succeeded, err = self.envParser.TryParse(curr, currEnvAbbrs, input)
 		if err != nil {
 			err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), err.Error())
-			return parsed, core.ParseErrEnv{err}
+			return parsed, trivialLvl, core.ParseErrEnv{err}
 		}
 		if succeeded {
 			if env != nil {
@@ -155,7 +171,7 @@ func (self *CmdParser) parse(
 			} else {
 				errStr := "unknow input '" + strings.Join(input, " ") + "', should be sub cmd"
 				err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-				return parsed, core.ParseErrExpectCmd{err}
+				return parsed, trivialLvl, core.ParseErrExpectCmd{err}
 			}
 		} else {
 			// Try to parse cmd args
@@ -169,19 +185,19 @@ func (self *CmdParser) parse(
 					errStr = "args parse failed"
 					errStr = "unknow input '" + strings.Join(input, " ") + "', " + errStr
 					err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-					return parsed, core.ParseErrExpectArgs{err}
+					return parsed, trivialLvl, core.ParseErrExpectArgs{err}
 				} else {
 					errStr = "looks like args, but curr cmd has no args"
 					errStr = "unknow input '" + strings.Join(input, " ") + "', " + errStr
 					err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-					return parsed, core.ParseErrExpectNoArg{err}
+					return parsed, trivialLvl, core.ParseErrExpectNoArg{err}
 				}
 			}
 			break
 		}
 	}
 
-	return parsed, nil
+	return parsed, trivialLvl, nil
 }
 
 func (self *CmdParser) displayPath(matchedCmdPath []string) string {

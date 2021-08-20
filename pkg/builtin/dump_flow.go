@@ -7,75 +7,58 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func SetDumpFlowDepth(
+func DumpFlowAll(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	key := "display.flow.depth"
-	if len(argv.GetRaw("depth")) != 0 {
-		depth := argv.GetInt("depth")
-		env.GetLayer(core.EnvLayerSession).SetInt("display.flow.depth", depth)
-	}
-	cc.Screen.Print(display.ColorKey(key, env) + display.ColorSymbol(" = ", env) + env.GetRaw(key) + "\n")
-	return currCmdIdx, true
-}
-
-func DumpFlowAll(
-	_ core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	return dumpFlowAll(cc, env, flow, currCmdIdx, false)
+	return dumpFlowAll(argv, cc, env, flow, currCmdIdx, false)
 }
 
 func DumpFlowAllSimple(
-	_ core.ArgVals,
+	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	return dumpFlowAll(cc, env, flow, currCmdIdx, true)
+	return dumpFlowAll(argv, cc, env, flow, currCmdIdx, true)
 }
 
 func DumpFlow(
-	_ core.ArgVals,
+	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs()
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 	return clearFlow(flow)
 }
 
 func DumpFlowSimple(
-	_ core.ArgVals,
+	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetSimple()
+	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 	return clearFlow(flow)
 }
 
 func DumpFlowSkeleton(
-	_ core.ArgVals,
+	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetSkeleton()
+	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 
 	deps := core.Depends{}
@@ -148,13 +131,14 @@ func DumpFlowEnvOpsCheckResult(
 }
 
 func dumpFlowAll(
+	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int,
 	simple bool) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs()
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	dumpArgs.Simple = simple
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 

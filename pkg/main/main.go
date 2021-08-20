@@ -49,6 +49,7 @@ func main() {
 	defEnv.Set("strs.flow-template-bracket-right", FlowTemplateBracketRight)
 	defEnv.Set("strs.flow-template-multiply-mark", FlowTemplateMultiplyMark)
 	defEnv.Set("strs.tag-mark", TagMark)
+	defEnv.Set("strs.trivial-mark", TrivialMark)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -91,7 +92,8 @@ func main() {
 		CmdPathSep,
 		CmdPathAlterSeps,
 		Spaces,
-		CmdRootDisplayName)
+		CmdRootDisplayName,
+		TrivialMark)
 	cliParser := parser.NewParser(seqParser, cmdParser)
 
 	// Virtual tty, for re-directing
@@ -164,6 +166,7 @@ const (
 	FlowTemplateBracketRight string = "]]"
 	FlowTemplateMultiplyMark string = "*"
 	TagMark                  string = "@"
+	TrivialMark              string = "^"
 	TagOutOfTheBox           string = TagMark + "ready"
 	TagProvider              string = TagMark + "config"
 	TagSelfTest              string = TagMark + "selftest"

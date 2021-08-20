@@ -481,3 +481,5 @@ $> ticat cmds:~ tree
 
 ## User stories
 * [Try to be a happy TiDB developer](https://github.com/innerr/tidb.ticat) (on going)
+
+(TODO: trivial level)

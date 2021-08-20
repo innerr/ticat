@@ -198,6 +198,16 @@ func PurgeInactiveRepoFromHub(
 	return currCmdIdx, true
 }
 
+func CheckGitRepoStatus(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	panic("TODO")
+}
+
 func UpdateHub(
 	argv core.ArgVals,
 	cc *core.Cli,
