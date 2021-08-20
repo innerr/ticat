@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -45,12 +46,25 @@ func RegMod(
 		regModAbbrs(meta, mod)
 	}
 
+	regTrivial(meta, mod)
 	regTags(meta, mod)
 	regArgs(meta, cmd, abbrsSep)
 	regDeps(meta, cmd)
 	regEnvOps(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regVal2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regArg2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
+}
+
+func regTrivial(meta *meta_file.MetaFile, mod *core.CmdTree) {
+	val := meta.Get("trivial")
+	if len(val) == 0 {
+		return
+	}
+	trivial, err := strconv.Atoi(val)
+	if err != nil {
+		panic(fmt.Errorf("[regTrivial] trivial string '%s' is not int: '%v'", val, err))
+	}
+	mod.SetTrivial(trivial)
 }
 
 func regTags(meta *meta_file.MetaFile, mod *core.CmdTree) {

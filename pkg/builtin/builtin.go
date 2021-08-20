@@ -1,6 +1,9 @@
 package builtin
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
@@ -33,21 +36,28 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("more", "+").
-		RegPowerCmd(GlobalHelpMoreInfo,
-			MoreHelpStr).
-		SetQuiet().
-		SetPriority().
-		AddArg("trivial", "32", "t", "T").
-		AddArg("depth", "32", "d", "D")
+	for i := 1; i < 6; i++ {
+		defTrivial := fmt.Sprintf("%d", i)
+		cmdSuffix := ""
+		if i > 1 {
+			cmdSuffix += fmt.Sprintf("-%d", i)
+		}
+		cmds.AddSub("more"+cmdSuffix, strings.Repeat("+", i)).
+			RegPowerCmd(GlobalHelpMoreInfo,
+				MoreHelpStr).
+			SetQuiet().
+			SetPriority().
+			AddArg("trivial", defTrivial, "t", "T").
+			AddArg("depth", "32", "d", "D")
 
-	cmds.AddSub("less", "-").
-		RegPowerCmd(GlobalHelpLessInfo,
-			LessHelpStr).
-		SetQuiet().
-		SetPriority().
-		AddArg("trivial", "32", "t", "T").
-		AddArg("depth", "32", "d", "D")
+		cmds.AddSub("less"+cmdSuffix, strings.Repeat("-", i)).
+			RegPowerCmd(GlobalHelpLessInfo,
+				LessHelpStr).
+			SetQuiet().
+			SetPriority().
+			AddArg("trivial", defTrivial, "t", "T").
+			AddArg("depth", "32", "d", "D")
+	}
 
 	find := cmds.AddSub("find", "search", "fnd", "s", "S", "/").
 		RegPowerCmd(GlobalFindCmd,

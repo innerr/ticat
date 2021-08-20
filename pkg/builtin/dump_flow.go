@@ -34,7 +34,7 @@ func DumpFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth"))
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 	return clearFlow(flow)
 }
@@ -46,7 +46,7 @@ func DumpFlowSimple(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth"))
+	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 	return clearFlow(flow)
 }
@@ -58,7 +58,7 @@ func DumpFlowSkeleton(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth"))
+	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
 
 	deps := core.Depends{}

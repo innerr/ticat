@@ -69,6 +69,8 @@ func dumpFlowCmd(
 		return
 	}
 
+	trivialMark := env.GetRaw("strs.trivial-mark")
+
 	sep := cmd.Strs.PathSep
 	envOpSep := " " + cmd.Strs.EnvOpSep + " "
 
@@ -84,7 +86,10 @@ func dumpFlowCmd(
 		return
 	}
 
-	trivial := maxTrivial - parsedCmd.TrivialLvl
+	trivial := maxTrivial - cmd.Trivial()
+	if parsedCmd.TrivialLvl != 0 {
+		trivial = maxTrivial - parsedCmd.TrivialLvl
+	}
 
 	var name string
 	if args.Skeleton {
@@ -94,7 +99,7 @@ func dumpFlowCmd(
 	}
 	name = ColorCmd("["+name+"]", env)
 	if trivial <= 0 {
-		name += " "+ColorProp("(trivial)", env)
+		name += ColorProp(trivialMark, env)
 	}
 	prt(0, name)
 
