@@ -28,6 +28,11 @@ type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) (succeede
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
+type Depend struct {
+	OsCmd  string
+	Reason string
+}
+
 type Cmd struct {
 	owner             *CmdTree
 	help              string
@@ -375,61 +380,15 @@ func (self *Cmd) RenderedFlowStrs(
 	env *Env,
 	allowFlowTemplateRenderError bool) (flow []string, fullyRendered bool) {
 
-	templBracketLeft := self.owner.Strs.FlowTemplateBracketLeft
-	templBracketRight := self.owner.Strs.FlowTemplateBracketRight
-	templMultiplyMark := self.owner.Strs.FlowTemplateMultiplyMark
+	fullyRendered = true
 
-	// TODO: this flag is too 'global'
-	hasError := false
-
-	renderLineAndAddToFlow := func(it string) {
-		findPos := 0
-		for {
-			str := it[findPos:]
-			i := strings.Index(str, templBracketLeft)
-			if i < 0 {
-				break
-			}
-			tail := str[i+len(templBracketLeft):]
-			j := strings.Index(tail, templBracketRight)
-			if j < 0 {
-				break
-			}
-			key := tail[0:j]
-			var valStr string
-			val, ok := env.GetEx(key)
-			valStr = val.Raw
-			if !ok {
-				val, inArg := argv[key]
-				valStr = val.Raw
-				ok = inArg && len(valStr) != 0
-			}
-			if !ok {
-				hasError = true
-				if allowFlowTemplateRenderError {
-					findPos += j + len(templBracketRight)
-					continue
-				}
-				self.flowTemplateRenderPanic(key, false)
-			}
-			it = it[:findPos] + str[0:i] + valStr + tail[j+len(templBracketRight):]
+	for _, line := range self.flow {
+		rendereds, lineFullyRendered := renderTemplateStr(line, "flow", self, argv, env, allowFlowTemplateRenderError)
+		for _, rendered := range rendereds {
+			flow = append(flow, rendered)
 		}
-		flow = append(flow, it)
+		fullyRendered = fullyRendered && lineFullyRendered
 	}
-
-	for _, it := range self.flow {
-		lines, lineRenderError := self.tryRenderMultiply(argv, env, it, templBracketLeft, templBracketRight,
-			templMultiplyMark, allowFlowTemplateRenderError)
-		for _, line := range lines {
-			if lineRenderError {
-				flow = append(flow, line)
-				continue
-			} else {
-				renderLineAndAddToFlow(line)
-			}
-		}
-	}
-	fullyRendered = !hasError
 	return
 }
 
@@ -522,180 +481,4 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 
 	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
 	return true
-}
-
-// It's slow and ugly, but it should works fine
-// only support one multiply definition in a line
-func (self *Cmd) tryRenderMultiply(
-	argv ArgVals,
-	env *Env,
-	in string,
-	templBracketLeft string,
-	templBracketRight string,
-	templMultiplyMark string,
-	allowFlowTemplateRenderError bool) (out []string, hasError bool) {
-
-	out = []string{in}
-	mm := templMultiplyMark + templMultiplyMark
-	ml := templBracketLeft + templMultiplyMark
-	mr := templMultiplyMark + templBracketRight
-
-	valBegin := strings.Index(in, ml)
-	if valBegin <= 0 {
-		return
-	}
-
-	valEnd := strings.Index(in[valBegin:], mr)
-	if valEnd <= 0 {
-		return
-	}
-	valEnd += valBegin
-
-	tempBegin := strings.Index(in[:valBegin], mm)
-	if tempBegin < 0 {
-		return
-	}
-
-	tempEnd := strings.Index(in[valEnd:], mm)
-	if tempEnd < 0 {
-		return
-	}
-	tempEnd += valEnd
-
-	key := strings.TrimSpace(in[valBegin+len(ml) : valEnd])
-
-	// TODO: duplicated code with normal flow template rendering
-	var valStr string
-	val, ok := env.GetEx(key)
-	valStr = val.Raw
-	if !ok {
-		val, inArg := argv[key]
-		valStr = val.Raw
-		ok = inArg && len(valStr) != 0
-	}
-	if !ok {
-		if allowFlowTemplateRenderError {
-			hasError = true
-			return
-		}
-		self.flowTemplateRenderPanic(key, true)
-	}
-
-	out = nil
-	if tempBegin != 0 {
-		out = append(out, strings.TrimSpace(in[:tempBegin]))
-	}
-
-	head := in[tempBegin+len(mm) : valBegin]
-	tail := in[valEnd+len(mr) : tempEnd]
-
-	listSep := self.owner.Strs.ListSep
-
-	vals := strings.Split(valStr, listSep)
-	for _, val := range vals {
-		val = strings.TrimSpace(val)
-		out = append(out, strings.TrimSpace(head+val+tail))
-	}
-
-	if tempEnd+len(mm) != len(in) {
-		out = append(out, strings.TrimSpace(in[tempEnd+len(mm):]))
-	}
-	return
-}
-
-func (self *Cmd) flowTemplateRenderPanic(key string, isMultiply bool) {
-	multiply := ""
-	if isMultiply {
-		multiply = "multiply "
-	}
-
-	findArgIdx := func(name string) int {
-		idx := -1
-		if len(name) == 0 {
-			return idx
-		}
-		for i, it := range self.args.Names() {
-			if it == name {
-				idx = i
-			}
-		}
-		return idx
-	}
-
-	if self.args.Has(key) {
-		err := CmdMissedArgValWhenRenderFlow{
-			"render flow " + multiply + "template failed, arg value missed.",
-			self.owner.DisplayPath(),
-			self.metaFilePath,
-			self.owner.Source(),
-			self,
-			key,
-			findArgIdx(key),
-		}
-		panic(err)
-	} else {
-		argName := self.arg2env.GetArgName(key)
-		argIdx := findArgIdx(argName)
-		err := CmdMissedEnvValWhenRenderFlow{
-			"render flow " + multiply + "template failed, env value missed.",
-			self.owner.DisplayPath(),
-			self.metaFilePath,
-			self.owner.Source(),
-			key,
-			self,
-			argName,
-			argIdx,
-		}
-		panic(err)
-	}
-}
-
-func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd) (sessionDir string, sessionPath string) {
-	sep := cc.Cmds.Strs.EnvKeyValSep
-
-	sessionDir = env.GetRaw("session")
-	if len(sessionDir) == 0 {
-		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session dir not found in env"))
-	}
-	sessionFileName := env.GetRaw("strs.session-env-file")
-	if len(sessionFileName) == 0 {
-		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session env file name not found in env"))
-	}
-	sessionPath = filepath.Join(sessionDir, sessionFileName)
-	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
-	return
-}
-
-func mayQuoteStr(origin string) string {
-	trimed := strings.TrimSpace(origin)
-	if len(trimed) == 0 || len(trimed) != len(origin) {
-		return "'" + origin + "'"
-	}
-	fields := strings.Fields(origin)
-	if len(fields) != 1 {
-		return "'" + origin + "'"
-	}
-	return origin
-}
-
-type Depend struct {
-	OsCmd  string
-	Reason string
-}
-
-type CmdError struct {
-	Cmd ParsedCmd
-	Err error
-}
-
-func WrapCmdError(cmd ParsedCmd, err error) *CmdError {
-	return &CmdError{cmd, err}
-}
-
-func NewCmdError(cmd ParsedCmd, err string) *CmdError {
-	return &CmdError{cmd, fmt.Errorf(err)}
-}
-
-func (self CmdError) Error() string {
-	return self.Err.Error()
 }

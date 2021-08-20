@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -99,4 +100,20 @@ func LoadEnvFromFile(env *Env, path string, sep string) {
 		panic(fmt.Errorf("[LoadEnvFromFile] read local env file '%s' failed: %v",
 			path, err))
 	}
+}
+
+func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd) (sessionDir string, sessionPath string) {
+	sep := cc.Cmds.Strs.EnvKeyValSep
+
+	sessionDir = env.GetRaw("session")
+	if len(sessionDir) == 0 {
+		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session dir not found in env"))
+	}
+	sessionFileName := env.GetRaw("strs.session-env-file")
+	if len(sessionFileName) == 0 {
+		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session env file name not found in env"))
+	}
+	sessionPath = filepath.Join(sessionDir, sessionFileName)
+	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
+	return
 }

@@ -297,7 +297,7 @@ func dumpCmd(
 			}
 
 			envOps := cic.EnvOps()
-			envOpKeys := envOps.EnvKeys()
+			envOpKeys := envOps.RawEnvKeys()
 			if len(envOpKeys) != 0 {
 				prt(1, ColorProp("- env-ops:", env))
 			}

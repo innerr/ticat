@@ -121,16 +121,16 @@ func dumpFlowCmd(
 			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteStr(v.Val)+" "+v.Source+"")
 		}
 	}
-	writtenKeys.AddCmd(cic)
+	writtenKeys.AddCmd(argv, env, cic)
 
 	if !args.Skeleton {
 		envOps := cic.EnvOps()
-		envOpKeys := envOps.EnvKeys()
+		envOpKeys, origins, _ := envOps.RenderedEnvKeys(argv, cmdEnv, cic, false)
 		if len(envOpKeys) != 0 {
 			prt(1, ColorProp("- env-ops:", env))
 		}
-		for _, k := range envOpKeys {
-			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(k), envOpSep))
+		for i, k := range envOpKeys {
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(origins[i]), envOpSep))
 		}
 	}
 
@@ -279,11 +279,14 @@ func (self *DumpFlowArgs) SetSkeleton() *DumpFlowArgs {
 
 type FlowWrittenKeys map[string]bool
 
-func (self FlowWrittenKeys) AddCmd(cic *core.Cmd) {
+func (self FlowWrittenKeys) AddCmd(argv core.ArgVals, env *core.Env, cic *core.Cmd) {
 	if cic == nil {
 		return
 	}
-	for _, k := range cic.EnvOps().EnvKeys() {
+	ops := cic.EnvOps()
+	keys, _, _ := ops.RenderedEnvKeys(argv, env, cic, false)
+	for _, k := range keys {
+		// If is read-op, then the key must exists, so no need to check the op flags
 		self[k] = true
 	}
 }
