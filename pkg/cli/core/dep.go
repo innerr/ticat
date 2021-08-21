@@ -44,7 +44,7 @@ func collectDepends(
 			}
 		}
 		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-		tryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, nil,
+		TryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, nil,
 			"failed to execute env op-cmd in depends collecting")
 		if cic.Type() != CmdTypeFlow {
 			continue
@@ -59,7 +59,7 @@ func collectDepends(
 	}
 }
 
-func tryExeEnvOpCmds(
+func TryExeEnvOpCmds(
 	argv ArgVals,
 	cc *Cli,
 	env *Env,

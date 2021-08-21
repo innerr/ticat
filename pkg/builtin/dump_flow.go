@@ -34,8 +34,9 @@ func DumpFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
-	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
+		SetMaxTrivial(argv.GetInt("trivial"))
+	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 	return clearFlow(flow)
 }
 
@@ -46,8 +47,9 @@ func DumpFlowSimple(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
-	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).
+		SetMaxTrivial(argv.GetInt("trivial"))
+	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 	return clearFlow(flow)
 }
 
@@ -58,8 +60,9 @@ func DumpFlowSkeleton(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
-	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).
+		SetMaxTrivial(argv.GetInt("trivial"))
+	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 
 	deps := core.Depends{}
 	core.CollectDepends(cc, env, flow, currCmdIdx+1, deps, false, EnvOpCmds())
@@ -138,9 +141,10 @@ func dumpFlowAll(
 	currCmdIdx int,
 	simple bool) (int, bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
+		SetMaxTrivial(argv.GetInt("trivial"))
 	dumpArgs.Simple = simple
-	display.DumpFlow(cc, env, flow.GlobalEnv, flow.Cmds[currCmdIdx+1:], dumpArgs)
+	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 
 	deps := core.Depends{}
 	core.CollectDepends(cc, env, flow, currCmdIdx+1, deps, false, EnvOpCmds())

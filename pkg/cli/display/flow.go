@@ -11,11 +11,12 @@ import (
 func DumpFlow(
 	cc *core.Cli,
 	env *core.Env,
-	parsedGlobalEnv core.ParsedEnv,
-	flow []core.ParsedCmd,
-	args *DumpFlowArgs) {
+	flow *core.ParsedCmds,
+	fromCmdIdx int,
+	args *DumpFlowArgs,
+	envOpCmds []core.EnvOpCmd) {
 
-	if len(flow) == 0 {
+	if len(flow.Cmds) == 0 {
 		return
 	}
 
@@ -27,15 +28,16 @@ func DumpFlow(
 
 	PrintTipTitle(cc.Screen, env, "flow executing description:")
 	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
-	dumpFlow(cc, env, parsedGlobalEnv, flow, args, writtenKeys, args.MaxDepth, args.MaxTrivial, 0)
+	dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, writtenKeys, args.MaxDepth, args.MaxTrivial, 0)
 	cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
 }
 
 func dumpFlow(
 	cc *core.Cli,
 	env *core.Env,
-	parsedGlobalEnv core.ParsedEnv,
-	flow []core.ParsedCmd,
+	envOpCmds []core.EnvOpCmd,
+	flow *core.ParsedCmds,
+	fromCmdIdx int,
 	args *DumpFlowArgs,
 	writtenKeys FlowWrittenKeys,
 	maxDepth int,
@@ -43,11 +45,12 @@ func dumpFlow(
 	indentAdjust int) {
 
 	metFlows := map[string]bool{}
-	for _, cmd := range flow {
-		if !cmd.IsEmpty() {
-			dumpFlowCmd(cc, cc.Screen, env, parsedGlobalEnv, cmd, args,
-				maxDepth, maxTrivial, indentAdjust, metFlows, writtenKeys)
+	for i, cmd := range flow.Cmds[fromCmdIdx:] {
+		if cmd.IsEmpty() {
+			continue
 		}
+		dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args,
+			maxDepth, maxTrivial, indentAdjust, metFlows, writtenKeys)
 	}
 }
 
@@ -55,8 +58,9 @@ func dumpFlowCmd(
 	cc *core.Cli,
 	screen core.Screen,
 	env *core.Env,
-	parsedGlobalEnv core.ParsedEnv,
-	parsedCmd core.ParsedCmd,
+	envOpCmds []core.EnvOpCmd,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
 	args *DumpFlowArgs,
 	maxDepth int,
 	maxTrivial int,
@@ -64,6 +68,7 @@ func dumpFlowCmd(
 	metFlows map[string]bool,
 	writtenKeys FlowWrittenKeys) {
 
+	parsedCmd := flow.Cmds[currCmdIdx]
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
 		return
@@ -107,13 +112,15 @@ func dumpFlowCmd(
 		prt(1, " "+ColorHelp("'"+cic.Help()+"'", env))
 	}
 
-	if trivial <= 0 {
-		return
-	}
-
 	// TODO: this is slow
 	originEnv := env.Clone()
 	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
+
+	if trivial <= 0 {
+		core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
+			"failed to execute env-op cmd in flow desc")
+		return
+	}
 
 	if !args.Skeleton {
 		args := cic.Args()
@@ -128,7 +135,7 @@ func dumpFlowCmd(
 	}
 
 	if !args.Skeleton {
-		keys, kvs := dumpFlowEnv(cc, originEnv, parsedGlobalEnv, parsedCmd, cmd, argv, writtenKeys)
+		keys, kvs := dumpFlowEnv(cc, originEnv, flow.GlobalEnv, parsedCmd, cmd, argv, writtenKeys)
 		if len(keys) != 0 {
 			prt(1, ColorProp("- env-values:", env))
 		}
@@ -210,14 +217,20 @@ func dumpFlowCmd(
 					if err != nil {
 						panic(err.Error)
 					}
+
+					// TODO: need it or not ?
 					parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
-					dumpFlow(cc, env, parsedGlobalEnv, parsedFlow.Cmds, args, writtenKeys,
+
+					dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, writtenKeys,
 						maxDepth-1, trivial, indentAdjust+2)
 					prt(2, ColorFlowing("<<<---", env))
 				}
 			}
 		}
 	}
+
+	core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
+		"failed to execute env-op cmd in flow desc")
 }
 
 type flowEnvVal struct {
