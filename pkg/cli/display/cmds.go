@@ -293,7 +293,8 @@ func dumpCmd(
 				prt(1, ColorProp("- env-from-argv:", env))
 			}
 			for _, k := range arg2env.EnvKeys() {
-				prt(2, ColorKey(k, env)+ColorSymbol(" <- ", env)+ColorArg(mayQuoteStr(arg2env.GetArgName(k)), env))
+				prt(2, ColorKey(k, env)+ColorSymbol(" <- ", env)+
+					ColorArg(mayQuoteStr(arg2env.GetArgName(cic, k, true)), env))
 			}
 
 			envOps := cic.EnvOps()

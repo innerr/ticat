@@ -225,7 +225,7 @@ func (self *Cmd) MatchWriteKey(key string) bool {
 		return true
 	}
 	if self.arg2env.Has(key) {
-		arg := self.arg2env.GetArgName(key)
+		arg := self.arg2env.GetArgName(self, key, false)
 		return len(self.args.DefVal(arg)) != 0
 	}
 	return false

@@ -194,7 +194,7 @@ func (self *EnvOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
 
 func getMissedMapperArgInfo(env *core.Env, cic *core.Cmd, key string) string {
 	arg2env := cic.GetArg2Env()
-	argName := arg2env.GetArgName(key)
+	argName := arg2env.GetArgName(cic, key, true)
 	return getArgInfoLine(env, cic, argName)
 }
 

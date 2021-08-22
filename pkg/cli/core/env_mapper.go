@@ -78,8 +78,21 @@ func (self *Arg2Env) EnvKeys() []string {
 	return self.orderedKeys
 }
 
-func (self *Arg2Env) GetArgName(envKey string) string {
-	return self.keyNames[envKey]
+func (self *Arg2Env) GetArgName(cmd *Cmd, envKey string, allowError bool) string {
+	argName, ok := self.keyNames[envKey]
+	if !ok {
+		return ""
+	}
+	args := cmd.Args()
+	if !args.Has(argName) {
+		msg := fmt.Sprintf("module error: no arg %s for key %s", argName, envKey)
+		if allowError {
+			return "(" + msg + ")"
+		} else {
+			panic(fmt.Errorf("[Arg2Env.GetArgName] %s", msg))
+		}
+	}
+	return argName
 }
 
 func (self *Arg2Env) GetEnvKey(argName string) (string, bool) {
