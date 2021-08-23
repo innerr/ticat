@@ -129,8 +129,15 @@ func regMod(
 
 	if isDir {
 		if len(cmdLine) != 0 {
+			if len(flow) != 0 {
+				panic(fmt.Errorf("[regMod] cmd '%s' has both command-line '%s' and flow",
+					cmdPath, cmdLine))
+			}
 			return mod.RegDirWithCmd(executablePath, help)
 		} else {
+			if len(flow) != 0 {
+				return mod.RegFlowCmd(flow, help)
+			}
 			return mod.RegEmptyDirCmd(executablePath, help)
 		}
 	} else if len(flow) != 0 {
