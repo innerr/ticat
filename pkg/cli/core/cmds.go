@@ -186,6 +186,12 @@ func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
 	return self.cmd
 }
 
+func (self *CmdTree) RegFileNFlowCmd(flow []string, cmd string, help string) *Cmd {
+	self.cmdConflictCheck(help, "RegPowerNFlow")
+	self.cmd = NewFileNFlowCmd(self, help, cmd, flow)
+	return self.cmd
+}
+
 func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	if old, ok := self.subs[name]; ok && old.name != name {
 		err := CmdTreeErrSubCmdConflicted{

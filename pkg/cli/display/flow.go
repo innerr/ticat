@@ -177,7 +177,7 @@ func dumpFlowCmd(
 	if (len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0) &&
 		cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
 		metFlow := false
-		if cic.Type() == core.CmdTypeFlow {
+		if cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow {
 			flowStrs, _ := cic.RenderedFlowStrs(argv, cmdEnv, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
@@ -207,7 +207,8 @@ func dumpFlowCmd(
 				prt(2, cic.MetaFile())
 			}
 		}
-		if cic.Type() == core.CmdTypeFlow && maxDepth > 1 && trivial > 0 {
+		if (cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) &&
+			maxDepth > 1 && trivial > 0 {
 			subFlow, rendered := cic.Flow(argv, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow {
@@ -223,7 +224,11 @@ func dumpFlowCmd(
 
 					dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, writtenKeys,
 						maxDepth-1, trivial, indentAdjust+2)
-					prt(2, ColorFlowing("<<<---", env))
+					exeMark := ""
+					if cic.Type() == core.CmdTypeFileNFlow {
+						exeMark = ColorCmd(" +", env)
+					}
+					prt(2, ColorFlowing("<<<---", env)+exeMark)
 				}
 			}
 		}

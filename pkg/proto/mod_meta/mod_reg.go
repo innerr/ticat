@@ -100,7 +100,7 @@ func regMod(
 	}
 
 	// Even if 'isFlow' is true, if it does not have 'flow' content, it can't reg as flow
-	if len(flow) != 0 {
+	if len(flow) != 0 && len(cmdLine) == 0 && len(executablePath) == 0 {
 		return mod.RegFlowCmd(flow, help)
 	}
 
@@ -125,12 +125,16 @@ func regMod(
 		}
 	}
 
+	// TOOD: a bit messy
+
 	if isDir {
 		if len(cmdLine) != 0 {
 			return mod.RegDirWithCmd(executablePath, help)
 		} else {
 			return mod.RegEmptyDirCmd(executablePath, help)
 		}
+	} else if len(flow) != 0 {
+		return mod.RegFileNFlowCmd(flow, executablePath, help)
 	} else {
 		return mod.RegFileCmd(executablePath, help)
 	}
