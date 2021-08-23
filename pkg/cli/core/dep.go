@@ -34,6 +34,19 @@ func collectDepends(
 		if cic == nil {
 			continue
 		}
+
+		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+
+		if cic.Type() == CmdTypeFileNFlow {
+			subFlow, rendered := cic.Flow(argv, cmdEnv, allowFlowTemplateRenderError)
+			if rendered && len(subFlow) != 0 {
+				parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+				parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+				// Allow parse errors here
+				collectDepends(cc, env, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds)
+			}
+		}
+
 		deps := cic.GetDepends()
 		for _, dep := range deps {
 			cmds, ok := res[dep.OsCmd]
@@ -43,12 +56,14 @@ func collectDepends(
 				res[dep.OsCmd] = map[*Cmd]DependInfo{cic: DependInfo{dep.Reason, it}}
 			}
 		}
-		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+
 		TryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, nil,
 			"failed to execute env op-cmd in depends collecting")
+
 		if cic.Type() != CmdTypeFlow {
 			continue
 		}
+
 		subFlow, rendered := cic.Flow(argv, cmdEnv, allowFlowTemplateRenderError)
 		if rendered && len(subFlow) != 0 {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)

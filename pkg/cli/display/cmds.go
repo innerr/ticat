@@ -314,7 +314,9 @@ func dumpCmd(
 				prt(2, ColorCmdDone(dep.OsCmd, env)+ColorSymbol(" = ", env)+dep.Reason)
 			}
 
-			if cic.Type() != core.CmdTypeFlow && (cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {
+			// TODO: a bit messy
+			if cic.Type() != core.CmdTypeFlow && cic.Type() != core.CmdTypeFileNFlow &&
+				(cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {
 				line := string(cic.Type())
 				if cic.IsQuiet() {
 					line += " (quiet)"

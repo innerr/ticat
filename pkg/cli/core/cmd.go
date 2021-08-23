@@ -330,7 +330,7 @@ func (self *Cmd) Help() string {
 }
 
 func (self *Cmd) DisplayHelpStr() string {
-	if len(self.help) == 0 && self.ty == CmdTypeFlow {
+	if len(self.help) == 0 && (self.ty == CmdTypeFlow || self.ty == CmdTypeFileNFlow) {
 		return self.cmdLine
 	}
 	return self.help
