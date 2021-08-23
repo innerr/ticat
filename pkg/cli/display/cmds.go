@@ -326,18 +326,23 @@ func dumpCmd(
 				prt(2, line)
 			}
 
+			// TODO: a bit messy
 			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
 				if len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0 {
-					if cic.Type() == core.CmdTypeFlow {
+					if cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow {
 						prt(1, ColorProp("- flow:", env))
 						for _, flowStr := range cic.FlowStrs() {
 							prt(2, ColorFlow(flowStr, env))
 						}
-					} else if cic.Type() == core.CmdTypeEmptyDir {
-						prt(1, ColorProp("- dir:", env))
-						prt(2, cic.CmdLine())
-					} else {
-						prt(1, ColorProp("- executable:", env))
+					}
+					if len(cic.CmdLine()) != 0 {
+						if cic.Type() == core.CmdTypeEmptyDir {
+							prt(1, ColorProp("- dir:", env))
+						} else if cic.Type() == core.CmdTypeFileNFlow {
+							prt(1, ColorProp("- executable(after flow):", env))
+						} else {
+							prt(1, ColorProp("- executable:", env))
+						}
 						prt(2, cic.CmdLine())
 					}
 				}

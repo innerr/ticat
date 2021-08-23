@@ -18,6 +18,7 @@ const (
 	CmdTypeNormal     CmdType = "normal"
 	CmdTypePower      CmdType = "power"
 	CmdTypeFlow       CmdType = "flow"
+	CmdTypeFileNFlow  CmdType = "executable-file+flow"
 	CmdTypeEmpty      CmdType = "no-executable"
 	CmdTypeFile       CmdType = "executable-file"
 	CmdTypeEmptyDir   CmdType = "dir-with-no-executable"
@@ -93,6 +94,14 @@ func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 	return c
 }
 
+func NewFileNFlowCmd(owner *CmdTree, help string, cmd string, flow []string) *Cmd {
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeFileNFlow
+	c.cmdLine = cmd
+	c.flow = flow
+	return c
+}
+
 func NewFileCmd(owner *CmdTree, help string, cmd string) *Cmd {
 	c := defaultCmd(owner, help)
 	c.ty = CmdTypeFile
@@ -136,6 +145,23 @@ func (self *Cmd) Execute(
 	return newCurrCmdIdx, ok
 }
 
+func (self *Cmd) executePowerCmd(
+	argv ArgVals,
+	cc *Cli,
+	env *Env,
+	flow *ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	currCmdIdx, succeeded := self.power(argv, cc, env, flow, currCmdIdx)
+	// Let commands manually clear it when it's tail-mode flow(not call),
+	// in that we could run tail-mode recursively
+	if flow.TailModeCall {
+		currCmdIdx = 0
+		flow.Cmds = nil
+	}
+	return currCmdIdx, succeeded
+}
+
 func (self *Cmd) execute(
 	argv ArgVals,
 	cc *Cli,
@@ -145,14 +171,7 @@ func (self *Cmd) execute(
 
 	switch self.ty {
 	case CmdTypePower:
-		currCmdIdx, succeeded := self.power(argv, cc, env, flow, currCmdIdx)
-		// Let commands manually clear it when it's tail-mode flow(not call),
-		// in that we could run tail-mode recursively
-		if flow.TailModeCall {
-			currCmdIdx = 0
-			flow.Cmds = nil
-		}
-		return currCmdIdx, succeeded
+		return self.executePowerCmd(argv, cc, env, flow, currCmdIdx)
 	case CmdTypeNormal:
 		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx:])
 	case CmdTypeFile:
@@ -163,6 +182,12 @@ func (self *Cmd) execute(
 		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
 	case CmdTypeFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env)
+	case CmdTypeFileNFlow:
+		succeeded := self.executeFlow(argv, cc, env)
+		if succeeded {
+			succeeded = self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
+		}
+		return currCmdIdx, succeeded
 	case CmdTypeEmpty:
 		return currCmdIdx, true
 	default:
