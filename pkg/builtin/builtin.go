@@ -66,8 +66,15 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetPriority()
 	addFindStrArgs(find)
 
-	findDetail := cmds.AddSub("find-detail", "//").
-		RegPowerCmd(GlobalFindCmdDetail,
+	findUsage := cmds.AddSub("find-usage", "//").
+		RegPowerCmd(GlobalFindCmdWithUsage,
+			"find commands with strings, with details").
+		SetAllowTailModeCall().
+		SetPriority()
+	addFindStrArgs(findUsage)
+
+	findDetail := cmds.AddSub("find-detail", "///").
+		RegPowerCmd(GlobalFindCmdWithDetail,
 			"find commands with strings, with details").
 		SetAllowTailModeCall().
 		SetPriority()
@@ -134,14 +141,20 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail-sub-less", "~").
-		RegPowerCmd(DumpTailCmdSubLess,
+	cmds.AddSub("tail-sub", "~").
+		RegPowerCmd(DumpTailCmdSub,
 			"display commands on the branch of the last command").
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail-sub-more", "~~").
-		RegPowerCmd(DumpTailCmdSubMore,
+	cmds.AddSub("tail-sub-with-usage", "~~").
+		RegPowerCmd(DumpTailCmdSubUsage,
+			"display commands on the branch of the last command, with usage").
+		SetQuiet().
+		SetPriority()
+
+	cmds.AddSub("tail-sub-with-details", "~~~").
+		RegPowerCmd(DumpTailCmdSubDetails,
 			"display commands on the branch of the last command, with details").
 		SetQuiet().
 		SetPriority()

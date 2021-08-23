@@ -51,47 +51,42 @@ func DumpTailCmdUsage(
 	return clearFlow(flow)
 }
 
-func DumpTailCmdSubLess(
+func DumpTailCmdSub(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, true)
+	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
+	return clearFlow(flow)
 }
 
-func DumpTailCmdSubMore(
+func DumpTailCmdSubUsage(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, false)
+	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage()
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
+	return clearFlow(flow)
 }
 
-func dumpTailCmdSub(
-	_ core.ArgVals,
+func DumpTailCmdSubDetails(
+	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
-	currCmdIdx int,
-	skeleton bool) (int, bool) {
+	currCmdIdx int) (int, bool) {
 
-	if len(flow.Cmds) < 2 {
-		panic("should not happen")
-		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-		dumpArgs := display.NewDumpCmdArgs().NoRecursive()
-		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	} else {
-		cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-		dumpArgs := display.NewDumpCmdArgs()
-		if skeleton {
-			dumpArgs.SetSkeleton()
-		}
-		dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	}
+	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+	dumpArgs := display.NewDumpCmdArgs()
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	return clearFlow(flow)
 }
 
@@ -102,33 +97,34 @@ func GlobalFindCmd(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	return globalFind(argv, cc, env, flow, currCmdIdx, false)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(findStrs...)
+	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", true)
+	return clearFlow(flow)
 }
 
-func GlobalFindCmdDetail(
+func GlobalFindCmdWithUsage(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	return globalFind(argv, cc, env, flow, currCmdIdx, true)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(findStrs...).SetShowUsage()
+	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", true)
+	return clearFlow(flow)
 }
 
-func globalFind(
+func GlobalFindCmdWithDetail(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
-	currCmdIdx int,
-	detail bool) (int, bool) {
+	currCmdIdx int) (int, bool) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
-
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(findStrs...)
-	if detail {
-		dumpArgs.SetShowUsage()
-	}
+	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
 	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", true)
 	return clearFlow(flow)
 }

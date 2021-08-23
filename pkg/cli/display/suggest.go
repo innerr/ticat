@@ -27,14 +27,14 @@ func SuggestListCmds(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" /", indent) + "- list all commands",
-		padR(selfName+" //", indent) + "- list all commands with details",
+		padR(selfName+" //", indent) + "- list all commands with usage",
 	}
 }
 
 func SuggestFindCmdsMore(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
-		padR(selfName+" str1 str2 ://", indent) + "- search commands with details",
+		padR(selfName+" str1 str2 ://", indent) + "- search commands with usage",
 	}
 }
 
@@ -70,7 +70,7 @@ func SuggestFindCmdsLess(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" cmd :~", indent) + "- search commands in the branch of 'cmd'",
-		padR(selfName+" cmd :~~", indent) + "- search commands in the branch of 'cmd', with details",
+		padR(selfName+" cmd :~~", indent) + "- search commands in the branch of 'cmd', with usage",
 		padR(selfName+" str1 str2 :/", indent) + "- search commands",
 	}
 }
@@ -177,7 +177,7 @@ func SuggestFindProvider(env *core.Env) []string {
 	explain := "- find modules will write this key"
 	return []string{
 		padR(prefix+"/", indent) + explain,
-		padR(prefix+"//", indent) + explain + ", with details",
+		padR(prefix+"//", indent) + explain + ", with usage",
 	}
 }
 
