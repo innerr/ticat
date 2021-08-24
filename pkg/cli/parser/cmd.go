@@ -169,7 +169,7 @@ func (self *CmdParser) parse(
 				allowSub = false
 				continue
 			} else {
-				errStr := "unknow input '" + strings.Join(input, " ") + "', should be sub cmd"
+				errStr := "unknow input '" + strings.Join(input, "") + "', should be sub cmd"
 				err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
 				return parsed, trivialLvl, core.ParseErrExpectCmd{err}
 			}

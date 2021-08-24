@@ -96,29 +96,44 @@ func dumpFlowCmd(
 		trivial = maxTrivial - parsedCmd.TrivialLvl
 	}
 
-	var name string
-	if args.Skeleton {
-		name = strings.Join(parsedCmd.Path(), sep)
-	} else {
-		name = parsedCmd.DisplayPath(sep, true)
-	}
-	name = ColorCmd("["+name+"]", env)
-	if trivial <= 0 {
-		name += ColorProp(trivialMark, env)
-	}
-	prt(0, name)
+	if trivial > 0 && maxDepth > 0 {
+		var name string
+		if args.Skeleton {
+			name = strings.Join(parsedCmd.Path(), sep)
+		} else {
+			name = parsedCmd.DisplayPath(sep, true)
+		}
+		name = ColorCmd("["+name+"]", env)
+		if trivial <= 0 {
+			name += ColorProp(trivialMark, env)
+		}
+		prt(0, name)
 
-	if len(cic.Help()) != 0 {
-		prt(1, " "+ColorHelp("'"+cic.Help()+"'", env))
+		if len(cic.Help()) != 0 {
+			prt(1, " "+ColorHelp("'"+cic.Help()+"'", env))
+		}
 	}
 
 	// TODO: this is slow
 	originEnv := env.Clone()
 	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
 
-	if trivial <= 0 {
+	if trivial <= 0 || maxDepth <= 1 {
 		core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 			"failed to execute env-op cmd in flow desc")
+
+		// Thi is for render checking, even it's folded
+		subFlow, rendered := cic.Flow(argv, cmdEnv, true)
+		if rendered {
+			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+			err := parsedFlow.FirstErr()
+			if err != nil {
+				panic(err.Error)
+			}
+			parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+			dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, writtenKeys,
+				maxDepth-1, trivial, indentAdjust+2)
+		}
 		return
 	}
 
@@ -207,8 +222,8 @@ func dumpFlowCmd(
 				prt(2, cic.MetaFile())
 			}
 		}
-		if (cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) &&
-			maxDepth > 1 && trivial > 0 {
+
+		if cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow {
 			subFlow, rendered := cic.Flow(argv, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow {
