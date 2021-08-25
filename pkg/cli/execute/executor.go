@@ -92,6 +92,10 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
+	if !innerCall && !bootstrap && !self.sessionInit(cc, flow, env) {
+		return false
+	}
+
 	if !innerCall && !bootstrap {
 		if !flow.HasTailMode && !verifyEnvOps(cc, flow, env) {
 			return false
@@ -99,10 +103,6 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 		if !flow.HasTailMode && !verifyOsDepCmds(cc, flow, env) {
 			return false
 		}
-	}
-
-	if !innerCall && !bootstrap && !self.sessionInit(cc, flow, env) {
-		return false
 	}
 
 	if !bootstrap {
