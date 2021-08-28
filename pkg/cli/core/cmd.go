@@ -417,17 +417,37 @@ func (self *Cmd) RenderedFlowStrs(
 	return
 }
 
+func StripFlowForExecute(flow []string, sequenceSep string) []string {
+	var output []string
+	for i, line := range flow {
+		strings.TrimSpace(line)
+		if len(line) <= 0 {
+			continue
+		}
+		// TODO: put # into env.strs
+		if line[0] == '#' {
+			continue
+		}
+		if line[len(line)-1:] != sequenceSep && i != len(flow)-1 {
+			line += " " + sequenceSep
+		}
+		output = append(output, line)
+	}
+	return output
+}
+
 func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
 	flow, rendered = self.RenderedFlowStrs(argv, env, allowFlowTemplateRenderError)
 	if !rendered || len(flow) == 0 {
 		return
 	}
+	flow = StripFlowForExecute(flow, env.GetRaw("strs.seq-sep"))
 	flowStr := strings.Join(flow, " ")
 	flow, err := shellwords.Parse(flowStr)
 	if err != nil {
 		// TODO: better display
-		panic(fmt.Errorf("[Cmd.executeFlow] parse '%s' failed: %v",
-			self.cmdLine, err))
+		panic(fmt.Errorf("[StripFlowForParse.shellwords] parse '%s' failed: %v",
+			flowStr, err))
 	}
 	return
 }

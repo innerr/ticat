@@ -152,10 +152,14 @@ func (self *MetaFile) parse(data []byte) {
 				for i += 1; i < len(lines); i++ {
 					line := lines[i]
 					line = bytes.TrimSpace(line)
+					// Keep the comments and blank lines in this format
+					//if line[0] == CommentPrefix {
+					//	continue
+					//}
 					if len(line) == 0 {
-						continue
-					}
-					if line[0] == CommentPrefix {
+						if len(v) != 0 {
+							v = append(v, "")
+						}
 						continue
 					}
 					if line[0] == SectionBracketLeft && line[size-1] == SectionBracketRight &&
@@ -164,6 +168,9 @@ func (self *MetaFile) parse(data []byte) {
 					}
 					l := string(bytes.TrimSpace(line))
 					v = append(v, l)
+				}
+				if len(v) > 0 && len(v[len(v)-1]) == 0 {
+					v = v[:len(v)-1]
 				}
 				global.SetMultiLineVal(k, v)
 			} else {
