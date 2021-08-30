@@ -91,6 +91,8 @@ func dumpFlowCmd(
 		return
 	}
 
+	trivialDelta := cmd.Trivial() + parsedCmd.TrivialLvl
+
 	if maxTrivial > 0 && maxDepth > 0 {
 		var name string
 		if args.Skeleton {
@@ -99,20 +101,22 @@ func dumpFlowCmd(
 			name = parsedCmd.DisplayPath(sep, true)
 		}
 		name = ColorCmd("["+name+"]", env)
-		if maxTrivial <= 1 && cic.Type() == core.CmdTypeFlow {
+		if maxTrivial == 1 && trivialDelta > 0 &&
+			(cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) {
 			name += ColorProp(trivialMark, env)
 		}
 		prt(0, name)
 
 		if len(cic.Help()) != 0 {
-			prt(1, " "+ColorHelp("'"+cic.Help()+"'", env))
+			if !args.Skeleton {
+				prt(1, " "+ColorHelp("'"+cic.Help()+"'", env))
+			} else {
+				prt(1, ColorHelp("'"+cic.Help()+"'", env))
+			}
 		}
 	}
 
-	trivial := maxTrivial - cmd.Trivial()
-	if parsedCmd.TrivialLvl != 0 {
-		trivial = maxTrivial - parsedCmd.TrivialLvl
-	}
+	trivial := maxTrivial - trivialDelta
 
 	// TODO: this is slow
 	originEnv := env.Clone()
@@ -146,6 +150,13 @@ func dumpFlowCmd(
 		}
 		for _, line := range argLines {
 			prt(2, line)
+		}
+	} else {
+		for name, val := range argv {
+			if !val.Provided {
+				continue
+			}
+			prt(1, " " + ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
 		}
 	}
 
@@ -197,17 +208,29 @@ func dumpFlowCmd(
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
 			if metFlow {
-				prt(1, ColorProp("- flow (duplicated):", env))
+				if !args.Skeleton {
+					prt(1, ColorProp("- flow (duplicated):", env))
+				} else {
+					prt(1, ColorProp("(duplicated sub flow)", env))
+				}
 			} else {
 				metFlows[flowStr] = true
 				if maxDepth <= 1 {
-					prt(1, ColorProp("- flow (folded):", env))
+					if !args.Skeleton {
+						prt(1, ColorProp("- flow (folded):", env))
+					} else {
+						prt(1, ColorProp("(folded flow)", env))
+					}
 				} else {
-					prt(1, ColorProp("- flow:", env))
+					if !args.Skeleton {
+						prt(1, ColorProp("- flow:", env))
+					}
 				}
 			}
-			for _, flowStr := range flowStrs {
-				prt(2, ColorFlow(flowStr, env))
+			if !args.Skeleton {
+				for _, flowStr := range flowStrs {
+					prt(2, ColorFlow(flowStr, env))
+				}
 			}
 		} else if !args.Simple && !args.Skeleton {
 			if cic.Type() == core.CmdTypeEmptyDir {

@@ -450,7 +450,8 @@ func RegisterMiscCmds(cmds *core.CmdTree) {
 	cmds.AddSub("mark-time", "time").
 		RegPowerCmd(MarkTime,
 			"set current timestamp to the specified key").
-		AddArg("write-to-key", "key", "k", "K")
+		AddArg("write-to-key", "key", "k", "K").
+		AddEnvOp("[[write-to-key]]", core.EnvOpTypeWrite)
 }
 
 // This cmds are for debug
