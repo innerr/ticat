@@ -274,7 +274,7 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	env.AddSub("reset-session", "reset", "--").
 		RegPowerCmd(ResetSessionEnv,
-			"clear all session env values")
+			"clear all env values in current session")
 
 	env.AddSub("reset-and-save", "clear", "---").
 		RegPowerCmd(ResetLocalEnv,
@@ -450,7 +450,21 @@ func RegisterMiscCmds(cmds *core.CmdTree) {
 	cmds.AddSub("mark-time", "time").
 		RegPowerCmd(MarkTime,
 			"set current timestamp to the specified key").
-		AddArg("write-to-key", "key", "k", "K").
+		AddArg("write-to-key", "", "key", "k", "K").
+		AddEnvOp("[[write-to-key]]", core.EnvOpTypeWrite)
+
+	timer := cmds.AddSub("timer")
+	timer.AddSub("begin").
+		RegPowerCmd(TimerBegin,
+			"start timer, set current timestamp to the specified key").
+		AddArg("begin-key", "", "key", "k", "K").
+		AddEnvOp("[[begin-key]]", core.EnvOpTypeWrite)
+	timer.AddSub("elapsed", "elapse", "end").
+		RegPowerCmd(TimerElapsed,
+			"set elapsed seconds to the specified key").
+		AddArg("begin-key", "", "begin").
+		AddArg("write-to-key", "", "key", "k", "K").
+		AddEnvOp("[[begin-key]]", core.EnvOpTypeRead).
 		AddEnvOp("[[write-to-key]]", core.EnvOpTypeWrite)
 }
 

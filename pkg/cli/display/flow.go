@@ -116,11 +116,32 @@ func dumpFlowCmd(
 		}
 	}
 
-	trivial := maxTrivial - trivialDelta
-
 	// TODO: this is slow
 	originEnv := env.Clone()
 	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
+
+	if maxTrivial > 0 && maxDepth > 0 {
+		if !args.Skeleton {
+			args := cic.Args()
+			arg2env := cic.GetArg2Env()
+			argLines := DumpEffectedArgs(originEnv, arg2env, &args, argv, writtenKeys)
+			if len(argLines) != 0 {
+				prt(1, ColorProp("- args:", env))
+			}
+			for _, line := range argLines {
+				prt(2, line)
+			}
+		} else {
+			for name, val := range argv {
+				if !val.Provided {
+					continue
+				}
+				prt(1, " "+ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
+			}
+		}
+	}
+
+	trivial := maxTrivial - trivialDelta
 
 	if trivial <= 0 || maxDepth <= 0 {
 		core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
@@ -139,25 +160,6 @@ func dumpFlowCmd(
 				maxDepth-1, trivial, indentAdjust+2)
 		}
 		return
-	}
-
-	if !args.Skeleton {
-		args := cic.Args()
-		arg2env := cic.GetArg2Env()
-		argLines := DumpEffectedArgs(originEnv, arg2env, &args, argv, writtenKeys)
-		if len(argLines) != 0 {
-			prt(1, ColorProp("- args:", env))
-		}
-		for _, line := range argLines {
-			prt(2, line)
-		}
-	} else {
-		for name, val := range argv {
-			if !val.Provided {
-				continue
-			}
-			prt(1, " " + ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
-		}
 	}
 
 	if !args.Skeleton {

@@ -172,7 +172,7 @@ func quoteIfHasSpace(str string) string {
 	return str
 }
 
-func getAndCheckArg(argv core.ArgVals, env *core.Env, cmd core.ParsedCmd, arg string) string {
+func getAndCheckArg(argv core.ArgVals, cmd core.ParsedCmd, arg string) string {
 	val := argv.GetRaw(arg)
 	if len(val) == 0 {
 		panic(core.NewCmdError(cmd, "arg '"+arg+"' is empty"))
