@@ -49,11 +49,49 @@ func MarkTime(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	key := argv.GetRaw("write-to-key")
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "write-to-key")
 	env = env.GetLayer(core.EnvLayerSession)
 	val := fmt.Sprintf("%d", int(time.Now().Unix()))
 	env.Set(key, val)
 	cc.Screen.Print(display.ColorKey(key, env) + display.ColorSymbol(" = ", env) + val + "\n")
+	return currCmdIdx, true
+}
+
+func TimerBegin(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+	begin := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "begin-key")
+	env = env.GetLayer(core.EnvLayerSession)
+	val := fmt.Sprintf("%d", int(time.Now().Unix()))
+	env.Set(begin, val)
+	cc.Screen.Print(display.ColorKey(begin, env) + display.ColorSymbol(" = ", env) + val + "\n")
+	return currCmdIdx, true
+}
+
+func TimerElapsed(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	beginKey := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "begin-key")
+	begin := env.GetInt(beginKey)
+	now := int(time.Now().Unix())
+
+	elapsedKey := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "write-to-key")
+	env = env.GetLayer(core.EnvLayerSession)
+	elapsed := now - begin
+	env.SetInt(elapsedKey, elapsed)
+	cc.Screen.Print(display.ColorKey(elapsedKey, env) + display.ColorSymbol(" = ", env) +
+		fmt.Sprintf("%d\n", elapsed))
 	return currCmdIdx, true
 }
 
