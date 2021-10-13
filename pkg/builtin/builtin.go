@@ -36,6 +36,13 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
+	cmds.AddSub("system", "sys").
+		RegPowerCmd(ExecCmds,
+			"execute command").
+		AddArg("command", "", "cmd").
+		SetAllowTailModeCall().
+		SetPriority()
+
 	for i := 1; i < 6; i++ {
 		defTrivial := fmt.Sprintf("%d", i)
 		cmdSuffix := ""
