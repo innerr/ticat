@@ -38,10 +38,8 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 
 	cmds.AddSub("system", "sys").
 		RegPowerCmd(ExecCmds,
-			"execute command").
-		AddArg("command", "", "cmd").
-		SetAllowTailModeCall().
-		SetPriority()
+			"execute os command in bash").
+		AddArg("command", "", "cmd")
 
 	for i := 1; i < 6; i++ {
 		defTrivial := fmt.Sprintf("%d", i)
