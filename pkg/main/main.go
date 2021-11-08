@@ -79,7 +79,7 @@ func main() {
 	// A simple parser, should be insteaded in the future
 	seqParser := parser.NewSequenceParser(
 		SequenceSep,
-		[]string{"http", "HTTP"},
+		[]string{"http", "HTTP", "https", "HTTPS"},
 		nil,
 	)
 	envParser := parser.NewEnvParser(

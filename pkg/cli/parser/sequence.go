@@ -35,6 +35,13 @@ func (self *SequenceParser) Normalize(argv []string) []string {
 				break
 			}
 			searchIdx += i
+			// TODO:
+			//  1. put '\' to class init args
+			//  2. this is a workaround, we also need to handle '\\', '\\\', ... things like that
+			if searchIdx >= 1 && "\\" == arg[searchIdx-1:searchIdx] {
+				arg = arg[0:searchIdx-1] + arg[searchIdx:]
+				continue
+			}
 			unbreakable := false
 			for _, prefix := range self.unbreakPrefixs {
 				if searchIdx >= len(prefix) &&
