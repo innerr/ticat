@@ -480,6 +480,11 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		"sys.step-by-step",
 		"step-by-step", "step", "confirm", "cfm")
 
+	registerSimpleSwitch(cmds,
+		"recover from internal error and give a frendly message",
+		"sys.panic.recover",
+		"recover")
+
 	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
 		RegPowerCmd(DbgDelayExecute,
 			"wait for a while before executing a command").
