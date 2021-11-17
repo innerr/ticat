@@ -47,12 +47,45 @@ func RegMod(
 	}
 
 	regTrivial(meta, mod)
+	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
 	regArgs(meta, cmd, abbrsSep)
 	regDeps(meta, cmd)
 	regEnvOps(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regVal2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regArg2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
+}
+
+func regAutoTimer(meta *meta_file.MetaFile, cmd *core.Cmd) {
+	key := meta.Get("begin-ts-key")
+	if len(key) != 0 {
+		cmd.RegAutoTimerBeginKey(key)
+	} else {
+		key := meta.Get("begin-key")
+		if len(key) != 0 {
+			cmd.RegAutoTimerBeginKey(key)
+		}
+	}
+
+	key = meta.Get("end-ts-key")
+	if len(key) != 0 {
+		cmd.RegAutoTimerEndKey(key)
+	} else {
+		key := meta.Get("end-key")
+		if len(key) != 0 {
+			cmd.RegAutoTimerEndKey(key)
+		}
+	}
+
+	key = meta.Get("duration-key")
+	if len(key) != 0 {
+		cmd.RegAutoTimerDurKey(key)
+	} else {
+		key = meta.Get("dur-key")
+		if len(key) != 0 {
+			cmd.RegAutoTimerDurKey(key)
+		}
+	}
 }
 
 func regTrivial(meta *meta_file.MetaFile, mod *core.CmdTree) {
