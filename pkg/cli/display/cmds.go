@@ -303,7 +303,7 @@ func dumpCmd(
 				prt(1, ColorProp("- env-ops:", env))
 			}
 			for _, k := range envOpKeys {
-				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(k), envOpSep))
+				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(k), envOpSep)+dumpIsAutoTimerKey(env, cic, k))
 			}
 
 			deps := cic.GetDepends()
@@ -373,4 +373,16 @@ func dumpCmd(
 			dumpCmd(screen, env, cmd.GetSub(name), args, indentAdjust)
 		}
 	}
+}
+
+func dumpIsAutoTimerKey(env *core.Env, cmd *core.Cmd, key string) string {
+	keys := cmd.GetAutoTimerKeys()
+	if key == keys.Begin {
+		return ColorSymbol(" <- ", env) + ColorExplain("(when running begins)", env)
+	} else if key == keys.End {
+		return ColorSymbol(" <- ", env) + ColorExplain("(when running ends)", env)
+	} else if key == keys.Dur {
+		return ColorSymbol(" <- ", env) + ColorExplain("(running elapsed secs)", env)
+	}
+	return ""
 }

@@ -32,6 +32,7 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"flowing":  2,
 		"enabled":  2,
 		"disabled": 3,
+		"explain":  1,
 	}
 	for _, it := range types {
 		extra, ok := lens[it]
@@ -89,6 +90,10 @@ func ColorTag(origin string, env *core.Env) string {
 
 func ColorHelp(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(27), env)
+}
+
+func ColorExplain(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(8), env)
 }
 
 func ColorFlow(origin string, env *core.Env) string {

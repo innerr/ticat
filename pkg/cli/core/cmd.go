@@ -36,9 +36,9 @@ type Depend struct {
 }
 
 type AutoTimerKeys struct {
-	begin string
-	end   string
-	dur   string
+	Begin string
+	End   string
+	Dur   string
 }
 
 type Cmd struct {
@@ -146,8 +146,8 @@ func (self *Cmd) Execute(
 	currCmdIdx int) (int, bool) {
 
 	begin := time.Now()
-	if len(self.autoTimerKeys.begin) != 0 {
-		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.begin, int(begin.Unix()))
+	if len(self.autoTimerKeys.Begin) != 0 {
+		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Begin, int(begin.Unix()))
 	}
 
 	newCurrCmdIdx, ok := self.execute(argv, cc, env, flow, currCmdIdx)
@@ -157,11 +157,11 @@ func (self *Cmd) Execute(
 	}
 
 	end := time.Now()
-	if len(self.autoTimerKeys.end) != 0 {
-		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.end, int(end.Unix()))
+	if len(self.autoTimerKeys.End) != 0 {
+		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.End, int(end.Unix()))
 	}
-	if len(self.autoTimerKeys.dur) != 0 {
-		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.dur, int(end.Sub(begin)/time.Second))
+	if len(self.autoTimerKeys.Dur) != 0 {
+		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Dur, int(end.Sub(begin)/time.Second))
 	}
 
 	return newCurrCmdIdx, ok
@@ -293,18 +293,22 @@ func (self *Cmd) AddSub(name string, abbrs ...string) *CmdTree {
 }
 
 func (self *Cmd) RegAutoTimerBeginKey(key string) {
-	self.autoTimerKeys.begin = key
+	self.autoTimerKeys.Begin = key
 	self.AddEnvOp(key, EnvOpTypeWrite)
 }
 
 func (self *Cmd) RegAutoTimerEndKey(key string) {
-	self.autoTimerKeys.end = key
+	self.autoTimerKeys.End = key
 	self.AddEnvOp(key, EnvOpTypeWrite)
 }
 
 func (self *Cmd) RegAutoTimerDurKey(key string) {
-	self.autoTimerKeys.dur = key
+	self.autoTimerKeys.Dur = key
 	self.AddEnvOp(key, EnvOpTypeWrite)
+}
+
+func (self *Cmd) GetAutoTimerKeys() AutoTimerKeys {
+	return self.autoTimerKeys
 }
 
 func (self *Cmd) SetMetaFile(path string) *Cmd {

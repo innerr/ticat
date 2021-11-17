@@ -181,7 +181,7 @@ func dumpFlowCmd(
 			prt(1, ColorProp("- env-ops:", env))
 		}
 		for i, k := range envOpKeys {
-			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(origins[i]), envOpSep))
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(origins[i]), envOpSep)+dumpIsAutoTimerKey(env, cic, k))
 		}
 	}
 
