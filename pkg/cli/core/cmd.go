@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/mattn/go-shellwords"
 )
@@ -34,6 +35,12 @@ type Depend struct {
 	Reason string
 }
 
+type AutoTimerKeys struct {
+	begin string
+	end   string
+	dur   string
+}
+
 type Cmd struct {
 	owner             *CmdTree
 	help              string
@@ -51,6 +58,7 @@ type Cmd struct {
 	metaFilePath      string
 	val2env           *Val2Env
 	arg2env           *Arg2Env
+	autoTimerKeys     AutoTimerKeys
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
@@ -137,11 +145,25 @@ func (self *Cmd) Execute(
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	begin := time.Now()
+	if len(self.autoTimerKeys.begin) != 0 {
+		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.begin, int(begin.Unix()))
+	}
+
 	newCurrCmdIdx, ok := self.execute(argv, cc, env, flow, currCmdIdx)
 	if !ok {
 		// Normally the command should print info before return false, so no need to panic
 		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
 	}
+
+	end := time.Now()
+	if len(self.autoTimerKeys.end) != 0 {
+		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.end, int(end.Unix()))
+	}
+	if len(self.autoTimerKeys.dur) != 0 {
+		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.dur, int(end.Sub(begin)/time.Second))
+	}
+
 	return newCurrCmdIdx, ok
 }
 
@@ -268,6 +290,21 @@ func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
 
 func (self *Cmd) AddSub(name string, abbrs ...string) *CmdTree {
 	return self.owner.AddSub(name, abbrs...)
+}
+
+func (self *Cmd) RegAutoTimerBeginKey(key string) {
+	self.autoTimerKeys.begin = key
+	self.AddEnvOp(key, EnvOpTypeWrite)
+}
+
+func (self *Cmd) RegAutoTimerEndKey(key string) {
+	self.autoTimerKeys.end = key
+	self.AddEnvOp(key, EnvOpTypeWrite)
+}
+
+func (self *Cmd) RegAutoTimerDurKey(key string) {
+	self.autoTimerKeys.dur = key
+	self.AddEnvOp(key, EnvOpTypeWrite)
 }
 
 func (self *Cmd) SetMetaFile(path string) *Cmd {
