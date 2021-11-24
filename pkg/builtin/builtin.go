@@ -16,10 +16,11 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterTrivialCmds(cmds)
 	RegisterFlowCmds(cmds)
 	RegisterHubCmds(cmds)
-	RegisterDbgCmds(cmds.AddSub("dbg"))
+	RegisterSessionCmds(cmds.AddSub("session", "sessions").RegEmptyCmd("manage sessions").Owner())
+	RegisterDbgCmds(cmds.AddSub("dbg").RegEmptyCmd("debug related commands").Owner())
 	RegisterMiscCmds(cmds)
-	RegisterDisplayCmds(cmds.AddSub("display", "disp", "dis", "di"))
-	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B").SetHidden())
+	RegisterDisplayCmds(cmds.AddSub("display", "disp", "dis", "di").RegEmptyCmd("display related commands").Owner())
+	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B").RegEmptyCmd("internal commands, mostly for init loading").Owner().SetHidden())
 }
 
 func RegisterExecutorCmds(cmds *core.CmdTree) {
@@ -325,6 +326,9 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 			"decrease verbose").
 		SetQuiet().
 		AddArg("volume", "1", "vol", "v", "V")
+}
+
+func RegisterSessionCmds(cmds *core.CmdTree) {
 }
 
 func RegisterHubCmds(cmds *core.CmdTree) {

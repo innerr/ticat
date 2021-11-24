@@ -140,20 +140,26 @@ func NewFlowCmd(owner *CmdTree, help string, flow []string) *Cmd {
 
 func (self *Cmd) Execute(
 	argv ArgVals,
+	sysArgv SysArgVals,
 	cc *Cli,
 	env *Env,
 	flow *ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (newCurrCmdIdx int, ok bool) {
 
 	begin := time.Now()
 	if len(self.autoTimerKeys.Begin) != 0 {
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Begin, int(begin.Unix()))
 	}
 
-	newCurrCmdIdx, ok := self.execute(argv, cc, env, flow, currCmdIdx)
-	if !ok {
-		// Normally the command should print info before return false, so no need to panic
-		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
+	if sysArgv.IsDelay() {
+		ok = self.asyncExecute(argv, sysArgv, cc, env, flow, currCmdIdx)
+		newCurrCmdIdx = currCmdIdx
+	} else {
+		newCurrCmdIdx, ok = self.execute(argv, cc, env, flow, currCmdIdx)
+		if !ok {
+			// Normally the command should print info before return false, so no need to panic
+			// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
+		}
 	}
 
 	end := time.Now()
@@ -182,6 +188,34 @@ func (self *Cmd) executePowerCmd(
 		flow.Cmds = nil
 	}
 	return currCmdIdx, succeeded
+}
+
+func (self *Cmd) asyncExecute(
+	argv ArgVals,
+	sysArgv SysArgVals,
+	cc *Cli,
+	env *Env,
+	flow *ParsedCmds,
+	currCmdIdx int) (scheduled bool) {
+
+	dur := sysArgv.GetDelayDuration()
+
+	// TODO: fixme, do real clone for ready-only instances
+	go func(
+		dur time.Duration,
+		argv ArgVals,
+		cc *Cli,
+		env *Env,
+		flow *ParsedCmds,
+		currCmdIdx int) {
+
+		time.Sleep(dur)
+		//_, ok := self.execute(argv, cc, env, flow, currCmdIdx)
+
+	}(dur, argv, cc.CloneForAsyncExecuting(), env.Clone(), flow, currCmdIdx)
+
+	cc.Screen.Print("background task scheduled\n")
+	return true
 }
 
 func (self *Cmd) execute(

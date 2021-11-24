@@ -65,6 +65,7 @@ func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
 
 func (self *CmdTree) Execute(
 	argv ArgVals,
+	sysArgv SysArgVals,
 	cc *Cli,
 	env *Env,
 	flow *ParsedCmds,
@@ -73,7 +74,7 @@ func (self *CmdTree) Execute(
 	if self.cmd == nil {
 		return currCmdIdx, true
 	} else {
-		return self.cmd.Execute(argv, cc, env, flow, currCmdIdx)
+		return self.cmd.Execute(argv, sysArgv, cc, env, flow, currCmdIdx)
 	}
 }
 

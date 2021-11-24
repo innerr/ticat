@@ -51,7 +51,7 @@ func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *Env
 	}
 }
 
-func (self *Cli) Clone() *Cli {
+func (self *Cli) Copy() *Cli {
 	return &Cli{
 		self.GlobalEnv,
 		self.Screen,
@@ -61,5 +61,19 @@ func (self *Cli) Clone() *Cli {
 		self.TolerableErrs,
 		nil,
 		self.Helps,
+	}
+}
+
+// TODO: fixme, do real clone for ready-only instances
+func (self *Cli) CloneForAsyncExecuting() *Cli {
+	return &Cli{
+		self.GlobalEnv.Clone(),
+		&QuietScreen{},
+		self.Cmds,
+		self.Parser,
+		self.EnvAbbrs,
+		NewTolerableErrs(),
+		nil,
+		NewHelps(),
 	}
 }

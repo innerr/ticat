@@ -285,7 +285,7 @@ func (self ParsedEnv) AddPrefix(prefix []string, sep string) {
 			prefixClone = append(prefixClone, it)
 		}
 		matchedPath := append(prefixClone, v.MatchedPath...)
-		self[prefixPath+k] = ParsedEnvVal{v.Val, v.IsArg, matchedPath, strings.Join(matchedPath, sep)}
+		self[prefixPath+k] = ParsedEnvVal{v.Val, v.IsArg, v.IsSysArg, matchedPath, strings.Join(matchedPath, sep)}
 		delete(self, k)
 		v = self[prefixPath+k]
 
@@ -323,7 +323,7 @@ func (self ParsedEnv) WriteTo(env *Env, valDelAllMark string) {
 		if v.Val == valDelAllMark {
 			env.Delete(k)
 		} else {
-			env.SetEx(k, v.Val, v.IsArg)
+			env.SetEx(k, v.Val, v.IsArg, v.IsSysArg)
 		}
 	}
 }
@@ -333,7 +333,7 @@ func (self ParsedEnv) WriteNotArgTo(env *Env, valDelAllMark string) {
 		if v.Val == valDelAllMark {
 			env.Delete(k)
 		} else if !v.IsArg {
-			env.SetEx(k, v.Val, v.IsArg)
+			env.SetEx(k, v.Val, v.IsArg, v.IsSysArg)
 		}
 	}
 }
@@ -341,16 +341,21 @@ func (self ParsedEnv) WriteNotArgTo(env *Env, valDelAllMark string) {
 type ParsedEnvVal struct {
 	Val            string
 	IsArg          bool
+	IsSysArg       bool
 	MatchedPath    []string
 	MatchedPathStr string
 }
 
 func NewParsedEnvVal(key string, val string) ParsedEnvVal {
-	return ParsedEnvVal{val, false, []string{key}, key}
+	return ParsedEnvVal{val, false, false, []string{key}, key}
 }
 
 func NewParsedEnvArgv(key string, val string) ParsedEnvVal {
-	return ParsedEnvVal{val, true, []string{key}, key}
+	return ParsedEnvVal{val, true, false, []string{key}, key}
+}
+
+func NewParsedSysArgv(key string, val string) ParsedEnvVal {
+	return ParsedEnvVal{val, true, true, []string{key}, key}
 }
 
 type ParseErrExpectCmd struct {

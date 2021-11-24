@@ -50,6 +50,7 @@ func main() {
 	defEnv.Set("strs.flow-template-multiply-mark", FlowTemplateMultiplyMark)
 	defEnv.Set("strs.tag-mark", TagMark)
 	defEnv.Set("strs.trivial-mark", TrivialMark)
+	defEnv.Set("strs.sys-arg-prefix", SysArgPrefix)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -86,7 +87,8 @@ func main() {
 		parser.Brackets{EnvBracketLeft, EnvBracketRight},
 		Spaces,
 		EnvKeyValSep,
-		EnvPathSep)
+		EnvPathSep,
+		SysArgPrefix)
 	cmdParser := parser.NewCmdParser(
 		envParser,
 		CmdPathSep,
@@ -150,6 +152,7 @@ const (
 	EnvBracketRight          string = "}"
 	EnvKeyValSep             string = "="
 	EnvPathSep               string = "."
+	SysArgPrefix             string = "%"
 	EnvValDelAllMark         string = "--"
 	EnvRuntimeSysPrefix      string = "sys"
 	EnvStrsPrefix            string = "strs"

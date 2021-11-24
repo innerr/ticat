@@ -44,6 +44,20 @@ func DumpProvidedArgs(env *core.Env, args *core.Args, argv core.ArgVals, coloriz
 	return
 }
 
+func DumpSysArgs(env *core.Env, sysArgv core.SysArgVals, colorize bool) (output []string) {
+	for k, v := range sysArgv {
+		if colorize {
+			line := ColorExplain("[sys] ", env) + ColorArg(k, env) +
+				ColorSymbol(" = ", env) + mayQuoteStr(v)
+			output = append(output, line)
+		} else {
+			line := "[sys] " + k + " = " + mayQuoteStr(v)
+			output = append(output, line)
+		}
+	}
+	return
+}
+
 func DumpEffectedArgs(
 	env *core.Env,
 	arg2env *core.Arg2Env,

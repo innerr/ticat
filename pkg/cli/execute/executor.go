@@ -168,8 +168,10 @@ func (self *Executor) executeCmd(
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
 			// This cmdEnv is different, it included values from 'val2env' and 'arg2env'
-			cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
+			cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
+				env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+			sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
+			newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, flow, currCmdIdx)
 		}
 	} else {
 		// Maybe a empty global-env definition

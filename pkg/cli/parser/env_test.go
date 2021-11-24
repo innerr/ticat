@@ -9,7 +9,7 @@ import (
 
 func TestEnvParserTryParseRaw(t *testing.T) {
 	root := newCmdTree()
-	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", "."}
+	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"}
 
 	test := func(a []string, bEnv core.ParsedEnv, bRest []string) {
 		aEnv, aRest := parser.TryParseRaw(root, nil, a)
@@ -21,10 +21,10 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	}
 
 	v := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, false, nil, ""}
+		return core.ParsedEnvVal{v, false, false, nil, ""}
 	}
 	a := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, true, nil, ""}
+		return core.ParsedEnvVal{v, true, false, nil, ""}
 	}
 
 	test(nil, nil, nil)
@@ -105,7 +105,7 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 }
 
 func TestEnvParserFindLeft(t *testing.T) {
-	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", "."}
+	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"}
 
 	test := func(a []string, bRest []string, bFound bool, bAgain bool) {
 		aRest, aFound, aAgain := parser.findLeft(a)
@@ -137,7 +137,7 @@ func TestEnvParserFindLeft(t *testing.T) {
 }
 
 func TestEnvParserFindRight(t *testing.T) {
-	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", "."}
+	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"}
 
 	test := func(a []string, bEnv []string, bRest []string, bFound bool) {
 		aEnv, aRest, aFound := parser.findRight(a)
@@ -181,7 +181,7 @@ func TestEnvParserFindRight(t *testing.T) {
 
 func TestEnvParserTryParse(t *testing.T) {
 	root := newCmdTree()
-	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", "."}
+	parser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"}
 
 	test := func(a []string, bEnv core.ParsedEnv, bRest []string, bFound bool, bErr error) {
 		aEnv, aRest, aFound, aErr := parser.TryParse(root, nil, a)
@@ -196,7 +196,7 @@ func TestEnvParserTryParse(t *testing.T) {
 	}
 
 	v := func(v string) core.ParsedEnvVal {
-		return core.ParsedEnvVal{v, false, nil, ""}
+		return core.ParsedEnvVal{v, false, false, nil, ""}
 	}
 
 	test(nil, nil, nil, false, nil)

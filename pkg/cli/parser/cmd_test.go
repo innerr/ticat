@@ -43,7 +43,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	l2.AddSub("21", "twenty-one")
 
 	parser := &CmdParser{
-		&EnvParser{Brackets{"{", "}"}, "\t ", "=", "."},
+		&EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"},
 		".", "./", "\t ", "<root>", "^",
 	}
 
@@ -128,7 +128,7 @@ func TestCmdParserParse(t *testing.T) {
 	l2.AddSub("21", "twenty-one")
 
 	parser := &CmdParser{
-		&EnvParser{Brackets{"{", "}"}, "\t ", "=", "."},
+		&EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"},
 		".", "./", "\t ", "<root>", "^",
 	}
 

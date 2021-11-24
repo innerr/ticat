@@ -141,6 +141,10 @@ func PrintCmdStack(
 		if i < displayIdxStart || i >= displayIdxEnd {
 			continue
 		}
+		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(core.EnvLayerSession),
+			strs.EnvValDelAllMark, strs.PathSep)
+		sysArgv := cmdEnv.GetSysArgv(cmd.Path(), strs.PathSep)
+		name := cmd.DisplayPath(strs.PathSep, printRealname)
 		var line string
 		lineExtraLen := 0
 		endOmitting := (i+1 == displayIdxEnd && i+1 != len(flow))
@@ -148,13 +152,27 @@ func PrintCmdStack(
 			line += "   ..."
 		} else {
 			if i == currCmdIdx {
-				line += ColorCmdCurr(">> "+cmd.DisplayPath(strs.PathSep, printRealname), env)
-				lineExtraLen += ColorExtraLen(env, "cmd-curr")
+				if sysArgv.IsDelay() {
+					line += ColorCmdCurr(">> "+name+" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
+					lineExtraLen += ColorExtraLen(env, "cmd-curr", "cmd-curr")
+				} else {
+					line += ColorCmdCurr(">> "+name, env)
+					lineExtraLen += ColorExtraLen(env, "cmd-curr")
+				}
 			} else if i < currCmdIdx {
-				line += "   " + ColorCmdDone(cmd.DisplayPath(strs.PathSep, printRealname), env)
-				lineExtraLen += ColorExtraLen(env, "cmd-done")
+				if sysArgv.IsDelay() {
+					line += "   " + ColorCmdDelay(name+" (scheduled in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
+					lineExtraLen += ColorExtraLen(env, "cmd-delay", "cmd-delay")
+				} else {
+					line += "   " + ColorCmdDone(name, env)
+					lineExtraLen += ColorExtraLen(env, "cmd-done")
+				}
 			} else {
-				line += "   " + cmd.DisplayPath(strs.PathSep, printRealname)
+				if sysArgv.IsDelay() {
+					line += "   " + name + " (schedule in " + sysArgv.GetDelayStr() + ")"
+				} else {
+					line += "   " + name
+				}
 			}
 		}
 		lines.Flow = append(lines.Flow, line)
@@ -162,23 +180,30 @@ func PrintCmdStack(
 		if endOmitting {
 			continue
 		}
-		_, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(core.EnvLayerSession),
-			strs.EnvValDelAllMark, strs.PathSep)
 		args := cmd.Args()
 		// TODO: use DumpEffectedArgs instead of DumpProvidedArgs
 		colorizeArg := i <= currCmdIdx
 		for _, line := range DumpProvidedArgs(env, &args, argv, colorizeArg) {
 			line := strings.Repeat(" ", 3+4) + line
 			extraLen := 0
-			if i <= currCmdIdx {
+			if colorizeArg {
 				extraLen += ColorExtraLen(env, "arg", "symbol")
 			}
 			lines.Flow = append(lines.Flow, line)
 			lines.FlowLen = append(lines.FlowLen, len(line)-extraLen)
 		}
+		//for _, line := range DumpSysArgs(env, sysArgv, colorizeArg) {
+		//	line = strings.Repeat(" ", 3+4) + line
+		//	extraLen := 0
+		//	if colorizeArg {
+		//		extraLen += ColorExtraLen(env, "explain", "arg", "symbol")
+		//	}
+		//	lines.Flow = append(lines.Flow, line)
+		//	lines.FlowLen = append(lines.FlowLen, len(line)-extraLen)
+		//}
 
 		cic := cmd.LastCmd()
-		if cic != nil && (cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) {
+		if cic != nil && !sysArgv.IsDelay() && (cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) {
 			if i+1 == currCmdIdx || i == currCmdIdx {
 				line := ColorFlowing("       --->>>", env)
 				lines.Flow = append(lines.Flow, line)
