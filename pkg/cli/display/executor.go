@@ -20,6 +20,8 @@ type CmdStackLines struct {
 	EnvLen   []int
 	Flow     []string
 	FlowLen  []int
+	Bg       []string
+	BgLen    []int
 }
 
 func PrintCmdStack(
@@ -30,6 +32,7 @@ func PrintCmdStack(
 	flow []core.ParsedCmd,
 	currCmdIdx int,
 	strs *core.CmdTreeStrs,
+	bgTasks *core.BgTasks,
 	tailModeCall bool) (lines CmdStackLines) {
 
 	if tailModeCall {
@@ -51,6 +54,31 @@ func PrintCmdStack(
 
 	env = env.Clone()
 	lines.Display = true
+
+	useUtf8 := env.GetBool("display.utf8.symbols")
+	inBg := env.GetBool("sys.in-bg-task")
+	if bgTasks != nil && !inBg {
+		for _, bg := range bgTasks.GetStat() {
+			line := ""
+			lineLen := 0
+			if bg.Finished {
+				doneStr := "OK"
+				if useUtf8 {
+					doneStr = " ✓"
+				}
+				line += ColorCmd(doneStr+" ", env) + ColorCmdDelay(bg.Cmd, env)
+				lineLen = 2 + 1 + len(bg.Cmd)
+			} else if bg.Started {
+				line += ColorCmdCurr(">> ", env) + ColorCmdDelay(bg.Cmd, env)
+				lineLen = len(line) - ColorExtraLen(env, "cmd-curr", "cmd-delay")
+			} else {
+				line += ColorExplain("zZ ", env) + ColorExplain(bg.Cmd, env)
+				lineLen = len(line) - ColorExtraLen(env, "explain", "explain")
+			}
+			lines.Bg = append(lines.Bg, line)
+			lines.BgLen = append(lines.BgLen, lineLen)
+		}
+	}
 
 	if env.GetBool("display.stack") {
 		listSep := env.GetRaw("strs.list-sep")
@@ -158,15 +186,15 @@ func PrintCmdStack(
 			line += "   ..."
 		} else {
 			if i == currCmdIdx {
-				if sysArgv.IsDelay() {
-					line += ColorCmdCurr(">> "+name+" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
+				if sysArgv.IsDelay() && !inBg {
+					line += ColorCmdCurr(">> "+name+" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdCurr(")", env)
 					lineExtraLen += ColorExtraLen(env, "cmd-curr", "cmd-curr")
 				} else {
 					line += ColorCmdCurr(">> "+name, env)
 					lineExtraLen += ColorExtraLen(env, "cmd-curr")
 				}
 			} else if i < currCmdIdx {
-				if sysArgv.IsDelay() {
+				if sysArgv.IsDelay() && !inBg {
 					line += "   " + ColorCmdDelay(name+" (scheduled in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
 					lineExtraLen += ColorExtraLen(env, "cmd-delay", "cmd-delay")
 				} else {
@@ -174,7 +202,7 @@ func PrintCmdStack(
 					lineExtraLen += ColorExtraLen(env, "cmd-done")
 				}
 			} else {
-				if sysArgv.IsDelay() {
+				if sysArgv.IsDelay() && !inBg {
 					line += "   " + name + " (schedule in " + sysArgv.GetDelayStr() + ")"
 				} else {
 					line += "   " + name

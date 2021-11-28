@@ -58,13 +58,47 @@ func (self *BgStdout) Write(p []byte) (n int, err error) {
 	return self.bg.Write(p)
 }
 
+type BgTaskInfo struct {
+	Tid      string
+	Cmd      string
+	Started  bool
+	Finished bool
+}
+
 type BgTask struct {
-	tid            string
+	info           BgTaskInfo
 	stdout         *BgStdout
 	finishNotifier chan interface{}
+	lock           sync.Mutex
+}
+
+func NewBgTask(tid string, cmd string, stdout *BgStdout) *BgTask {
+	return &BgTask{
+		info: BgTaskInfo{
+			Tid: tid,
+			Cmd: cmd,
+		},
+		stdout:         stdout,
+		finishNotifier: make(chan interface{}),
+	}
+}
+
+func (self *BgTask) OnStart() {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	self.info.Started = true
+}
+
+func (self *BgTask) GetStat() BgTaskInfo {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	return self.info
 }
 
 func (self *BgTask) OnFinish() {
+	self.lock.Lock()
+	self.info.Finished = true
+	self.lock.Unlock()
 	self.finishNotifier <- nil
 }
 
@@ -85,7 +119,7 @@ func NewBgTasks() *BgTasks {
 	}
 }
 
-func (self *BgTasks) GetOrAddTask(tid string, stdout *BgStdout) *BgTask {
+func (self *BgTasks) GetOrAddTask(tid string, cmd string, stdout *BgStdout) *BgTask {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	task, ok := self.tasks[tid]
@@ -93,7 +127,7 @@ func (self *BgTasks) GetOrAddTask(tid string, stdout *BgStdout) *BgTask {
 		return task
 	}
 	self.tids = append(self.tids, tid)
-	task = &BgTask{tid, stdout, make(chan interface{})}
+	task = NewBgTask(tid, cmd, stdout)
 	self.tasks[tid] = task
 	return task
 }
@@ -107,6 +141,16 @@ func (self *BgTasks) GetEarliestTask() (tid string, task *BgTask, ok bool) {
 	tid = self.tids[0]
 	task, ok = self.tasks[tid]
 	return
+}
+
+func (self *BgTasks) GetStat() []BgTaskInfo {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	infos := make([]BgTaskInfo, len(self.tids))
+	for i, tid := range self.tids {
+		infos[i] = self.tasks[tid].GetStat()
+	}
+	return infos
 }
 
 func (self *BgTasks) BringBgTaskToFront(tid string, stdout io.Writer) {

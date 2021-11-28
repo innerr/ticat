@@ -36,21 +36,17 @@ func (self ParsedCmdSeq) LastCmd() (last ParsedCmd) {
 	return
 }
 
-func (self ParsedCmdSeq) Clone() ParsedCmdSeq {
-	res := make(ParsedCmdSeq, len(self))
-	for i, it := range self {
-		// TODO: use clone?
-		// res[i] = it.Clone()
-		res[i] = it
-	}
-	return res
+func (self ParsedCmdSeq) Clone(idx int) ParsedCmdSeq {
+	// TODO: use clone?
+	// self[idx].Clone()
+	return ParsedCmdSeq{self[idx]}
 }
 
-func (self *ParsedCmds) Clone() *ParsedCmds {
+func (self *ParsedCmds) Clone(idx int) *ParsedCmds {
 	return &ParsedCmds{
 		// TODO: clone global env?
 		self.GlobalEnv,
-		self.Cmds.Clone(),
+		self.Cmds.Clone(idx),
 		self.GlobalCmdIdx,
 		self.HasTailMode,
 		self.TailModeCall,

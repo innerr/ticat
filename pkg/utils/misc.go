@@ -75,7 +75,9 @@ func GoRoutineId() int {
 func GoRoutineIdStr() string {
 	id := GoRoutineId()
 	if id == 1 {
-		return "main"
+		return GoRoutineIdStrMain
 	}
 	return strconv.Itoa(id)
 }
+
+const GoRoutineIdStrMain = "main"

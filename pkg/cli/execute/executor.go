@@ -55,8 +55,9 @@ func (self *Executor) WaitAllBgTasks(cc *core.Cli) {
 		if !ok {
 			break
 		}
+		info := task.GetStat()
 
-		display.PrintSwitchingThreadDisplay(preTid, tid, cc.GlobalEnv, cc.Screen)
+		display.PrintSwitchingThreadDisplay(preTid, info, cc.GlobalEnv, cc.Screen)
 
 		cc.BgTasks.BringBgTaskToFront(tid, cc.CmdIO.CmdStdout)
 		task.WaitForFinish()
@@ -169,7 +170,7 @@ func (self *Executor) executeCmd(
 	ln := cc.Screen.OutputNum()
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
-		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, flow.TailModeCall)
+		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, cc.BgTasks, flow.TailModeCall)
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -199,7 +200,7 @@ func (self *Executor) executeCmd(
 				dur := sysArgv.GetDelayDuration()
 				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
 				succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
-					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.Clone(), currCmdIdx)
+					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.Clone(currCmdIdx), 0)
 				newCurrCmdIdx = currCmdIdx
 			}
 		}
@@ -466,15 +467,16 @@ func asyncExecute(
 		envBgSession.SetBool("display.one-cmd", true)
 		envBgSession.SetBool("sys.in-bg-task", true)
 		name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
-		envBgSession.Set("sys.bg-task-cmd", name)
 		tid := utils.GoRoutineIdStr()
-		task := cc.BgTasks.GetOrAddTask(tid, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
+		task := cc.BgTasks.GetOrAddTask(tid, name, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
 		tidChan <- tid
 
 		time.Sleep(dur)
+		task.OnStart()
 
+		//cc.Screen.Print(display.ColorExplain("(current command start running in thread "+tid+")\n", env))
 		stackLines := display.PrintCmdStack(false, cc.Screen, cmd,
-			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, false)
+			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, nil, false)
 		var width int
 		if stackLines.Display {
 			width = display.RenderCmdStack(stackLines, env, cc.Screen)
@@ -497,7 +499,6 @@ func asyncExecute(
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
 
-	//screen.Print(display.ColorThread("[threads] current command scheduled to thread ", env) + <-tidChan + "\n")
-	screen.Print("(current command scheduled to thread " + <-tidChan + ")\n")
+	screen.Print(display.ColorExplain("(current command scheduled to thread "+<-tidChan+")\n", env))
 	return true
 }
