@@ -23,8 +23,8 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) (renderW
 
 	c := getFrameChars(env)
 
-	titleLine := c.V + " " + l.StackDepth + c.V
-	titleInner := 1 + l.StackDepthLen
+	titleLine := c.V + " " + l.Title + " " + c.V
+	titleInner := 1 + l.TitleLen + 1
 	titleLineLen := 1 + titleInner + 1
 
 	width := env.GetInt("display.width") - 2

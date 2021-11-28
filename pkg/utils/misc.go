@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -57,4 +59,23 @@ func MoveFile(src string, dest string) error {
 	cmd := exec.Command("mv", src, dest)
 	_, err = cmd.Output()
 	return err
+}
+
+func GoRoutineId() int {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+	id, err := strconv.Atoi(idField)
+	if err != nil {
+		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+	}
+	return id
+}
+
+func GoRoutineIdStr() string {
+	id := GoRoutineId()
+	if id == 1 {
+		return "main"
+	}
+	return strconv.Itoa(id)
 }

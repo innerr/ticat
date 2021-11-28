@@ -5,20 +5,21 @@ import (
 	"time"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 type CmdStackLines struct {
-	Display       bool
-	StackDepth    string
-	StackDepthLen int
-	Time          string
-	TimeLen       int
-	Stack         []string
-	StackLen      []int
-	Env           []string
-	EnvLen        []int
-	Flow          []string
-	FlowLen       []int
+	Display  bool
+	Title    string
+	TitleLen int
+	Time     string
+	TimeLen  int
+	Stack    []string
+	StackLen []int
+	Env      []string
+	EnvLen   []int
+	Flow     []string
+	FlowLen  []int
 }
 
 func PrintCmdStack(
@@ -77,14 +78,19 @@ func PrintCmdStack(
 		cmdDisplayCnt = 4
 	}
 
-	stackDepth := env.Get("sys.stack-depth").Raw
-	if len(stackDepth) > 2 {
-		stackDepth = "[..]"
-	} else {
-		stackDepth = "[" + stackDepth + "]" + strings.Repeat(" ", 2+1-len(stackDepth))
-	}
-	lines.StackDepth = "stack-level: " + stackDepth
-	lines.StackDepthLen = len(lines.StackDepth)
+	// TODO: show stack depth when no background tasks
+	/*
+		stackDepth := env.Get("sys.stack-depth").Raw
+		if len(stackDepth) > 2 {
+			stackDepth = "[..]"
+		} else {
+			stackDepth = "[" + stackDepth + "]"// + strings.Repeat(" ", 2+1-len(stackDepth))
+		}
+		lines.Title = "stack-level: " + stackDepth
+		lines.TitleLen = len(lines.Title)
+	*/
+	lines.Title = ColorThread("thread: ", env) + utils.GoRoutineIdStr()
+	lines.TitleLen = len(lines.Title) - ColorExtraLen(env, "thread")
 
 	lines.Time = time.Now().Format("01-02 15:04:05")
 	lines.TimeLen = len(lines.Time)

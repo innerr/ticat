@@ -25,6 +25,7 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"prop":      3,
 		"tag":       2,
 		"help":      2,
+		"thread":    2,
 		"flow":      2,
 		"cmd":       2,
 		"cmd-done":  2,
@@ -115,6 +116,10 @@ func ColorCmdDone(origin string, env *core.Env) string {
 
 func ColorCmdDelay(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(22), env)
+}
+
+func ColorThread(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(27), env)
 }
 
 func ColorFlowing(origin string, env *core.Env) string {

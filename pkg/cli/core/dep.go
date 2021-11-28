@@ -91,7 +91,7 @@ func TryExeEnvOpCmds(
 		}
 		newCC := cc.Copy()
 		newCC.Screen = &QuietScreen{}
-		_, succeeded := cmd.Execute(argv, SysArgVals{}, newCC, env, flow, currCmdIdx)
+		_, succeeded := cmd.Execute(argv, newCC, env, flow, currCmdIdx)
 		if !succeeded {
 			panic(NewCmdError(flow.Cmds[currCmdIdx], errString))
 		}

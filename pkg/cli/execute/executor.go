@@ -43,7 +43,9 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	if !self.execute(self.callerNameBootstrap, cc, true, false, bootstrap) {
 		return false
 	}
-	return self.execute(self.callerNameEntry, cc, false, false, input...)
+	ok := self.execute(self.callerNameEntry, cc, false, false, input...)
+	cc.BgTasks.TrySwitchToBgTaskScreen()
+	return ok
 }
 
 // Implement core.Executor
@@ -167,14 +169,25 @@ func (self *Executor) executeCmd(
 			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
-			// This cmdEnv is different, it included values from 'val2env' and 'arg2env'
+			// This is a fake apply just for calculate sys args, the env is a clone
 			cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
-				env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 			sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
-			newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, flow, currCmdIdx)
+			if !sysArgv.IsDelay() {
+				// This cmdEnv is different from env, it included values from 'val2env' and 'arg2env'
+				cmdEnv, argv = cmd.ApplyMappingGenEnvAndArgv(
+					env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, flow, currCmdIdx)
+			} else {
+				dur := sysArgv.GetDelayDuration()
+				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
+				succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
+					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.Clone(), currCmdIdx)
+				newCurrCmdIdx = currCmdIdx
+			}
 		}
 	} else {
-		// Maybe a empty global-env definition
+		// Maybe it's an empty global-env definition
 		newCurrCmdIdx, succeeded = currCmdIdx, true
 	}
 	elapsed := time.Now().Sub(start)
@@ -401,4 +414,41 @@ func stackStepOut(caller string, callerNameEntry string, env *core.Env) {
 		stack = stack[0 : len(stack)-len(sep)-len(caller)]
 	}
 	env.Set("sys.stack", stack)
+}
+
+func asyncExecute(
+	screen core.Screen,
+	durStr string,
+	dur time.Duration,
+	cmd *core.Cmd,
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (scheduled bool) {
+
+	tidChan := make(chan string, 1)
+
+	// TODO: fixme, do real clone for ready-only instances
+	go func(
+		dur time.Duration,
+		argv core.ArgVals,
+		cc *core.Cli,
+		env *core.Env,
+		flow *core.ParsedCmds,
+		currCmdIdx int) {
+
+		env.SetBool("sys.in-bg-task", true)
+		tid := utils.GoRoutineIdStr()
+		cc.BgTasks.GetOrAddTask(tid)
+		tidChan <- tid
+
+		time.Sleep(dur)
+		_, ok := cmd.Execute(argv, cc, env, flow, currCmdIdx)
+		_ = ok
+
+	}(dur, argv, cc, env, flow, currCmdIdx)
+
+	screen.Print(display.ColorHelp("[bg] current command scheduled to thread ", env) + <-tidChan + "\n")
+	return true
 }

@@ -29,6 +29,35 @@ type ParsedCmds struct {
 
 type ParsedCmdSeq []ParsedCmd
 
+func (self ParsedCmdSeq) LastCmd() (last ParsedCmd) {
+	if len(self) > 0 {
+		last = self[len(self)-1]
+	}
+	return
+}
+
+func (self ParsedCmdSeq) Clone() ParsedCmdSeq {
+	res := make(ParsedCmdSeq, len(self))
+	for i, it := range self {
+		// TODO: use clone?
+		// res[i] = it.Clone()
+		res[i] = it
+	}
+	return res
+}
+
+func (self *ParsedCmds) Clone() *ParsedCmds {
+	return &ParsedCmds{
+		// TODO: clone global env?
+		self.GlobalEnv,
+		self.Cmds.Clone(),
+		self.GlobalCmdIdx,
+		self.HasTailMode,
+		self.TailModeCall,
+		self.AttempTailModeCall,
+	}
+}
+
 func (self *ParsedCmds) FirstErr() *ParseResult {
 	for _, cmd := range self.Cmds {
 		if cmd.ParseResult.Error != nil {
@@ -40,13 +69,6 @@ func (self *ParsedCmds) FirstErr() *ParseResult {
 
 func (self *ParsedCmds) Last() (last ParsedCmd) {
 	return self.Cmds[len(self.Cmds)-1]
-}
-
-func (self ParsedCmdSeq) LastCmd() (last ParsedCmd) {
-	if len(self) > 0 {
-		last = self[len(self)-1]
-	}
-	return
 }
 
 func (self *ParsedCmds) RemoveLeadingCmds(count int) {
@@ -62,11 +84,36 @@ type ParseResult struct {
 	Error error
 }
 
+func (self ParseResult) Clone() ParseResult {
+	input := make([]string, len(self.Input))
+	for i, it := range self.Input {
+		input[i] = it
+	}
+	return ParseResult{
+		input,
+		// TODO: clone error?
+		self.Error,
+	}
+}
+
 type ParsedCmd struct {
 	Segments    []ParsedCmdSeg
 	ParseResult ParseResult
 	TrivialLvl  int
 	TailMode    bool
+}
+
+func (self ParsedCmd) Clone() ParsedCmd {
+	segments := make([]ParsedCmdSeg, len(self.Segments))
+	for i, seg := range self.Segments {
+		segments[i] = seg.Clone()
+	}
+	return ParsedCmd{
+		segments,
+		self.ParseResult.Clone(),
+		self.TrivialLvl,
+		self.TailMode,
+	}
 }
 
 func (self ParsedCmd) IsEmpty() bool {
@@ -165,6 +212,7 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 	return
 }
 
+// TODO: this function's meaning is bad, it modifies origin env, and return a new env
 func (self ParsedCmd) ApplyMappingGenEnvAndArgv(
 	originEnv *Env,
 	valDelAllMark string,
@@ -226,6 +274,14 @@ type ParsedCmdSeg struct {
 	Matched MatchedCmd
 }
 
+func (self ParsedCmdSeg) Clone() ParsedCmdSeg {
+	return ParsedCmdSeg{
+		// TODO: clone env?
+		self.Env,
+		self.Matched.Clone(),
+	}
+}
+
 func (self ParsedCmdSeg) IsPowerCmd() bool {
 	return !self.Matched.IsEmptyCmd() && self.Matched.GetCmd().IsPowerCmd()
 }
@@ -248,6 +304,14 @@ func (self *ParsedCmdSeg) IsEmpty() bool {
 type MatchedCmd struct {
 	Name string
 	Cmd  *CmdTree
+}
+
+func (self MatchedCmd) Clone() MatchedCmd {
+	return MatchedCmd{
+		self.Name,
+		// TODO: clone cmd?
+		self.Cmd,
+	}
 }
 
 func (self MatchedCmd) GetCmd() *Cmd {

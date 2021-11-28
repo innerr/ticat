@@ -98,11 +98,14 @@ func main() {
 		TrivialMark)
 	cliParser := parser.NewParser(seqParser, cmdParser)
 
-	// Virtual tty, for re-directing
-	screen := execute.NewScreen()
+	// Executing info, commands' output are not included
+	screen := core.NewStdScreen(os.Stdout, os.Stderr)
+
+	// Commands' input and output
+	cmdIO := core.CmdIO{os.Stdin, os.Stdout, os.Stderr}
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
-	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs)
+	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs, cmdIO)
 
 	// Modules and env loaders
 	bootstrap := `

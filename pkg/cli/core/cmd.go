@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
@@ -140,7 +139,6 @@ func NewFlowCmd(owner *CmdTree, help string, flow []string) *Cmd {
 
 func (self *Cmd) Execute(
 	argv ArgVals,
-	sysArgv SysArgVals,
 	cc *Cli,
 	env *Env,
 	flow *ParsedCmds,
@@ -151,15 +149,10 @@ func (self *Cmd) Execute(
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Begin, int(begin.Unix()))
 	}
 
-	if sysArgv.IsDelay() {
-		ok = self.asyncExecute(argv, sysArgv, cc, env, flow, currCmdIdx)
-		newCurrCmdIdx = currCmdIdx
-	} else {
-		newCurrCmdIdx, ok = self.execute(argv, cc, env, flow, currCmdIdx)
-		if !ok {
-			// Normally the command should print info before return false, so no need to panic
-			// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
-		}
+	newCurrCmdIdx, ok = self.execute(argv, cc, env, flow, currCmdIdx)
+	if !ok {
+		// Normally the command should print info before return false, so no need to panic
+		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
 	}
 
 	end := time.Now()
@@ -188,34 +181,6 @@ func (self *Cmd) executePowerCmd(
 		flow.Cmds = nil
 	}
 	return currCmdIdx, succeeded
-}
-
-func (self *Cmd) asyncExecute(
-	argv ArgVals,
-	sysArgv SysArgVals,
-	cc *Cli,
-	env *Env,
-	flow *ParsedCmds,
-	currCmdIdx int) (scheduled bool) {
-
-	dur := sysArgv.GetDelayDuration()
-
-	// TODO: fixme, do real clone for ready-only instances
-	go func(
-		dur time.Duration,
-		argv ArgVals,
-		cc *Cli,
-		env *Env,
-		flow *ParsedCmds,
-		currCmdIdx int) {
-
-		time.Sleep(dur)
-		//_, ok := self.execute(argv, cc, env, flow, currCmdIdx)
-
-	}(dur, argv, cc.CloneForAsyncExecuting(), env.Clone(), flow, currCmdIdx)
-
-	cc.Screen.Print("background task scheduled\n")
-	return true
 }
 
 func (self *Cmd) execute(
@@ -583,9 +548,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	}
 	cmd := exec.Command(bin, args...)
 
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cc.CmdIO.SetupCmd(cmd)
 
 	err := cmd.Run()
 	if err != nil {

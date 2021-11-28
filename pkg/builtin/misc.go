@@ -31,13 +31,18 @@ func Sleep(
 		fmt.Printf("[Sleep] time string '%s' parse failed: %v\n", durStr, err)
 		return currCmdIdx, false
 	}
-	fmt.Printf(".zzZZ ")
 	secs := int(dur.Seconds())
 	for i := 0; i < secs; i++ {
+		if i%60 == 0 && i != 0 && i+1 != secs {
+			fmt.Printf("\n")
+		}
+		if i%60 == 0 && i+1 != secs {
+			fmt.Printf(".zzZZ ")
+		}
 		fmt.Printf(".")
 		time.Sleep(time.Second)
 	}
-	fmt.Printf(" *\\O/*\n")
+	fmt.Printf("\n")
 	return currCmdIdx, true
 }
 
