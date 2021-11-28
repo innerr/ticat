@@ -74,20 +74,24 @@ func NewBgTaskScreen() *BgTaskScreen {
 
 func (self *BgTaskScreen) Print(text string) {
 	self.lock.Lock()
+	defer self.lock.Unlock()
 	self.basic.Print(text)
 }
 
 func (self *BgTaskScreen) Error(text string) {
 	self.lock.Lock()
+	defer self.lock.Unlock()
 	self.basic.Error(text)
 }
 
 func (self *BgTaskScreen) OutputNum() int {
 	self.lock.Lock()
+	defer self.lock.Unlock()
 	return self.basic.OutputNum()
 }
 
 func (self *BgTaskScreen) GetBgStdout() *BgStdout {
 	self.lock.Lock()
+	defer self.lock.Unlock()
 	return self.stdout
 }

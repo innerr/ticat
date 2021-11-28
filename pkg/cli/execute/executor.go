@@ -44,8 +44,20 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 		return false
 	}
 	ok := self.execute(self.callerNameEntry, cc, false, false, input...)
-	cc.BgTasks.TrySwitchToBgTaskScreen()
+	self.WaitAllBgTasks(cc)
 	return ok
+}
+
+func (self *Executor) WaitAllBgTasks(cc *core.Cli) {
+	for {
+		tid, task, ok := cc.BgTasks.GetEarliestTask()
+		if !ok {
+			break
+		}
+		cc.BgTasks.BrightBgTaskToFront(cc.CmdIO)
+		task.WaitForFinish()
+		cc.BgTasks.RemoveTask(tid)
+	}
 }
 
 // Implement core.Executor
@@ -427,6 +439,11 @@ func asyncExecute(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (scheduled bool) {
 
+	if env.GetBool("sys.in-bg-task") {
+		tid := utils.GoRoutineIdStr()
+		panic(fmt.Errorf("can't delay a command when not in main thread, current thread: %s", tid))
+	}
+
 	tidChan := make(chan string, 1)
 
 	// TODO: fixme, do real clone for ready-only instances
@@ -438,14 +455,19 @@ func asyncExecute(
 		flow *core.ParsedCmds,
 		currCmdIdx int) {
 
-		env.SetBool("sys.in-bg-task", true)
+		env.GetLayer(core.EnvLayerSession).SetBool("sys.in-bg-task", true)
 		tid := utils.GoRoutineIdStr()
-		cc.BgTasks.GetOrAddTask(tid)
+		task := cc.BgTasks.GetOrAddTask(tid)
 		tidChan <- tid
 
 		time.Sleep(dur)
 		_, ok := cmd.Execute(argv, cc, env, flow, currCmdIdx)
-		_ = ok
+		if !ok {
+			// Should already panic inside cmd.Execute
+			panic(fmt.Errorf("delay-command fail, thread: %s", tid))
+		}
+
+		task.OnFinish()
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
 
