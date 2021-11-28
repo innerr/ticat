@@ -3,12 +3,20 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
+	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func UserConfirm() (yes bool) {
 	buf := bufio.NewReader(os.Stdin)
@@ -58,3 +66,35 @@ func MoveFile(src string, dest string) error {
 	_, err = cmd.Output()
 	return err
 }
+
+func GoRoutineId() int {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+	id, err := strconv.Atoi(idField)
+	if err != nil {
+		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+	}
+	return id
+}
+
+func GoRoutineIdStr() string {
+	id := GoRoutineId()
+	if id == 1 {
+		return GoRoutineIdStrMain
+	}
+	return strconv.Itoa(id)
+}
+
+func RandomName(n uint) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = Chars[rand.Intn(len(Chars))]
+	}
+	return string(b)
+}
+
+const (
+	GoRoutineIdStrMain = "main"
+	Chars              = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+)

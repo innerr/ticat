@@ -93,6 +93,9 @@ func dumpFlowCmd(
 
 	trivialDelta := cmd.Trivial() + parsedCmd.TrivialLvl
 
+	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
+	sysArgv := cmdEnv.GetSysArgv(cmd.Path(), sep)
+
 	if maxTrivial > 0 && maxDepth > 0 {
 		var name string
 		if args.Skeleton {
@@ -100,11 +103,20 @@ func dumpFlowCmd(
 		} else {
 			name = parsedCmd.DisplayPath(sep, true)
 		}
-		name = ColorCmd("["+name+"]", env)
+		if sysArgv.IsDelay() {
+			name = ColorCmdDelay("["+name+"]", env)
+		} else {
+			name = ColorCmd("["+name+"]", env)
+		}
 		if maxTrivial == 1 && trivialDelta > 0 &&
 			(cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) {
 			name += ColorProp(trivialMark, env)
 		}
+
+		if sysArgv.IsDelay() {
+			name = name + ColorCmdDelay(" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(") ", env)
+		}
+
 		prt(0, name)
 
 		if len(cic.Help()) != 0 {
@@ -118,7 +130,6 @@ func dumpFlowCmd(
 
 	// TODO: this is slow
 	originEnv := env.Clone()
-	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
 
 	if maxTrivial > 0 && maxDepth > 0 {
 		if !args.Skeleton {
@@ -131,6 +142,10 @@ func dumpFlowCmd(
 			for _, line := range argLines {
 				prt(2, line)
 			}
+			//sysArgv := cmdEnv.GetSysArgv(cmd.Path(), sep)
+			//for _, line := range DumpSysArgs(env, sysArgv, true) {
+			//	prt(2, line)
+			//}
 		} else {
 			for name, val := range argv {
 				if !val.Provided {
@@ -138,6 +153,10 @@ func dumpFlowCmd(
 				}
 				prt(1, " "+ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
 			}
+			//sysArgv := cmdEnv.GetSysArgv(cmd.Path(), sep)
+			//for _, line := range DumpSysArgs(env, sysArgv, true) {
+			//	prt(1, " "+line)
+			//}
 		}
 	}
 

@@ -33,7 +33,7 @@ func NewEnv() *Env {
 func (self *Env) Clone() (env *Env) {
 	pairs := map[string]EnvVal{}
 	for k, v := range self.pairs {
-		pairs[k] = EnvVal{v.Raw, v.IsArg}
+		pairs[k] = EnvVal{v.Raw, v.IsArg, v.IsSysArg}
 	}
 	var parent *Env
 	if self.parent != nil {
@@ -47,7 +47,7 @@ func (self *Env) Clear(recursive bool) {
 	for k, v := range self.pairs {
 		// TODO: put all these special key path in one place
 		if strings.HasPrefix(k, "sys.") || k == "session" {
-			pairs[k] = EnvVal{v.Raw, v.IsArg}
+			pairs[k] = EnvVal{v.Raw, v.IsArg, v.IsSysArg}
 		}
 	}
 	self.pairs = pairs
@@ -130,8 +130,9 @@ func (self Env) DeleteEx(name string, stopLayer EnvLayerType) {
 }
 
 func (self *Env) Merge(x *Env) {
+	// TODO: why we discard arg flags from x?
 	for k, v := range x.pairs {
-		self.pairs[k] = EnvVal{v.Raw, false}
+		self.pairs[k] = EnvVal{v.Raw, false, false}
 	}
 }
 
@@ -148,7 +149,7 @@ func (self *Env) Deduplicate() {
 }
 
 func (self *Env) Set(name string, val string) (old EnvVal) {
-	return self.SetEx(name, val, false)
+	return self.SetEx(name, val, false, false)
 }
 
 func (self *Env) SetIfEmpty(name string, val string) (old EnvVal) {
@@ -157,21 +158,21 @@ func (self *Env) SetIfEmpty(name string, val string) (old EnvVal) {
 	if exists {
 		return
 	}
-	self.pairs[name] = EnvVal{val, false}
+	self.pairs[name] = EnvVal{val, false, false}
 	return
 }
 
-func (self *Env) SetAsArg(name string, val string) (old EnvVal) {
-	return self.SetEx(name, val, true)
-}
+//func (self *Env) SetAsArg(name string, val string, isSysArg bool) (old EnvVal) {
+//	return self.SetEx(name, val, true, isSysArg)
+//}
 
-func (self *Env) SetEx(name string, val string, isArg bool) (old EnvVal) {
+func (self *Env) SetEx(name string, val string, isArg bool, isSysArg bool) (old EnvVal) {
 	var exists bool
 	old, exists = self.GetEx(name)
 	if exists && old.Raw == val {
 		return
 	}
-	self.pairs[name] = EnvVal{val, isArg}
+	self.pairs[name] = EnvVal{val, isArg, isSysArg}
 	return
 }
 
@@ -179,11 +180,11 @@ func (self *Env) Parent() *Env {
 	return self.parent
 }
 
-func (self *Env) GetArgv(path []string, sep string, args Args) ArgVals {
+func (self *Env) GetArgv(cmdPath []string, sep string, args Args) ArgVals {
 	argv := ArgVals{}
 	list := args.Names()
 	for i, it := range list {
-		key := strings.Join(append(path, it), sep)
+		key := strings.Join(append(cmdPath, it), sep)
 		val, ok := self.GetEx(key)
 		if ok {
 			argv[it] = ArgVal{val.Raw, true, i}
@@ -192,6 +193,30 @@ func (self *Env) GetArgv(path []string, sep string, args Args) ArgVals {
 		}
 	}
 	return argv
+}
+
+func (self *Env) GetSysArgv(cmdPath []string, sep string) SysArgVals {
+	sysArgv := SysArgVals{}
+	keyPrefix := strings.Join(cmdPath, sep) + sep
+	sysArgPrefix := self.GetRaw("strs.sys-arg-prefix")
+	self.getSysArgv(keyPrefix, sysArgPrefix, sysArgv)
+	return sysArgv
+}
+
+func (self *Env) getSysArgv(keyPrefix string, sysArgPrefix string, sysArgv SysArgVals) {
+	prefixLen := len(keyPrefix) + len(sysArgPrefix)
+	for k, v := range self.pairs {
+		if !v.IsSysArg || len(k) <= prefixLen || !strings.HasPrefix(k, keyPrefix) {
+			continue
+		}
+		key := k[prefixLen:]
+		if _, ok := sysArgv[key]; !ok {
+			sysArgv[key] = v.Raw
+		}
+	}
+	if self.parent != nil {
+		self.parent.getSysArgv(keyPrefix, sysArgPrefix, sysArgv)
+	}
 }
 
 func (self Env) Get(name string) EnvVal {

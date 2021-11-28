@@ -15,24 +15,26 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		return 0
 	}
 	lens := map[string]int{
-		"hub":      3,
-		"arg":      3,
-		"key":      3,
-		"warn":     3,
-		"error":    3,
-		"tip":      3,
-		"symbol":   3,
-		"prop":     3,
-		"tag":      2,
-		"help":     2,
-		"flow":     2,
-		"cmd":      2,
-		"cmd-done": 2,
-		"cmd-curr": 2,
-		"flowing":  2,
-		"enabled":  2,
-		"disabled": 3,
-		"explain":  1,
+		"hub":       3,
+		"arg":       3,
+		"key":       3,
+		"warn":      3,
+		"error":     3,
+		"tip":       3,
+		"symbol":    3,
+		"prop":      3,
+		"tag":       2,
+		"help":      2,
+		"thread":    2,
+		"flow":      2,
+		"cmd":       2,
+		"cmd-done":  2,
+		"cmd-curr":  2,
+		"cmd-delay": 2,
+		"flowing":   2,
+		"enabled":   2,
+		"disabled":  3,
+		"explain":   1,
 	}
 	for _, it := range types {
 		extra, ok := lens[it]
@@ -110,6 +112,14 @@ func ColorCmdCurr(origin string, env *core.Env) string {
 
 func ColorCmdDone(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(34), env)
+}
+
+func ColorCmdDelay(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(22), env)
+}
+
+func ColorThread(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(27), env)
 }
 
 func ColorFlowing(origin string, env *core.Env) string {

@@ -43,7 +43,27 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	if !self.execute(self.callerNameBootstrap, cc, true, false, bootstrap) {
 		return false
 	}
-	return self.execute(self.callerNameEntry, cc, false, false, input...)
+	ok := self.execute(self.callerNameEntry, cc, false, false, input...)
+	self.WaitAllBgTasks(cc)
+	return ok
+}
+
+func (self *Executor) WaitAllBgTasks(cc *core.Cli) {
+	preTid := utils.GoRoutineIdStr()
+	for {
+		tid, task, ok := cc.BgTasks.GetEarliestTask()
+		if !ok {
+			break
+		}
+		info := task.GetStat()
+
+		display.PrintSwitchingThreadDisplay(preTid, info, cc.GlobalEnv, cc.Screen)
+
+		cc.BgTasks.BringBgTaskToFront(tid, cc.CmdIO.CmdStdout)
+		task.WaitForFinish()
+		cc.BgTasks.RemoveTask(tid)
+		preTid = tid
+	}
 }
 
 // Implement core.Executor
@@ -150,7 +170,7 @@ func (self *Executor) executeCmd(
 	ln := cc.Screen.OutputNum()
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
-		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, flow.TailModeCall)
+		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, cc.BgTasks, flow.TailModeCall)
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -167,12 +187,25 @@ func (self *Executor) executeCmd(
 			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
-			// This cmdEnv is different, it included values from 'val2env' and 'arg2env'
-			cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-			newCurrCmdIdx, succeeded = last.Execute(argv, cc, cmdEnv, flow, currCmdIdx)
+			// This is a fake apply just for calculate sys args, the env is a clone
+			cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
+				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+			sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
+			if !sysArgv.IsDelay() {
+				// This cmdEnv is different from env, it included values from 'val2env' and 'arg2env'
+				cmdEnv, argv = cmd.ApplyMappingGenEnvAndArgv(
+					env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, flow, currCmdIdx)
+			} else {
+				dur := sysArgv.GetDelayDuration()
+				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
+				succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
+					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.Clone(currCmdIdx), 0)
+				newCurrCmdIdx = currCmdIdx
+			}
 		}
 	} else {
-		// Maybe a empty global-env definition
+		// Maybe it's an empty global-env definition
 		newCurrCmdIdx, succeeded = currCmdIdx, true
 	}
 	elapsed := time.Now().Sub(start)
@@ -399,4 +432,79 @@ func stackStepOut(caller string, callerNameEntry string, env *core.Env) {
 		stack = stack[0 : len(stack)-len(sep)-len(caller)]
 	}
 	env.Set("sys.stack", stack)
+}
+
+func asyncExecute(
+	screen core.Screen,
+	durStr string,
+	dur time.Duration,
+	cic *core.Cmd,
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (scheduled bool) {
+
+	if env.GetBool("sys.in-bg-task") {
+		tid := utils.GoRoutineIdStr()
+		panic(fmt.Errorf("can't delay a command when not in main thread, current thread: %s", tid))
+	}
+
+	tidChan := make(chan string, 1)
+
+	// TODO: fixme, do real clone for ready-only instances
+	go func(
+		dur time.Duration,
+		argv core.ArgVals,
+		cc *core.Cli,
+		env *core.Env,
+		flow *core.ParsedCmds,
+		currCmdIdx int) {
+
+		cmd := flow.Cmds[currCmdIdx]
+		name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+		tid := utils.GoRoutineIdStr()
+
+		sessionDir := env.GetRaw("session")
+		sessionDir = filepath.Join(sessionDir, tid)
+		os.MkdirAll(sessionDir, os.ModePerm)
+
+		envBgSession := env.GetLayer(core.EnvLayerSession)
+		envBgSession.Set("session", sessionDir)
+		envBgSession.SetBool("display.one-cmd", true)
+		envBgSession.SetBool("sys.in-bg-task", true)
+
+		task := cc.BgTasks.GetOrAddTask(tid, name, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
+		tidChan <- tid
+
+		time.Sleep(dur)
+		task.OnStart()
+
+		//cc.Screen.Print(display.ColorExplain("(current command start running in thread "+tid+")\n", env))
+		stackLines := display.PrintCmdStack(false, cc.Screen, cmd,
+			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, nil, false)
+		var width int
+		if stackLines.Display {
+			width = display.RenderCmdStack(stackLines, env, cc.Screen)
+		}
+
+		start := time.Now()
+		_, ok := cic.Execute(argv, cc, env, flow, currCmdIdx)
+		elapsed := time.Now().Sub(start)
+		if !ok {
+			// Should already panic inside cmd.Execute
+			panic(fmt.Errorf("delay-command fail, thread: %s", tid))
+		}
+
+		if stackLines.Display {
+			resultLines := display.PrintCmdResult(false, cc.Screen, cmd,
+				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
+			display.RenderCmdResult(resultLines, env, cc.Screen, width)
+		}
+		task.OnFinish()
+
+	}(dur, argv, cc, env, flow, currCmdIdx)
+
+	screen.Print(display.ColorExplain("(current command scheduled to thread "+<-tidChan+")\n", env))
+	return true
 }

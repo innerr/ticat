@@ -50,6 +50,7 @@ func main() {
 	defEnv.Set("strs.flow-template-multiply-mark", FlowTemplateMultiplyMark)
 	defEnv.Set("strs.tag-mark", TagMark)
 	defEnv.Set("strs.trivial-mark", TrivialMark)
+	defEnv.Set("strs.sys-arg-prefix", SysArgPrefix)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -86,7 +87,8 @@ func main() {
 		parser.Brackets{EnvBracketLeft, EnvBracketRight},
 		Spaces,
 		EnvKeyValSep,
-		EnvPathSep)
+		EnvPathSep,
+		SysArgPrefix)
 	cmdParser := parser.NewCmdParser(
 		envParser,
 		CmdPathSep,
@@ -96,11 +98,14 @@ func main() {
 		TrivialMark)
 	cliParser := parser.NewParser(seqParser, cmdParser)
 
-	// Virtual tty, for re-directing
-	screen := execute.NewScreen()
+	// Executing info, commands' output are not included
+	screen := core.NewStdScreen(os.Stdout, os.Stderr)
+
+	// Commands' input and output
+	cmdIO := core.CmdIO{os.Stdin, os.Stdout, os.Stderr}
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
-	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs)
+	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs, cmdIO)
 
 	// Modules and env loaders
 	bootstrap := `
@@ -150,6 +155,7 @@ const (
 	EnvBracketRight          string = "}"
 	EnvKeyValSep             string = "="
 	EnvPathSep               string = "."
+	SysArgPrefix             string = "%"
 	EnvValDelAllMark         string = "--"
 	EnvRuntimeSysPrefix      string = "sys"
 	EnvStrsPrefix            string = "strs"

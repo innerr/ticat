@@ -40,8 +40,9 @@ func (self Env) GetBool(name string) bool {
 }
 
 type EnvVal struct {
-	Raw   string
-	IsArg bool
+	Raw      string
+	IsArg    bool
+	IsSysArg bool
 }
 
 type EnvValErrWrongType struct {

@@ -8,23 +8,26 @@ import (
 )
 
 type EnvParser struct {
-	brackets   Brackets
-	spaces     string
-	kvSep      string
-	envPathSep string
+	brackets     Brackets
+	spaces       string
+	kvSep        string
+	envPathSep   string
+	sysArgPrefix string
 }
 
 func NewEnvParser(
 	brackets Brackets,
 	spaces string,
 	kvSep string,
-	envPathSep string) *EnvParser {
+	envPathSep string,
+	sysArgPrefix string) *EnvParser {
 
 	return &EnvParser{
 		brackets,
 		spaces,
 		kvSep,
 		envPathSep,
+		sysArgPrefix,
 	}
 }
 
@@ -96,7 +99,7 @@ func (self *EnvParser) TryParseRaw(
 				if matched {
 					key = strings.Join(matchedEnvPath, self.envPathSep)
 				}
-				env[key] = core.ParsedEnvVal{value, false, matchedEnvPath, strings.Join(matchedEnvPath, self.envPathSep)}
+				env[key] = core.ParsedEnvVal{value, false, false, matchedEnvPath, strings.Join(matchedEnvPath, self.envPathSep)}
 			} else {
 				env[key] = core.NewParsedEnvVal(key, value)
 			}
@@ -135,11 +138,16 @@ func (self *EnvParser) TryParseRaw(
 		}
 	} else {
 		for ; i+2 < len(rest); i += 3 {
-			key := args.Realname(rest[i])
+			value := rest[i+2]
+			key, normalized := core.SysArgRealnameAndNormalizedValue(rest[i], self.sysArgPrefix, value)
+			if len(key) != 0 {
+				env[key] = core.NewParsedSysArgv(rest[i], normalized)
+				continue
+			}
+			key = args.Realname(rest[i])
 			if len(key) == 0 || rest[i+1] != self.kvSep {
 				return tryTrimParsedEnv(env), genResult(i)
 			}
-			value := rest[i+2]
 			env[key] = core.NewParsedEnvArgv(rest[i], value)
 		}
 	}

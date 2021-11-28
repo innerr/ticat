@@ -89,7 +89,7 @@ func TryExeEnvOpCmds(
 		if !cmd.IsTheSameFunc(it.Func) {
 			continue
 		}
-		newCC := cc.Clone()
+		newCC := cc.Copy()
 		newCC.Screen = &QuietScreen{}
 		_, succeeded := cmd.Execute(argv, newCC, env, flow, currCmdIdx)
 		if !succeeded {

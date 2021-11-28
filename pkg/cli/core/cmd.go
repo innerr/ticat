@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
@@ -143,14 +142,14 @@ func (self *Cmd) Execute(
 	cc *Cli,
 	env *Env,
 	flow *ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (newCurrCmdIdx int, ok bool) {
 
 	begin := time.Now()
 	if len(self.autoTimerKeys.Begin) != 0 {
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Begin, int(begin.Unix()))
 	}
 
-	newCurrCmdIdx, ok := self.execute(argv, cc, env, flow, currCmdIdx)
+	newCurrCmdIdx, ok = self.execute(argv, cc, env, flow, currCmdIdx)
 	if !ok {
 		// Normally the command should print info before return false, so no need to panic
 		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
@@ -549,9 +548,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	}
 	cmd := exec.Command(bin, args...)
 
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cc.CmdIO.SetupCmd(cmd)
 
 	err := cmd.Run()
 	if err != nil {

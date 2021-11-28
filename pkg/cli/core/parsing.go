@@ -29,6 +29,31 @@ type ParsedCmds struct {
 
 type ParsedCmdSeq []ParsedCmd
 
+func (self ParsedCmdSeq) LastCmd() (last ParsedCmd) {
+	if len(self) > 0 {
+		last = self[len(self)-1]
+	}
+	return
+}
+
+func (self ParsedCmdSeq) Clone(idx int) ParsedCmdSeq {
+	// TODO: use clone?
+	// self[idx].Clone()
+	return ParsedCmdSeq{self[idx]}
+}
+
+func (self *ParsedCmds) Clone(idx int) *ParsedCmds {
+	return &ParsedCmds{
+		// TODO: clone global env?
+		self.GlobalEnv,
+		self.Cmds.Clone(idx),
+		self.GlobalCmdIdx,
+		self.HasTailMode,
+		self.TailModeCall,
+		self.AttempTailModeCall,
+	}
+}
+
 func (self *ParsedCmds) FirstErr() *ParseResult {
 	for _, cmd := range self.Cmds {
 		if cmd.ParseResult.Error != nil {
@@ -40,13 +65,6 @@ func (self *ParsedCmds) FirstErr() *ParseResult {
 
 func (self *ParsedCmds) Last() (last ParsedCmd) {
 	return self.Cmds[len(self.Cmds)-1]
-}
-
-func (self ParsedCmdSeq) LastCmd() (last ParsedCmd) {
-	if len(self) > 0 {
-		last = self[len(self)-1]
-	}
-	return
 }
 
 func (self *ParsedCmds) RemoveLeadingCmds(count int) {
@@ -62,11 +80,36 @@ type ParseResult struct {
 	Error error
 }
 
+func (self ParseResult) Clone() ParseResult {
+	input := make([]string, len(self.Input))
+	for i, it := range self.Input {
+		input[i] = it
+	}
+	return ParseResult{
+		input,
+		// TODO: clone error?
+		self.Error,
+	}
+}
+
 type ParsedCmd struct {
 	Segments    []ParsedCmdSeg
 	ParseResult ParseResult
 	TrivialLvl  int
 	TailMode    bool
+}
+
+func (self ParsedCmd) Clone() ParsedCmd {
+	segments := make([]ParsedCmdSeg, len(self.Segments))
+	for i, seg := range self.Segments {
+		segments[i] = seg.Clone()
+	}
+	return ParsedCmd{
+		segments,
+		self.ParseResult.Clone(),
+		self.TrivialLvl,
+		self.TailMode,
+	}
 }
 
 func (self ParsedCmd) IsEmpty() bool {
@@ -165,6 +208,7 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 	return
 }
 
+// TODO: this function's meaning is bad, it modifies origin env, and return a new env
 func (self ParsedCmd) ApplyMappingGenEnvAndArgv(
 	originEnv *Env,
 	valDelAllMark string,
@@ -226,6 +270,14 @@ type ParsedCmdSeg struct {
 	Matched MatchedCmd
 }
 
+func (self ParsedCmdSeg) Clone() ParsedCmdSeg {
+	return ParsedCmdSeg{
+		// TODO: clone env?
+		self.Env,
+		self.Matched.Clone(),
+	}
+}
+
 func (self ParsedCmdSeg) IsPowerCmd() bool {
 	return !self.Matched.IsEmptyCmd() && self.Matched.GetCmd().IsPowerCmd()
 }
@@ -248,6 +300,14 @@ func (self *ParsedCmdSeg) IsEmpty() bool {
 type MatchedCmd struct {
 	Name string
 	Cmd  *CmdTree
+}
+
+func (self MatchedCmd) Clone() MatchedCmd {
+	return MatchedCmd{
+		self.Name,
+		// TODO: clone cmd?
+		self.Cmd,
+	}
 }
 
 func (self MatchedCmd) GetCmd() *Cmd {
@@ -285,7 +345,7 @@ func (self ParsedEnv) AddPrefix(prefix []string, sep string) {
 			prefixClone = append(prefixClone, it)
 		}
 		matchedPath := append(prefixClone, v.MatchedPath...)
-		self[prefixPath+k] = ParsedEnvVal{v.Val, v.IsArg, matchedPath, strings.Join(matchedPath, sep)}
+		self[prefixPath+k] = ParsedEnvVal{v.Val, v.IsArg, v.IsSysArg, matchedPath, strings.Join(matchedPath, sep)}
 		delete(self, k)
 		v = self[prefixPath+k]
 
@@ -323,7 +383,7 @@ func (self ParsedEnv) WriteTo(env *Env, valDelAllMark string) {
 		if v.Val == valDelAllMark {
 			env.Delete(k)
 		} else {
-			env.SetEx(k, v.Val, v.IsArg)
+			env.SetEx(k, v.Val, v.IsArg, v.IsSysArg)
 		}
 	}
 }
@@ -333,7 +393,7 @@ func (self ParsedEnv) WriteNotArgTo(env *Env, valDelAllMark string) {
 		if v.Val == valDelAllMark {
 			env.Delete(k)
 		} else if !v.IsArg {
-			env.SetEx(k, v.Val, v.IsArg)
+			env.SetEx(k, v.Val, v.IsArg, v.IsSysArg)
 		}
 	}
 }
@@ -341,16 +401,21 @@ func (self ParsedEnv) WriteNotArgTo(env *Env, valDelAllMark string) {
 type ParsedEnvVal struct {
 	Val            string
 	IsArg          bool
+	IsSysArg       bool
 	MatchedPath    []string
 	MatchedPathStr string
 }
 
 func NewParsedEnvVal(key string, val string) ParsedEnvVal {
-	return ParsedEnvVal{val, false, []string{key}, key}
+	return ParsedEnvVal{val, false, false, []string{key}, key}
 }
 
 func NewParsedEnvArgv(key string, val string) ParsedEnvVal {
-	return ParsedEnvVal{val, true, []string{key}, key}
+	return ParsedEnvVal{val, true, false, []string{key}, key}
+}
+
+func NewParsedSysArgv(key string, val string) ParsedEnvVal {
+	return ParsedEnvVal{val, true, true, []string{key}, key}
 }
 
 type ParseErrExpectCmd struct {

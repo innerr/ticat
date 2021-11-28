@@ -28,16 +28,24 @@ func Sleep(
 
 	dur, err := time.ParseDuration(durStr)
 	if err != nil {
-		fmt.Printf("[Sleep] time string '%s' parse failed: %v\n", durStr, err)
-		return currCmdIdx, false
+		panic(fmt.Errorf("[Sleep] time string '%s' parse failed: %v\n", durStr, err))
 	}
-	fmt.Printf(".zzZZ ")
 	secs := int(dur.Seconds())
+	if secs == 0 {
+		return currCmdIdx, true
+	}
+
 	for i := 0; i < secs; i++ {
-		fmt.Printf(".")
+		if i%60 == 0 && i != 0 && i+1 != secs {
+			cc.Screen.Print("\n")
+		}
+		if i%60 == 0 && i+1 != secs {
+			cc.Screen.Print(".zzZZ ")
+		}
+		cc.Screen.Print(".")
 		time.Sleep(time.Second)
 	}
-	fmt.Printf(" *\\O/*\n")
+	cc.Screen.Print("\n")
 	return currCmdIdx, true
 }
 

@@ -1,26 +1,10 @@
 package core
 
-// TODO: use io.Write ?
 type Screen interface {
 	Print(text string)
 	Error(text string)
 	// Same as line-number, but it's the count of 'Print'
 	OutputNum() int
-}
-
-type QuietScreen struct {
-	outN int
-}
-
-func (self *QuietScreen) Print(text string) {
-	self.outN += 1
-}
-
-func (self *QuietScreen) Error(text string) {
-}
-
-func (self *QuietScreen) OutputNum() int {
-	return self.outN
 }
 
 type Executor interface {
@@ -36,9 +20,11 @@ type Cli struct {
 	TolerableErrs *TolerableErrs
 	Executor      Executor
 	Helps         *Helps
+	BgTasks       *BgTasks
+	CmdIO         CmdIO
 }
 
-func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs) *Cli {
+func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO CmdIO) *Cli {
 	return &Cli{
 		env,
 		screen,
@@ -48,10 +34,12 @@ func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *Env
 		NewTolerableErrs(),
 		nil,
 		NewHelps(),
+		NewBgTasks(),
+		cmdIO,
 	}
 }
 
-func (self *Cli) Clone() *Cli {
+func (self *Cli) Copy() *Cli {
 	return &Cli{
 		self.GlobalEnv,
 		self.Screen,
@@ -59,7 +47,31 @@ func (self *Cli) Clone() *Cli {
 		self.Parser,
 		self.EnvAbbrs,
 		self.TolerableErrs,
-		nil,
+		self.Executor,
 		self.Helps,
+		self.BgTasks,
+		self.CmdIO,
+	}
+}
+
+// TODO: fixme, do real clone for ready-only instances
+func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
+	screen := NewBgTaskScreen()
+	bgStdout := screen.GetBgStdout()
+	return &Cli{
+		env.GetLayer(EnvLayerSession),
+		screen,
+		self.Cmds,
+		self.Parser,
+		self.EnvAbbrs,
+		NewTolerableErrs(),
+		self.Executor,
+		self.Helps,
+		self.BgTasks,
+		CmdIO{
+			nil,
+			bgStdout,
+			bgStdout,
+		},
 	}
 }

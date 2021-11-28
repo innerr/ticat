@@ -5,20 +5,23 @@ import (
 	"time"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 type CmdStackLines struct {
-	Display       bool
-	StackDepth    string
-	StackDepthLen int
-	Time          string
-	TimeLen       int
-	Stack         []string
-	StackLen      []int
-	Env           []string
-	EnvLen        []int
-	Flow          []string
-	FlowLen       []int
+	Display  bool
+	Title    string
+	TitleLen int
+	Time     string
+	TimeLen  int
+	Stack    []string
+	StackLen []int
+	Env      []string
+	EnvLen   []int
+	Flow     []string
+	FlowLen  []int
+	Bg       []string
+	BgLen    []int
 }
 
 func PrintCmdStack(
@@ -29,6 +32,7 @@ func PrintCmdStack(
 	flow []core.ParsedCmd,
 	currCmdIdx int,
 	strs *core.CmdTreeStrs,
+	bgTasks *core.BgTasks,
 	tailModeCall bool) (lines CmdStackLines) {
 
 	if tailModeCall {
@@ -50,6 +54,31 @@ func PrintCmdStack(
 
 	env = env.Clone()
 	lines.Display = true
+
+	useUtf8 := env.GetBool("display.utf8.symbols")
+	inBg := env.GetBool("sys.in-bg-task")
+	if bgTasks != nil && !inBg {
+		for _, bg := range bgTasks.GetStat() {
+			line := ""
+			lineLen := 0
+			if bg.Finished {
+				doneStr := "OK"
+				if useUtf8 {
+					doneStr = " ✓"
+				}
+				line += ColorCmd(doneStr+" ", env) + ColorCmdDelay(bg.Cmd, env)
+				lineLen = 2 + 1 + len(bg.Cmd)
+			} else if bg.Started {
+				line += ColorCmdCurr(">> ", env) + ColorCmdDelay(bg.Cmd, env)
+				lineLen = len(line) - ColorExtraLen(env, "cmd-curr", "cmd-delay")
+			} else {
+				line += ColorExplain("zZ ", env) + ColorExplain(bg.Cmd, env)
+				lineLen = len(line) - ColorExtraLen(env, "explain", "explain")
+			}
+			lines.Bg = append(lines.Bg, line)
+			lines.BgLen = append(lines.BgLen, lineLen)
+		}
+	}
 
 	if env.GetBool("display.stack") {
 		listSep := env.GetRaw("strs.list-sep")
@@ -77,14 +106,19 @@ func PrintCmdStack(
 		cmdDisplayCnt = 4
 	}
 
-	stackDepth := env.Get("sys.stack-depth").Raw
-	if len(stackDepth) > 2 {
-		stackDepth = "[..]"
-	} else {
-		stackDepth = "[" + stackDepth + "]" + strings.Repeat(" ", 2+1-len(stackDepth))
-	}
-	lines.StackDepth = "stack-level: " + stackDepth
-	lines.StackDepthLen = len(lines.StackDepth)
+	// TODO: show stack depth when no background tasks
+	/*
+		stackDepth := env.Get("sys.stack-depth").Raw
+		if len(stackDepth) > 2 {
+			stackDepth = "[..]"
+		} else {
+			stackDepth = "[" + stackDepth + "]"// + strings.Repeat(" ", 2+1-len(stackDepth))
+		}
+		lines.Title = "stack-level: " + stackDepth
+		lines.TitleLen = len(lines.Title)
+	*/
+	lines.Title = ColorThread("thread: ", env) + utils.GoRoutineIdStr()
+	lines.TitleLen = len(lines.Title) - ColorExtraLen(env, "thread")
 
 	lines.Time = time.Now().Format("01-02 15:04:05")
 	lines.TimeLen = len(lines.Time)
@@ -141,6 +175,10 @@ func PrintCmdStack(
 		if i < displayIdxStart || i >= displayIdxEnd {
 			continue
 		}
+		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(core.EnvLayerSession),
+			strs.EnvValDelAllMark, strs.PathSep)
+		sysArgv := cmdEnv.GetSysArgv(cmd.Path(), strs.PathSep)
+		name := cmd.DisplayPath(strs.PathSep, printRealname)
 		var line string
 		lineExtraLen := 0
 		endOmitting := (i+1 == displayIdxEnd && i+1 != len(flow))
@@ -148,13 +186,27 @@ func PrintCmdStack(
 			line += "   ..."
 		} else {
 			if i == currCmdIdx {
-				line += ColorCmdCurr(">> "+cmd.DisplayPath(strs.PathSep, printRealname), env)
-				lineExtraLen += ColorExtraLen(env, "cmd-curr")
+				if sysArgv.IsDelay() && !inBg {
+					line += ColorCmdCurr(">> "+name+" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdCurr(")", env)
+					lineExtraLen += ColorExtraLen(env, "cmd-curr", "cmd-curr")
+				} else {
+					line += ColorCmdCurr(">> "+name, env)
+					lineExtraLen += ColorExtraLen(env, "cmd-curr")
+				}
 			} else if i < currCmdIdx {
-				line += "   " + ColorCmdDone(cmd.DisplayPath(strs.PathSep, printRealname), env)
-				lineExtraLen += ColorExtraLen(env, "cmd-done")
+				if sysArgv.IsDelay() && !inBg {
+					line += "   " + ColorCmdDelay(name+" (scheduled in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
+					lineExtraLen += ColorExtraLen(env, "cmd-delay", "cmd-delay")
+				} else {
+					line += "   " + ColorCmdDone(name, env)
+					lineExtraLen += ColorExtraLen(env, "cmd-done")
+				}
 			} else {
-				line += "   " + cmd.DisplayPath(strs.PathSep, printRealname)
+				if sysArgv.IsDelay() && !inBg {
+					line += "   " + name + " (schedule in " + sysArgv.GetDelayStr() + ")"
+				} else {
+					line += "   " + name
+				}
 			}
 		}
 		lines.Flow = append(lines.Flow, line)
@@ -162,23 +214,30 @@ func PrintCmdStack(
 		if endOmitting {
 			continue
 		}
-		_, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(core.EnvLayerSession),
-			strs.EnvValDelAllMark, strs.PathSep)
 		args := cmd.Args()
 		// TODO: use DumpEffectedArgs instead of DumpProvidedArgs
 		colorizeArg := i <= currCmdIdx
 		for _, line := range DumpProvidedArgs(env, &args, argv, colorizeArg) {
 			line := strings.Repeat(" ", 3+4) + line
 			extraLen := 0
-			if i <= currCmdIdx {
+			if colorizeArg {
 				extraLen += ColorExtraLen(env, "arg", "symbol")
 			}
 			lines.Flow = append(lines.Flow, line)
 			lines.FlowLen = append(lines.FlowLen, len(line)-extraLen)
 		}
+		//for _, line := range DumpSysArgs(env, sysArgv, colorizeArg) {
+		//	line = strings.Repeat(" ", 3+4) + line
+		//	extraLen := 0
+		//	if colorizeArg {
+		//		extraLen += ColorExtraLen(env, "explain", "arg", "symbol")
+		//	}
+		//	lines.Flow = append(lines.Flow, line)
+		//	lines.FlowLen = append(lines.FlowLen, len(line)-extraLen)
+		//}
 
 		cic := cmd.LastCmd()
-		if cic != nil && (cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) {
+		if cic != nil && !sysArgv.IsDelay() && (cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) {
 			if i+1 == currCmdIdx || i == currCmdIdx {
 				line := ColorFlowing("       --->>>", env)
 				lines.Flow = append(lines.Flow, line)
