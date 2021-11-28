@@ -49,14 +49,19 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 }
 
 func (self *Executor) WaitAllBgTasks(cc *core.Cli) {
+	preTid := utils.GoRoutineIdStr()
 	for {
 		tid, task, ok := cc.BgTasks.GetEarliestTask()
 		if !ok {
 			break
 		}
-		cc.BgTasks.BrightBgTaskToFront(cc.CmdIO)
+
+		display.PrintSwitchingThreadDisplay(preTid, tid, cc.GlobalEnv, cc.Screen)
+
+		cc.BgTasks.BringBgTaskToFront(tid, cc.CmdIO.CmdStdout)
 		task.WaitForFinish()
 		cc.BgTasks.RemoveTask(tid)
+		preTid = tid
 	}
 }
 
@@ -432,7 +437,7 @@ func asyncExecute(
 	screen core.Screen,
 	durStr string,
 	dur time.Duration,
-	cmd *core.Cmd,
+	cic *core.Cmd,
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -455,22 +460,44 @@ func asyncExecute(
 		flow *core.ParsedCmds,
 		currCmdIdx int) {
 
-		env.GetLayer(core.EnvLayerSession).SetBool("sys.in-bg-task", true)
+		cmd := flow.Cmds[currCmdIdx]
+
+		envBgSession := env.GetLayer(core.EnvLayerSession)
+		envBgSession.SetBool("display.one-cmd", true)
+		envBgSession.SetBool("sys.in-bg-task", true)
+		name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+		envBgSession.Set("sys.bg-task-cmd", name)
 		tid := utils.GoRoutineIdStr()
-		task := cc.BgTasks.GetOrAddTask(tid)
+		task := cc.BgTasks.GetOrAddTask(tid, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
 		tidChan <- tid
 
 		time.Sleep(dur)
-		_, ok := cmd.Execute(argv, cc, env, flow, currCmdIdx)
+
+		stackLines := display.PrintCmdStack(false, cc.Screen, cmd,
+			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, false)
+		var width int
+		if stackLines.Display {
+			width = display.RenderCmdStack(stackLines, env, cc.Screen)
+		}
+
+		start := time.Now()
+		_, ok := cic.Execute(argv, cc, env, flow, currCmdIdx)
+		elapsed := time.Now().Sub(start)
 		if !ok {
 			// Should already panic inside cmd.Execute
 			panic(fmt.Errorf("delay-command fail, thread: %s", tid))
 		}
 
+		if stackLines.Display {
+			resultLines := display.PrintCmdResult(false, cc.Screen, cmd,
+				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
+			display.RenderCmdResult(resultLines, env, cc.Screen, width)
+		}
 		task.OnFinish()
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
 
-	screen.Print(display.ColorHelp("[bg] current command scheduled to thread ", env) + <-tidChan + "\n")
+	//screen.Print(display.ColorThread("[threads] current command scheduled to thread ", env) + <-tidChan + "\n")
+	screen.Print("(current command scheduled to thread " + <-tidChan + ")\n")
 	return true
 }

@@ -27,24 +27,40 @@ func (self CmdIO) SetupCmd(cmd *exec.Cmd) {
 }
 
 type BgStdout struct {
-	buffer *bytes.Buffer
-	lock   sync.Mutex
+	bg   *bytes.Buffer
+	fg   io.Writer
+	lock sync.Mutex
 }
 
 func NewBgStdout() *BgStdout {
 	return &BgStdout{
-		buffer: bytes.NewBuffer(nil),
+		bg: bytes.NewBuffer(nil),
 	}
+}
+
+func (self *BgStdout) BringToFront(fg io.Writer) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	_, err := io.Copy(fg, self.bg)
+	if err != nil {
+		panic(err)
+	}
+	self.fg = fg
+	self.bg = nil
 }
 
 func (self *BgStdout) Write(p []byte) (n int, err error) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	return self.buffer.Write(p)
+	if self.fg != nil {
+		return self.fg.Write(p)
+	}
+	return self.bg.Write(p)
 }
 
 type BgTask struct {
 	tid            string
+	stdout         *BgStdout
 	finishNotifier chan interface{}
 }
 
@@ -69,7 +85,7 @@ func NewBgTasks() *BgTasks {
 	}
 }
 
-func (self *BgTasks) GetOrAddTask(tid string) *BgTask {
+func (self *BgTasks) GetOrAddTask(tid string, stdout *BgStdout) *BgTask {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	task, ok := self.tasks[tid]
@@ -77,7 +93,7 @@ func (self *BgTasks) GetOrAddTask(tid string) *BgTask {
 		return task
 	}
 	self.tids = append(self.tids, tid)
-	task = &BgTask{tid, make(chan interface{})}
+	task = &BgTask{tid, stdout, make(chan interface{})}
 	self.tasks[tid] = task
 	return task
 }
@@ -93,7 +109,14 @@ func (self *BgTasks) GetEarliestTask() (tid string, task *BgTask, ok bool) {
 	return
 }
 
-func (self *BgTasks) BrightBgTaskToFront(cmdIO CmdIO) {
+func (self *BgTasks) BringBgTaskToFront(tid string, stdout io.Writer) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	task, ok := self.tasks[tid]
+	if !ok {
+		panic(fmt.Errorf("[BgTasks.BringBgTaskToFront] task '%s' not found", tid))
+	}
+	task.stdout.BringToFront(stdout)
 }
 
 func (self *BgTasks) RemoveTask(tid string) {

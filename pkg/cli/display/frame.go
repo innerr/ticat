@@ -16,6 +16,15 @@ type FrameChars struct {
 	P9 string
 }
 
+func FrameCharsHeavy() *FrameChars {
+	return &FrameChars{
+		"|", "=",
+		"=", "=", "=",
+		"=", "=", "=",
+		"=", "=", "=",
+	}
+}
+
 func FrameCharsUtf8Heavy() *FrameChars {
 	return &FrameChars{
 		"┃", "━",
