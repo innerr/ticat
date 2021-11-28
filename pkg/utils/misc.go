@@ -3,14 +3,20 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func UserConfirm() (yes bool) {
 	buf := bufio.NewReader(os.Stdin)
@@ -80,4 +86,15 @@ func GoRoutineIdStr() string {
 	return strconv.Itoa(id)
 }
 
-const GoRoutineIdStrMain = "main"
+func RandomName(n uint) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = Chars[rand.Intn(len(Chars))]
+	}
+	return string(b)
+}
+
+const (
+	GoRoutineIdStrMain = "main"
+	Chars              = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+)

@@ -462,12 +462,18 @@ func asyncExecute(
 		currCmdIdx int) {
 
 		cmd := flow.Cmds[currCmdIdx]
-
-		envBgSession := env.GetLayer(core.EnvLayerSession)
-		envBgSession.SetBool("display.one-cmd", true)
-		envBgSession.SetBool("sys.in-bg-task", true)
 		name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
 		tid := utils.GoRoutineIdStr()
+
+		sessionDir := env.GetRaw("session")
+		sessionDir = filepath.Join(sessionDir, tid)
+		os.MkdirAll(sessionDir, os.ModePerm)
+
+		envBgSession := env.GetLayer(core.EnvLayerSession)
+		envBgSession.Set("session", sessionDir)
+		envBgSession.SetBool("display.one-cmd", true)
+		envBgSession.SetBool("sys.in-bg-task", true)
+
 		task := cc.BgTasks.GetOrAddTask(tid, name, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
 		tidChan <- tid
 
