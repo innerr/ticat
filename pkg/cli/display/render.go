@@ -56,11 +56,6 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) (renderW
 		}
 	}
 
-	plns(l.Bg, l.BgLen, "bg")
-	if len(l.Bg) != 0 {
-		pln(c.P4 + rpt(c.H, width) + c.P6)
-	}
-
 	plns(l.Env, l.EnvLen, "env")
 	if len(l.Env) != 0 {
 		pln(c.P4 + rpt(c.H, width) + c.P6)
@@ -72,7 +67,18 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) (renderW
 	}
 
 	plns(l.Flow, l.FlowLen, "flow")
-	pln(c.P7 + rpt(c.H, width) + c.P9)
+	if len(l.Flow) != 0 {
+		if len(l.Bg) != 0 {
+			pln(c.P4 + rpt(c.H, width) + c.P6)
+		} else {
+			pln(c.P7 + rpt(c.H, width) + c.P9)
+		}
+	}
+
+	plns(l.Bg, l.BgLen, "bg")
+	if len(l.Bg) != 0 {
+		pln(c.P7 + rpt(c.H, width) + c.P9)
+	}
 
 	return width + 2
 }
@@ -120,7 +126,7 @@ func PrintSwitchingThreadDisplay(preTid string, info core.BgTaskInfo, env *core.
 		extraLen = ColorExtraLen(env, "thread", "thread", "cmd-delay")
 	}
 	if !info.Started {
-		title += ColorThread(", not started now", env)
+		title += ColorThread(", not started yet", env)
 		extraLen += ColorExtraLen(env, "thread")
 	} else if info.Started && !info.Finished {
 		title += ColorThread(", still running", env)

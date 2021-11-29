@@ -88,7 +88,8 @@ func PrintCmdStack(
 				line := rpt(" ", i*4+3)
 				extraLen := 0
 				if i == 0 {
-					line += frame
+					line += ColorExplain(frame, env)
+					extraLen += ColorExtraLen(env, "explain")
 				} else {
 					line += ColorCmd(frame, env)
 					extraLen += ColorExtraLen(env, "cmd")
