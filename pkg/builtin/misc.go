@@ -2,11 +2,11 @@ package builtin
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 func Sleep(
@@ -18,14 +18,7 @@ func Sleep(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	durStr := argv.GetRaw("duration")
-
-	// Default unit is 's'
-	_, err := strconv.ParseFloat(durStr, 64)
-	if err == nil {
-		durStr += "s"
-	}
-
+	durStr := utils.NormalizeDurStr(argv.GetRaw("duration"))
 	dur, err := time.ParseDuration(durStr)
 	if err != nil {
 		panic(fmt.Errorf("[Sleep] time string '%s' parse failed: %v\n", durStr, err))

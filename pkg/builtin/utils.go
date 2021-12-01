@@ -157,21 +157,6 @@ func getCmdPath(path string, flowExt string, cmd core.ParsedCmd) string {
 	return base[:len(base)-len(flowExt)]
 }
 
-func quoteIfHasSpace(str string) string {
-	if strings.IndexAny(str, " \t\r\n") < 0 {
-		return str
-	}
-	i := strings.Index(str, "\"")
-	if i < 0 {
-		return "\"" + str + "\""
-	}
-	i = strings.Index(str, "'")
-	if i < 0 {
-		return "'" + str + "'"
-	}
-	return str
-}
-
 func getAndCheckArg(argv core.ArgVals, cmd core.ParsedCmd, arg string) string {
 	val := argv.GetRaw(arg)
 	if len(val) == 0 {

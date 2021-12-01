@@ -84,3 +84,18 @@ func allowParseError(flow *core.ParsedCmds) bool {
 	}
 	return false
 }
+
+func noSessionCmds(flow *core.ParsedCmds) bool {
+	if flow.HasTailMode {
+		return true
+	}
+	if len(flow.Cmds) != 1 {
+		return false
+	}
+	cmd := flow.Cmds[0].LastCmdNode()
+	// No source == builtin command
+	if cmd.IsBuiltin() {
+		return true
+	}
+	return false
+}
