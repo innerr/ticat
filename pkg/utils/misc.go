@@ -94,6 +94,30 @@ func RandomName(n uint) string {
 	return string(b)
 }
 
+func NormalizeDurStr(durStr string) string {
+	// Default unit is 's'
+	_, err := strconv.ParseFloat(durStr, 64)
+	if err == nil {
+		durStr += "s"
+	}
+	return durStr
+}
+
+func QuoteStrIfHasSpace(str string) string {
+	if strings.IndexAny(str, " \t\r\n") < 0 {
+		return str
+	}
+	i := strings.Index(str, "\"")
+	if i < 0 {
+		return "\"" + str + "\""
+	}
+	i = strings.Index(str, "'")
+	if i < 0 {
+		return "'" + str + "'"
+	}
+	return str
+}
+
 const (
 	GoRoutineIdStrMain = "main"
 	Chars              = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

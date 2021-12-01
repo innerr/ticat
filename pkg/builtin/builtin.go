@@ -16,7 +16,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterTrivialCmds(cmds)
 	RegisterFlowCmds(cmds)
 	RegisterHubCmds(cmds)
-	RegisterSessionCmds(cmds.AddSub("session", "sessions").RegEmptyCmd("manage sessions").Owner())
+	RegisterSessionCmds(cmds.AddSub("sessions", "session", "s", "S").RegEmptyCmd("manage sessions").Owner())
 	RegisterDbgCmds(cmds.AddSub("dbg").RegEmptyCmd("debug related commands").Owner())
 	RegisterMiscCmds(cmds)
 	RegisterDisplayCmds(cmds.AddSub("display", "disp", "dis", "di").RegEmptyCmd("display related commands").Owner())
@@ -65,7 +65,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			AddArg("depth", "32", "d", "D")
 	}
 
-	find := cmds.AddSub("find", "search", "fnd", "s", "S", "/").
+	find := cmds.AddSub("find", "fnd", "search", "/").
 		RegPowerCmd(GlobalFindCmd,
 			"find commands with strings").
 		SetAllowTailModeCall().
@@ -329,6 +329,19 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 }
 
 func RegisterSessionCmds(cmds *core.CmdTree) {
+	cmds.AddSub("list", "ls", "l", "L").
+		RegPowerCmd(ListSessions,
+			"list executed/ing sessions")
+	cmds.AddSub("last").
+		RegPowerCmd(LastSession,
+			"show last session")
+	cmds.AddSub("clean", "clear", "--").
+		RegPowerCmd(CleanSessions,
+			"clean executed sessions")
+	cmds.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
+		RegPowerCmd(SetSessionsKeepDur,
+			"set the keeping duration of executed sessions").
+		AddArg("duration", "72h", "dur")
 }
 
 func RegisterHubCmds(cmds *core.CmdTree) {

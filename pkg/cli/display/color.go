@@ -35,6 +35,7 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"enabled":   2,
 		"disabled":  3,
 		"explain":   1,
+		"session":   3,
 	}
 	for _, it := range types {
 		extra, ok := lens[it]
@@ -124,6 +125,10 @@ func ColorThread(origin string, env *core.Env) string {
 
 func ColorFlowing(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(81), env)
+}
+
+func ColorSession(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(220), env)
 }
 
 func DecodeColor(text string, env *core.Env) string {

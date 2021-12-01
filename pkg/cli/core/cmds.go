@@ -400,6 +400,10 @@ func (self *CmdTree) Source() string {
 	return self.source
 }
 
+func (self *CmdTree) IsBuiltin() bool {
+	return len(self.source) == 0
+}
+
 func (self *CmdTree) SetSource(s string) {
 	self.source = s
 }

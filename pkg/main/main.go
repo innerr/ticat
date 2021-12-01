@@ -38,6 +38,7 @@ func main() {
 	defEnv.Set("strs.env-bracket-right", EnvBracketRight)
 	defEnv.Set("strs.env-file-name", EnvFileName)
 	defEnv.Set("strs.session-env-file", SessionEnvFileName)
+	defEnv.Set("strs.session-status-file", SessionStatusFileName)
 	defEnv.Set("strs.hub-file-name", HubFileName)
 	defEnv.Set("strs.repos-file-name", ReposFileName)
 	defEnv.Set("strs.mods-repo-ext", ModsRepoExt)
@@ -129,7 +130,8 @@ func main() {
 	}()
 
 	// Main process
-	executor := execute.NewExecutor(SessionEnvFileName, "<bootstrap>", "<entry>")
+	executor := execute.NewExecutor(SessionEnvFileName,
+		SessionStatusFileName, "<bootstrap>", "<entry>")
 	cc.Executor = executor
 	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
 
@@ -168,6 +170,7 @@ const (
 	HubFileName              string = "repos.hub"
 	ReposFileName            string = "hub.ticat"
 	SessionEnvFileName       string = "env"
+	SessionStatusFileName    string = "status"
 	FlowTemplateBracketLeft  string = "[["
 	FlowTemplateBracketRight string = "]]"
 	FlowTemplateMultiplyMark string = "*"

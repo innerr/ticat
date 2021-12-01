@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/pingcap/ticat/pkg/builtin"
@@ -18,18 +16,21 @@ import (
 type ExecFunc func(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool
 
 type Executor struct {
-	sessionFileName     string
-	callerNameBootstrap string
-	callerNameEntry     string
+	sessionFileName       string
+	sessionStatusFileName string
+	callerNameBootstrap   string
+	callerNameEntry       string
 }
 
 func NewExecutor(
 	sessionFileName string,
+	sessionStatusFileName string,
 	callerNameBootstrap string,
 	callerNameEntry string) *Executor {
 
 	return &Executor{
 		sessionFileName,
+		sessionStatusFileName,
 		callerNameBootstrap,
 		callerNameEntry,
 	}
@@ -112,7 +113,8 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
-	if !innerCall && !bootstrap && !self.sessionInit(cc, flow, env) {
+	if !innerCall && !bootstrap && !noSessionCmds(flow) && !core.SessionInit(cc, flow, env,
+		self.sessionFileName, self.sessionStatusFileName) {
 		return false
 	}
 
@@ -270,65 +272,6 @@ func moveLastPriorityCmdToFront(
 	flow = append([]core.ParsedCmd{last}, flow...)
 	attempTailModeCall = !last.IsPriority() && !last.AllowTailModeCall() && len(flow) == 2
 	return flow, true, last.AllowTailModeCall() && len(flow) <= 2, attempTailModeCall
-}
-
-func (self *Executor) sessionInit(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
-	sessionDir := env.GetRaw("session")
-	sessionPath := filepath.Join(sessionDir, self.sessionFileName)
-	if len(sessionDir) != 0 {
-		core.LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep)
-		return true
-	}
-
-	sessionsRoot := env.GetRaw("sys.paths.sessions")
-	if len(sessionsRoot) == 0 {
-		cc.Screen.Print("[sessionInit] can't get sessions' root path\n")
-		return false
-	}
-
-	os.MkdirAll(sessionsRoot, os.ModePerm)
-	dirs, err := os.ReadDir(sessionsRoot)
-	if err != nil {
-		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't read sessions' root path '%s'\n",
-			sessionsRoot))
-		return false
-	}
-
-	pid := fmt.Sprintf("%d", os.Getpid())
-
-	for _, dir := range dirs {
-		pid, err := strconv.Atoi(dir.Name())
-		if err != nil {
-			continue
-		}
-		err = syscall.Kill(pid, syscall.Signal(0))
-		if err != nil && err == syscall.ESRCH {
-			os.RemoveAll(filepath.Join(sessionsRoot, dir.Name()))
-		}
-	}
-
-	sessionDir = filepath.Join(sessionsRoot, pid)
-	err = os.MkdirAll(sessionDir, os.ModePerm)
-	if err != nil && !os.IsExist(err) {
-		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create session dir '%s'\n",
-			sessionDir))
-		return false
-	}
-
-	env.GetLayer(core.EnvLayerSession).Set("session", sessionDir)
-	return true
-}
-
-// TODO: clean ti
-// Seems not very useful, no user now.
-func (self *Executor) sessionFinish(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
-	sessionDir := env.GetRaw("session")
-	if len(sessionDir) == 0 {
-		return true
-	}
-	path := filepath.Join(sessionDir, self.sessionFileName)
-	core.SaveEnvToFile(env, path, cc.Cmds.Strs.EnvKeyValSep)
-	return true
 }
 
 func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {
