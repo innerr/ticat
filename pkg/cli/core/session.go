@@ -18,9 +18,10 @@ type SessionStatus struct {
 	StartTs  time.Time
 	Running  bool
 	Cleaning bool
+	Status   string
 }
 
-func ListSessions(env *Env) (sessions []SessionStatus) {
+func ListSessions(env *Env, filterStrs []string) (sessions []SessionStatus) {
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
 		panic(fmt.Errorf("[ListSessions] can't get sessions' root path\n"))
@@ -36,18 +37,36 @@ func ListSessions(env *Env) (sessions []SessionStatus) {
 	}
 	sort.Strings(dirs)
 
-	now := time.Now()
 	keepDur := env.GetDur("sys.session.keep-status-duration")
+	statusFileName := env.GetRaw("strs.session-status-file")
+
+	now := time.Now()
 
 	for _, dir := range dirs {
 		oldSessionPid, oldSessionStartTs, ok := parseSessionDirName(dir)
 		if !ok {
 			continue
 		}
+
+		statusPath := filepath.Join(sessionsRoot, dir, statusFileName)
+		status := LoadSessionStatus(statusPath, env)
+
+		if len(filterStrs) != 0 {
+			matched := false
+			for _, it := range filterStrs {
+				if strings.Index(dir, it) >= 0 || strings.Index(status, it) >= 0 {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
 		err = syscall.Kill(oldSessionPid, syscall.Signal(0))
 		running := !(err != nil && err == syscall.ESRCH)
 		cleaning := oldSessionStartTs.Add(keepDur).Before(now)
-		sessions = append(sessions, SessionStatus{dir, oldSessionPid, oldSessionStartTs, running, cleaning})
+		sessions = append(sessions, SessionStatus{dir, oldSessionPid, oldSessionStartTs, running, cleaning, status})
 	}
 
 	return

@@ -65,14 +65,14 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			AddArg("depth", "32", "d", "D")
 	}
 
-	find := cmds.AddSub("find", "fnd", "search", "/").
+	find := cmds.AddSub("find", "search", "/").
 		RegPowerCmd(GlobalFindCmd,
 			"find commands with strings").
 		SetAllowTailModeCall().
 		SetPriority()
 	addFindStrArgs(find)
 
-	findUsage := cmds.AddSub("find-usage", "//").
+	findUsage := cmds.AddSub("find-detail", "//").
 		RegPowerCmd(GlobalFindCmdWithUsage,
 			"find commands with strings, with details").
 		SetAllowTailModeCall().
@@ -165,9 +165,10 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	mods := cmds.AddSub("cmds", "cmd", "c", "C")
-	mods.RegPowerCmd(DumpCmdNoRecursive,
-		"display command info, sub tree commands will not show").
+	// TODO: asign 'cmds' to a freq-use command
+	mods := cmds.AddSub("cmds", "cmd", "c", "C").
+		RegPowerCmd(DumpCmdNoRecursive,
+			"display command info").
 		SetAllowTailModeCall().
 		AddArg("cmd-path", "", "path", "p", "P")
 
@@ -179,7 +180,8 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
 		RegPowerCmd(DumpCmdTreeSkeleton,
 			"list builtin and loaded commands, skeleton only").
-		AddArg("cmd-path", "", "path", "p", "P")
+		AddArg("cmd-path", "", "path", "p", "P").
+		AddArg("recursive", "true", "r", "R")
 
 	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegPowerCmd(DumpCmdList,
@@ -329,15 +331,20 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 }
 
 func RegisterSessionCmds(cmds *core.CmdTree) {
-	cmds.AddSub("list", "ls", "l", "L").
+	list := cmds.AddSub("list", "ls", "l", "L").
 		RegPowerCmd(ListSessions,
-			"list executed/ing sessions")
+			"list executed/ing sessions").
+		SetAllowTailModeCall()
+	addFindStrArgs(list)
+
 	cmds.AddSub("last").
 		RegPowerCmd(LastSession,
 			"show last session")
+
 	cmds.AddSub("clean", "clear", "--").
 		RegPowerCmd(CleanSessions,
 			"clean executed sessions")
+
 	cmds.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
 		RegPowerCmd(SetSessionsKeepDur,
 			"set the keeping duration of executed sessions").
