@@ -190,6 +190,31 @@ func (self *Cmd) execute(
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	if cc.FlowStatus != nil {
+		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env)
+		defer func() {
+			var err error
+			r := recover()
+			if r != nil {
+				err = r.(error)
+			}
+			cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, err)
+			if r != nil {
+				panic(r)
+			}
+		}()
+	}
+
+	return self.executeByType(argv, cc, env, flow, currCmdIdx)
+}
+
+func (self *Cmd) executeByType(
+	argv ArgVals,
+	cc *Cli,
+	env *Env,
+	flow *ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
 	switch self.ty {
 	case CmdTypePower:
 		return self.executePowerCmd(argv, cc, env, flow, currCmdIdx)
@@ -501,6 +526,10 @@ func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool)
 //   3. (consider remove concept cc.GlobalEnv)
 //
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
+	if cc.FlowStatus != nil {
+		cc.FlowStatus.OnEnterSubFlow()
+		defer cc.FlowStatus.OnLeaveSubFlow()
+	}
 	flow, _ := self.Flow(argv, env, false)
 	return cc.Executor.Execute(self.owner.DisplayPath(), cc, flow...)
 }

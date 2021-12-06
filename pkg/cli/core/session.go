@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,10 +17,10 @@ type SessionStatus struct {
 	StartTs  time.Time
 	Running  bool
 	Cleaning bool
-	Status   string
+	Status   *ExecutedFlow
 }
 
-func ListSessions(env *Env, filterStrs []string) (sessions []SessionStatus) {
+func ListSessions(env *Env, findStrs []string) (sessions []SessionStatus) {
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
 		panic(fmt.Errorf("[ListSessions] can't get sessions' root path\n"))
@@ -49,19 +48,10 @@ func ListSessions(env *Env, filterStrs []string) (sessions []SessionStatus) {
 		}
 
 		statusPath := filepath.Join(sessionsRoot, dir, statusFileName)
-		status := LoadSessionStatus(statusPath, env)
+		status := ParseExecutedFlow(statusPath, dir, env)
 
-		if len(filterStrs) != 0 {
-			matched := false
-			for _, it := range filterStrs {
-				if strings.Index(dir, it) >= 0 || strings.Index(status, it) >= 0 {
-					matched = true
-					break
-				}
-			}
-			if !matched {
-				continue
-			}
+		if !status.MatchFind(findStrs) {
+			continue
 		}
 		err = syscall.Kill(oldSessionPid, syscall.Signal(0))
 		running := !(err != nil && err == syscall.ESRCH)
@@ -100,32 +90,39 @@ func CleanSessions(env *Env) (cleaned uint, runnings uint) {
 	return
 }
 
-func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string, statusFileName string) bool {
-	sessionDir := env.GetRaw("session")
-	sessionPath := filepath.Join(sessionDir, sessionFileName)
-	if len(sessionDir) != 0 {
-		LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep)
-		return true
-	}
-
-	keepDur := env.GetDur("sys.session.keep-status-duration")
+func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
+	statusFileName string) (flowStatus *ExecutingFlow, ok bool) {
 
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
 		cc.Screen.Print("[sessionInit] can't get sessions' root path\n")
-		return false
+		return nil, false
 	}
+
+	sessionDir := env.GetRaw("session")
+
+	sessionPath := filepath.Join(sessionDir, sessionFileName)
+	if len(sessionDir) != 0 {
+		LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep)
+		// NOTE: treat recursive ticat call as non-ticat scripts, not record the executing status
+		//statusPath := filepath.Join(sessionDir, statusFileName)
+		//return NewExecutingFlow(statusPath, flow, env), true
+		return nil, true
+	}
+
+	keepDur := env.GetDur("sys.session.keep-status-duration")
 
 	os.MkdirAll(sessionsRoot, os.ModePerm)
 	dirs, err := os.ReadDir(sessionsRoot)
 	if err != nil {
 		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't read sessions' root path '%s'\n",
 			sessionsRoot))
-		return false
+		return nil, false
 	}
 
 	_, now, dirName := genSessionDirName()
 
+	// TODO: move this cleaning code to another function
 	for _, dir := range dirs {
 		oldSessionPid, oldSessionStartTs, ok := parseSessionDirName(dir.Name())
 		if !ok {
@@ -147,35 +144,13 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string, st
 	if err != nil && !os.IsExist(err) {
 		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create session dir '%s'\n",
 			sessionDir))
-		return false
+		return nil, false
 	}
 
 	env.GetLayer(EnvLayerSession).Set("session", sessionDir)
 
 	statusPath := filepath.Join(sessionDir, statusFileName)
-	SaveSessionStatus(statusPath, flow, env)
-	return true
-}
-
-func SaveSessionStatus(statusPath string, flow *ParsedCmds, env *Env) {
-	// TODO: save session full status to this file
-	file, err := os.OpenFile(statusPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		panic(fmt.Errorf("[SaveSessionStatus] open session status file '%s' failed: %v", statusPath, err))
-	}
-	defer file.Close()
-
-	trivialMark := env.GetRaw("strs.trivial-mark")
-	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
-	SaveFlow(file, flow, 0, cmdPathSep, trivialMark, env)
-}
-
-func LoadSessionStatus(statusPath string, env *Env) string {
-	data, err := ioutil.ReadFile(statusPath)
-	if err != nil {
-		panic(fmt.Errorf("[LoadSessionStatus] open session status file '%s' failed: %v", statusPath, err))
-	}
-	return string(data)
+	return NewExecutingFlow(statusPath, flow, env), true
 }
 
 // TODO: clean it
@@ -228,3 +203,4 @@ func parseSessionDirName(dirName string) (pid int, startTs time.Time, ok bool) {
 }
 
 const SessionDirTimeFormat = "20060102-150405"
+const SessionStartFormat = "2006-01-02 15:04:05"

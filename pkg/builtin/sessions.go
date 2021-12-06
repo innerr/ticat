@@ -81,9 +81,9 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen) 
 
 	screen.Print(display.ColorSession("["+session.DirName+"]\n", env))
 	screen.Print(display.ColorProp("    cmd:\n", env))
-	screen.Print(display.ColorFlow(fmt.Sprintf("        %s %s\n", selfName, session.Status), env))
+	screen.Print(display.ColorFlow(fmt.Sprintf("        %s %s\n", selfName, session.Status.Flow), env))
 	screen.Print(display.ColorProp("    start-at:\n", env))
-	screen.Print(fmt.Sprintf("        %v\n", session.StartTs.Format(core.SessionDirTimeFormat)))
+	screen.Print(fmt.Sprintf("        %v\n", session.StartTs.Format(core.SessionStartFormat)))
 	screen.Print(display.ColorProp("    status:\n", env))
 	if session.Running {
 		screen.Print("        running\n")

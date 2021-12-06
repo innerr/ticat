@@ -91,6 +91,7 @@ func SaveFlowEnv(
 		if strings.HasPrefix(k, prefix) && len(k) != len(prefix) {
 			k = strings.Join(v.MatchedPath[len(prefixPath):], pathSep)
 		}
+		k = strings.ReplaceAll(k, "%", "%%")
 		kvs = append(kvs, fmt.Sprintf("%v%s%v", k, envKeyValSep, utils.QuoteStrIfHasSpace(v.Val)))
 	}
 

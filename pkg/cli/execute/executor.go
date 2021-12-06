@@ -46,6 +46,9 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	}
 	ok := self.execute(self.callerNameEntry, cc, false, false, input...)
 	self.WaitAllBgTasks(cc)
+	if cc.FlowStatus != nil {
+		cc.FlowStatus.OnFlowFinish()
+	}
 	return ok
 }
 
@@ -113,9 +116,12 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
-	if !innerCall && !bootstrap && !noSessionCmds(flow) && !core.SessionInit(cc, flow, env,
-		self.sessionFileName, self.sessionStatusFileName) {
-		return false
+	if !innerCall && !bootstrap && !noSessionCmds(flow) {
+		statusWriter, ok := core.SessionInit(cc, flow, env, self.sessionFileName, self.sessionStatusFileName)
+		if !ok {
+			return false
+		}
+		cc.SetFlowStatusWriter(statusWriter)
 	}
 
 	if !innerCall && !bootstrap {
@@ -412,6 +418,10 @@ func asyncExecute(
 		sessionDir = filepath.Join(sessionDir, tid)
 		os.MkdirAll(sessionDir, os.ModePerm)
 
+		statusFileName := env.GetRaw("strs.session-status-file")
+		statusPath := filepath.Join(sessionDir, statusFileName)
+		cc.SetFlowStatusWriter(core.NewExecutingFlow(statusPath, flow, env))
+
 		envBgSession := env.GetLayer(core.EnvLayerSession)
 		envBgSession.Set("session", sessionDir)
 		envBgSession.SetBool("display.one-cmd", true)
@@ -423,7 +433,6 @@ func asyncExecute(
 		time.Sleep(dur)
 		task.OnStart()
 
-		//cc.Screen.Print(display.ColorExplain("(current command start running in thread "+tid+")\n", env))
 		stackLines := display.PrintCmdStack(false, cc.Screen, cmd,
 			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, nil, false)
 		var width int
@@ -444,6 +453,7 @@ func asyncExecute(
 				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}
+		cc.FlowStatus.OnFlowFinish()
 		task.OnFinish()
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
