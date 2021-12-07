@@ -188,7 +188,7 @@ func (self *Cmd) execute(
 	cc *Cli,
 	env *Env,
 	flow *ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
 
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env)
@@ -198,14 +198,17 @@ func (self *Cmd) execute(
 			if r != nil {
 				err = r.(error)
 			}
-			cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, err)
+			if !self.HasSubFlow() {
+				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err)
+			}
 			if r != nil {
 				panic(r)
 			}
 		}()
 	}
 
-	return self.executeByType(argv, cc, env, flow, currCmdIdx)
+	newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, flow, currCmdIdx)
+	return
 }
 
 func (self *Cmd) executeByType(
@@ -240,6 +243,10 @@ func (self *Cmd) executeByType(
 		panic(NewCmdError(flow.Cmds[currCmdIdx],
 			fmt.Sprintf("[Cmd.Execute] unknown cmd executable type: %v", self.ty)))
 	}
+}
+
+func (self *Cmd) HasSubFlow() bool {
+	return self.ty == CmdTypeFlow || self.ty == CmdTypeFileNFlow
 }
 
 func (self *Cmd) MatchFind(findStr string) bool {
@@ -525,13 +532,18 @@ func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool)
 //   2. if we support async or parallel commands one day, this is not fit
 //   3. (consider remove concept cc.GlobalEnv)
 //
-func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) bool {
+func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) (succeeded bool) {
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnEnterSubFlow()
-		defer cc.FlowStatus.OnLeaveSubFlow()
+		defer func() {
+			if succeeded {
+				cc.FlowStatus.OnLeaveSubFlow()
+			}
+		}()
 	}
 	flow, _ := self.Flow(argv, env, false)
-	return cc.Executor.Execute(self.owner.DisplayPath(), cc, flow...)
+	succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flow...)
+	return
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd) bool {

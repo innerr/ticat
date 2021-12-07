@@ -36,17 +36,17 @@ func (self ParsedCmdSeq) LastCmd() (last ParsedCmd) {
 	return
 }
 
-func (self ParsedCmdSeq) Clone(idx int) ParsedCmdSeq {
+func (self ParsedCmdSeq) CloneOne(idx int) ParsedCmdSeq {
 	// TODO: use clone?
 	// self[idx].Clone()
 	return ParsedCmdSeq{self[idx]}
 }
 
-func (self *ParsedCmds) Clone(idx int) *ParsedCmds {
+func (self *ParsedCmds) CloneOne(idx int) *ParsedCmds {
 	return &ParsedCmds{
 		// TODO: clone global env?
 		self.GlobalEnv,
-		self.Cmds.Clone(idx),
+		self.Cmds.CloneOne(idx),
 		self.GlobalCmdIdx,
 		self.HasTailMode,
 		self.TailModeCall,

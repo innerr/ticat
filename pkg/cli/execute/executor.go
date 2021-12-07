@@ -190,7 +190,10 @@ func (self *Executor) executeCmd(
 				dur := sysArgv.GetDelayDuration()
 				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
 				succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
-					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.Clone(currCmdIdx), 0)
+					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.CloneOne(currCmdIdx), 0)
+				if cc.FlowStatus != nil {
+					cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env)
+				}
 				newCurrCmdIdx = currCmdIdx
 			}
 		}
