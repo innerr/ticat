@@ -19,6 +19,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterSessionCmds(cmds.AddSub("sessions", "session", "s", "S").RegEmptyCmd("manage sessions").Owner())
 	RegisterDbgCmds(cmds.AddSub("dbg").RegEmptyCmd("debug related commands").Owner())
 	RegisterMiscCmds(cmds)
+	RegisterBgCmds(cmds.AddSub("background", "bg").RegEmptyCmd("background tasks management").Owner())
 	RegisterDisplayCmds(cmds.AddSub("display", "disp", "dis", "di").RegEmptyCmd("display related commands").Owner())
 	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B").RegEmptyCmd("internal commands, mostly for init loading").Owner().SetHidden())
 }
@@ -468,6 +469,12 @@ func RegisterTrivialCmds(cmds *core.CmdTree) {
 		AddArg("duration", "1s", "dur", "d", "D")
 }
 
+func RegisterBgCmds(cmds *core.CmdTree) {
+	cmds.AddSub("wait").
+		RegPowerCmd(WaitForAllBgTasksFinish,
+			"wait for all tasks/threads to finish in current(must be main) thread")
+}
+
 func RegisterMiscCmds(cmds *core.CmdTree) {
 	cmds.AddSub("mark-time", "time").
 		RegPowerCmd(MarkTime,
@@ -504,7 +511,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 
 	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
 		RegPowerCmd(DbgDelayExecute,
-			"wait for a while before executing a command").
+			"wait for a while before executing each commands").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")
 
