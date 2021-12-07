@@ -45,29 +45,11 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 		return false
 	}
 	ok := self.execute(self.callerNameEntry, cc, false, false, input...)
-	self.WaitAllBgTasks(cc)
+	builtin.WaitAllBgTasks(cc)
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnFlowFinish()
 	}
 	return ok
-}
-
-func (self *Executor) WaitAllBgTasks(cc *core.Cli) {
-	preTid := utils.GoRoutineIdStr()
-	for {
-		tid, task, ok := cc.BgTasks.GetEarliestTask()
-		if !ok {
-			break
-		}
-		info := task.GetStat()
-
-		display.PrintSwitchingThreadDisplay(preTid, info, cc.GlobalEnv, cc.Screen)
-
-		cc.BgTasks.BringBgTaskToFront(tid, cc.CmdIO.CmdStdout)
-		task.WaitForFinish()
-		cc.BgTasks.RemoveTask(tid)
-		preTid = tid
-	}
 }
 
 // Implement core.Executor

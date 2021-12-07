@@ -111,7 +111,6 @@ func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen, width 
 }
 
 func PrintSwitchingThreadDisplay(preTid string, info core.BgTaskInfo, env *core.Env, screen core.Screen) {
-
 	var title string
 	var extraLen int
 
