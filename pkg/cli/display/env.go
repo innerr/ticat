@@ -30,6 +30,10 @@ func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 	dumpEnvFlattenVals(screen, env, flatten, findStrs...)
 }
 
+func KeyValueDisplayStr(key string, value string, env *core.Env) string {
+	return ColorKey(key, env) + ColorSymbol(" = ", env) + mayQuoteStr(value)
+}
+
 func dumpEnvFlattenVals(screen core.Screen, env *core.Env, flatten map[string]string, findStrs ...string) {
 	var keys []string
 	for k, _ := range flatten {
@@ -51,7 +55,7 @@ func dumpEnvFlattenVals(screen core.Screen, env *core.Env, flatten map[string]st
 				continue
 			}
 		}
-		screen.Print(ColorKey(k, env) + ColorSymbol(" = ", env) + mayQuoteStr(v) + "\n")
+		screen.Print(KeyValueDisplayStr(k, v, env) + "\n")
 	}
 }
 
