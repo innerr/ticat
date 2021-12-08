@@ -83,6 +83,24 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	mod.GetOrAddSub("realname").AddAbbrs("real", "r", "R")
 }
 
+func MapEnvKeyValueToAnotherKey(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src-key")
+	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest-key")
+
+	env = env.GetLayer(core.EnvLayerSession)
+	value := env.GetRaw(src)
+	env.Set(dest, value)
+
+	cc.Screen.Print(display.KeyValueDisplayStr(dest, value, env) + "\n")
+	return currCmdIdx, true
+}
+
 func LoadRuntimeEnv(
 	argv core.ArgVals,
 	cc *core.Cli,

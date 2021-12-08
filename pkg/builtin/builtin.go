@@ -273,6 +273,12 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 			"save session env changes to local").
 		SetQuiet()
 
+	env.AddSub("map").
+		RegPowerCmd(MapEnvKeyValueToAnotherKey,
+			"read src-key's value and write to dest-key").
+		AddArg("src-key", "", "source-key", "source", "src", "from").
+		AddArg("dest-key", "", "dest", "to")
+
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
 		RegPowerCmd(RemoveEnvValAndSaveToLocal,
 			"remove specified env value and save changes to local").
