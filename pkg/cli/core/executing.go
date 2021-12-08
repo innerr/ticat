@@ -81,7 +81,7 @@ func (self *ExecutingFlow) OnLeaveSubFlow() {
 }
 
 func (self *ExecutingFlow) OnFlowFinish() {
-	writeStatusContent(self.path, StatusFileEOF+"\n")
+	writeStatusContent(self.path, StatusFileEOF)
 }
 
 func writeCmdEnv(w io.Writer, env *Env, mark string, level int) {

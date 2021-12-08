@@ -68,8 +68,12 @@ func parseExecutedFlow(path string, lines []string, dirName string) (executed *E
 	}
 	executed.Cmds = cmds
 
-	executed.Executed = len(lines) == 1 && lines[0] == StatusFileEOF
+	executed.Executed = parseStatusFileEOF(lines)
 	return
+}
+
+func parseStatusFileEOF(lines []string) bool {
+	return len(lines) == 1 && lines[0] == StatusFileEOF
 }
 
 func parseExecutedCmds(path string, dirName string, lines []string, level int) (cmds []*ExecutedCmd, remain []string, ok bool) {
@@ -77,7 +81,7 @@ func parseExecutedCmds(path string, dirName string, lines []string, level int) (
 		var cmd *ExecutedCmd
 		cmd, lines, ok = parseExecutedCmd(path, dirName, lines, level)
 		if !ok {
-			if len(lines) != 0 {
+			if !parseStatusFileEOF(lines) {
 				panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has extra %v lines", path, len(lines)))
 			}
 			return cmds, nil, false
@@ -105,7 +109,7 @@ func parseExecutedCmd(path string, dirName string, lines []string, level int) (c
 		return cmd, lines, true
 	}
 
-	startEnvLines, lines, ok := parseMarkedContent(path, lines, "start-env", level)
+	startEnvLines, lines, ok := parseMarkedContent(path, lines, "env-start", level)
 	if !ok {
 		return nil, lines, false
 	}
@@ -123,7 +127,7 @@ func parseExecutedCmd(path string, dirName string, lines []string, level int) (c
 		cmd.Cmds = cmds
 	}
 
-	finishEnvLines, lines, ok := parseMarkedContent(path, lines, "finish-env", level)
+	finishEnvLines, lines, ok := parseMarkedContent(path, lines, "env-finish", level)
 	if ok {
 		cmd.FinishEnv = parseEnvLines(path, finishEnvLines, level)
 	}
@@ -199,7 +203,7 @@ func parseMarkedContent(path string, lines []string, mark string, level int) (co
 			depth += 1
 		} else if markFinish == line {
 			if depth == 0 {
-				return lines[0:i], lines[i:], true
+				return lines[0:i], lines[i+1:], true
 			} else {
 				depth -= 1
 				if depth < 0 {
