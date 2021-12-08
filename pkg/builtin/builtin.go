@@ -16,7 +16,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterTrivialCmds(cmds)
 	RegisterFlowCmds(cmds)
 	RegisterHubCmds(cmds)
-	RegisterSessionCmds(cmds.AddSub("sessions", "session", "s", "S").RegEmptyCmd("manage sessions").Owner())
+	RegisterSessionCmds(cmds.AddSub("sessions", "s", "S").RegEmptyCmd("manage sessions").Owner())
 	RegisterDbgCmds(cmds.AddSub("dbg").RegEmptyCmd("debug related commands").Owner())
 	RegisterMiscCmds(cmds)
 	RegisterBgCmds(cmds.AddSub("background", "bg").RegEmptyCmd("background tasks management").Owner())

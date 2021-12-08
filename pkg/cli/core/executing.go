@@ -14,6 +14,10 @@ type ExecutingFlow struct {
 }
 
 func NewExecutingFlow(path string, flow *ParsedCmds, env *Env) *ExecutingFlow {
+	if len(path) > 0 && path[0] != '/' && path[0] != '\\' {
+		panic(fmt.Errorf("[ExecutingFlow] status file '%s' invalid path", path))
+	}
+
 	executing := &ExecutingFlow{
 		path:  path,
 		level: 0,
@@ -28,7 +32,7 @@ func (self *ExecutingFlow) onFlowStart(flow *ParsedCmds, env *Env) {
 	buf := bytes.NewBuffer(nil)
 	SaveFlow(buf, flow, 0, cmdPathSep, trivialMark, env)
 	flowStr := buf.String()
-	writeMarkedContent(self.path, "flow", flowStr)
+	writeMarkedContent(self.path, "flow", 0, flowStr)
 }
 
 func (self *ExecutingFlow) OnCmdStart(flow *ParsedCmds, index int, env *Env) {
@@ -70,9 +74,10 @@ func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, su
 	writeStatusContent(self.path, buf.String())
 }
 
-func (self *ExecutingFlow) OnEnterSubFlow() {
+func (self *ExecutingFlow) OnEnterSubFlow(flow string) {
 	writeMarkStart(self.path, "subflow", self.level)
 	self.level += 1
+	writeMarkedContent(self.path, "flow", self.level, flow)
 }
 
 func (self *ExecutingFlow) OnLeaveSubFlow() {
@@ -81,7 +86,7 @@ func (self *ExecutingFlow) OnLeaveSubFlow() {
 }
 
 func (self *ExecutingFlow) OnFlowFinish() {
-	writeStatusContent(self.path, StatusFileEOF)
+	writeStatusContent(self.path, StatusFileEOF+"\n")
 }
 
 func writeCmdEnv(w io.Writer, env *Env, mark string, level int) {
@@ -103,7 +108,7 @@ func writeCmdEnv(w io.Writer, env *Env, mark string, level int) {
 	if len(kvs) > 0 {
 		fprintf(w, "%s\n%s%s\n", markStartStr(mark, level), buf.String(), markFinishStr(mark, level))
 	} else {
-		fprintf(w, "%s\n", emptyMarkStr(mark, level))
+		//fprintf(w, "%s\n", emptyMarkStr(mark, level))
 	}
 }
 
@@ -121,23 +126,25 @@ func writeMarkFinish(path string, mark string, level int) {
 	writeStatusContent(path, content)
 }
 
-func writeMarkedContent(path string, mark string, lines ...string) {
-	content := fmt.Sprintf("%s\n%s\n%s\n",
-		StatusFileMarkBracketLeft+mark+StatusFileMarkBracketRight,
-		strings.Join(lines, "\n"),
-		StatusFileMarkBracketLeft+StatusFileMarkFinishMark+mark+StatusFileMarkBracketRight)
+func writeMarkedContent(path string, mark string, level int, lines ...string) {
+	indent := strings.Repeat(StatusFileIndent, level)
+	content := indent + StatusFileMarkBracketLeft + mark + StatusFileMarkBracketRight + "\n"
+	for _, line := range lines {
+		content += indent + line + "\n"
+	}
+	content += indent + StatusFileMarkBracketLeft + StatusFileMarkFinishMark + mark + StatusFileMarkBracketRight + "\n"
 	writeStatusContent(path, content)
 }
 
 func writeStatusContent(path string, content string) {
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		panic(fmt.Errorf("[ExecutedFlow.write] open executing status file '%s' failed: %v", path, err))
+		panic(fmt.Errorf("[ExecutingFlow] open executing status file '%s' failed: %v", path, err))
 	}
 	defer file.Close()
-	_, err = fmt.Fprintf(file, content)
+	_, err = file.Write([]byte(content))
 	if err != nil {
-		panic(fmt.Errorf("[ExecutedFlow.write] write executing status file '%s' failed: %v", path, err))
+		panic(fmt.Errorf("[ExecutingFlow] write executing status file '%s' failed: %v", path, err))
 	}
 }
 
@@ -163,8 +170,8 @@ func emptyMarkStr(mark string, level int) string {
 }
 
 const (
-	StatusFileMarkBracketLeft  = "[<"
-	StatusFileMarkBracketRight = ">]"
+	StatusFileMarkBracketLeft  = "<"
+	StatusFileMarkBracketRight = ">"
 	StatusFileMarkFinishMark   = "/"
 	StatusFileEOF              = StatusFileMarkBracketLeft + "EOF" + StatusFileMarkFinishMark + StatusFileMarkBracketRight
 	StatusFileIndent           = "    "

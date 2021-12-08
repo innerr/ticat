@@ -533,15 +533,15 @@ func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool)
 //   3. (consider remove concept cc.GlobalEnv)
 //
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) (succeeded bool) {
+	flow, _ := self.Flow(argv, env, false)
 	if cc.FlowStatus != nil {
-		cc.FlowStatus.OnEnterSubFlow()
+		cc.FlowStatus.OnEnterSubFlow(strings.Join(flow, " "))
 		defer func() {
 			if succeeded {
 				cc.FlowStatus.OnLeaveSubFlow()
 			}
 		}()
 	}
-	flow, _ := self.Flow(argv, env, false)
 	succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flow...)
 	return
 }

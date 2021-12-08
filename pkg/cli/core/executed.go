@@ -12,7 +12,7 @@ type ExecutedCmd struct {
 	Cmd       string
 	IsDelay   bool
 	StartEnv  *Env
-	Cmds      []*ExecutedCmd
+	SubFlow   *ExecutedFlow
 	FinishEnv *Env
 	Succeeded bool
 	Err       []string
@@ -25,18 +25,32 @@ type ExecutedFlow struct {
 	Executed bool
 }
 
-func ParseExecutedFlow(path string, dirName string) *ExecutedFlow {
-	file, err := os.Open(path)
+type ExecutedStatusFilePath struct {
+	RootPath string
+	DirName  string
+	FileName string
+}
+
+func (self ExecutedStatusFilePath) Full() string {
+	return filepath.Join(self.RootPath, self.DirName, self.FileName)
+}
+
+func (self ExecutedStatusFilePath) Short() string {
+	return filepath.Join("...", self.DirName, self.FileName)
+}
+
+func ParseExecutedFlow(path ExecutedStatusFilePath) *ExecutedFlow {
+	file, err := os.Open(path.Full())
 	if err != nil {
-		panic(fmt.Errorf("[ParseExecutedFlow] open executed status file '%s' failed: %v", path, err))
+		panic(fmt.Errorf("[ParseExecutedFlow] open executed status file '%s' failed: %v", path.Short(), err))
 	}
 	defer file.Close()
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		panic(fmt.Errorf("[ParseExecutedFlow] read executed status file '%s' failed: %v", path, err))
+		panic(fmt.Errorf("[ParseExecutedFlow] read executed status file '%s' failed: %v", path.Short(), err))
 	}
 	lines := strings.Split(string(data), "\n")
-	return parseExecutedFlow(path, lines, dirName)
+	return parseExecutedFlow(path, lines)
 }
 
 func (self *ExecutedFlow) MatchFind(findStrs []string) bool {
@@ -51,18 +65,22 @@ func (self *ExecutedFlow) MatchFind(findStrs []string) bool {
 	return false
 }
 
-func parseExecutedFlow(path string, lines []string, dirName string) (executed *ExecutedFlow) {
-	executed = &ExecutedFlow{
-		DirName: dirName,
+func parseExecutedFlow(path ExecutedStatusFilePath, lines []string) (executed *ExecutedFlow) {
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
 	}
 
-	flowStrs, lines, ok := parseMarkedContent(path, lines, "flow", 0)
+	executed = &ExecutedFlow{
+		DirName: path.DirName,
+	}
+
+	flowStr, lines, ok := parseMarkedOneLineContent(path, lines, "flow", 0)
 	if !ok {
 		return
 	}
-	executed.Flow = strings.Join(flowStrs, " ")
+	executed.Flow = flowStr
 
-	cmds, lines, ok := parseExecutedCmds(path, dirName, lines, 0)
+	cmds, lines, ok := parseExecutedCmds(path, lines, 0)
 	if !ok {
 		return
 	}
@@ -76,13 +94,17 @@ func parseStatusFileEOF(lines []string) bool {
 	return len(lines) == 1 && lines[0] == StatusFileEOF
 }
 
-func parseExecutedCmds(path string, dirName string, lines []string, level int) (cmds []*ExecutedCmd, remain []string, ok bool) {
+func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (cmds []*ExecutedCmd, remain []string, ok bool) {
 	for len(lines) != 0 {
 		var cmd *ExecutedCmd
-		cmd, lines, ok = parseExecutedCmd(path, dirName, lines, level)
+		cmd, lines, ok = parseExecutedCmd(path, lines, level)
 		if !ok {
-			if !parseStatusFileEOF(lines) {
-				panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has extra %v lines", path, len(lines)))
+			if parseStatusFileEOF(lines) {
+				break
+			}
+			if len(lines) != 0 {
+				panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has extra %v lines",
+					path.Short(), len(lines)))
 			}
 			return cmds, nil, false
 		}
@@ -91,7 +113,7 @@ func parseExecutedCmds(path string, dirName string, lines []string, level int) (
 	return cmds, lines, true
 }
 
-func parseExecutedCmd(path string, dirName string, lines []string, level int) (cmd *ExecutedCmd, remain []string, ok bool) {
+func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (cmd *ExecutedCmd, remain []string, ok bool) {
 	cmdStr, lines, ok := parseMarkedOneLineContent(path, lines, "cmd", level)
 	if !ok {
 		return nil, lines, false
@@ -102,29 +124,35 @@ func parseExecutedCmd(path string, dirName string, lines []string, level int) (c
 
 	tid, lines, ok := parseMarkedOneLineContent(path, lines, "scheduled", level)
 	if ok {
-		bgSessionPath := filepath.Join(path, tid)
-		bgFlow := ParseExecutedFlow(bgSessionPath, filepath.Join(dirName, tid))
-		cmd.Cmds = bgFlow.Cmds
+		bgSessionPath := ExecutedStatusFilePath{path.RootPath, filepath.Join(path.DirName, tid), path.FileName}
+		cmd.SubFlow = ParseExecutedFlow(bgSessionPath)
 		cmd.IsDelay = true
 		return cmd, lines, true
 	}
 
 	startEnvLines, lines, ok := parseMarkedContent(path, lines, "env-start", level)
-	if !ok {
-		return nil, lines, false
+	if ok {
+		cmd.StartEnv = parseEnvLines(path, startEnvLines, level)
 	}
-	cmd.StartEnv = parseEnvLines(path, startEnvLines, level)
 
 	subflowLines, lines, ok := parseMarkedContent(path, lines, "subflow", level)
 	if ok {
-		cmds, subflowRemain, ok := parseExecutedCmds(path, dirName, subflowLines, level+1)
+		subflow := &ExecutedFlow{}
+		flowStr, subflowLines, ok := parseMarkedOneLineContent(path, subflowLines, "flow", level+1)
+		if ok {
+			subflow.Flow = flowStr
+		} else {
+			panic(fmt.Errorf("[ParseExecutedFlow] expect 'flow' mark"))
+		}
+		cmds, subflowRemain, ok := parseExecutedCmds(path, subflowLines, level+1)
 		if len(subflowRemain) != 0 {
-			panic(fmt.Errorf("[ParseExecutedFlow] bad lines of subflow in status file '%s'", path))
+			panic(fmt.Errorf("[ParseExecutedFlow] bad lines of subflow in status file '%s'", path.Short()))
 		}
 		if !ok {
-			panic(fmt.Errorf("[ParseExecutedFlow] parse subflow failed in status file '%s'", path))
+			panic(fmt.Errorf("[ParseExecutedFlow] parse subflow failed in status file '%s'", path.Short()))
 		}
-		cmd.Cmds = cmds
+		subflow.Cmds = cmds
+		cmd.SubFlow = subflow
 	}
 
 	finishEnvLines, lines, ok := parseMarkedContent(path, lines, "env-finish", level)
@@ -134,7 +162,11 @@ func parseExecutedCmd(path string, dirName string, lines []string, level int) (c
 
 	succeeded, lines, ok := parseMarkedOneLineContent(path, lines, "result", level)
 	if !ok {
-		return nil, lines, false
+		if cmd.SubFlow != nil {
+			return cmd, lines, true
+		} else {
+			return nil, lines, false
+		}
 	}
 	cmd.Succeeded = (succeeded == "true")
 
@@ -146,35 +178,39 @@ func parseExecutedCmd(path string, dirName string, lines []string, level int) (c
 	return cmd, lines, true
 }
 
-func parseEnvLines(path string, lines []string, level int) (env *Env) {
+func parseEnvLines(path ExecutedStatusFilePath, lines []string, level int) (env *Env) {
 	env = NewEnvEx(EnvLayerSession)
 	indent := strings.Repeat(StatusFileIndent, level)
 	for _, line := range lines {
 		if !strings.HasPrefix(line, indent) {
-			panic(fmt.Errorf("[ParseExecutedFlow] bad indent of env line '%s' in status file '%s'", line, path))
+			panic(fmt.Errorf("[ParseExecutedFlow] bad indent of env line '%s' in status file '%s'", line, path.Short()))
 		}
 		line = line[len(indent):]
 		i := strings.Index(line, "=")
 		if i <= 0 {
-			panic(fmt.Errorf("[ParseExecutedFlow] bad format of env line '%s' in status file '%s'", line, path))
+			panic(fmt.Errorf("[ParseExecutedFlow] bad format of env line '%s' in status file '%s'", line, path.Short()))
 		}
 		env.Set(line[0:i], line[i+1:])
 	}
 	return env
 }
 
-func parseMarkedOneLineContent(path string, lines []string, mark string, level int) (content string, remain []string, ok bool) {
+func parseMarkedOneLineContent(path ExecutedStatusFilePath, lines []string,
+	mark string, level int) (content string, remain []string, ok bool) {
+
 	res, remain, ok := parseMarkedContent(path, lines, mark, level)
 	if !ok {
 		return
 	}
 	if len(res) != 1 {
-		panic(fmt.Errorf("[ParseExecutedFlow] expect only one line for mark '%s' in status file '%s'", mark, path))
+		panic(fmt.Errorf("[ParseExecutedFlow] expect only one line for mark '%s' in status file '%s'", mark, path.Short()))
 	}
 	return res[0], remain, ok
 }
 
-func parseMarkedContent(path string, lines []string, mark string, level int) (content []string, remain []string, ok bool) {
+func parseMarkedContent(path ExecutedStatusFilePath, lines []string,
+	mark string, level int) (content []string, remain []string, ok bool) {
+
 	remain = lines
 	if len(lines) == 0 {
 		return
@@ -207,7 +243,7 @@ func parseMarkedContent(path string, lines []string, mark string, level int) (co
 			} else {
 				depth -= 1
 				if depth < 0 {
-					panic(fmt.Errorf("[ParseExecutedFlow] bad recusive mark '%s' in status file '%s'", mark, path))
+					panic(fmt.Errorf("[ParseExecutedFlow] bad recusive mark '%s' in status file '%s'", mark, path.Short()))
 				}
 			}
 		}
