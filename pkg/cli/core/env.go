@@ -29,6 +29,10 @@ func NewEnv() *Env {
 	return &Env{map[string]EnvVal{}, nil, EnvLayerDefault}
 }
 
+func NewEnvEx(ty EnvLayerType) *Env {
+	return &Env{map[string]EnvVal{}, nil, ty}
+}
+
 // TODO: COW ?
 func (self *Env) Clone() (env *Env) {
 	pairs := map[string]EnvVal{}

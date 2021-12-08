@@ -189,10 +189,11 @@ func (self *Executor) executeCmd(
 			} else {
 				dur := sysArgv.GetDelayDuration()
 				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
-				succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
+				var tid string
+				tid, succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
 					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.CloneOne(currCmdIdx), 0)
 				if cc.FlowStatus != nil {
-					cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env)
+					cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env, tid)
 				}
 				newCurrCmdIdx = currCmdIdx
 			}
@@ -377,7 +378,7 @@ func asyncExecute(
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
-	currCmdIdx int) (scheduled bool) {
+	currCmdIdx int) (tid string, scheduled bool) {
 
 	if env.GetBool("sys.in-bg-task") {
 		tid := utils.GoRoutineIdStr()
@@ -454,6 +455,7 @@ func asyncExecute(
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
 
-	screen.Print(display.ColorExplain("(current command scheduled to thread "+<-tidChan+")\n", env))
-	return true
+	tid = <-tidChan
+	screen.Print(display.ColorExplain("(current command scheduled to thread "+tid+")\n", env))
+	return tid, true
 }

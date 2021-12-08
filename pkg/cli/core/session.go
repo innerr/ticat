@@ -48,7 +48,7 @@ func ListSessions(env *Env, findStrs []string) (sessions []SessionStatus) {
 		}
 
 		statusPath := filepath.Join(sessionsRoot, dir, statusFileName)
-		status := ParseExecutedFlow(statusPath, dir, env)
+		status := ParseExecutedFlow(statusPath, dir)
 
 		if !status.MatchFind(findStrs) {
 			continue
