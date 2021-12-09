@@ -15,7 +15,7 @@ func DumpFlow(
 	args *DumpFlowArgs,
 	envOpCmds []core.EnvOpCmd) {
 
-	DumpFlowEx(cc, env, flow, fromCmdIdx, args, nil, envOpCmds)
+	DumpFlowEx(cc, env, flow, fromCmdIdx, args, nil, false, envOpCmds)
 }
 
 // 'parsedGlobalEnv' + env in 'flow' = all env
@@ -26,6 +26,7 @@ func DumpFlowEx(
 	fromCmdIdx int,
 	args *DumpFlowArgs,
 	executedFlow *core.ExecutedFlow,
+	running bool,
 	envOpCmds []core.EnvOpCmd) {
 
 	if len(flow.Cmds) == 0 {
@@ -44,7 +45,7 @@ func DumpFlowEx(
 	}
 
 	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
-	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow,
+	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, running,
 		writtenKeys, args.MaxDepth, args.MaxTrivial, 0)
 	if ok {
 		cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
@@ -59,6 +60,7 @@ func dumpFlow(
 	fromCmdIdx int,
 	args *DumpFlowArgs,
 	executedFlow *core.ExecutedFlow,
+	running bool,
 	writtenKeys FlowWrittenKeys,
 	maxDepth int,
 	maxTrivial int,
@@ -77,7 +79,7 @@ func dumpFlow(
 				return false
 			}
 		}
-		ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd,
+		ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, running,
 			maxDepth, maxTrivial, indentAdjust, metFlows, writtenKeys)
 		if !ok {
 			return false
@@ -95,6 +97,7 @@ func dumpFlowCmd(
 	currCmdIdx int,
 	args *DumpFlowArgs,
 	executedCmd *core.ExecutedCmd,
+	running bool,
 	maxDepth int,
 	maxTrivial int,
 	indentAdjust int,
@@ -164,8 +167,10 @@ func dumpFlowCmd(
 				name += ColorSymbol(" - ", env) + ColorExplain("un-run", env)
 			} else if executedCmd.Succeeded {
 				name += ColorSymbol(" - ", env) + ColorCmdDone("OK", env)
-			} else {
+			} else if running {
 				name += ColorSymbol(" - ", env) + ColorError("not-done", env)
+			} else {
+				name += ColorSymbol(" - ", env) + ColorError("ERR", env)
 			}
 		}
 
@@ -255,8 +260,8 @@ func dumpFlowCmd(
 			if executedCmd != nil {
 				executedFlow = executedCmd.SubFlow
 			}
-			return dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, writtenKeys,
-				maxDepth-1, trivial, indentAdjust+2)
+			return dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, running,
+				writtenKeys, maxDepth-1, trivial, indentAdjust+2)
 		}
 		return executedCmd == nil || executedCmd.Succeeded
 	}
@@ -372,8 +377,8 @@ func dumpFlowCmd(
 					if executedCmd == nil || executedCmd.Succeeded {
 						newMaxDepth -= 1
 					}
-					ok := dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, writtenKeys,
-						newMaxDepth, trivial, indentAdjust+2)
+					ok := dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, running,
+						writtenKeys, newMaxDepth, trivial, indentAdjust+2)
 					if !ok {
 						return false
 					}

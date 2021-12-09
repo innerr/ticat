@@ -168,5 +168,5 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().
 		SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, core.FlowStrToStrs(session.Status.Flow)...)
-	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, EnvOpCmds())
+	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, session.Running, EnvOpCmds())
 }
