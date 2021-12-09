@@ -514,14 +514,23 @@ func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool)
 		return
 	}
 	flow = StripFlowForExecute(flow, env.GetRaw("strs.seq-sep"))
-	flowStr := strings.Join(flow, " ")
-	flow, err := shellwords.Parse(flowStr)
+	flowStr := FlowStrsToStr(flow)
+	flow = FlowStrToStrs(flowStr)
+	return
+}
+
+func FlowStrToStrs(flowStr string) []string {
+	flowStrs, err := shellwords.Parse(flowStr)
 	if err != nil {
 		// TODO: better display
-		panic(fmt.Errorf("[StripFlowForParse.shellwords] parse '%s' failed: %v",
+		panic(fmt.Errorf("[shellwords] parse '%s' failed: %v",
 			flowStr, err))
 	}
-	return
+	return flowStrs
+}
+
+func FlowStrsToStr(flowStrs []string) string {
+	return strings.Join(flowStrs, " ")
 }
 
 // TODO:
@@ -535,7 +544,7 @@ func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool)
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) (succeeded bool) {
 	flow, _ := self.Flow(argv, env, false)
 	if cc.FlowStatus != nil {
-		cc.FlowStatus.OnEnterSubFlow(strings.Join(flow, " "))
+		cc.FlowStatus.OnEnterSubFlow(FlowStrsToStr(flow))
 		defer func() {
 			if succeeded {
 				cc.FlowStatus.OnLeaveSubFlow()

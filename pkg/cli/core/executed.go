@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+type ExecutedStatusFilePath struct {
+	RootPath string
+	DirName  string
+	FileName string
+}
+
 type ExecutedCmd struct {
 	Cmd       string
 	IsDelay   bool
@@ -23,12 +29,6 @@ type ExecutedFlow struct {
 	DirName  string
 	Cmds     []*ExecutedCmd
 	Executed bool
-}
-
-type ExecutedStatusFilePath struct {
-	RootPath string
-	DirName  string
-	FileName string
 }
 
 func (self ExecutedStatusFilePath) Full() string {
@@ -63,6 +63,17 @@ func (self *ExecutedFlow) MatchFind(findStrs []string) bool {
 		}
 	}
 	return false
+}
+
+func (self *ExecutedFlow) GetCmd(i int) *ExecutedCmd {
+	if i >= len(self.Cmds) {
+		return nil
+	}
+	cmd := self.Cmds[i]
+	if !cmd.IsDelay {
+		return cmd
+	}
+	return cmd.SubFlow.Cmds[0]
 }
 
 func parseExecutedFlow(path ExecutedStatusFilePath, lines []string) (executed *ExecutedFlow) {
@@ -119,14 +130,18 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		return nil, lines, false
 	}
 	cmd = &ExecutedCmd{
-		Cmd: cmdStr,
+		Cmd: strings.TrimSpace(cmdStr),
 	}
 
 	tid, lines, ok := parseMarkedOneLineContent(path, lines, "scheduled", level)
 	if ok {
 		bgSessionPath := ExecutedStatusFilePath{path.RootPath, filepath.Join(path.DirName, tid), path.FileName}
 		cmd.SubFlow = ParseExecutedFlow(bgSessionPath)
+		if len(cmd.SubFlow.Cmds) != 1 {
+			panic(fmt.Errorf("[ParseExecutedFlow] expect only one cmd in delayed task"))
+		}
 		cmd.IsDelay = true
+		cmd.Succeeded = true
 		return cmd, lines, true
 	}
 
@@ -153,6 +168,7 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		}
 		subflow.Cmds = cmds
 		cmd.SubFlow = subflow
+		cmd.Succeeded = true
 	}
 
 	finishEnvLines, lines, ok := parseMarkedContent(path, lines, "env-finish", level)

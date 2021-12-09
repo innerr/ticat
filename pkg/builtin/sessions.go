@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
@@ -37,11 +38,46 @@ func ListSessions(
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
 	sessions := core.ListSessions(env, findStrs)
+	if len(sessions) == 0 {
+		if len(findStrs) > 0 {
+			display.PrintErrTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
+		} else {
+			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
+		}
+	}
 	for _, it := range sessions {
 		if it.Cleaning {
 			continue
 		}
 		dumpSession(it, env, cc.Screen)
+	}
+	return currCmdIdx, true
+}
+
+func DescListedSession(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+
+	sessions := core.ListSessions(env, findStrs)
+	if len(sessions) == 0 {
+		if len(findStrs) > 0 {
+			display.PrintErrTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
+		} else {
+			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
+		}
+	} else if len(sessions) > 1 {
+		if len(findStrs) > 0 {
+			display.PrintErrTitle(cc.Screen, env, "more than one executed sessions, add more find-str to filter them")
+		} else {
+			display.PrintErrTitle(cc.Screen, env, "more than one executed sessions, add find-str to filter them")
+		}
+	} else {
+		descSession(sessions[0], env, cc)
 	}
 	return currCmdIdx, true
 }
@@ -59,6 +95,22 @@ func LastSession(
 		return currCmdIdx, true
 	}
 	dumpSession(sessions[len(sessions)-1], env, cc.Screen)
+	return currCmdIdx, true
+}
+
+func DescLastSession(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	sessions := core.ListSessions(env, nil)
+	if len(sessions) == 0 {
+		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
+		return currCmdIdx, true
+	}
+	descSession(sessions[len(sessions)-1], env, cc)
 	return currCmdIdx, true
 }
 
@@ -92,4 +144,10 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen) 
 	} else {
 		screen.Print("        done\n")
 	}
+}
+
+func descSession(session core.SessionStatus, env *core.Env, cc *core.Cli) {
+	dumpArgs := display.NewDumpFlowArgs().SetSkeleton()
+	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, core.FlowStrToStrs(session.Status.Flow)...)
+	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, EnvOpCmds())
 }

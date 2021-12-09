@@ -41,7 +41,7 @@ func (self *ExecutingFlow) OnCmdStart(flow *ParsedCmds, index int, env *Env) {
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
 	fprintf(buf, "%s\n%s%s\n%s\n",
 		markStartStr("cmd", self.level),
-		indent, flow.Cmds[index].DisplayPath(cmdPathSep, true),
+		indent, strings.Join(flow.Cmds[index].Path(), cmdPathSep),
 		markFinishStr("cmd", self.level))
 	writeCmdEnv(buf, env, "env-start", self.level)
 	writeStatusContent(self.path, buf.String())
@@ -53,7 +53,7 @@ func (self *ExecutingFlow) OnAsyncTaskSchedule(flow *ParsedCmds, index int, env 
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
 	fprintf(buf, "%s\n%s%s\n%s\n",
 		markStartStr("cmd", self.level),
-		indent, flow.Cmds[index].DisplayPath(cmdPathSep, true),
+		indent, strings.Join(flow.Cmds[index].Path(), cmdPathSep),
 		markFinishStr("cmd", self.level))
 	fprintf(buf, "%s%s%s\n", markStartStr("scheduled", self.level), tid, markFinishStr("scheduled", 0))
 	writeStatusContent(self.path, buf.String())

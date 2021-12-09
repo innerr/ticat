@@ -344,9 +344,19 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall()
 	addFindStrArgs(list)
 
-	cmds.AddSub("last").
-		RegPowerCmd(LastSession,
-			"show last session")
+	desc := list.AddSub("desc", "-").
+		RegPowerCmd(DescListedSession,
+			"desc executed/ing session").
+		SetAllowTailModeCall()
+	addFindStrArgs(desc)
+
+	last := cmds.AddSub("last")
+	last.RegPowerCmd(LastSession,
+		"show last session")
+
+	last.AddSub("desc", "-").
+		RegPowerCmd(DescLastSession,
+			"desc the execution status of last session")
 
 	cmds.AddSub("clean", "clear", "--").
 		RegPowerCmd(CleanSessions,
