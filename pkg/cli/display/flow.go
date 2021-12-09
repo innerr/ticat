@@ -101,6 +101,8 @@ func dumpFlowCmd(
 	metFlows map[string]bool,
 	writtenKeys FlowWrittenKeys) bool {
 
+	// TODO: too complicated with executedCmd
+
 	parsedCmd := flow.Cmds[currCmdIdx]
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
@@ -129,7 +131,7 @@ func dumpFlowCmd(
 	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
 	sysArgv := cmdEnv.GetSysArgv(cmd.Path(), sep)
 
-	if maxTrivial > 0 && maxDepth > 0 {
+	if (executedCmd != nil && !executedCmd.Succeeded) || (maxTrivial > 0 && maxDepth > 0) {
 		cmdId := strings.Join(parsedCmd.Path(), sep)
 		var name string
 		if args.Skeleton {
@@ -142,7 +144,7 @@ func dumpFlowCmd(
 		} else {
 			name = ColorCmd("["+name+"]", env)
 		}
-		if maxTrivial == 1 && trivialDelta > 0 &&
+		if (executedCmd == nil || executedCmd.Succeeded) && maxTrivial == 1 && trivialDelta > 0 &&
 			(cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) {
 			name += ColorProp(trivialMark, env)
 		}
@@ -153,14 +155,15 @@ func dumpFlowCmd(
 
 		if executedCmd != nil {
 			if executedCmd.Cmd != cmdId {
+				// TODO: better display
 				name += " - flow not matched, executed cmd " + ColorCmd("["+executedCmd.Cmd+"]", env)
 				prt(0, name)
 				return false
 			}
 			if executedCmd.Succeeded {
-				name += " - DONE"
+				name += ColorSymbol(" - ", env) + ColorCmdDone("done", env)
 			} else {
-				name += " -" + ColorError(" EER", env)
+				name += ColorSymbol(" - ", env) + ColorError("EER", env)
 			}
 		}
 
@@ -175,11 +178,20 @@ func dumpFlowCmd(
 		}
 
 		if executedCmd != nil {
-			if len(executedCmd.Err) != 0 {
-				prt(1, ColorError("- exec-err:", env))
-			}
-			for _, line := range executedCmd.Err {
-				prt(2, ColorError(line, env))
+			if !args.Skeleton {
+				if len(executedCmd.Err) != 0 {
+					prt(1, ColorError("- error:", env))
+				}
+				for _, line := range executedCmd.Err {
+					prt(2, ColorError(line, env))
+				}
+			} else {
+				if len(executedCmd.Err) != 0 {
+					prt(0, "  "+ColorError(" - error:", env))
+				}
+				for _, line := range executedCmd.Err {
+					prt(1, " "+ColorError(line, env))
+				}
 			}
 		}
 	}
@@ -187,7 +199,7 @@ func dumpFlowCmd(
 	// TODO: this is slow
 	originEnv := env.Clone()
 
-	if maxTrivial > 0 && maxDepth > 0 {
+	if (executedCmd != nil && !executedCmd.Succeeded) || (maxTrivial > 0 && maxDepth > 0) {
 		if !args.Skeleton {
 			args := cic.Args()
 			arg2env := cic.GetArg2Env()
@@ -218,7 +230,10 @@ func dumpFlowCmd(
 
 	trivial := maxTrivial - trivialDelta
 
-	if trivial <= 0 || maxDepth <= 0 {
+	// Folding if too trivial or too deep
+	if (executedCmd == nil || executedCmd.Succeeded) &&
+		(trivial <= 0 || maxDepth <= 0) {
+
 		core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 			"failed to execute env-op cmd in flow desc")
 
@@ -238,7 +253,7 @@ func dumpFlowCmd(
 			return dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, writtenKeys,
 				maxDepth-1, trivial, indentAdjust+2)
 		}
-		return true
+		return executedCmd == nil || executedCmd.Succeeded
 	}
 
 	if !args.Skeleton {
@@ -260,7 +275,8 @@ func dumpFlowCmd(
 			prt(1, ColorProp("- env-ops:", env))
 		}
 		for i, k := range envOpKeys {
-			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+dumpEnvOps(envOps.Ops(origins[i]), envOpSep)+dumpIsAutoTimerKey(env, cic, k))
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+
+				dumpEnvOps(envOps.Ops(origins[i]), envOpSep)+dumpIsAutoTimerKey(env, cic, k))
 		}
 	}
 
@@ -288,7 +304,7 @@ func dumpFlowCmd(
 			flowStrs, _ := cic.RenderedFlowStrs(argv, cmdEnv, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
-			if metFlow && executedCmd == nil {
+			if (executedCmd == nil || executedCmd.Succeeded) && metFlow {
 				if !args.Skeleton {
 					prt(1, ColorProp("- flow (duplicated):", env))
 				} else {
@@ -296,7 +312,7 @@ func dumpFlowCmd(
 				}
 			} else {
 				metFlows[flowStr] = true
-				if maxDepth <= 1 {
+				if (executedCmd == nil || executedCmd.Succeeded) && maxDepth <= 1 {
 					if !args.Skeleton {
 						prt(1, ColorProp("- flow (folded):", env))
 					} else {
@@ -330,8 +346,8 @@ func dumpFlowCmd(
 		if cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow {
 			subFlow, rendered := cic.Flow(argv, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
-				if !(metFlow && executedCmd == nil) {
-					if maxDepth > 1 {
+				if !(metFlow && (executedCmd == nil || executedCmd.Succeeded)) {
+					if (executedCmd != nil && !executedCmd.Succeeded) || maxDepth > 1 {
 						prt(2, ColorFlowing("--->>>", env))
 					}
 					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
@@ -347,8 +363,12 @@ func dumpFlowCmd(
 					if executedCmd != nil {
 						executedFlow = executedCmd.SubFlow
 					}
+					newMaxDepth := maxDepth
+					if (executedCmd == nil || executedCmd.Succeeded) {
+						newMaxDepth -= 1
+					}
 					ok := dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, writtenKeys,
-						maxDepth-1, trivial, indentAdjust+2)
+						newMaxDepth, trivial, indentAdjust+2)
 					if !ok {
 						return false
 					}
@@ -356,7 +376,7 @@ func dumpFlowCmd(
 					if cic.Type() == core.CmdTypeFileNFlow {
 						exeMark = ColorCmd(" +", env)
 					}
-					if maxDepth > 1 {
+					if (executedCmd == nil || executedCmd.Succeeded) && maxDepth > 1 {
 						prt(2, ColorFlowing("<<<---", env)+exeMark)
 					}
 				}
@@ -366,7 +386,7 @@ func dumpFlowCmd(
 
 	core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 		"failed to execute env-op cmd in flow desc")
-	return true
+	return executedCmd == nil || executedCmd.Succeeded
 }
 
 type flowEnvVal struct {

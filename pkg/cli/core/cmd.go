@@ -544,10 +544,10 @@ func FlowStrsToStr(flowStrs []string) string {
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) (succeeded bool) {
 	flow, _ := self.Flow(argv, env, false)
 	if cc.FlowStatus != nil {
-		cc.FlowStatus.OnEnterSubFlow(FlowStrsToStr(flow))
+		cc.FlowStatus.OnSubFlowStart(FlowStrsToStr(flow))
 		defer func() {
 			if succeeded {
-				cc.FlowStatus.OnLeaveSubFlow()
+				cc.FlowStatus.OnSubFlowFinish()
 			}
 		}()
 	}

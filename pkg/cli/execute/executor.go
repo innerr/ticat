@@ -46,7 +46,7 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	}
 	ok := self.execute(self.callerNameEntry, cc, false, false, input...)
 	builtin.WaitAllBgTasks(cc)
-	if cc.FlowStatus != nil {
+	if cc.FlowStatus != nil && ok {
 		cc.FlowStatus.OnFlowFinish()
 	}
 	return ok
@@ -450,7 +450,9 @@ func asyncExecute(
 				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}
-		cc.FlowStatus.OnFlowFinish()
+		if ok {
+			cc.FlowStatus.OnFlowFinish()
+		}
 		task.OnFinish()
 
 	}(dur, argv, cc, env, flow, currCmdIdx)

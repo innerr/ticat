@@ -150,7 +150,11 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 	tid, lines, ok := parseMarkedOneLineContent(path, lines, "scheduled", level)
 	if ok {
 		bgSessionPath := ExecutedStatusFilePath{path.RootPath, filepath.Join(path.DirName, tid), path.FileName}
-		cmd.SubFlow = ParseExecutedFlow(bgSessionPath)
+		subflow := ParseExecutedFlow(bgSessionPath)
+		if len(subflow.Cmds) == 0 {
+			return cmd, lines, true
+		}
+		cmd.SubFlow = subflow
 		if len(cmd.SubFlow.Cmds) != 1 {
 			panic(fmt.Errorf("[ParseExecutedFlow] expect only one cmd in delayed task"))
 		}
@@ -165,7 +169,12 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 	}
 
 	subflowLines, lines, ok := parseMarkedContent(path, lines, "subflow", level)
-	if ok {
+	if len(subflowLines) > 0 {
+		if !ok && len(lines) != 0 {
+			panic(fmt.Errorf("[ParseExecutedFlow] bad subflow in executed status file '%s', has extra %v lines",
+				path.Short(), len(lines)))
+		}
+		cmd.Succeeded = ok
 		subflow := &ExecutedFlow{}
 		flowStr, subflowLines, ok := parseMarkedOneLineContent(path, subflowLines, "flow", level+1)
 		if ok {
@@ -182,7 +191,6 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		}
 		subflow.Cmds = cmds
 		cmd.SubFlow = subflow
-		cmd.Succeeded = true
 	}
 
 	finishEnvLines, lines, ok := parseMarkedContent(path, lines, "env-finish", level)
@@ -202,7 +210,9 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 
 	errLines, lines, ok := parseMarkedContent(path, lines, "error", level)
 	if ok {
-		cmd.Err = errLines
+		for _, line := range errLines {
+			cmd.Err = append(cmd.Err, strings.TrimSpace(line))
+		}
 	}
 
 	return cmd, lines, true

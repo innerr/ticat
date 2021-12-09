@@ -78,7 +78,7 @@ func DescListedSession(
 			display.PrintErrTitle(cc.Screen, env, "more than one executed sessions, add find-str to filter them")
 		}
 	} else {
-		descSession(sessions[0], env, cc)
+		descSession(sessions[0], argv, cc, env)
 	}
 	return currCmdIdx, true
 }
@@ -111,7 +111,7 @@ func DescLastSession(
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 		return currCmdIdx, true
 	}
-	descSession(sessions[len(sessions)-1], env, cc)
+	descSession(sessions[len(sessions)-1], argv, cc, env)
 	return currCmdIdx, true
 }
 
@@ -142,24 +142,29 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen) 
 	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago", env)+"\n",
 		time.Now().Sub(session.StartTs).Round(time.Second).String()))
 
-	screen.Print(display.ColorProp("    finish-at:\n", env))
-	screen.Print(fmt.Sprintf("        %s\n", session.Status.FinishTs.Format(core.SessionTimeFormat)))
-	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago, elapsed %s", env)+"\n",
-		time.Now().Sub(session.Status.FinishTs).Round(time.Second),
-		session.Status.FinishTs.Sub(session.StartTs).Round(time.Second)))
+	if session.Status.Executed {
+		screen.Print(display.ColorProp("    finish-at:\n", env))
+		screen.Print(fmt.Sprintf("        %s\n", session.Status.FinishTs.Format(core.SessionTimeFormat)))
+		screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago, elapsed %s", env)+"\n",
+			time.Now().Sub(session.Status.FinishTs).Round(time.Second),
+			session.Status.FinishTs.Sub(session.StartTs).Round(time.Second)))
+	}
 
 	screen.Print(display.ColorProp("    status:\n", env))
 	if session.Running {
 		screen.Print("        " + display.ColorCmdCurr("running", env) + "\n")
 		screen.Print(display.ColorProp("    pid:\n", env))
 		screen.Print(fmt.Sprintf("        %v\n", session.Pid))
+	} else if session.Status.Executed {
+		screen.Print(display.ColorCmdDone("        done\n", env))
 	} else {
-		screen.Print("        done\n")
+		screen.Print(display.ColorError("        ERR\n", env))
 	}
 }
 
-func descSession(session core.SessionStatus, env *core.Env, cc *core.Cli) {
-	dumpArgs := display.NewDumpFlowArgs().SetSkeleton()
+func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, env *core.Env) {
+	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().
+		SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, core.FlowStrToStrs(session.Status.Flow)...)
 	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, EnvOpCmds())
 }

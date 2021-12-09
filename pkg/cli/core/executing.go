@@ -75,13 +75,13 @@ func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, su
 	writeStatusContent(self.path, buf.String())
 }
 
-func (self *ExecutingFlow) OnEnterSubFlow(flow string) {
+func (self *ExecutingFlow) OnSubFlowStart(flow string) {
 	writeMarkStart(self.path, "subflow", self.level)
 	self.level += 1
 	writeMarkedContent(self.path, "flow", self.level, flow)
 }
 
-func (self *ExecutingFlow) OnLeaveSubFlow() {
+func (self *ExecutingFlow) OnSubFlowFinish() {
 	self.level -= 1
 	writeMarkFinish(self.path, "subflow", self.level)
 }
