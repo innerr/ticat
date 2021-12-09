@@ -150,7 +150,7 @@ func dumpFlowCmd(
 		}
 
 		if sysArgv.IsDelay() {
-			name += ColorCmdDelay(" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(") ", env)
+			name += ColorCmdDelay(" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
 		}
 
 		if executedCmd != nil {
@@ -160,10 +160,12 @@ func dumpFlowCmd(
 				prt(0, name)
 				return false
 			}
-			if executedCmd.Succeeded {
+			if executedCmd.Unexecuted {
+				name += ColorSymbol(" - ", env) + ColorExplain("un-run", env)
+			} else if executedCmd.Succeeded {
 				name += ColorSymbol(" - ", env) + ColorCmdDone("done", env)
 			} else {
-				name += ColorSymbol(" - ", env) + ColorError("EER", env)
+				name += ColorSymbol(" - ", env) + ColorError("ERR", env)
 			}
 		}
 
@@ -178,6 +180,9 @@ func dumpFlowCmd(
 		}
 
 		if executedCmd != nil {
+			if executedCmd.Unexecuted {
+				return true
+			}
 			if !args.Skeleton {
 				if len(executedCmd.Err) != 0 {
 					prt(1, ColorError("- error:", env))
@@ -364,7 +369,7 @@ func dumpFlowCmd(
 						executedFlow = executedCmd.SubFlow
 					}
 					newMaxDepth := maxDepth
-					if (executedCmd == nil || executedCmd.Succeeded) {
+					if executedCmd == nil || executedCmd.Succeeded {
 						newMaxDepth -= 1
 					}
 					ok := dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, writtenKeys,

@@ -16,13 +16,14 @@ type ExecutedStatusFilePath struct {
 }
 
 type ExecutedCmd struct {
-	Cmd       string
-	IsDelay   bool
-	StartEnv  *Env
-	SubFlow   *ExecutedFlow
-	FinishEnv *Env
-	Succeeded bool
-	Err       []string
+	Cmd        string
+	IsDelay    bool
+	StartEnv   *Env
+	SubFlow    *ExecutedFlow
+	FinishEnv  *Env
+	Unexecuted bool
+	Succeeded  bool
+	Err        []string
 }
 
 type ExecutedFlow struct {
@@ -74,6 +75,9 @@ func (self *ExecutedFlow) GetCmd(idx int) *ExecutedCmd {
 	cmd := self.Cmds[idx]
 	if !cmd.IsDelay {
 		return cmd
+	}
+	if len(cmd.SubFlow.Cmds) == 0 {
+		return nil
 	}
 	return cmd.SubFlow.Cmds[0]
 }
@@ -152,12 +156,11 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		bgSessionPath := ExecutedStatusFilePath{path.RootPath, filepath.Join(path.DirName, tid), path.FileName}
 		subflow := ParseExecutedFlow(bgSessionPath)
 		if len(subflow.Cmds) == 0 {
-			return cmd, lines, true
-		}
-		cmd.SubFlow = subflow
-		if len(cmd.SubFlow.Cmds) != 1 {
+			subflow.Cmds = append(subflow.Cmds, &ExecutedCmd{Cmd: cmd.Cmd, Unexecuted: true})
+		} else if len(subflow.Cmds) != 1 {
 			panic(fmt.Errorf("[ParseExecutedFlow] expect only one cmd in delayed task"))
 		}
+		cmd.SubFlow = subflow
 		cmd.IsDelay = true
 		cmd.Succeeded = true
 		return cmd, lines, true
