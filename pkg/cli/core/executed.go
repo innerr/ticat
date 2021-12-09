@@ -189,7 +189,7 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		if len(subflowRemain) != 0 {
 			panic(fmt.Errorf("[ParseExecutedFlow] bad lines of subflow in status file '%s'", path.Short()))
 		}
-		if !ok {
+		if !ok && len(subflowRemain) != 0 {
 			panic(fmt.Errorf("[ParseExecutedFlow] parse subflow failed in status file '%s'", path.Short()))
 		}
 		subflow.Cmds = cmds

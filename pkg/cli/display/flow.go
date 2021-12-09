@@ -163,9 +163,9 @@ func dumpFlowCmd(
 			if executedCmd.Unexecuted {
 				name += ColorSymbol(" - ", env) + ColorExplain("un-run", env)
 			} else if executedCmd.Succeeded {
-				name += ColorSymbol(" - ", env) + ColorCmdDone("done", env)
+				name += ColorSymbol(" - ", env) + ColorCmdDone("OK", env)
 			} else {
-				name += ColorSymbol(" - ", env) + ColorError("ERR", env)
+				name += ColorSymbol(" - ", env) + ColorError("not-done", env)
 			}
 		}
 

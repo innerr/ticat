@@ -72,10 +72,12 @@ func DescListedSession(
 			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
 		}
 	} else if len(sessions) > 1 {
+		descSession(sessions[len(sessions)-1], argv, cc, env)
+		prefix := fmt.Sprintf("more than one sessions(%v), only display the last one, ", len(sessions))
 		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, "more than one executed sessions, add more find-str to filter them")
+			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-str to filter")
 		} else {
-			display.PrintErrTitle(cc.Screen, env, "more than one executed sessions, add find-str to filter them")
+			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-str to filter")
 		}
 	} else {
 		descSession(sessions[0], argv, cc, env)

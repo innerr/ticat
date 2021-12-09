@@ -347,10 +347,10 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	desc := list.AddSub("desc", "-").
 		RegPowerCmd(DescListedSession,
 			"desc executed/ing session").
-		SetAllowTailModeCall().
-		AddArg("trivial", "1", "t", "T").
-		AddArg("depth", "32", "d", "D")
+		SetAllowTailModeCall()
 	addFindStrArgs(desc)
+	desc.AddArg("trivial", "1", "t", "T")
+	desc.AddArg("depth", "32", "d", "D")
 
 	last := cmds.AddSub("last")
 	last.RegPowerCmd(LastSession,
