@@ -3,6 +3,7 @@ package builtin
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
@@ -132,13 +133,24 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen) 
 	selfName := env.GetRaw("strs.self-name")
 
 	screen.Print(display.ColorSession("["+session.DirName+"]\n", env))
+
 	screen.Print(display.ColorProp("    cmd:\n", env))
 	screen.Print(display.ColorFlow(fmt.Sprintf("        %s %s\n", selfName, session.Status.Flow), env))
+
 	screen.Print(display.ColorProp("    start-at:\n", env))
-	screen.Print(fmt.Sprintf("        %v\n", session.StartTs.Format(core.SessionStartFormat)))
+	screen.Print(fmt.Sprintf("        %s\n", session.StartTs.Format(core.SessionTimeFormat)))
+	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago", env)+"\n",
+		time.Now().Sub(session.StartTs).Round(time.Second).String()))
+
+	screen.Print(display.ColorProp("    finish-at:\n", env))
+	screen.Print(fmt.Sprintf("        %s\n", session.Status.FinishTs.Format(core.SessionTimeFormat)))
+	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago, elapsed %s", env)+"\n",
+		time.Now().Sub(session.Status.FinishTs).Round(time.Second),
+		session.Status.FinishTs.Sub(session.StartTs).Round(time.Second)))
+
 	screen.Print(display.ColorProp("    status:\n", env))
 	if session.Running {
-		screen.Print("        running\n")
+		screen.Print("        " + display.ColorCmdCurr("running", env) + "\n")
 		screen.Print(display.ColorProp("    pid:\n", env))
 		screen.Print(fmt.Sprintf("        %v\n", session.Pid))
 	} else {

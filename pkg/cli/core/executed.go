@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type ExecutedStatusFilePath struct {
@@ -29,6 +30,7 @@ type ExecutedFlow struct {
 	DirName  string
 	Cmds     []*ExecutedCmd
 	Executed bool
+	FinishTs time.Time
 }
 
 func (self ExecutedStatusFilePath) Full() string {
@@ -58,18 +60,18 @@ func (self *ExecutedFlow) MatchFind(findStrs []string) bool {
 		return true
 	}
 	for _, it := range findStrs {
-		if len(self.DirName) > 0 && strings.Index(self.DirName, it) >= 0 || strings.Index(self.Flow, it) >= 0 {
-			return true
+		if strings.Index(self.DirName, it) < 0 && strings.Index(self.Flow, it) < 0 {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
-func (self *ExecutedFlow) GetCmd(i int) *ExecutedCmd {
-	if i >= len(self.Cmds) {
+func (self *ExecutedFlow) GetCmd(idx int) *ExecutedCmd {
+	if idx >= len(self.Cmds) {
 		return nil
 	}
-	cmd := self.Cmds[i]
+	cmd := self.Cmds[idx]
 	if !cmd.IsDelay {
 		return cmd
 	}
@@ -97,12 +99,24 @@ func parseExecutedFlow(path ExecutedStatusFilePath, lines []string) (executed *E
 	}
 	executed.Cmds = cmds
 
-	executed.Executed = parseStatusFileEOF(lines)
+	executed.FinishTs, executed.Executed = parseStatusFileEOF(path, lines)
 	return
 }
 
-func parseStatusFileEOF(lines []string) bool {
-	return len(lines) == 1 && lines[0] == StatusFileEOF
+func parseStatusFileEOF(path ExecutedStatusFilePath, lines []string) (finishTs time.Time, ok bool) {
+	if len(lines) != 1 {
+		return
+	}
+	var finishTsStr string
+	finishTsStr, _, ok = parseMarkedOneLineContent(path, lines, StatusFileEOF, 0)
+	if !ok {
+		return
+	}
+	finishTs, err := time.ParseInLocation(SessionTimeFormat, finishTsStr, time.Local)
+	if err != nil {
+		panic(fmt.Errorf("[ParseExecutedFlow] bad finish-ts format '%s' in status file '%s'", finishTsStr, path.Short()))
+	}
+	return finishTs, ok
 }
 
 func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (cmds []*ExecutedCmd, remain []string, ok bool) {
@@ -110,7 +124,7 @@ func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (
 		var cmd *ExecutedCmd
 		cmd, lines, ok = parseExecutedCmd(path, lines, level)
 		if !ok {
-			if parseStatusFileEOF(lines) {
+			if _, ok := parseStatusFileEOF(path, lines); ok {
 				break
 			}
 			if len(lines) != 0 {

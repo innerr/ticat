@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 type ExecutingFlow struct {
@@ -86,7 +87,11 @@ func (self *ExecutingFlow) OnLeaveSubFlow() {
 }
 
 func (self *ExecutingFlow) OnFlowFinish() {
-	writeStatusContent(self.path, StatusFileEOF+"\n")
+	now := time.Now().Format(SessionTimeFormat)
+	content := fmt.Sprintf("%s%s%s%s%s%s%s%s\n",
+		StatusFileMarkBracketLeft, StatusFileEOF, StatusFileMarkBracketRight, now,
+		StatusFileMarkBracketLeft, StatusFileMarkFinishMark, StatusFileEOF, StatusFileMarkBracketRight)
+	writeStatusContent(self.path, content)
 }
 
 func writeCmdEnv(w io.Writer, env *Env, mark string, level int) {
@@ -173,6 +178,6 @@ const (
 	StatusFileMarkBracketLeft  = "<"
 	StatusFileMarkBracketRight = ">"
 	StatusFileMarkFinishMark   = "/"
-	StatusFileEOF              = StatusFileMarkBracketLeft + "EOF" + StatusFileMarkFinishMark + StatusFileMarkBracketRight
+	StatusFileEOF              = "EOF"
 	StatusFileIndent           = "    "
 )
