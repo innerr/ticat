@@ -288,7 +288,7 @@ func dumpFlowCmd(
 			flowStrs, _ := cic.RenderedFlowStrs(argv, cmdEnv, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
-			if metFlow {
+			if metFlow && executedCmd == nil {
 				if !args.Skeleton {
 					prt(1, ColorProp("- flow (duplicated):", env))
 				} else {
@@ -330,7 +330,7 @@ func dumpFlowCmd(
 		if cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow {
 			subFlow, rendered := cic.Flow(argv, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
-				if !metFlow {
+				if !(metFlow && executedCmd == nil) {
 					if maxDepth > 1 {
 						prt(2, ColorFlowing("--->>>", env))
 					}
