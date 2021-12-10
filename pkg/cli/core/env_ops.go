@@ -34,7 +34,7 @@ func (self EnvOps) MatchWriteKey(key string) bool {
 		return false
 	}
 	for _, op := range ops {
-		if (op|EnvOpTypeWrite) > 0 || (op|EnvOpTypeMayWrite) > 0 {
+		if (op&EnvOpTypeWrite) > 0 || (op&EnvOpTypeMayWrite) > 0 {
 			return true
 		}
 	}

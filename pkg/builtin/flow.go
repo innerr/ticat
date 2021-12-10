@@ -93,6 +93,33 @@ func ListFlows(
 	return currCmdIdx, true
 }
 
+func RenameFlow(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	srcCmdPath, srcFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "src")
+	destCmdPath, destFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, false, "dest")
+
+	_, err := os.Stat(srcFilePath)
+	if os.IsNotExist(err) {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("path '%s' does not exist", srcFilePath)))
+	}
+
+	err = os.Rename(srcFilePath, destFilePath)
+	if err != nil {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("move flow file '%s' to'%s' failed: %v", srcFilePath, destFilePath, err)))
+	}
+
+	cc.Screen.Print(display.ColorCmd("["+srcCmdPath+"]", env) +
+		display.ColorSymbol(" -> ", env) + display.ColorCmd("["+destCmdPath+"]", env) + "\n")
+	return currCmdIdx, true
+}
+
 func RemoveFlow(
 	argv core.ArgVals,
 	cc *core.Cli,
