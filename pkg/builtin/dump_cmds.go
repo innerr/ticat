@@ -67,8 +67,12 @@ func DumpCmdTreeSkeleton(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	recursive := argv.GetBool("recursive")
 	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().NoFlatten()
+	if !recursive {
+		dumpArgs.NoRecursive()
+	}
 	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
 	return currCmdIdx, true
 }

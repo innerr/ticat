@@ -46,6 +46,9 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 	}
 	ok := self.execute(self.callerNameEntry, cc, false, false, input...)
 	builtin.WaitAllBgTasks(cc)
+	if cc.FlowStatus != nil && ok {
+		cc.FlowStatus.OnFlowFinish()
+	}
 	return ok
 }
 
@@ -95,9 +98,12 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
-	if !innerCall && !bootstrap && !noSessionCmds(flow) && !core.SessionInit(cc, flow, env,
-		self.sessionFileName, self.sessionStatusFileName) {
-		return false
+	if !innerCall && !bootstrap && !noSessionCmds(flow) {
+		statusWriter, ok := core.SessionInit(cc, flow, env, self.sessionFileName, self.sessionStatusFileName)
+		if !ok {
+			return false
+		}
+		cc.SetFlowStatusWriter(statusWriter)
 	}
 
 	if !innerCall && !bootstrap {
@@ -183,8 +189,12 @@ func (self *Executor) executeCmd(
 			} else {
 				dur := sysArgv.GetDelayDuration()
 				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
-				succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
-					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.Clone(currCmdIdx), 0)
+				var tid string
+				tid, succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
+					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.CloneOne(currCmdIdx), 0)
+				if cc.FlowStatus != nil {
+					cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env, tid)
+				}
 				newCurrCmdIdx = currCmdIdx
 			}
 		}
@@ -368,7 +378,7 @@ func asyncExecute(
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
-	currCmdIdx int) (scheduled bool) {
+	currCmdIdx int) (tid string, scheduled bool) {
 
 	if env.GetBool("sys.in-bg-task") {
 		tid := utils.GoRoutineIdStr()
@@ -394,6 +404,10 @@ func asyncExecute(
 		sessionDir = filepath.Join(sessionDir, tid)
 		os.MkdirAll(sessionDir, os.ModePerm)
 
+		statusFileName := env.GetRaw("strs.session-status-file")
+		statusPath := filepath.Join(sessionDir, statusFileName)
+		cc.SetFlowStatusWriter(core.NewExecutingFlow(statusPath, flow, env))
+
 		envBgSession := env.GetLayer(core.EnvLayerSession)
 		envBgSession.Set("session", sessionDir)
 		envBgSession.SetBool("display.one-cmd", true)
@@ -403,9 +417,19 @@ func asyncExecute(
 		tidChan <- tid
 
 		time.Sleep(dur)
+
+		defer func() {
+			if !cc.GlobalEnv.GetBool("sys.panic.recover") {
+				return
+			}
+			if r := recover(); r != nil {
+				display.PrintError(cc, cc.GlobalEnv, r.(error))
+				os.Exit(-1)
+			}
+		}()
+
 		task.OnStart()
 
-		//cc.Screen.Print(display.ColorExplain("(current command start running in thread "+tid+")\n", env))
 		stackLines := display.PrintCmdStack(false, cc.Screen, cmd,
 			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, nil, false)
 		var width int
@@ -426,10 +450,14 @@ func asyncExecute(
 				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}
+		if ok {
+			cc.FlowStatus.OnFlowFinish()
+		}
 		task.OnFinish()
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
 
-	screen.Print(display.ColorExplain("(current command scheduled to thread "+<-tidChan+")\n", env))
-	return true
+	tid = <-tidChan
+	screen.Print(display.ColorExplain("(current command scheduled to thread "+tid+")\n", env))
+	return tid, true
 }

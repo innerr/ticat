@@ -16,7 +16,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterTrivialCmds(cmds)
 	RegisterFlowCmds(cmds)
 	RegisterHubCmds(cmds)
-	RegisterSessionCmds(cmds.AddSub("sessions", "session", "s", "S").RegEmptyCmd("manage sessions").Owner())
+	RegisterSessionCmds(cmds.AddSub("sessions", "s", "S").RegEmptyCmd("manage sessions").Owner())
 	RegisterDbgCmds(cmds.AddSub("dbg").RegEmptyCmd("debug related commands").Owner())
 	RegisterMiscCmds(cmds)
 	RegisterBgCmds(cmds.AddSub("background", "bg").RegEmptyCmd("background tasks management").Owner())
@@ -54,7 +54,7 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 				MoreHelpStr).
 			SetQuiet().
 			SetPriority().
-			AddArg("trivial", defTrivial, "t", "T").
+			AddArg("trivial", defTrivial, "triv", "tri", "t", "T").
 			AddArg("depth", "32", "d", "D")
 
 		cmds.AddSub("less"+cmdSuffix, strings.Repeat("-", i)).
@@ -62,18 +62,18 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 				LessHelpStr).
 			SetQuiet().
 			SetPriority().
-			AddArg("trivial", defTrivial, "t", "T").
+			AddArg("trivial", defTrivial, "triv", "tri", "t", "T").
 			AddArg("depth", "32", "d", "D")
 	}
 
-	find := cmds.AddSub("find", "fnd", "search", "/").
+	find := cmds.AddSub("find", "search", "/").
 		RegPowerCmd(GlobalFindCmd,
 			"find commands with strings").
 		SetAllowTailModeCall().
 		SetPriority()
 	addFindStrArgs(find)
 
-	findUsage := cmds.AddSub("find-usage", "//").
+	findUsage := cmds.AddSub("find-detail", "//").
 		RegPowerCmd(GlobalFindCmdWithUsage,
 			"find commands with strings, with details").
 		SetAllowTailModeCall().
@@ -100,21 +100,21 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"desc the flow about to execute").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "t", "T").
+		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 	desc.AddSub("simple", "sim", "s", "S").
 		RegPowerCmd(DumpFlowAllSimple,
 			"desc the flow about to execute in lite style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "t", "T").
+		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 	desc.AddSub("skeleton", "sk", "sl", "st", "-").
 		RegPowerCmd(DumpFlowSkeleton,
 			"desc the flow about to execute, skeleton only").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "t", "T").
+		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 	desc.AddSub("dependencies", "depends", "depend", "dep", "os-cmd", "os").
 		RegPowerCmd(DumpFlowDepends,
@@ -132,14 +132,14 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 			"desc the flow execution").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "t", "T").
+		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 	descFlow.AddSub("simple", "sim", "s", "S", "-").
 		RegPowerCmd(DumpFlowSimple,
 			"desc the flow execution in lite style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "t", "T").
+		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
 	cmds.AddSub("tail-info", "==").
@@ -166,9 +166,10 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	mods := cmds.AddSub("cmds", "cmd", "c", "C")
-	mods.RegPowerCmd(DumpCmdNoRecursive,
-		"display command info, sub tree commands will not show").
+	// TODO: asign 'cmds' to a freq-use command
+	mods := cmds.AddSub("cmds", "cmd", "c", "C").
+		RegPowerCmd(DumpCmdNoRecursive,
+			"display command info").
 		SetAllowTailModeCall().
 		AddArg("cmd-path", "", "path", "p", "P")
 
@@ -180,7 +181,8 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
 		RegPowerCmd(DumpCmdTreeSkeleton,
 			"list builtin and loaded commands, skeleton only").
-		AddArg("cmd-path", "", "path", "p", "P")
+		AddArg("cmd-path", "", "path", "p", "P").
+		AddArg("recursive", "true", "r", "R")
 
 	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegPowerCmd(DumpCmdList,
@@ -273,11 +275,12 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 			"save session env changes to local").
 		SetQuiet()
 
-	env.AddSub("map").
+	env.AddSub("mapping", "map").
 		RegPowerCmd(MapEnvKeyValueToAnotherKey,
 			"read src-key's value and write to dest-key").
 		AddArg("src-key", "", "source-key", "source", "src", "from").
-		AddArg("dest-key", "", "dest", "to")
+		AddArg("dest-key", "", "dest", "to").
+		AddEnvOp("[[dest-key]]", core.EnvOpTypeWrite)
 
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
 		RegPowerCmd(RemoveEnvValAndSaveToLocal,
@@ -336,15 +339,34 @@ func RegisterVerbCmds(cmds *core.CmdTree) {
 }
 
 func RegisterSessionCmds(cmds *core.CmdTree) {
-	cmds.AddSub("list", "ls", "l", "L").
+	list := cmds.AddSub("list", "ls").
 		RegPowerCmd(ListSessions,
-			"list executed/ing sessions")
-	cmds.AddSub("last").
-		RegPowerCmd(LastSession,
-			"show last session")
+			"list executed/ing sessions").
+		SetAllowTailModeCall()
+	addFindStrArgs(list)
+
+	desc := list.AddSub("desc", "-").
+		RegPowerCmd(DescListedSession,
+			"desc executed/ing session").
+		SetAllowTailModeCall()
+	addFindStrArgs(desc)
+	desc.AddArg("trivial", "1", "triv", "tri", "t", "T")
+	desc.AddArg("depth", "32", "d", "D")
+
+	last := cmds.AddSub("last", "l", "L")
+	last.RegPowerCmd(LastSession,
+		"show last session")
+
+	last.AddSub("desc", "-").
+		RegPowerCmd(DescLastSession,
+			"desc the execution status of last session").
+		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
 	cmds.AddSub("clean", "clear", "--").
 		RegPowerCmd(CleanSessions,
 			"clean executed sessions")
+
 	cmds.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
 		RegPowerCmd(SetSessionsKeepDur,
 			"set the keeping duration of executed sessions").

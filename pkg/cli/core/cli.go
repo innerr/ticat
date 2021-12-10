@@ -1,5 +1,9 @@
 package core
 
+import (
+	"fmt"
+)
+
 type Screen interface {
 	Print(text string)
 	Error(text string)
@@ -22,6 +26,7 @@ type Cli struct {
 	Helps         *Helps
 	BgTasks       *BgTasks
 	CmdIO         CmdIO
+	FlowStatus    *ExecutingFlow
 }
 
 func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO CmdIO) *Cli {
@@ -36,7 +41,15 @@ func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *Env
 		NewHelps(),
 		NewBgTasks(),
 		cmdIO,
+		nil,
 	}
+}
+
+func (self *Cli) SetFlowStatusWriter(status *ExecutingFlow) {
+	if self.FlowStatus != nil {
+		panic(fmt.Errorf("[SetExecutingFlowStatusLogger] should never happen"))
+	}
+	self.FlowStatus = status
 }
 
 func (self *Cli) Copy() *Cli {
@@ -51,6 +64,7 @@ func (self *Cli) Copy() *Cli {
 		self.Helps,
 		self.BgTasks,
 		self.CmdIO,
+		nil,
 	}
 }
 
@@ -73,5 +87,6 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 			bgStdout,
 			bgStdout,
 		},
+		nil,
 	}
 }
