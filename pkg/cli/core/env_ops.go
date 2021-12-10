@@ -130,6 +130,15 @@ func (self *EnvOpsChecker) RemoveKeyStat(key string) {
 	(*self)[key] = envOpsCheckerKeyInfo{}
 }
 
+func (self *EnvOpsChecker) SetKeyWritten(key string) {
+	old, ok := (*self)[key]
+	if !ok {
+		old = envOpsCheckerKeyInfo{}
+	}
+	old.val = old.val | EnvOpTypeWrite
+	(*self)[key] = old
+}
+
 func (self EnvOpsChecker) OnCallCmd(
 	env *Env,
 	argv ArgVals,
