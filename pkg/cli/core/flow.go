@@ -36,7 +36,7 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, currCmdIdx int, cmdPathSep string, 
 		}
 
 		var path []string
-		var lastSegHasNoCmd bool
+		var prevSegHasNoCmd bool
 		var cmdHasEnv bool
 
 		for i := 0; i < cmd.TrivialLvl; i++ {
@@ -44,20 +44,24 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, currCmdIdx int, cmdPathSep string, 
 		}
 
 		for j, seg := range cmd.Segments {
-			if len(cmd.Segments) > 1 && j != 0 && !lastSegHasNoCmd {
+			if len(cmd.Segments) > 1 && j != 0 && !prevSegHasNoCmd {
 				fmt.Fprint(w, cmdPathSep)
 			}
 			fmt.Fprint(w, seg.Matched.Name)
 
 			if seg.Matched.Cmd != nil {
 				path = append(path, seg.Matched.Cmd.Name())
-			} else {
+			} else if len(seg.Matched.Name) != 0 {
 				path = append(path, seg.Matched.Name)
 			}
-			lastSegHasNoCmd = (seg.Matched.Cmd == nil)
-			cmdHasEnv = cmdHasEnv || SaveFlowEnv(w, seg.Env, path, envPathSep,
-				bracketLeft, bracketRight, envKeyValSep,
-				!cmdHasEnv && j == len(cmd.Segments)-1)
+
+			prevSegHasNoCmd = (seg.Matched.Cmd == nil)
+
+			savedEnv := false
+			useArgsFmt := (j == len(cmd.Segments)-1)
+			savedEnv = SaveFlowEnv(w, seg.Env, path, envPathSep, seqSep,
+				bracketLeft, bracketRight, envKeyValSep, useArgsFmt)
+			cmdHasEnv = cmdHasEnv || savedEnv
 		}
 	}
 }
@@ -67,6 +71,7 @@ func SaveFlowEnv(
 	env ParsedEnv,
 	prefixPath []string,
 	pathSep string,
+	seqSep string,
 	bracketLeft string,
 	bracketRight string,
 	envKeyValSep string,
@@ -91,7 +96,8 @@ func SaveFlowEnv(
 		if strings.HasPrefix(k, prefix) && len(k) != len(prefix) {
 			k = strings.Join(v.MatchedPath[len(prefixPath):], pathSep)
 		}
-		kv := fmt.Sprintf("%v%s%v", k, envKeyValSep, utils.QuoteStrIfHasSpace(v.Val))
+		val := normalizeEnvVal(v.Val, seqSep)
+		kv := fmt.Sprintf("%v%s%v", k, envKeyValSep, utils.QuoteStrIfHasSpace(val))
 		kvs = append(kvs, kv)
 	}
 
@@ -102,3 +108,27 @@ func SaveFlowEnv(
 	fmt.Fprintf(w, format, strings.Join(kvs, " "))
 	return true
 }
+
+func normalizeEnvVal(v string, seqSep string) string {
+	i := 0
+	for i < len(v) {
+		origin := i
+		i = strings.Index(v[i:], seqSep)
+		if i < 0 {
+			break
+		}
+		i += origin
+		if i > len(BackSlash) && v[i-len(BackSlash):i] == BackSlash {
+			i += len(seqSep)
+			continue
+		}
+		// NOTE: shellwords in 'cmd.go#FlowStrToStrs' will eat the single '\', so double '\\' is needed
+		v = v[0:i] + BackSlash + BackSlash + seqSep + v[i+len(seqSep):]
+		i += len(BackSlash)*2 + len(seqSep)
+	}
+	return v
+}
+
+// TODO: put '\' to env
+// TODO: too many related logic: here, parser, shellwords
+const BackSlash = "\\"
