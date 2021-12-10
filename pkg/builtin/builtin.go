@@ -219,6 +219,12 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P").
 		AddArg("help-str", "", "help", "h", "H")
 
+	flow.AddSub("rename", "rn").
+		RegPowerCmd(RenameFlow,
+			"rename a saved flow").
+		AddArg("src", "", "src-cmd", "s", "S").
+		AddArg("dest", "", "dest-cmd", "d", "D")
+
 	flow.AddSub("remove", "rm", "delete", "del", "-").
 		RegPowerCmd(RemoveFlow,
 			"remove a saved flow").

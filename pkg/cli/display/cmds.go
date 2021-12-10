@@ -24,7 +24,15 @@ func DumpCmdsWithTips(
 	findStr := strings.Join(args.FindStrs, " ")
 	selfName := env.GetRaw("strs.self-name")
 
-	// TODO: tip title of find by tag and 'MatchWriteKey'
+	if len(args.MatchWriteKey) != 0 {
+		if buf.OutputNum() > 0 {
+			prt("all commands which write key '" + args.MatchWriteKey + "':")
+		} else {
+			prt("no command writes key '" + args.MatchWriteKey + "':")
+		}
+		buf.WriteTo(screen)
+		return
+	}
 
 	if !args.Recursive {
 		prt("command details:")
