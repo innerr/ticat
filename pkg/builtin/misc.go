@@ -168,5 +168,13 @@ func EnvOpCmds() []core.EnvOpCmd {
 			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
 				checker.RemoveKeyStat(argv.GetRaw("key"))
 			}},
+		core.EnvOpCmd{MarkTime,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
+				checker.SetKeyWritten(argv.GetRaw("write-to-key"))
+			}},
+		core.EnvOpCmd{MapEnvKeyValueToAnotherKey,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
+				checker.SetKeyWritten(argv.GetRaw("dest-key"))
+			}},
 	}
 }
