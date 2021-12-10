@@ -159,7 +159,8 @@ func dumpFlowCmd(
 		if executedCmd != nil {
 			if executedCmd.Cmd != cmdId {
 				// TODO: better display
-				name += " - flow not matched, executed cmd " + ColorCmd("["+executedCmd.Cmd+"]", env)
+				name += ColorSymbol(" - ", env) + ColorError("flow not matched, origin cmd: ", env) +
+					ColorCmd("["+executedCmd.Cmd+"]", env)
 				prt(0, name)
 				return false
 			}
