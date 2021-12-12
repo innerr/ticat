@@ -291,3 +291,21 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 14)
 }
+
+func EnvAssertEqual(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	val := argv.GetRaw("val")
+	envVal := env.GetRaw(key)
+
+	if val != envVal {
+		panic(fmt.Errorf("assert env '%s' = '%s' failed, is '%s'", key, val, envVal))
+	}
+	cc.Screen.Print(display.KeyValueDisplayStr(key, val, env) + "\n")
+	return currCmdIdx, true
+}

@@ -205,6 +205,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall()
 	addFindStrArgs(flow)
 
+	// TODO: check the new cmd is conflicted with other cmds
 	flow.AddSub("save", "persist", "s", "S", "+").
 		RegPowerCmd(SaveFlow,
 			"save current commands as a flow").
@@ -219,6 +220,7 @@ func RegisterFlowCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P").
 		AddArg("help-str", "", "help", "h", "H")
 
+	// TODO: check the new cmd is conflicted with other cmds
 	flow.AddSub("rename", "rn").
 		RegPowerCmd(RenameFlow,
 			"rename a saved flow").
@@ -260,6 +262,12 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 			"list essential env values in flatten format").
 		SetAllowTailModeCall()
 	addFindStrArgs(env)
+
+	env.AddSub("assert").
+		RegPowerCmd(EnvAssertEqual,
+			"assert the value of a key in env equal to specified value").
+		AddArg("key", "", "k", "K").
+		AddArg("val", "", "value", "v", "V")
 
 	env.AddSub("tree", "t", "T").
 		RegPowerCmd(DumpEnvTree,
