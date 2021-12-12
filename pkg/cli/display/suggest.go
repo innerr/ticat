@@ -173,13 +173,10 @@ func SuggestFindConfigFlows(env *core.Env) []string {
 
 func SuggestFindProvider(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	//prefix := selfName + " key-name write :"
 	explain := "- find modules which will write this key"
 	return []string{
 		padR(selfName+" env.who-write key-name", indent) + explain,
 		padR(selfName+" e.ww          key-name", indent) + "- same as above",
-		//padR(prefix+"/", indent) + explain,
-		//padR(prefix+"//", indent) + explain + ", with usage",
 	}
 }
 
