@@ -263,11 +263,16 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall()
 	addFindStrArgs(env)
 
-	env.AddSub("assert").
+	assert := env.AddSub("assert")
+	assert.AddSub("equal").
 		RegPowerCmd(EnvAssertEqual,
 			"assert the value of a key in env equal to specified value").
 		AddArg("key", "", "k", "K").
 		AddArg("val", "", "value", "v", "V")
+	assert.AddSub("not-exists").
+		RegPowerCmd(EnvAssertNotExists,
+			"assert the key not in env").
+		AddArg("key", "", "k", "K")
 
 	env.AddSub("tree", "t", "T").
 		RegPowerCmd(DumpEnvTree,

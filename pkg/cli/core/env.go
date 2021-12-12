@@ -12,6 +12,7 @@ const (
 	EnvLayerPersisted              = "persisted"
 	EnvLayerSession                = "session"
 	EnvLayerCmd                    = "command"
+	EnvLayerSubFlow                = "subflow"
 	EnvLayerTmp                    = "temporary"
 )
 
@@ -79,6 +80,21 @@ func (self *Env) GetLayer(ty EnvLayerType) *Env {
 	env := self.getLayer(ty)
 	if env == nil {
 		panic(fmt.Errorf("[Env.GetLayer] env layer '%s' not found", ty))
+	}
+	return env
+}
+
+func (self *Env) GetOneOfLayers(tys ...EnvLayerType) (env *Env) {
+	names := []string{}
+	for _, ty := range tys {
+		env = self.getLayer(ty)
+		if env != nil {
+			break
+		}
+		names = append(names, string(ty))
+	}
+	if env == nil {
+		panic(fmt.Errorf("[Env.GetOneOfLayers] env layers '%s' not found", strings.Join(names, " ")))
 	}
 	return env
 }

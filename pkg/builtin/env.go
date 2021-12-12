@@ -309,3 +309,18 @@ func EnvAssertEqual(
 	cc.Screen.Print(display.KeyValueDisplayStr(key, val, env) + "\n")
 	return currCmdIdx, true
 }
+
+func EnvAssertNotExists(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+
+	if env.Has(key) {
+		panic(fmt.Errorf("assert key '%s' not in env failed", key))
+	}
+	return currCmdIdx, true
+}
