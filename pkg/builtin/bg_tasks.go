@@ -19,11 +19,11 @@ func WaitForAllBgTasksFinish(
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 			"must be in main thread to wait for other threads to finish"))
 	}
-	WaitAllBgTasks(cc)
+	WaitAllBgTasks(cc, env)
 	return currCmdIdx, true
 }
 
-func WaitAllBgTasks(cc *core.Cli) {
+func WaitAllBgTasks(cc *core.Cli, env *core.Env) {
 	preTid := utils.GoRoutineIdStr()
 	for {
 		tid, task, ok := cc.BgTasks.GetEarliestTask()
@@ -32,7 +32,7 @@ func WaitAllBgTasks(cc *core.Cli) {
 		}
 		info := task.GetStat()
 
-		display.PrintSwitchingThreadDisplay(preTid, info, cc.GlobalEnv, cc.Screen)
+		display.PrintSwitchingThreadDisplay(preTid, info, env, cc.Screen)
 
 		cc.BgTasks.BringBgTaskToFront(tid, cc.CmdIO.CmdStdout)
 		task.WaitForFinish()

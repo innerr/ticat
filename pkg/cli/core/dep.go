@@ -41,9 +41,10 @@ func collectDepends(
 			subFlow, rendered := cic.Flow(argv, cmdEnv, allowFlowTemplateRenderError)
 			if rendered && len(subFlow) != 0 {
 				parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-				parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+				flowEnv := cmdEnv.NewLayer(EnvLayerSubFlow)
+				parsedFlow.GlobalEnv.WriteNotArgTo(flowEnv, cc.Cmds.Strs.EnvValDelAllMark)
 				// Allow parse errors here
-				collectDepends(cc, env, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds)
+				collectDepends(cc, flowEnv, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds)
 			}
 		}
 
@@ -67,9 +68,10 @@ func collectDepends(
 		subFlow, rendered := cic.Flow(argv, cmdEnv, allowFlowTemplateRenderError)
 		if rendered && len(subFlow) != 0 {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-			parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+			flowEnv := cmdEnv.NewLayer(EnvLayerSubFlow)
+			parsedFlow.GlobalEnv.WriteNotArgTo(flowEnv, cc.Cmds.Strs.EnvValDelAllMark)
 			// Allow parse errors here
-			collectDepends(cc, env, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds)
+			collectDepends(cc, flowEnv, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds)
 		}
 	}
 }

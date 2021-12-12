@@ -245,10 +245,12 @@ func checkEnvOps(
 		}
 
 		displayPath := cmd.DisplayPath(sep, true)
+
 		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+
 		if last.Type() == CmdTypeFileNFlow {
-			parsedFlow := renderSubFlowOnChecking(last, cc, argv, env, cmdEnv)
-			checkEnvOps(cc, parsedFlow, env, checker, ignoreMaybe, envOpCmds, result, arg2envs)
+			parsedFlow, flowEnv := renderSubFlowOnChecking(last, cc, argv, cmdEnv)
+			checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs)
 		}
 
 		res := checker.OnCallCmd(cmdEnv, argv, cmd, sep, last, ignoreMaybe, displayPath, arg2envs)
@@ -261,22 +263,22 @@ func checkEnvOps(
 			continue
 		}
 
-		parsedFlow := renderSubFlowOnChecking(last, cc, argv, env, cmdEnv)
-		checkEnvOps(cc, parsedFlow, env, checker, ignoreMaybe, envOpCmds, result, arg2envs)
+		parsedFlow, flowEnv := renderSubFlowOnChecking(last, cc, argv, cmdEnv)
+		checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs)
 	}
 }
 
 // TODO: a bit meeessy
-func renderSubFlowOnChecking(last *Cmd, cc *Cli, argv ArgVals, env *Env, cmdEnv *Env) (parsedFlow *ParsedCmds) {
+func renderSubFlowOnChecking(last *Cmd, cc *Cli, argv ArgVals, cmdEnv *Env) (parsedFlow *ParsedCmds, flowEnv *Env) {
 	subFlow, _ := last.Flow(argv, cmdEnv, false)
 	parsedFlow = cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 	err := parsedFlow.FirstErr()
 	if err != nil {
 		panic(err.Error)
 	}
+	flowEnv = cmdEnv.NewLayer(EnvLayerSubFlow)
 	if parsedFlow.GlobalEnv != nil {
-		env = env.GetOrNewLayer(EnvLayerTmp)
-		parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
+		parsedFlow.GlobalEnv.WriteNotArgTo(flowEnv, cc.Cmds.Strs.EnvValDelAllMark)
 	}
 	return
 }

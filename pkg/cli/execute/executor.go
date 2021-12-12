@@ -36,16 +36,16 @@ func NewExecutor(
 	}
 }
 
-func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool {
-	overWriteBootstrap := cc.GlobalEnv.Get("sys.bootstrap").Raw
+func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input ...string) bool {
+	overWriteBootstrap := env.Get("sys.bootstrap").Raw
 	if len(overWriteBootstrap) != 0 {
 		bootstrap = overWriteBootstrap
 	}
-	if !self.execute(self.callerNameBootstrap, cc, true, false, bootstrap) {
+	if !self.execute(self.callerNameBootstrap, cc, env, true, false, bootstrap) {
 		return false
 	}
-	ok := self.execute(self.callerNameEntry, cc, false, false, input...)
-	builtin.WaitAllBgTasks(cc)
+	ok := self.execute(self.callerNameEntry, cc, env, false, false, input...)
+	builtin.WaitAllBgTasks(cc, env)
 	if cc.FlowStatus != nil && ok {
 		cc.FlowStatus.OnFlowFinish()
 	}
@@ -53,15 +53,14 @@ func (self *Executor) Run(cc *core.Cli, bootstrap string, input ...string) bool 
 }
 
 // Implement core.Executor
-func (self *Executor) Execute(caller string, cc *core.Cli, input ...string) bool {
-	return self.execute(caller, cc, false, true, input...)
+func (self *Executor) Execute(caller string, cc *core.Cli, env *core.Env, input ...string) bool {
+	return self.execute(caller, cc, env, false, true, input...)
 }
 
-func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, innerCall bool, input ...string) bool {
-	if !innerCall && cc.GlobalEnv.GetBool("sys.env.use-cmd-abbrs") {
+func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, bootstrap bool, innerCall bool, input ...string) bool {
+	if !innerCall && env.GetBool("sys.env.use-cmd-abbrs") {
 		useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	}
-	env := cc.GlobalEnv.GetLayer(core.EnvLayerSession)
 
 	if !innerCall && len(input) == 0 {
 		display.PrintGlobalHelp(cc, env)
@@ -73,6 +72,7 @@ func (self *Executor) execute(caller string, cc *core.Cli, bootstrap bool, inner
 	}
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
 	if flow.GlobalEnv != nil {
+		env = env.GetOneOfLayers(core.EnvLayerSubFlow, core.EnvLayerSession)
 		flow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 	}
 
@@ -419,11 +419,11 @@ func asyncExecute(
 		time.Sleep(dur)
 
 		defer func() {
-			if !cc.GlobalEnv.GetBool("sys.panic.recover") {
+			if !env.GetBool("sys.panic.recover") {
 				return
 			}
 			if r := recover(); r != nil {
-				display.PrintError(cc, cc.GlobalEnv, r.(error))
+				display.PrintError(cc, env, r.(error))
 				os.Exit(-1)
 			}
 		}()

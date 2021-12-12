@@ -11,15 +11,15 @@ import (
 )
 
 func main() {
-	globalEnv := core.NewEnv().NewLayers(
+	env := core.NewEnv().NewLayers(
 		core.EnvLayerDefault,
 		core.EnvLayerPersisted,
 		core.EnvLayerSession,
 	)
-	builtin.LoadDefaultEnv(globalEnv)
+	builtin.LoadDefaultEnv(env)
 
 	// Any mod could get the specific string val from env when it's called
-	defEnv := globalEnv.GetLayer(core.EnvLayerDefault)
+	defEnv := env.GetLayer(core.EnvLayerDefault)
 	defEnv.Set("strs.self-name", SelfName)
 	defEnv.Set("strs.list-sep", ListSep)
 	defEnv.Set("strs.cmd-builtin-display-name", CmdBuiltinDisplayName)
@@ -106,7 +106,7 @@ func main() {
 	cmdIO := core.CmdIO{os.Stdin, os.Stdout, os.Stderr}
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
-	cc := core.NewCli(globalEnv, screen, tree, cliParser, abbrs, cmdIO)
+	cc := core.NewCli(screen, tree, cliParser, abbrs, cmdIO)
 
 	// Modules and env loaders
 	bootstrap := `
@@ -120,11 +120,11 @@ func main() {
 
 	// TODO: handle error by types
 	defer func() {
-		if !cc.GlobalEnv.GetBool("sys.panic.recover") {
+		if !env.GetBool("sys.panic.recover") {
 			return
 		}
 		if r := recover(); r != nil {
-			display.PrintError(cc, cc.GlobalEnv, r.(error))
+			display.PrintError(cc, env, r.(error))
 			os.Exit(-1)
 		}
 	}()
@@ -133,7 +133,7 @@ func main() {
 	executor := execute.NewExecutor(SessionEnvFileName,
 		SessionStatusFileName, "<bootstrap>", "<entry>")
 	cc.Executor = executor
-	succeeded := executor.Run(cc, bootstrap, os.Args[1:]...)
+	succeeded := executor.Run(cc, env, bootstrap, os.Args[1:]...)
 
 	// TODO: more exit codes
 	if !succeeded {
@@ -142,16 +142,15 @@ func main() {
 }
 
 const (
-	SelfName              string = "ticat"
-	ListSep               string = ","
-	CmdRootDisplayName    string = "<root>"
-	CmdBuiltinDisplayName string = "<builtin>"
-	Spaces                string = "\t\n\r "
-	AbbrsSep              string = "|"
-	EnvOpSep              string = ":"
-	SequenceSep           string = ":"
-	CmdPathSep            string = "."
-	//CmdPathAlterSeps         string = "./"
+	SelfName                 string = "ticat"
+	ListSep                  string = ","
+	CmdRootDisplayName       string = "<root>"
+	CmdBuiltinDisplayName    string = "<builtin>"
+	Spaces                   string = "\t\n\r "
+	AbbrsSep                 string = "|"
+	EnvOpSep                 string = ":"
+	SequenceSep              string = ":"
+	CmdPathSep               string = "."
 	CmdPathAlterSeps         string = "."
 	EnvBracketLeft           string = "{"
 	EnvBracketRight          string = "}"

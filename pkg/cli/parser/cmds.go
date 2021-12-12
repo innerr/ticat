@@ -29,7 +29,6 @@ func (self *Parser) Parse(
 	}
 	if firstIsGlobal && len(flow.Cmds) != 0 {
 		flow.GlobalCmdIdx = 0
-		// TODO: remove GlobalEnv?
 		if !flow.Cmds[0].IsEmpty() {
 			firstCmd := flow.Cmds[0]
 			for _, seg := range firstCmd.Segments {

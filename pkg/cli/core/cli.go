@@ -12,11 +12,10 @@ type Screen interface {
 }
 
 type Executor interface {
-	Execute(caller string, cc *Cli, input ...string) bool
+	Execute(caller string, cc *Cli, env *Env, input ...string) bool
 }
 
 type Cli struct {
-	GlobalEnv     *Env
 	Screen        Screen
 	Cmds          *CmdTree
 	Parser        CliParser
@@ -29,9 +28,8 @@ type Cli struct {
 	FlowStatus    *ExecutingFlow
 }
 
-func NewCli(env *Env, screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO CmdIO) *Cli {
+func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO CmdIO) *Cli {
 	return &Cli{
-		env,
 		screen,
 		cmds,
 		parser,
@@ -54,7 +52,6 @@ func (self *Cli) SetFlowStatusWriter(status *ExecutingFlow) {
 
 func (self *Cli) Copy() *Cli {
 	return &Cli{
-		self.GlobalEnv,
 		self.Screen,
 		self.Cmds,
 		self.Parser,
@@ -73,7 +70,6 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 	screen := NewBgTaskScreen()
 	bgStdout := screen.GetBgStdout()
 	return &Cli{
-		env.GetLayer(EnvLayerSession),
 		screen,
 		self.Cmds,
 		self.Parser,
