@@ -80,13 +80,36 @@ func CleanSessions(env *Env) (cleaned uint, runnings uint) {
 		err = syscall.Kill(oldSessionPid, syscall.Signal(0))
 		running := !(err != nil && err == syscall.ESRCH)
 		if !running {
-			os.RemoveAll(filepath.Join(sessionsRoot, dir.Name()))
-			cleaned += 1
+			err = os.RemoveAll(filepath.Join(sessionsRoot, dir.Name()))
+			if err == nil {
+				cleaned += 1
+			}
 		} else {
 			runnings += 1
 		}
 	}
 	return
+}
+
+func CleanSession(session SessionStatus, env *Env) (cleaned bool, running bool) {
+	sessionsRoot := env.GetRaw("sys.paths.sessions")
+	if len(sessionsRoot) == 0 {
+		panic(fmt.Errorf("[CleanSession] can't get sessions' root path"))
+	}
+
+	err := syscall.Kill(session.Pid, syscall.Signal(0))
+	running = !(err != nil && err == syscall.ESRCH)
+	if running {
+		return false, true
+	}
+
+	sessionDir := filepath.Join(sessionsRoot, session.DirName)
+	err = os.RemoveAll(sessionDir)
+	if err != nil {
+		//panic(fmt.Sprintf("[CleanSession] can't remove session dir '%s'", sessionDir))
+		return false, false
+	}
+	return true, false
 }
 
 func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,

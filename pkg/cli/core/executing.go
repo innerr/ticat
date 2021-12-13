@@ -81,9 +81,13 @@ func (self *ExecutingFlow) OnSubFlowStart(flow string) {
 	writeMarkedContent(self.path, "flow", self.level, flow)
 }
 
-func (self *ExecutingFlow) OnSubFlowFinish() {
+func (self *ExecutingFlow) OnSubFlowFinish(env *Env) {
 	self.level -= 1
 	writeMarkFinish(self.path, "subflow", self.level)
+	// TODO: write once
+	buf := bytes.NewBuffer(nil)
+	writeCmdEnv(buf, env, "env-finish", self.level)
+	writeStatusContent(self.path, buf.String())
 }
 
 func (self *ExecutingFlow) OnFlowFinish() {

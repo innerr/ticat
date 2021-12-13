@@ -9,7 +9,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func CleanSessions(
+func RemoveAllSessions(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -48,14 +48,15 @@ func ListSessions(
 	}
 	for _, it := range sessions {
 		if it.Cleaning {
-			continue
+			dumpSession(it, env, cc.Screen, "expired")
+		} else {
+			dumpSession(it, env, cc.Screen, "")
 		}
-		dumpSession(it, env, cc.Screen)
 	}
 	return currCmdIdx, true
 }
 
-func DescListedSession(
+func FindAndRemoveSessions(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -71,8 +72,75 @@ func DescListedSession(
 		} else {
 			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
 		}
+	}
+	for _, it := range sessions {
+		if it.Cleaning {
+			dumpSession(it, env, cc.Screen, "expired")
+			continue
+		}
+		cleaned, running := core.CleanSession(it, env)
+		status := "removed"
+		if running {
+			status = "running, untouched"
+		} else if !cleaned {
+			status = "remove failed"
+		}
+		dumpSession(it, env, cc.Screen, status)
+	}
+	return currCmdIdx, true
+}
+
+func ListedSessionDescLess(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return listedSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, false)
+}
+
+func ListedSessionDescMore(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return listedSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, true)
+}
+
+func ListedSessionDescFull(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return listedSessionDesc(argv, cc, env, flow, currCmdIdx, false, true, true)
+}
+
+func listedSessionDesc(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	skeleton bool,
+	showStartEnv bool,
+	showModifiedEnv bool) (int, bool) {
+
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+
+	sessions := core.ListSessions(env, findStrs)
+	if len(sessions) == 0 {
+		if len(findStrs) > 0 {
+			display.PrintErrTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
+		} else {
+			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
+		}
 	} else if len(sessions) > 1 {
-		descSession(sessions[len(sessions)-1], argv, cc, env)
+		descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showStartEnv, showModifiedEnv)
 		prefix := fmt.Sprintf("more than one sessions(%v), only display the last one, ", len(sessions))
 		if len(findStrs) > 0 {
 			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-str to filter")
@@ -80,7 +148,7 @@ func DescListedSession(
 			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-str to filter")
 		}
 	} else {
-		descSession(sessions[0], argv, cc, env)
+		descSession(sessions[0], argv, cc, env, skeleton, showStartEnv, showModifiedEnv)
 	}
 	return currCmdIdx, true
 }
@@ -97,23 +165,56 @@ func LastSession(
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 		return currCmdIdx, true
 	}
-	dumpSession(sessions[len(sessions)-1], env, cc.Screen)
+	dumpSession(sessions[len(sessions)-1], env, cc.Screen, "")
 	return currCmdIdx, true
 }
 
-func DescLastSession(
+func LastSessionDescLess(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, false)
+}
+
+func LastSessionDescMore(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, true)
+}
+
+func LastSessionDescFull(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, false, true, true)
+}
+
+func lastSessionDesc(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	skeleton bool,
+	showStartEnv bool,
+	showModifiedEnv bool) (int, bool) {
+
 	sessions := core.ListSessions(env, nil)
 	if len(sessions) == 0 {
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 		return currCmdIdx, true
 	}
-	descSession(sessions[len(sessions)-1], argv, cc, env)
+	descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showStartEnv, showModifiedEnv)
 	return currCmdIdx, true
 }
 
@@ -131,10 +232,10 @@ func SetSessionsKeepDur(
 	return currCmdIdx, true
 }
 
-func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen) {
+func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, status string) {
 	selfName := env.GetRaw("strs.self-name")
 
-	screen.Print(display.ColorSession("["+session.DirName+"]\n", env))
+	screen.Print(display.ColorSession("["+session.DirName+"]", env) + " " + display.ColorExplain(status, env) + "\n")
 
 	screen.Print(display.ColorProp("    cmd:\n", env))
 	screen.Print(display.ColorFlow(fmt.Sprintf("        %s %s\n", selfName, session.Status.Flow), env))
@@ -164,9 +265,20 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen) 
 	}
 }
 
-func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, env *core.Env) {
-	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().
-		SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
+func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, env *core.Env,
+	skeleton, showStartEnv bool, showModifiedEnv bool) {
+
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
+	if skeleton {
+		dumpArgs.SetSkeleton()
+	}
+	if showStartEnv {
+		dumpArgs.SetShowExecutedStartEnv()
+	}
+	if showModifiedEnv {
+		dumpArgs.SetShowExecutedModifiedEnv()
+	}
+
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, core.FlowStrToStrs(session.Status.Flow)...)
 	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, session.Running, EnvOpCmds())
 }

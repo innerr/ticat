@@ -364,27 +364,61 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall()
 	addFindStrArgs(list)
 
-	desc := list.AddSub("desc", "-").
-		RegPowerCmd(DescListedSession,
+	listDesc := list.AddSub("desc", "desc-less", "-").
+		RegPowerCmd(ListedSessionDescLess,
 			"desc executed/ing session").
 		SetAllowTailModeCall()
-	addFindStrArgs(desc)
-	desc.AddArg("trivial", "1", "triv", "tri", "t", "T")
-	desc.AddArg("depth", "32", "d", "D")
+	addFindStrArgs(listDesc)
+	listDesc.AddArg("trivial", "1", "triv", "tri", "t", "T")
+	listDesc.AddArg("depth", "32", "d", "D")
+
+	listDescMore := list.AddSub("desc-more", "+").
+		RegPowerCmd(ListedSessionDescMore,
+			"desc executed/ing session with more details").
+		SetAllowTailModeCall()
+	addFindStrArgs(listDescMore)
+	listDescMore.AddArg("trivial", "1", "triv", "tri", "t", "T")
+	listDescMore.AddArg("depth", "32", "d", "D")
+
+	listDescFull := list.AddSub("desc-full", "++").
+		RegPowerCmd(ListedSessionDescFull,
+			"desc executed/ing session with full details").
+		SetAllowTailModeCall()
+	addFindStrArgs(listDescFull)
+	listDescFull.AddArg("trivial", "1", "triv", "tri", "t", "T")
+	listDescFull.AddArg("depth", "32", "d", "D")
 
 	last := cmds.AddSub("last", "l", "L")
 	last.RegPowerCmd(LastSession,
 		"show last session")
 
-	last.AddSub("desc", "-").
-		RegPowerCmd(DescLastSession,
+	last.AddSub("desc", "desc-less", "-").
+		RegPowerCmd(LastSessionDescLess,
 			"desc the execution status of last session").
 		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
-	cmds.AddSub("clean", "clear", "--").
-		RegPowerCmd(CleanSessions,
+	last.AddSub("desc-more", "+").
+		RegPowerCmd(LastSessionDescMore,
+			"desc the execution status of last session with more details").
+		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	last.AddSub("desc-full", "++").
+		RegPowerCmd(LastSessionDescFull,
+			"desc the execution status of last session with full details").
+		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	cmds.AddSub("remove-all", "clean", "clear", "--").
+		RegPowerCmd(RemoveAllSessions,
 			"clean executed sessions")
+
+	remove := cmds.AddSub("remove", "delete", "rm").
+		RegPowerCmd(FindAndRemoveSessions,
+			"clean executed sessions by find-strs").
+		SetAllowTailModeCall()
+	addFindStrArgs(remove)
 
 	cmds.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
 		RegPowerCmd(SetSessionsKeepDur,
