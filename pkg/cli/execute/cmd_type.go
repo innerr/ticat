@@ -85,17 +85,27 @@ func allowParseError(flow *core.ParsedCmds) bool {
 	return false
 }
 
-func noSessionCmds(flow *core.ParsedCmds) bool {
+func noSessionCmds(flow *core.ParsedCmds) (yes bool, notRecord bool) {
 	if flow.HasTailMode {
-		return true
+		return true, true
 	}
 	if len(flow.Cmds) != 1 {
-		return false
+		return false, false
 	}
 	cmd := flow.Cmds[0].LastCmdNode()
-	// No source == builtin command
-	if cmd.IsBuiltin() {
-		return true
+
+	if !cmd.IsBuiltin() {
+		return false, false
 	}
-	return false
+
+	funcs := []interface{}{
+		builtin.ListSessionRetry,
+		builtin.LastSessionRetry,
+	}
+	for _, it := range funcs {
+		if cmd.Cmd() != nil && cmd.Cmd().IsTheSameFunc(it) {
+			return false, true
+		}
+	}
+	return true, true
 }

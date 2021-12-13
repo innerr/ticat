@@ -20,7 +20,7 @@ type SessionStatus struct {
 	Status   *ExecutedFlow
 }
 
-func ListSessions(env *Env, findStrs []string) (sessions []SessionStatus) {
+func ListSessions(env *Env, findStrs []string, mustMatchDirName string) (sessions []SessionStatus) {
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
 		panic(fmt.Errorf("[ListSessions] can't get sessions' root path\n"))
@@ -44,6 +44,10 @@ func ListSessions(env *Env, findStrs []string) (sessions []SessionStatus) {
 	for _, dir := range dirs {
 		oldSessionPid, oldSessionStartTs, ok := parseSessionDirName(dir)
 		if !ok {
+			continue
+		}
+
+		if len(mustMatchDirName) != 0 && dir != mustMatchDirName {
 			continue
 		}
 

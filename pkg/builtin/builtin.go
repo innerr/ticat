@@ -388,6 +388,11 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	listDescFull.AddArg("trivial", "1", "triv", "tri", "t", "T")
 	listDescFull.AddArg("depth", "32", "d", "D")
 
+	list.AddSub("retry").
+		RegPowerCmd(ListSessionRetry,
+			"find a session by find-strs, if it failed, retry running from the error point").
+		AddArg("session-id", "", "session", "id")
+
 	last := cmds.AddSub("last", "l", "L")
 	last.RegPowerCmd(LastSession,
 		"show last session")
@@ -409,6 +414,10 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the execution status of last session with full details").
 		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
+
+	last.AddSub("retry").
+		RegPowerCmd(LastSessionRetry,
+			"if the last session failed, retry running from the error point")
 
 	cmds.AddSub("remove-all", "clean", "clear", "--").
 		RegPowerCmd(RemoveAllSessions,
