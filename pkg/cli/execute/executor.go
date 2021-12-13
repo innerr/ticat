@@ -227,6 +227,7 @@ func removeEmptyCmds(flow *core.ParsedCmds) {
 	flow.Cmds = cmds
 }
 
+// TODO: trim the empty cmds at tail, like: '<cmd> : <cmd> ::'
 func moveLastPriorityCmdToFront(
 	flow []core.ParsedCmd) (reordered []core.ParsedCmd, doMove bool, tailModeCall bool, attempTailModeCall bool) {
 

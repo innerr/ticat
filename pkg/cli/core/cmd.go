@@ -535,15 +535,15 @@ func FlowStrsToStr(flowStrs []string) string {
 
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) (succeeded bool) {
 	flow, _ := self.Flow(argv, env, false)
+	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnSubFlowStart(FlowStrsToStr(flow))
 		defer func() {
 			if succeeded {
-				cc.FlowStatus.OnSubFlowFinish()
+				cc.FlowStatus.OnSubFlowFinish(flowEnv)
 			}
 		}()
 	}
-	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flowEnv, flow...)
 	return
 }
