@@ -114,7 +114,6 @@ func dumpFlowCmd(
 	}
 
 	sep := cmd.Strs.PathSep
-	envOpSep := " " + cmd.Strs.EnvOpSep + " "
 
 	prt := func(indentLvl int, msg string) {
 		indentLvl += indentAdjust
@@ -128,53 +127,26 @@ func dumpFlowCmd(
 		return true
 	}
 
-	var startEnv map[string]string
-	if executedCmd.StartEnv != nil {
-		startEnv = executedCmd.StartEnv.FlattenAll()
-	}
-
 	trivialDelta := cmd.Trivial() + parsedCmd.TrivialLvl
 
 	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, sep)
 
 	if (executedCmd != nil && !executedCmd.Succeeded) || (maxTrivial > 0 && maxDepth > 0) {
-		showTrivialMark := (executedCmd == nil || executedCmd.Succeeded) && maxTrivial == 1 && trivialDelta > 0 &&
-			(cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow)
+		showTrivialMark := (executedCmd == nil || executedCmd.Succeeded) &&
+			maxTrivial == 1 && trivialDelta > 0 && cic.HasSubFlow()
 		name, ok := dumpCmdDisplayName(cmdEnv, parsedCmd, args, executedCmd, running, showTrivialMark)
 		prt(0, name)
 		if !ok {
 			return false
 		}
 
-		if len(cic.Help()) != 0 {
-			if !args.Skeleton {
-				prt(1, " "+ColorHelp("'"+cic.Help()+"'", env))
-			} else {
-				prt(1, ColorHelp("'"+cic.Help()+"'", env))
-			}
-		}
+		dumpCmdHelp(cic.Help(), cmdEnv, args, prt)
 
 		if executedCmd != nil {
 			if executedCmd.Unexecuted {
 				return true
 			}
-			if !args.Skeleton {
-				if len(executedCmd.Err) != 0 {
-					prt(1, ColorError("- error:", env))
-				}
-				for _, line := range executedCmd.Err {
-					prt(2, ColorError(strings.TrimSpace(line), env))
-				}
-			} else {
-				if len(executedCmd.Err) != 0 {
-					prt(0, "  "+ColorError(" - error:", env))
-				}
-				for _, line := range executedCmd.Err {
-					prt(1, " "+ColorError(strings.TrimSpace(line), env))
-				}
-			}
-
-			dumpExecutedStartEnv(env, prt, args, startEnv)
+			dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
 		}
 	}
 
@@ -182,7 +154,7 @@ func dumpFlowCmd(
 	originEnv := env.Clone()
 
 	if (executedCmd != nil && !executedCmd.Succeeded) || (maxTrivial > 0 && maxDepth > 0) {
-		dumpCmdArgv(cic, argv, env, originEnv, prt, args, writtenKeys)
+		dumpCmdArgv(cic, argv, cmdEnv, originEnv, prt, args, writtenKeys)
 	}
 
 	trivial := maxTrivial - trivialDelta
@@ -213,46 +185,9 @@ func dumpFlowCmd(
 		return executedCmd == nil || executedCmd.Succeeded
 	}
 
-	if !args.Skeleton {
-		keys, kvs := dumpFlowEnv(cc, originEnv, flow.GlobalEnv, parsedCmd, cmd, argv, writtenKeys)
-		if len(keys) != 0 {
-			prt(1, ColorProp("- env-values:", env))
-		}
-		for _, k := range keys {
-			v := kvs[k]
-			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(v.Val, env)+" "+v.Source+"")
-		}
-	}
-	writtenKeys.AddCmd(argv, env, cic)
-
-	if !args.Skeleton {
-		envOps := cic.EnvOps()
-		envOpKeys, origins, _ := envOps.RenderedEnvKeys(argv, cmdEnv, cic, false)
-		if len(envOpKeys) != 0 {
-			prt(1, ColorProp("- env-ops:", env))
-		}
-		for i, k := range envOpKeys {
-			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+
-				dumpEnvOps(envOps.Ops(origins[i]), envOpSep)+dumpIsAutoTimerKey(env, cic, k))
-		}
-	}
-
-	if !args.Simple && !args.Skeleton {
-		line := string(cic.Type())
-		if cic.IsQuiet() {
-			line += " quiet"
-		}
-		if cic.IsPriority() {
-			line += " priority"
-		}
-		prt(1, ColorProp("- cmd-type:", env))
-		prt(2, line)
-
-		if len(cmd.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cmd.Source()) {
-			prt(1, ColorProp("- from:", env))
-			prt(2, cmd.Source())
-		}
-	}
+	dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, args, writtenKeys)
+	dumpEnvOpsInFlow(cic, argv, cmdEnv, prt, args, executedCmd)
+	dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
 
 	if (len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0) &&
 		cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
@@ -286,18 +221,8 @@ func dumpFlowCmd(
 					prt(2, ColorFlow(flowStr, env))
 				}
 			}
-		} else if !args.Simple && !args.Skeleton {
-			if cic.Type() == core.CmdTypeEmptyDir {
-				prt(1, ColorProp("- dir:", env))
-				prt(2, cic.CmdLine())
-			} else {
-				prt(1, ColorProp("- executable:", env))
-				prt(2, cic.CmdLine())
-			}
-			if len(cic.MetaFile()) != 0 {
-				prt(1, ColorProp("- meta:", env))
-				prt(2, cic.MetaFile())
-			}
+		} else {
+			dumpCmdExecutable(cic, env, prt, args)
 		}
 
 		if cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow {
@@ -345,9 +270,48 @@ func dumpFlowCmd(
 	core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 		"failed to execute env-op cmd in flow desc")
 
-	dumpExecutedModifiedEnv(env, prt, args, startEnv, executedCmd.FinishEnv)
+	startEnv := dumpExecutedEnvFull(cmdEnv, prt, args, executedCmd)
+	dumpExecutedModifiedEnv(env, prt, args, startEnv, executedCmd)
 
 	return executedCmd == nil || executedCmd.Succeeded
+}
+
+func dumpCmdHelp(help string, env *core.Env, args *DumpFlowArgs, prt func(indentLvl int, msg string)) {
+	if len(help) == 0 {
+		return
+	}
+	if !args.Skeleton {
+		prt(1, " "+ColorHelp("'"+help+"'", env))
+	} else {
+		prt(1, ColorHelp("'"+help+"'", env))
+	}
+}
+
+func dumpCmdExecutedErr(
+	env *core.Env,
+	args *DumpFlowArgs,
+	executedCmd *core.ExecutedCmd,
+	prt func(indentLvl int, msg string)) {
+
+	if executedCmd == nil {
+		return
+	}
+
+	if !args.Skeleton {
+		if len(executedCmd.Err) != 0 {
+			prt(1, ColorError("- error:", env))
+		}
+		for _, line := range executedCmd.Err {
+			prt(2, ColorError(strings.TrimSpace(line), env))
+		}
+	} else {
+		if len(executedCmd.Err) != 0 {
+			prt(0, "  "+ColorError(" - error:", env))
+		}
+		for _, line := range executedCmd.Err {
+			prt(2, ColorError(strings.TrimSpace(line), env))
+		}
+	}
 }
 
 func dumpCmdDisplayName(
@@ -411,6 +375,95 @@ func dumpCmdDisplayName(
 	return name, true
 }
 
+func dumpCmdExecutable(
+	cic *core.Cmd,
+	env *core.Env,
+	prt func(indentLvl int, msg string),
+	args *DumpFlowArgs) {
+
+	if args.Simple || args.Skeleton {
+		return
+	}
+
+	if cic.Type() == core.CmdTypeEmptyDir {
+		prt(1, ColorProp("- dir:", env))
+		prt(2, cic.CmdLine())
+	} else {
+		prt(1, ColorProp("- executable:", env))
+		prt(2, cic.CmdLine())
+	}
+	if len(cic.MetaFile()) != 0 {
+		prt(1, ColorProp("- meta:", env))
+		prt(2, cic.MetaFile())
+	}
+}
+
+func dumpCmdTypeAndSource(
+	cmd *core.CmdTree,
+	env *core.Env,
+	prt func(indentLvl int, msg string),
+	args *DumpFlowArgs) {
+
+	cic := cmd.Cmd()
+	if cic == nil {
+		panic(fmt.Errorf("should never happen"))
+	}
+
+	if args.Simple || args.Skeleton {
+		return
+	}
+
+	/*
+		line := string(cic.Type())
+		if cic.IsQuiet() {
+			line += " quiet"
+		}
+		if cic.IsPriority() {
+			line += " priority"
+		}
+		prt(1, ColorProp("- cmd-type:", env))
+		prt(2, line)
+	*/
+
+	if len(cmd.Source()) != 0 && !strings.HasPrefix(cic.CmdLine(), cmd.Source()) {
+		prt(1, ColorProp("- from:", env))
+		prt(2, cmd.Source())
+	}
+}
+
+func dumpCmdEnvValues(
+	cc *core.Cli,
+	flow *core.ParsedCmds,
+	parsedCmd core.ParsedCmd,
+	argv core.ArgVals,
+	env *core.Env,
+	originEnv *core.Env,
+	prt func(indentLvl int, msg string),
+	args *DumpFlowArgs,
+	writtenKeys FlowWrittenKeys) {
+
+	cmd := parsedCmd.Last().Matched.Cmd
+	if cmd == nil {
+		panic(fmt.Errorf("should never happen"))
+	}
+	cic := cmd.Cmd()
+	if cic == nil {
+		panic(fmt.Errorf("should never happen"))
+	}
+
+	if !args.Skeleton {
+		keys, kvs := dumpFlowEnv(cc, originEnv, flow.GlobalEnv, parsedCmd, cmd, argv, writtenKeys)
+		if len(keys) != 0 {
+			prt(1, ColorProp("- env-pre-handle:", env))
+		}
+		for _, k := range keys {
+			v := kvs[k]
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(v.Val, env)+" "+v.Source+"")
+		}
+	}
+	writtenKeys.AddCmd(argv, env, cic)
+}
+
 func dumpCmdArgv(
 	cic *core.Cmd,
 	argv core.ArgVals,
@@ -440,12 +493,42 @@ func dumpCmdArgv(
 	}
 }
 
-// TODO: better display
-func dumpExecutedStartEnv(
+func dumpEnvOpsInFlow(
+	cic *core.Cmd,
+	argv core.ArgVals,
 	env *core.Env,
 	prt func(indentLvl int, msg string),
 	args *DumpFlowArgs,
-	startEnv map[string]string) {
+	executedCmd *core.ExecutedCmd) {
+
+	envOpSep := " " + env.GetRaw("strs.env-op-sep") + " "
+
+	//if args.Skeleton || (executedCmd != nil && args.ShowExecutedEnvFull) {
+	if args.Skeleton {
+		return
+	}
+
+	envOps := cic.EnvOps()
+	envOpKeys, origins, _ := envOps.RenderedEnvKeys(argv, env, cic, false)
+	if len(envOpKeys) != 0 {
+		prt(1, ColorProp("- env-ops:", env))
+	}
+	for i, k := range envOpKeys {
+		prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+
+			dumpEnvOps(envOps.Ops(origins[i]), envOpSep)+dumpIsAutoTimerKey(env, cic, k))
+	}
+}
+
+// TODO: env-before-execute => env-full-trace
+func dumpExecutedEnvFull(
+	env *core.Env,
+	prt func(indentLvl int, msg string),
+	args *DumpFlowArgs,
+	executedCmd *core.ExecutedCmd) (startEnv map[string]string) {
+
+	if executedCmd != nil && executedCmd.StartEnv != nil {
+		startEnv = executedCmd.StartEnv.FlattenAll()
+	}
 
 	keys := []string{}
 	for k, _ := range startEnv {
@@ -453,19 +536,23 @@ func dumpExecutedStartEnv(
 	}
 	sort.Strings(keys)
 
-	if args.ShowExecutedStartEnv && len(startEnv) != 0 {
-		if !args.Skeleton {
-			prt(1, ColorProp("- env-before-execute:", env))
-			for _, k := range keys {
-				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(startEnv[k], env))
-			}
-		} else {
-			prt(0, "  "+ColorProp(" - env-before-execute:", env))
-			for _, k := range keys {
-				prt(1, " "+ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(startEnv[k], env))
-			}
+	// TODO
+	if !args.ShowExecutedEnvFull || len(startEnv) == 0 {
+		return
+	}
+
+	if !args.Skeleton {
+		prt(1, ColorProp("- env-before-execute:", env))
+		for _, k := range keys {
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(startEnv[k], env))
+		}
+	} else {
+		prt(0, "  "+ColorProp(" - env-before-execute:", env))
+		for _, k := range keys {
+			prt(1, "   "+ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(startEnv[k], env))
 		}
 	}
+	return
 }
 
 // TODO: better display
@@ -474,50 +561,71 @@ func dumpExecutedModifiedEnv(
 	prt func(indentLvl int, msg string),
 	args *DumpFlowArgs,
 	startEnv map[string]string,
-	executedFinishEnv *core.Env) {
+	executedCmd *core.ExecutedCmd) {
 
-	if args.ShowExecutedModifiedEnv {
-		var finishEnv map[string]string
-		if executedFinishEnv != nil {
-			finishEnv = executedFinishEnv.FlattenAll()
-		}
-		lines := []string{}
-		for k, v := range startEnv {
-			op := ""
-			val := mayQuoteMayTrimStr(v, env)
-			newV, ok := finishEnv[k]
-			if !ok {
-				op = ColorSymbol(" <- ", env) + ColorTip("(deleted)", env)
-			} else if newV != v {
-				op = ColorSymbol(" <- ", env) + ColorTip("(modified to) ", env) + mayQuoteMayTrimStr(newV, env)
-			} else {
-				continue
-			}
-			lines = append(lines, ColorKey(k, env)+ColorSymbol(" = ", env)+val+op)
-		}
-		for k, v := range finishEnv {
-			_, ok := startEnv[k]
-			if ok {
-				continue
-			}
-			op := ColorSymbol(" <- ", env) + ColorTip("(added)", env)
-			lines = append(lines, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(v, env)+op)
-		}
+	if executedCmd == nil {
+		return
+	}
+	if args.ShowExecutedEnvFull {
+		//return
+	}
+	if !args.ShowExecutedModifiedEnv && executedCmd.Succeeded {
+		return
+	}
+	if executedCmd.FinishEnv == nil && !executedCmd.Succeeded {
+		return
+	}
 
-		sort.Strings(lines)
-		if !args.Skeleton {
-			if len(lines) != 0 {
-				prt(1, ColorProp("- env-modified:", env))
-			}
+	var finishEnv map[string]string
+	if executedCmd.FinishEnv != nil {
+		finishEnv = executedCmd.FinishEnv.FlattenAll()
+	}
+
+	lines := []string{}
+	for k, v := range startEnv {
+		op := ""
+		val := mayQuoteMayTrimStr(v, env)
+		newV, ok := finishEnv[k]
+		if !ok {
+			op = ColorSymbol(" <- ", env) + ColorTip("(deleted)", env)
+		} else if newV != v {
+			op = ColorSymbol(" <- ", env) + ColorTip("(modified to) ", env) + mayQuoteMayTrimStr(newV, env)
+		} else {
+			continue
+		}
+		lines = append(lines, ColorKey(k, env)+ColorSymbol(" = ", env)+val+op)
+	}
+
+	for k, v := range finishEnv {
+		_, ok := startEnv[k]
+		if ok {
+			continue
+		}
+		op := ColorSymbol(" <- ", env) + ColorTip("(added)", env)
+		lines = append(lines, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(v, env)+op)
+	}
+
+	sort.Strings(lines)
+	if !args.Skeleton {
+		if len(lines) != 0 || !executedCmd.Succeeded {
+			prt(1, ColorProp("- env-modified:", env))
+		}
+		if len(lines) == 0 && !executedCmd.Succeeded {
+			prt(2, ColorExplain("(none)", env))
+		} else {
 			for _, line := range lines {
 				prt(2, line)
 			}
+		}
+	} else {
+		if len(lines) != 0 || !executedCmd.Succeeded {
+			prt(0, "  "+ColorProp(" - env-modified:", env))
+		}
+		if len(lines) == 0 && !executedCmd.Succeeded {
+			prt(2, ColorExplain("(none)", env))
 		} else {
-			if len(lines) != 0 {
-				prt(0, "  "+ColorProp(" - env-modified:", env))
-			}
 			for _, line := range lines {
-				prt(1, " "+line)
+				prt(2, line)
 			}
 		}
 	}
@@ -580,13 +688,26 @@ func dumpFlowEnv(
 	return
 }
 
+// TODO: better display
+func mayQuoteMayTrimStr(s string, env *core.Env) string {
+	limit := env.GetInt("display.width")*3/5*2/2 - 10
+	if limit < 10 {
+		limit = 10
+	}
+	if len(s) > limit {
+		half := limit / 2
+		s = s[0:half-1] + ColorExplain("...", env) + s[len(s)-(half-2):]
+	}
+	return mayQuoteStr(s)
+}
+
 type DumpFlowArgs struct {
 	Simple                  bool
 	Skeleton                bool
 	IndentSize              int
 	MaxDepth                int
 	MaxTrivial              int
-	ShowExecutedStartEnv    bool
+	ShowExecutedEnvFull     bool
 	ShowExecutedModifiedEnv bool
 }
 
@@ -615,8 +736,8 @@ func (self *DumpFlowArgs) SetSkeleton() *DumpFlowArgs {
 	return self
 }
 
-func (self *DumpFlowArgs) SetShowExecutedStartEnv() *DumpFlowArgs {
-	self.ShowExecutedStartEnv = true
+func (self *DumpFlowArgs) SetShowExecutedEnvFull() *DumpFlowArgs {
+	self.ShowExecutedEnvFull = true
 	return self
 }
 
@@ -637,14 +758,4 @@ func (self FlowWrittenKeys) AddCmd(argv core.ArgVals, env *core.Env, cic *core.C
 		// If is read-op, then the key must exists, so no need to check the op flags
 		self[k] = true
 	}
-}
-
-// TODO: better display
-func mayQuoteMayTrimStr(s string, env *core.Env) string {
-	limit := env.GetInt("display.width") * 2 / 3 * 2 / 2
-	if len(s) > limit {
-		half := limit / 2
-		s = s[0:half-2] + ColorExplain("....", env) + s[len(s)-(half-2):]
-	}
-	return mayQuoteStr(s)
 }
