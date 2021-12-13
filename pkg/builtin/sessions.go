@@ -127,7 +127,7 @@ func listedSessionDesc(
 	flow *core.ParsedCmds,
 	currCmdIdx int,
 	skeleton bool,
-	showStartEnv bool,
+	showEnvFull bool,
 	showModifiedEnv bool) (int, bool) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
@@ -140,7 +140,7 @@ func listedSessionDesc(
 			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
 		}
 	} else if len(sessions) > 1 {
-		descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showStartEnv, showModifiedEnv)
+		descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
 		prefix := fmt.Sprintf("more than one sessions(%v), only display the last one, ", len(sessions))
 		if len(findStrs) > 0 {
 			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-str to filter")
@@ -148,7 +148,7 @@ func listedSessionDesc(
 			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-str to filter")
 		}
 	} else {
-		descSession(sessions[0], argv, cc, env, skeleton, showStartEnv, showModifiedEnv)
+		descSession(sessions[0], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
 	}
 	return currCmdIdx, true
 }
@@ -206,7 +206,7 @@ func lastSessionDesc(
 	flow *core.ParsedCmds,
 	currCmdIdx int,
 	skeleton bool,
-	showStartEnv bool,
+	showEnvFull bool,
 	showModifiedEnv bool) (int, bool) {
 
 	sessions := core.ListSessions(env, nil)
@@ -214,7 +214,7 @@ func lastSessionDesc(
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 		return currCmdIdx, true
 	}
-	descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showStartEnv, showModifiedEnv)
+	descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
 	return currCmdIdx, true
 }
 
@@ -266,14 +266,14 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 }
 
 func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, env *core.Env,
-	skeleton, showStartEnv bool, showModifiedEnv bool) {
+	skeleton, showEnvFull bool, showModifiedEnv bool) {
 
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	if skeleton {
 		dumpArgs.SetSkeleton()
 	}
-	if showStartEnv {
-		dumpArgs.SetShowExecutedStartEnv()
+	if showEnvFull {
+		dumpArgs.SetShowExecutedEnvFull()
 	}
 	if showModifiedEnv {
 		dumpArgs.SetShowExecutedModifiedEnv()
