@@ -238,7 +238,7 @@ func PrintCmdStack(
 		//}
 
 		cic := cmd.LastCmd()
-		if cic != nil && !sysArgv.IsDelay() && (cic.Type() == core.CmdTypeFlow || cic.Type() == core.CmdTypeFileNFlow) {
+		if cic != nil && !sysArgv.IsDelay() && cic.HasSubFlow() {
 			if i+1 == currCmdIdx || i == currCmdIdx {
 				line := ColorFlowing("       --->>>", env)
 				lines.Flow = append(lines.Flow, line)

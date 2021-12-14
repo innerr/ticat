@@ -23,6 +23,7 @@ const (
 	CmdTypeFile       CmdType = "executable-file"
 	CmdTypeEmptyDir   CmdType = "dir-with-no-executable"
 	CmdTypeDirWithCmd CmdType = "dir-with-executable-file"
+	CmdTypeAdHotFlow  CmdType = "adhot-flow"
 )
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) (succeeded bool)
@@ -406,6 +407,14 @@ func (self *Cmd) DisplayHelpStr() string {
 		return self.cmdLine
 	}
 	return self.help
+}
+
+func (self *Cmd) IsBuiltinCmd() bool {
+	return self.ty == CmdTypeNormal || self.ty == CmdTypePower
+}
+
+func (self *Cmd) HasCmdLine() bool {
+	return len(self.cmdLine) != 0
 }
 
 func (self *Cmd) IsNoExecutableCmd() bool {
