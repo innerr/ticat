@@ -104,7 +104,7 @@ func noSessionCmds(flow *core.ParsedCmds) (yes bool, notRecord bool) {
 	}
 	for _, it := range funcs {
 		if cmd.Cmd() != nil && cmd.Cmd().IsTheSameFunc(it) {
-			return false, true
+			return false, false
 		}
 	}
 	return true, true

@@ -31,6 +31,7 @@ type ExecutedFlow struct {
 	DirName  string
 	Cmds     []*ExecutedCmd
 	Executed bool
+	IsRetry  bool
 	FinishTs time.Time
 }
 
@@ -132,8 +133,8 @@ func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (
 				break
 			}
 			if len(lines) != 0 {
-				panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has extra %v lines",
-					path.Short(), len(lines)))
+				panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', level %d, has extra %v lines",
+					path.Short(), level, len(lines)))
 			}
 			return cmds, nil, false
 		}

@@ -2,12 +2,27 @@ package builtin
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
+
+func SetSessionsKeepDur(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	env = env.GetLayer(core.EnvLayerSession)
+	key := "sys.session.keep-status-duration"
+	env.SetDur(key, argv.GetRaw("duration"))
+	display.PrintTipTitle(cc.Screen, env, "each session status will be kept for '"+env.GetRaw(key)+"'")
+	return currCmdIdx, true
+}
 
 func RemoveAllSessions(
 	argv core.ArgVals,
@@ -36,16 +51,7 @@ func ListSessions(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
-
-	sessions := core.ListSessions(env, findStrs, "")
-	if len(sessions) == 0 {
-		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
-		} else {
-			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
-		}
-	}
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
 	for _, it := range sessions {
 		if it.Cleaning {
 			dumpSession(it, env, cc.Screen, "expired")
@@ -63,23 +69,10 @@ func FindAndRemoveSessions(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
-
-	sessions := core.ListSessions(env, findStrs, "")
-	if len(sessions) == 0 {
-		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
-		} else {
-			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
-		}
-	}
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
 	for _, it := range sessions {
-		if it.Cleaning {
-			dumpSession(it, env, cc.Screen, "expired")
-			continue
-		}
-		cleaned, running := core.CleanSession(it, env)
 		status := "removed"
+		cleaned, running := core.CleanSession(it, env)
 		if running {
 			status = "running, untouched"
 		} else if !cleaned {
@@ -130,27 +123,71 @@ func listedSessionDesc(
 	showEnvFull bool,
 	showModifiedEnv bool) (int, bool) {
 
-	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
 
-	sessions := core.ListSessions(env, findStrs, "")
-	if len(sessions) == 0 {
-		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
-		} else {
-			display.PrintErrTitle(cc.Screen, env, "no executed sessions")
-		}
-	} else if len(sessions) > 1 {
+	handleTooMany := func() {
 		descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
 		prefix := fmt.Sprintf("more than one sessions(%v), only display the last one, ", len(sessions))
+		findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-str to filter")
+			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-strs to filter, or specify the arg 'id'")
 		} else {
-			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-str to filter")
+			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-strs to filter, or specify the arg 'id'")
 		}
-	} else {
+	}
+
+	allSessions := sessions
+	if len(sessions) > 1 {
+		sessions = filterRetrySessions(sessions)
+	}
+	if len(sessions) > 1 {
+		handleTooMany()
+	} else if len(sessions) != 0 {
 		descSession(sessions[0], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
+	} else if len(allSessions) != len(sessions) {
+		handleTooMany()
 	}
 	return currCmdIdx, true
+}
+
+func filterRetrySessions(sessions []core.SessionStatus) (res []core.SessionStatus) {
+	for _, session := range sessions {
+		if !session.Status.IsRetry {
+			res = append(res, session)
+		}
+	}
+	return
+}
+
+func findSessionsByStrsAndId(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (sessions []core.SessionStatus) {
+
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	id := argv.GetRaw("session-id")
+	// TODO: put brackets to env?
+	id = strings.TrimRight(strings.TrimLeft(id, "["), "]")
+	sessions = core.ListSessions(env, findStrs, id)
+	if len(sessions) == 0 {
+		if len(id) == 0 {
+			if len(findStrs) > 0 {
+				display.PrintErrTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
+			} else {
+				display.PrintErrTitle(cc.Screen, env, "no executed sessions")
+			}
+		} else {
+			if len(findStrs) > 0 {
+				display.PrintErrTitle(cc.Screen, env,
+					"no executed sessions found by '"+strings.Join(findStrs, " ")+"' with id = '"+id+"'")
+			} else {
+				display.PrintErrTitle(cc.Screen, env, "no executed sessiond with id = '"+id+"'")
+			}
+		}
+	}
+	return
 }
 
 func LastSession(
@@ -225,18 +262,49 @@ func ListSessionRetry(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
-
-	sessions := core.ListSessions(env, nil, id)
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
 	if len(sessions) == 0 {
-		display.PrintErrTitle(cc.Screen, env, "no executed session named '"+id+"'")
 		return currCmdIdx, true
-	} else if len(sessions) > 1 {
+	}
+
+	sessions = filterRetrySessions(sessions)
+	if len(sessions) == 0 {
+		display.PrintErrTitle(cc.Screen, env, "matched sessions are all retry-session, can't re-retry")
+		return currCmdIdx, true
+	}
+
+	if len(sessions) > 1 {
 		panic(fmt.Errorf("[ListSessionRetry] should never happen"))
 	} else {
 		return currCmdIdx, retrySession(sessions[0], argv, cc, env, flow, currCmdIdx)
 	}
 	return currCmdIdx, true
+}
+
+func SessionRetry(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	id = strings.TrimRight(strings.TrimLeft(id, "["), "]")
+	sessions := core.ListSessions(env, nil, id)
+	if len(sessions) == 0 {
+		display.PrintErrTitle(cc.Screen, env, "no session with id = '"+id+"'")
+		return currCmdIdx, true
+	} else if len(sessions) > 1 {
+		panic(fmt.Errorf("[SessionRetry] should never happen"))
+	}
+
+	session := sessions[0]
+	if session.Status.IsRetry {
+		display.PrintErrTitle(cc.Screen, env, "no session with id = '"+id+"', is retry-session, can't re-retry")
+		return currCmdIdx, true
+	}
+
+	return currCmdIdx, retrySession(session, argv, cc, env, flow, currCmdIdx)
 }
 
 func LastSessionRetry(
@@ -251,6 +319,13 @@ func LastSessionRetry(
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 		return currCmdIdx, true
 	}
+
+	sessions = filterRetrySessions(sessions)
+	if len(sessions) == 0 {
+		display.PrintErrTitle(cc.Screen, env, "all sessions are all retry-session, can't re-retry")
+		return currCmdIdx, true
+	}
+
 	ok := retrySession(sessions[len(sessions)-1], argv, cc, env, flow, currCmdIdx)
 	return currCmdIdx, ok
 }
@@ -261,30 +336,35 @@ func retrySession(
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
-	currCmdIdx int) bool {
+	currCmdIdx int) (succeeded bool) {
 
-	if session.Status != nil && session.Status.Executed {
-		cc.Screen.Print("last session succeeded, nothing to retry\n")
-		return true
-	}
+	/*
+		if session.Status != nil && session.Status.Executed {
+			cc.Screen.Print("last session succeeded, nothing to retry\n")
+			return true
+		}
+	*/
+
+	// TODO: forbit retry retry-sesion
 
 	sessionFlow := core.FlowStrToStrs(session.Status.Flow)
 	flowEnv := env.NewLayer(core.EnvLayerTmp)
-	return cc.Executor.Execute("retry:"+session.DirName, cc, flowEnv, sessionFlow...)
-}
 
-func SetSessionsKeepDur(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	env = env.GetLayer(core.EnvLayerSession)
-	key := "sys.session.keep-status-duration"
-	env.SetDur(key, argv.GetRaw("duration"))
-	display.PrintTipTitle(cc.Screen, env, "each session status will be kept for '"+env.GetRaw(key)+"'")
-	return currCmdIdx, true
+	if cc.FlowStatus != nil {
+		cc.FlowStatus.OnSubFlowStart(core.FlowStrsToStr(sessionFlow))
+		defer func() {
+			if succeeded {
+				cc.FlowStatus.OnSubFlowFinish(flowEnv)
+			}
+			// Avoid double recover
+			if r := recover(); r != nil {
+				display.PrintError(cc, env, r.(error))
+				os.Exit(-1)
+			}
+		}()
+	}
+	succeeded = cc.Executor.Execute("retry:"+session.DirName, cc, flowEnv, sessionFlow...)
+	return
 }
 
 func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, status string) {
@@ -325,7 +405,12 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
 	if skeleton {
-		dumpArgs.SetSkeleton()
+		if !showEnvFull && !showModifiedEnv {
+			dumpArgs.SetSkeleton()
+		} else {
+			//dumpArgs.SetSimple()
+			dumpArgs.SetSkeleton()
+		}
 	}
 	if showEnvFull {
 		dumpArgs.SetShowExecutedEnvFull()
