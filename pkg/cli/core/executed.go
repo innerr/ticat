@@ -31,7 +31,6 @@ type ExecutedFlow struct {
 	DirName  string
 	Cmds     []*ExecutedCmd
 	Executed bool
-	IsRetry  bool
 	FinishTs time.Time
 }
 
@@ -55,6 +54,10 @@ func ParseExecutedFlow(path ExecutedStatusFilePath) *ExecutedFlow {
 	}
 	lines := strings.Split(string(data), "\n")
 	return parseExecutedFlow(path, lines)
+}
+
+func (self *ExecutedFlow) IsOneCmdSession(cmd string) bool {
+	return len(self.Cmds) == 1 && self.Cmds[0].Cmd == cmd
 }
 
 func (self *ExecutedFlow) MatchFind(findStrs []string) bool {

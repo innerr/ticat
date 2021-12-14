@@ -270,7 +270,7 @@ func checkEnvOps(
 
 // TODO: a bit meeessy
 func renderSubFlowOnChecking(last *Cmd, cc *Cli, argv ArgVals, cmdEnv *Env) (parsedFlow *ParsedCmds, flowEnv *Env) {
-	subFlow, _ := last.Flow(argv, cmdEnv, false)
+	subFlow, _ := last.Flow(argv, cc, cmdEnv, false)
 	parsedFlow = cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 	err := parsedFlow.FirstErr()
 	if err != nil {

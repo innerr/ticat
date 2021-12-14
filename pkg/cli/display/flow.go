@@ -58,6 +58,7 @@ func DumpFlowEx(
 	writtenKeys := FlowWrittenKeys{}
 
 	if executedFlow != nil {
+		PrintTipTitle(cc.Screen, env, "session-id ["+executedFlow.DirName+"], flow executed status:")
 	} else {
 		PrintTipTitle(cc.Screen, env, "flow executing description:")
 	}
@@ -169,7 +170,7 @@ func dumpFlowCmd(
 			"failed to execute env-op cmd in flow desc")
 
 		// This is for render checking, even it's folded
-		subFlow, rendered := cic.Flow(argv, cmdEnv, true)
+		subFlow, rendered := cic.Flow(argv, cc, cmdEnv, true)
 		if rendered {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 			err := parsedFlow.FirstErr()
@@ -209,7 +210,7 @@ func dumpFlowCmd(
 	if !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow()) {
 		metFlow := false
 		if cic.HasSubFlow() {
-			flowStrs, _ := cic.RenderedFlowStrs(argv, cmdEnv, true)
+			flowStrs, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
 			if !cmdFailed() && metFlow {
@@ -242,7 +243,7 @@ func dumpFlowCmd(
 		}
 
 		if cic.HasSubFlow() {
-			subFlow, rendered := cic.Flow(argv, cmdEnv, true)
+			subFlow, rendered := cic.Flow(argv, cc, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || cmdFailed() {
 					if !foldSubFlow() {
@@ -469,7 +470,7 @@ func dumpCmdEnvValues(
 	if !args.Skeleton {
 		keys, kvs := dumpFlowEnv(cc, originEnv, flow.GlobalEnv, parsedCmd, cmd, argv, writtenKeys)
 		if len(keys) != 0 {
-			prt(1, ColorProp("- env-pre-handle:", env))
+			prt(1, ColorProp("- env-filling:", env))
 		}
 		for _, k := range keys {
 			v := kvs[k]

@@ -99,15 +99,13 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, bootst
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
 	if !innerCall && !bootstrap {
-		noSession, notRecord := noSessionCmds(flow)
+		noSession := noSessionCmds(flow)
 		if !noSession {
 			statusWriter, ok := core.SessionInit(cc, flow, env, self.sessionFileName, self.sessionStatusFileName)
 			if !ok {
 				return false
 			}
-			if !notRecord {
-				cc.SetFlowStatusWriter(statusWriter)
-			}
+			cc.SetFlowStatusWriter(statusWriter)
 		}
 	}
 

@@ -38,7 +38,7 @@ func collectDepends(
 		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 
 		if cic.Type() == CmdTypeFileNFlow {
-			subFlow, rendered := cic.Flow(argv, cmdEnv, allowFlowTemplateRenderError)
+			subFlow, rendered := cic.Flow(argv, cc, cmdEnv, allowFlowTemplateRenderError)
 			if rendered && len(subFlow) != 0 {
 				parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 				flowEnv := cmdEnv.NewLayer(EnvLayerSubFlow)
@@ -65,7 +65,7 @@ func collectDepends(
 			continue
 		}
 
-		subFlow, rendered := cic.Flow(argv, cmdEnv, allowFlowTemplateRenderError)
+		subFlow, rendered := cic.Flow(argv, cc, cmdEnv, allowFlowTemplateRenderError)
 		if rendered && len(subFlow) != 0 {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 			flowEnv := cmdEnv.NewLayer(EnvLayerSubFlow)

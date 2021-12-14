@@ -187,6 +187,12 @@ func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
 	return self.cmd
 }
 
+func (self *CmdTree) RegAdHotFlowCmd(cmd AdHotFlowCmd, help string) *Cmd {
+	self.cmdConflictCheck(help, "RegAdHotFlowCmd")
+	self.cmd = NewAdHotFlowCmd(self, help, cmd)
+	return self.cmd
+}
+
 func (self *CmdTree) RegFileNFlowCmd(flow []string, cmd string, help string) *Cmd {
 	self.cmdConflictCheck(help, "RegPowerNFlow")
 	self.cmd = NewFileNFlowCmd(self, help, cmd, flow)

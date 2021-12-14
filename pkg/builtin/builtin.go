@@ -368,9 +368,10 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	addFindStrArgs(list)
 	list.AddArg("session-id", "", "session", "id")
 
-	list.AddSub("retry").
-		RegPowerCmd(ListSessionRetry,
-			"find a session by find-strs and id, if it's failed, retry running from the error point").
+	list.AddSub("retry", "r", "R").
+		RegAdHotFlowCmd(ListSessionRetry,
+			//"find a session by find-strs and id, if it's failed, retry running from the error point").
+			"find a session by id, if it's failed, retry running from the error point").
 		AddArg("session-id", "", "session", "id")
 
 	listDesc := list.AddSub("desc", "desc-less", "-").
@@ -422,9 +423,11 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
-	last.AddSub("retry").
-		RegPowerCmd(LastSessionRetry,
-			"if the last session failed, retry running from the error point")
+	/*
+		last.AddSub("retry", "r", "R").
+			RegAdHotFlowCmd(LastSessionRetry,
+				"if the last session failed, retry running from the error point")
+	*/
 
 	cmds.AddSub("remove-all", "clean", "clear", "--").
 		RegPowerCmd(RemoveAllSessions,

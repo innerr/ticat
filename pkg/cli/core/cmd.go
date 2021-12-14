@@ -27,8 +27,11 @@ const (
 )
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) (succeeded bool)
+
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
+
+type AdHotFlowCmd func(argv ArgVals, cc *Cli, env *Env) (flow []string)
 
 type Depend struct {
 	OsCmd  string
@@ -51,6 +54,7 @@ type Cmd struct {
 	args              Args
 	normal            NormalCmd
 	power             PowerCmd
+	adhotFlow         AdHotFlowCmd
 	cmdLine           string
 	flow              []string
 	envOps            EnvOps
@@ -72,6 +76,7 @@ func defaultCmd(owner *CmdTree, help string) *Cmd {
 		args:              newArgs(),
 		normal:            nil,
 		power:             nil,
+		adhotFlow:         nil,
 		cmdLine:           "",
 		flow:              nil,
 		envOps:            newEnvOps(),
@@ -99,6 +104,13 @@ func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 	c := defaultCmd(owner, help)
 	c.ty = CmdTypePower
 	c.power = cmd
+	return c
+}
+
+func NewAdHotFlowCmd(owner *CmdTree, help string, adhotFlow AdHotFlowCmd) *Cmd {
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeAdHotFlow
+	c.adhotFlow = adhotFlow
 	return c
 }
 
@@ -238,6 +250,8 @@ func (self *Cmd) executeByType(
 			succeeded = self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
 		}
 		return currCmdIdx, succeeded
+	case CmdTypeAdHotFlow:
+		return currCmdIdx, self.executeFlow(argv, cc, env)
 	case CmdTypeEmpty:
 		return currCmdIdx, true
 	default:
@@ -247,7 +261,7 @@ func (self *Cmd) executeByType(
 }
 
 func (self *Cmd) HasSubFlow() bool {
-	return self.ty == CmdTypeFlow || self.ty == CmdTypeFileNFlow
+	return self.ty == CmdTypeFlow || self.ty == CmdTypeFileNFlow || self.ty == CmdTypeAdHotFlow
 }
 
 func (self *Cmd) MatchFind(findStr string) bool {
@@ -477,18 +491,31 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 			return true
 		}
 	}
+	if self.adhotFlow != nil {
+		fr2 := reflect.ValueOf(self.adhotFlow)
+		if fr1.Pointer() == fr2.Pointer() {
+			return true
+		}
+	}
 	return false
 }
 
 // TODO: move to parser ?
+// TODO: read and parse session file too many times for CmdTypeAdHotFlow, cache it
 func (self *Cmd) RenderedFlowStrs(
 	argv ArgVals,
+	cc *Cli,
 	env *Env,
 	allowFlowTemplateRenderError bool) (flow []string, fullyRendered bool) {
 
 	fullyRendered = true
 
-	for _, line := range self.flow {
+	flowStrs := self.flow
+	if self.ty == CmdTypeAdHotFlow {
+		flowStrs = self.adhotFlow(argv, cc, env)
+	}
+
+	for _, line := range flowStrs {
 		rendereds, lineFullyRendered := renderTemplateStr(line, "flow", self, argv, env, allowFlowTemplateRenderError)
 		for _, rendered := range rendereds {
 			flow = append(flow, rendered)
@@ -517,8 +544,8 @@ func StripFlowForExecute(flow []string, sequenceSep string) []string {
 	return output
 }
 
-func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
-	flow, rendered = self.RenderedFlowStrs(argv, env, allowFlowTemplateRenderError)
+func (self *Cmd) Flow(argv ArgVals, cc *Cli, env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
+	flow, rendered = self.RenderedFlowStrs(argv, cc, env, allowFlowTemplateRenderError)
 	if !rendered || len(flow) == 0 {
 		return
 	}
@@ -542,8 +569,9 @@ func FlowStrsToStr(flowStrs []string) string {
 	return strings.Join(flowStrs, " ")
 }
 
+// TODO: flow must not have argv, is it OK?
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) (succeeded bool) {
-	flow, _ := self.Flow(argv, env, false)
+	flow, _ := self.Flow(argv, cc, env, false)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnSubFlowStart(FlowStrsToStr(flow))

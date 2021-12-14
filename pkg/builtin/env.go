@@ -31,6 +31,9 @@ func LoadDefaultEnv(env *core.Env) {
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
 	row, col := utils.GetTerminalWidth()
+	if col > 160 {
+		col = 160
+	}
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
 
