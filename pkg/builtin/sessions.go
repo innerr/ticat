@@ -335,8 +335,8 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 		if !showEnvFull && !showModifiedEnv {
 			dumpArgs.SetSkeleton()
 		} else {
-			//dumpArgs.SetSimple()
-			dumpArgs.SetSkeleton()
+			dumpArgs.SetSimple()
+			//dumpArgs.SetSkeleton()
 		}
 	}
 	if showEnvFull {

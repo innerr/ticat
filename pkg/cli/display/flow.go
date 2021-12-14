@@ -321,14 +321,14 @@ func dumpCmdExecutedErr(
 
 	if !args.Skeleton {
 		if len(executedCmd.Err) != 0 {
-			prt(1, ColorError("- error:", env))
+			prt(1, ColorError("- err-msg:", env))
 		}
 		for _, line := range executedCmd.Err {
 			prt(2, ColorError(strings.TrimSpace(line), env))
 		}
 	} else {
 		if len(executedCmd.Err) != 0 {
-			prt(0, "  "+ColorError(" - error:", env))
+			prt(0, "  "+ColorError(" - err-msg:", env))
 		}
 		for _, line := range executedCmd.Err {
 			prt(2, ColorError(strings.TrimSpace(line), env))
@@ -385,17 +385,17 @@ func dumpCmdDisplayName(
 			return name, false
 		}
 		if executedCmd.Unexecuted {
-			name += ColorSymbol(" - ", env) + ColorExplain("un-run", env)
+			name += ColorExplain(" - ", env) + ColorExplain("un-run", env)
 		} else if running {
-			name += ColorSymbol(" - ", env) + ColorError("not-done", env)
+			name += ColorExplain(" - ", env) + ColorError("not-done", env)
 		} else if executedCmd.Skipped {
-			name += ColorSymbol(" - ", env) + ColorExplain("skipped", env)
+			name += ColorExplain(" - ", env) + ColorExplain("skipped", env)
 		} else if executedCmd.Succeeded {
-			name += ColorSymbol(" - ", env) + ColorCmdDone("OK", env)
+			name += ColorExplain(" - ", env) + ColorCmdDone("OK", env)
 		} else if executedCmd.NoSelfErr {
-			name += ColorSymbol(" - ", env) + ColorWarn("failed", env)
+			name += ColorExplain(" - ", env) + ColorWarn("failed", env)
 		} else {
-			name += ColorSymbol(" - ", env) + ColorError("ERR", env)
+			name += ColorExplain(" - ", env) + ColorError("ERR", env)
 		}
 	}
 	return name, true

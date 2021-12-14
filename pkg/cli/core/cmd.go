@@ -205,6 +205,18 @@ func (self *Cmd) execute(
 	flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
 
+	// TODO: this logic should be in upper layer
+	if mask != nil && mask.OverWriteStartEnv != nil {
+		p := env
+		for p != nil && p.LayerType() != EnvLayerSession {
+			p.CleanCurrLayer()
+			p = p.Parent()
+		}
+		if p != nil {
+			mask.OverWriteStartEnv.WriteCurrLayerTo(p)
+		}
+	}
+
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env)
 		defer func() {

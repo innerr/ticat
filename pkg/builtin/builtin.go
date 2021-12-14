@@ -438,6 +438,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"clean executed sessions by find-strs").
 		SetAllowTailModeCall()
 	addFindStrArgs(remove)
+	remove.AddArg("session-id", "", "session", "id")
 
 	cmds.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
 		RegPowerCmd(SetSessionsKeepDur,
