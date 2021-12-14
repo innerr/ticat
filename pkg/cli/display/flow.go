@@ -529,8 +529,10 @@ func dumpEnvOpsInFlow(
 
 	envOpSep := " " + env.GetRaw("strs.env-op-sep") + " "
 
-	//if args.Skeleton || (executedCmd != nil && args.ShowExecutedEnvFull) {
 	if args.Skeleton {
+		return
+	}
+	if args.Simple && executedCmd != nil {
 		return
 	}
 
@@ -562,8 +564,11 @@ func dumpExecutedEnvFull(
 	}
 	sort.Strings(keys)
 
-	// TODO
-	if !args.ShowExecutedEnvFull || len(startEnv) == 0 {
+	if len(startEnv) == 0 {
+		return
+	}
+
+	if !args.ShowExecutedEnvFull && !(executedCmd != nil && !executedCmd.NoSelfErr) {
 		return
 	}
 
