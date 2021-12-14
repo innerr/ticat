@@ -41,10 +41,10 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 	if len(overWriteBootstrap) != 0 {
 		bootstrap = overWriteBootstrap
 	}
-	if !self.execute(self.callerNameBootstrap, cc, env, true, false, bootstrap) {
+	if !self.execute(self.callerNameBootstrap, cc, env, nil, true, false, bootstrap) {
 		return false
 	}
-	ok := self.execute(self.callerNameEntry, cc, env, false, false, input...)
+	ok := self.execute(self.callerNameEntry, cc, env, nil, false, false, input...)
 	builtin.WaitAllBgTasks(cc, env)
 	if cc.FlowStatus != nil && ok {
 		cc.FlowStatus.OnFlowFinish()
@@ -53,11 +53,13 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 }
 
 // Implement core.Executor
-func (self *Executor) Execute(caller string, cc *core.Cli, env *core.Env, input ...string) bool {
-	return self.execute(caller, cc, env, false, true, input...)
+func (self *Executor) Execute(caller string, cc *core.Cli, env *core.Env, masks []*core.ExecuteMask, input ...string) bool {
+	return self.execute(caller, cc, env, masks, false, true, input...)
 }
 
-func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, bootstrap bool, innerCall bool, input ...string) bool {
+func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks []*core.ExecuteMask,
+	bootstrap bool, innerCall bool, input ...string) bool {
+
 	if !innerCall && env.GetBool("sys.env.use-cmd-abbrs") {
 		useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	}
@@ -121,7 +123,7 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, bootst
 	if !bootstrap {
 		stackStepIn(caller, env)
 	}
-	if !self.executeFlow(cc, bootstrap, flow, env, input) {
+	if !self.executeFlow(cc, bootstrap, flow, env, masks, input) {
 		return false
 	}
 	if !bootstrap {
@@ -135,12 +137,17 @@ func (self *Executor) executeFlow(
 	bootstrap bool,
 	flow *core.ParsedCmds,
 	env *core.Env,
+	masks []*core.ExecuteMask,
 	input []string) bool {
 
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool
-		i, succeeded = self.executeCmd(cc, bootstrap, cmd, env, flow, i)
+		var mask *core.ExecuteMask
+		if i < len(masks) {
+			mask = masks[i]
+		}
+		i, succeeded = self.executeCmd(cc, bootstrap, cmd, env, mask, flow, i)
 		if !succeeded {
 			return false
 		}
@@ -153,6 +160,7 @@ func (self *Executor) executeCmd(
 	bootstrap bool,
 	cmd core.ParsedCmd,
 	env *core.Env,
+	mask *core.ExecuteMask,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
 
@@ -188,13 +196,13 @@ func (self *Executor) executeCmd(
 				// This cmdEnv is different from env, it included values from 'val2env' and 'arg2env'
 				cmdEnv, argv = cmd.ApplyMappingGenEnvAndArgv(
 					env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, flow, currCmdIdx)
+				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx)
 			} else {
 				dur := sysArgv.GetDelayDuration()
 				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
 				var tid string
 				tid, succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
-					dur, last.Cmd(), argv, asyncCC, cmdEnv, flow.CloneOne(currCmdIdx), 0)
+					dur, last.Cmd(), argv, asyncCC, cmdEnv, mask, flow.CloneOne(currCmdIdx), 0)
 				if cc.FlowStatus != nil {
 					cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env, tid)
 				}
@@ -381,6 +389,7 @@ func asyncExecute(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
+	mask *core.ExecuteMask,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (tid string, scheduled bool) {
 
@@ -442,7 +451,7 @@ func asyncExecute(
 		}
 
 		start := time.Now()
-		_, ok := cic.Execute(argv, cc, env, flow, currCmdIdx)
+		_, ok := cic.Execute(argv, cc, env, mask, flow, currCmdIdx)
 		elapsed := time.Now().Sub(start)
 		if !ok {
 			// Should already panic inside cmd.Execute

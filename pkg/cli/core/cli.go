@@ -11,8 +11,19 @@ type Screen interface {
 	OutputNum() int
 }
 
+type ExecPolicy string
+
+const ExecPolicyExec ExecPolicy = "exec"
+const ExecPolicySkip ExecPolicy = "skip"
+
+type ExecuteMask struct {
+	Cmd        string
+	ExecPolicy ExecPolicy
+	SubFlow    []*ExecuteMask
+}
+
 type Executor interface {
-	Execute(caller string, cc *Cli, env *Env, input ...string) bool
+	Execute(caller string, cc *Cli, env *Env, masks []*ExecuteMask, input ...string) bool
 }
 
 type Cli struct {

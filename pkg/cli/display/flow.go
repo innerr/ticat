@@ -149,6 +149,12 @@ func dumpFlowCmd(
 	cmdFailed := func() bool {
 		return executedCmd != nil && !executedCmd.Succeeded
 	}
+	cmdSkipped := func() bool {
+		return executedCmd != nil && executedCmd.Skipped
+	}
+	cmdOkButSubFailed := func() bool {
+		return cmdFailed() && executedCmd.NoSelfErr
+	}
 
 	notFold := func() bool {
 		return cmdFailed() || maxTrivial > 0 && maxDepth > 0
@@ -170,7 +176,7 @@ func dumpFlowCmd(
 			"failed to execute env-op cmd in flow desc")
 
 		// This is for render checking, even it's folded
-		subFlow, rendered := cic.Flow(argv, cc, cmdEnv, true)
+		subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true)
 		if rendered {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 			err := parsedFlow.FirstErr()
@@ -196,21 +202,19 @@ func dumpFlowCmd(
 	}
 
 	dumpCmdHelp(cic.Help(), cmdEnv, args, prt)
-
 	dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
 
-	dumpCmdArgv(cic, argv, cmdEnv, originEnv, prt, args, writtenKeys)
-
-	dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, args, writtenKeys)
-
-	dumpEnvOpsInFlow(cic, argv, cmdEnv, prt, args, executedCmd)
-
-	dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
+	if !cmdSkipped() && !cmdOkButSubFailed() {
+		dumpCmdArgv(cic, argv, cmdEnv, originEnv, prt, args, writtenKeys)
+		dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, args, writtenKeys)
+		dumpEnvOpsInFlow(cic, argv, cmdEnv, prt, args, executedCmd)
+		dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
+	}
 
 	if !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow()) {
 		metFlow := false
 		if cic.HasSubFlow() {
-			flowStrs, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true)
+			flowStrs, _, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
 			if !cmdFailed() && metFlow {
@@ -228,22 +232,22 @@ func dumpFlowCmd(
 						prt(1, ColorProp("(folded flow)", env))
 					}
 				} else {
-					if !args.Skeleton {
+					if !args.Skeleton && !foldSubFlow() {
 						prt(1, ColorProp("- flow:", env))
 					}
 				}
 			}
-			if !args.Skeleton {
+			if !args.Skeleton && !foldSubFlow() && !cmdSkipped() {
 				for _, flowStr := range flowStrs {
 					prt(2, ColorFlow(flowStr, env))
 				}
 			}
-		} else {
+		} else if !cmdSkipped() {
 			dumpCmdExecutable(cic, env, prt, args)
 		}
 
 		if cic.HasSubFlow() {
-			subFlow, rendered := cic.Flow(argv, cc, cmdEnv, true)
+			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || cmdFailed() {
 					if !foldSubFlow() {
@@ -286,8 +290,10 @@ func dumpFlowCmd(
 	core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 		"failed to execute env-op cmd in flow desc")
 
-	startEnv := dumpExecutedEnvFull(cmdEnv, prt, args, executedCmd)
-	dumpExecutedModifiedEnv(env, prt, args, startEnv, executedCmd)
+	if !cmdSkipped() {
+		startEnv := dumpExecutedEnvFull(cmdEnv, prt, args, executedCmd)
+		dumpExecutedModifiedEnv(env, prt, args, startEnv, executedCmd)
+	}
 
 	return !cmdFailed()
 }
@@ -380,10 +386,14 @@ func dumpCmdDisplayName(
 		}
 		if executedCmd.Unexecuted {
 			name += ColorSymbol(" - ", env) + ColorExplain("un-run", env)
-		} else if executedCmd.Succeeded {
-			name += ColorSymbol(" - ", env) + ColorCmdDone("OK", env)
 		} else if running {
 			name += ColorSymbol(" - ", env) + ColorError("not-done", env)
+		} else if executedCmd.Skipped {
+			name += ColorSymbol(" - ", env) + ColorExplain("skipped", env)
+		} else if executedCmd.Succeeded {
+			name += ColorSymbol(" - ", env) + ColorCmdDone("OK", env)
+		} else if executedCmd.NoSelfErr {
+			name += ColorSymbol(" - ", env) + ColorWarn("failed", env)
 		} else {
 			name += ColorSymbol(" - ", env) + ColorError("ERR", env)
 		}
@@ -583,7 +593,8 @@ func dumpExecutedModifiedEnv(
 		return
 	}
 	if args.ShowExecutedEnvFull {
-		//return
+		// TODO:
+		// return
 	}
 	if !args.ShowExecutedModifiedEnv && executedCmd.Succeeded {
 		return

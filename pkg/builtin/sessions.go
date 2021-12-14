@@ -125,13 +125,13 @@ func listedSessionDesc(
 	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
 
 	handleTooMany := func() {
-		descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
-		prefix := fmt.Sprintf("more than one sessions(%v) matched, only display the last one, ", len(sessions))
+		descSession(sessions[0], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
+		prefix := fmt.Sprintf("more than one sessions(%v) matched, only display the first one, ", len(sessions))
 		findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-strs to filter, or specify the arg 'id'")
+			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-strs to filter, or specify arg 'id'")
 		} else {
-			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-strs to filter, or specify the arg 'id'")
+			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-strs to filter, or specify arg 'id'")
 		}
 	}
 
@@ -211,7 +211,7 @@ func lastSessionDesc(
 	return currCmdIdx, true
 }
 
-func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string) {
+func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask) {
 	id := argv.GetRaw("session-id")
 	if len(id) == 0 {
 		panic(fmt.Errorf("[ListSessionRetry] arg 'session-id' is empty"))
@@ -229,7 +229,7 @@ func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []st
 }
 
 /*
-func LastSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string) {
+func LastSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask) {
 	sessions := core.ListSessions(env, nil, "")
 	// if there is one, it's this session itself
 	if len(sessions) <= 1 {
@@ -350,9 +350,9 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, session.Running, EnvOpCmds())
 }
 
-func retrySession(session core.SessionStatus) (flow []string) {
+func retrySession(session core.SessionStatus) (flow []string, masks []*core.ExecuteMask) {
 	if session.Status.Executed {
 		panic(fmt.Errorf("session [%s] had succeeded, nothing to retry", session.DirName))
 	}
-	return []string{session.Status.Flow}
+	return []string{session.Status.Flow}, session.Status.GenExecMasks()
 }

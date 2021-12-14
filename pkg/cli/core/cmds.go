@@ -68,13 +68,14 @@ func (self *CmdTree) Execute(
 	sysArgv SysArgVals,
 	cc *Cli,
 	env *Env,
+	mask *ExecuteMask,
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
 	if self.cmd == nil {
 		return currCmdIdx, true
 	} else {
-		return self.cmd.Execute(argv, cc, env, flow, currCmdIdx)
+		return self.cmd.Execute(argv, cc, env, mask, flow, currCmdIdx)
 	}
 }
 

@@ -60,11 +60,21 @@ func (self *ExecutingFlow) OnAsyncTaskSchedule(flow *ParsedCmds, index int, env 
 	writeStatusContent(self.path, buf.String())
 }
 
-func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, succeeded bool, err error) {
+func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, succeeded bool, err error, skipped bool) {
 	indent := strings.Repeat(StatusFileIndent, self.level)
 	buf := bytes.NewBuffer(nil)
 	writeCmdEnv(buf, env, "env-finish", self.level)
-	fprintf(buf, "%s%v%s\n", markStartStr("result", self.level), succeeded, markFinishStr("result", 0))
+
+	result := "failed"
+	if succeeded {
+		if skipped {
+			result = "skipped"
+		} else {
+			result = "succeeded"
+		}
+	}
+	fprintf(buf, "%s%v%s\n", markStartStr("result", self.level), result, markFinishStr("result", 0))
+
 	if err != nil {
 		fprintf(buf, "%s\n", markStartStr("error", self.level))
 		for _, line := range strings.Split(err.Error(), "\n") {
