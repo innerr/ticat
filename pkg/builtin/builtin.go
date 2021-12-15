@@ -468,9 +468,10 @@ func RegisterHubCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		AddArg("git-address", "", "git", "address", "addr")
 
-	hub.AddSub("git-status", "status").
+	repoStatus := hub.AddSub("git-status", "status").
 		RegPowerCmd(CheckGitRepoStatus,
 			"check git status for all repos")
+	addFindStrArgs(repoStatus)
 
 	add.AddSub("local-dir", "local", "l", "L").
 		RegPowerCmd(AddLocalDirToHub,
