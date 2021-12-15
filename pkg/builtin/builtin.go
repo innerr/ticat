@@ -368,7 +368,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	addFindStrArgs(list)
 	list.AddArg("session-id", "", "session", "id")
 
-	list.AddSub("retry", "r", "R").
+	list.AddSub("retry", "rr", "r", "R").
 		RegAdHotFlowCmd(ListSessionRetry,
 			//"find a session by find-strs and id, if it's failed, retry running from the error point").
 			"find a session by id, if it's failed, retry running from the error point").
@@ -616,6 +616,12 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 			"wait for a while before executing each commands").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")
+
+	breaks := cmds.AddSub("breaks", "break")
+	breaks.AddSub("before", "at").
+		RegPowerCmd(DbgBreakBefore,
+			"setup break points, will pause before specified commands").
+		AddArg("break-points", "", "cmds")
 
 	cmds.AddSub("echo").
 		RegPowerCmd(DbgEcho,

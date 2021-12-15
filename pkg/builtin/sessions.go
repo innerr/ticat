@@ -211,7 +211,7 @@ func lastSessionDesc(
 	return currCmdIdx, true
 }
 
-func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask) {
+func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
 	id := argv.GetRaw("session-id")
 	if len(id) == 0 {
 		panic(fmt.Errorf("[ListSessionRetry] arg 'session-id' is empty"))
@@ -219,7 +219,7 @@ func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []st
 
 	sessions := findSessions(nil, id, cc, env)
 	if len(sessions) == 0 {
-		panic(fmt.Errorf("[ListSessionRetry] no matched session with id = '%s'", id))
+		return
 	}
 	if len(sessions) > 1 {
 		panic(fmt.Errorf("[ListSessionRetry] should never happen"))
@@ -229,7 +229,7 @@ func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []st
 }
 
 /*
-func LastSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask) {
+func LastSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
 	sessions := core.ListSessions(env, nil, "")
 	// if there is one, it's this session itself
 	if len(sessions) <= 1 {
@@ -350,9 +350,9 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, session.Running, EnvOpCmds())
 }
 
-func retrySession(session core.SessionStatus) (flow []string, masks []*core.ExecuteMask) {
+func retrySession(session core.SessionStatus) (flow []string, masks []*core.ExecuteMask, ok bool) {
 	if session.Status.Executed {
 		panic(fmt.Errorf("session [%s] had succeeded, nothing to retry", session.DirName))
 	}
-	return []string{session.Status.Flow}, session.Status.GenExecMasks()
+	return []string{session.Status.Flow}, session.Status.GenExecMasks(), true
 }
