@@ -36,7 +36,7 @@ func (self *ExecutingFlow) onFlowStart(flow *ParsedCmds, env *Env) {
 	writeMarkedContent(self.path, "flow", 0, flowStr)
 }
 
-func (self *ExecutingFlow) OnCmdStart(flow *ParsedCmds, index int, env *Env) {
+func (self *ExecutingFlow) OnCmdStart(flow *ParsedCmds, index int, env *Env, logFilePath string) {
 	indent := strings.Repeat(StatusFileIndent, self.level)
 	buf := bytes.NewBuffer(nil)
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
@@ -86,16 +86,16 @@ func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, su
 }
 
 func (self *ExecutingFlow) OnSubFlowStart(flow string) {
-	writeMarkStart(self.path, "subflow", self.level)
+	content := markStartStr("subflow", self.level) + "\n"
 	self.level += 1
-	writeMarkedContent(self.path, "flow", self.level, flow)
+	content += markedContent("flow", self.level, flow)
+	writeStatusContent(self.path, content)
 }
 
 func (self *ExecutingFlow) OnSubFlowFinish(env *Env) {
 	self.level -= 1
-	writeMarkFinish(self.path, "subflow", self.level)
-	// TODO: write once
 	buf := bytes.NewBuffer(nil)
+	buf.Write([]byte(markFinishStr("subflow", self.level) + "\n"))
 	writeCmdEnv(buf, env, "env-finish", self.level)
 	writeStatusContent(self.path, buf.String())
 }
@@ -126,7 +126,7 @@ func writeCmdEnv(w io.Writer, env *Env, mark string, level int) {
 	}
 	if len(kvs) > 0 {
 		fprintf(w, "%s\n%s%s\n", markStartStr(mark, level), buf.String(), markFinishStr(mark, level))
-	} else {
+		//} else {
 		//fprintf(w, "%s\n", emptyMarkStr(mark, level))
 	}
 }
@@ -138,20 +138,8 @@ func writeMarkStart(path string, mark string, level int) {
 	writeStatusContent(path, content)
 }
 
-func writeMarkFinish(path string, mark string, level int) {
-	indent := strings.Repeat(StatusFileIndent, level)
-	content := fmt.Sprintf("%s%s%s%s%s\n",
-		indent, StatusFileMarkBracketLeft, StatusFileMarkFinishMark, "subflow", StatusFileMarkBracketRight)
-	writeStatusContent(path, content)
-}
-
 func writeMarkedContent(path string, mark string, level int, lines ...string) {
-	indent := strings.Repeat(StatusFileIndent, level)
-	content := indent + StatusFileMarkBracketLeft + mark + StatusFileMarkBracketRight + "\n"
-	for _, line := range lines {
-		content += indent + line + "\n"
-	}
-	content += indent + StatusFileMarkBracketLeft + StatusFileMarkFinishMark + mark + StatusFileMarkBracketRight + "\n"
+	content := markedContent(mark, level, lines...)
 	writeStatusContent(path, content)
 }
 
@@ -172,6 +160,16 @@ func fprintf(w io.Writer, format string, a ...interface{}) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func markedContent(mark string, level int, lines ...string) (content string) {
+	indent := strings.Repeat(StatusFileIndent, level)
+	content += indent + StatusFileMarkBracketLeft + mark + StatusFileMarkBracketRight + "\n"
+	for _, line := range lines {
+		content += indent + line + "\n"
+	}
+	content += indent + StatusFileMarkBracketLeft + StatusFileMarkFinishMark + mark + StatusFileMarkBracketRight + "\n"
+	return
 }
 
 func markStartStr(mark string, level int) string {

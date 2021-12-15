@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"math/rand"
 	"os/exec"
 	"path/filepath"
 	"reflect"
@@ -180,23 +181,6 @@ func (self *Cmd) Execute(
 	return newCurrCmdIdx, ok
 }
 
-func (self *Cmd) executePowerCmd(
-	argv ArgVals,
-	cc *Cli,
-	env *Env,
-	flow *ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	currCmdIdx, succeeded := self.power(argv, cc, env, flow, currCmdIdx)
-	// Let commands manually clear it when it's tail-mode flow(not call),
-	// in that we could run tail-mode recursively
-	if flow.TailModeCall {
-		currCmdIdx = 0
-		flow.Cmds = nil
-	}
-	return currCmdIdx, succeeded
-}
-
 func (self *Cmd) execute(
 	argv ArgVals,
 	cc *Cli,
@@ -217,8 +201,10 @@ func (self *Cmd) execute(
 		}
 	}
 
+	logFilePath := self.genLogFilePath(env)
+
 	if cc.FlowStatus != nil {
-		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env)
+		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env, logFilePath)
 		defer func() {
 			var err error
 			r := recover()
@@ -238,7 +224,7 @@ func (self *Cmd) execute(
 		cc.Screen.Print("(skipped)\n")
 		newCurrCmdIdx, succeeded = currCmdIdx, true
 	} else {
-		newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow, currCmdIdx)
+		newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow, currCmdIdx, logFilePath)
 	}
 	return
 }
@@ -249,7 +235,8 @@ func (self *Cmd) executeByType(
 	env *Env,
 	mask *ExecuteMask,
 	flow *ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int,
+	logFilePath string) (int, bool) {
 
 	switch self.ty {
 	case CmdTypePower:
@@ -257,17 +244,17 @@ func (self *Cmd) executeByType(
 	case CmdTypeNormal:
 		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx:])
 	case CmdTypeFile:
-		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
+		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath)
 	case CmdTypeEmptyDir:
 		return currCmdIdx, true
 	case CmdTypeDirWithCmd:
-		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
+		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath)
 	case CmdTypeFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeFileNFlow:
 		succeeded := self.executeFlow(argv, cc, env, mask)
 		if succeeded && shouldExecByMask(mask) {
-			succeeded = self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
+			succeeded = self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath)
 		}
 		return currCmdIdx, succeeded
 	case CmdTypeAdHotFlow:
@@ -520,6 +507,29 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 	return false
 }
 
+func (self *Cmd) genLogFilePath(env *Env) string {
+	if !self.shouldWriteLogFile() {
+		return ""
+	}
+	sessionDir := env.GetRaw("session")
+	if len(sessionDir) == 0 {
+		panic(fmt.Errorf("[Cmd.genLogFilePath] session dir not found in env"))
+	}
+	fileName := self.genLogFileName()
+	return filepath.Join(sessionDir, fileName)
+}
+
+func (self *Cmd) shouldWriteLogFile() bool {
+	return self.ty == CmdTypeFile ||
+		self.ty == CmdTypeDirWithCmd ||
+		self.ty == CmdTypeFileNFlow
+}
+
+func (self *Cmd) genLogFileName() string {
+	name := self.owner.DisplayPath()
+	return fmt.Sprintf("%s.%s.%v", name, time.Now().Format("2006-01-02_15-04-05"), rand.Int())
+}
+
 // TODO: move to parser ?
 // TODO: read and parse session file too many times for CmdTypeAdHotFlow, cache it
 func (self *Cmd) RenderedFlowStrs(
@@ -589,6 +599,23 @@ func FlowStrsToStr(flowStrs []string) string {
 	return strings.Join(flowStrs, " ")
 }
 
+func (self *Cmd) executePowerCmd(
+	argv ArgVals,
+	cc *Cli,
+	env *Env,
+	flow *ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	currCmdIdx, succeeded := self.power(argv, cc, env, flow, currCmdIdx)
+	// Let commands manually clear it when it's tail-mode flow(not call),
+	// in that we could run tail-mode recursively
+	if flow.TailModeCall {
+		currCmdIdx = 0
+		flow.Cmds = nil
+	}
+	return currCmdIdx, succeeded
+}
+
 // TODO: flow must not have argv, is it OK?
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask) (succeeded bool) {
 	flow, masks, _ := self.Flow(argv, cc, env, false)
@@ -611,7 +638,7 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 	return
 }
 
-func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd) bool {
+func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd, logFilePath string) bool {
 	if len(self.cmdLine) == 0 {
 		return true
 	}
