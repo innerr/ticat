@@ -38,6 +38,7 @@ type Cli struct {
 	BgTasks       *BgTasks
 	CmdIO         *CmdIO
 	FlowStatus    *ExecutingFlow
+	BreakPoints   *BreakPoints
 }
 
 func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO) *Cli {
@@ -52,6 +53,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		NewBgTasks(),
 		cmdIO,
 		nil,
+		NewBreakPoints(),
 	}
 }
 
@@ -75,6 +77,7 @@ func (self *Cli) Copy() *Cli {
 		self.BgTasks,
 		self.CmdIO,
 		nil,
+		self.BreakPoints,
 	}
 }
 
@@ -93,5 +96,6 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		self.BgTasks,
 		NewCmdIO(nil, bgStdout, bgStdout),
 		nil,
+		NewBreakPoints(),
 	}
 }

@@ -32,7 +32,7 @@ type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) (succeede
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
 
-type AdHotFlowCmd func(argv ArgVals, cc *Cli, env *Env) (flow []string, masks []*ExecuteMask)
+type AdHotFlowCmd func(argv ArgVals, cc *Cli, env *Env) (flow []string, masks []*ExecuteMask, succeeded bool)
 
 type Depend struct {
 	OsCmd  string
@@ -542,7 +542,7 @@ func (self *Cmd) RenderedFlowStrs(
 
 	flowStrs := self.flow
 	if self.ty == CmdTypeAdHotFlow {
-		flowStrs, masks = self.adhotFlow(argv, cc, env)
+		flowStrs, masks, _ = self.adhotFlow(argv, cc, env)
 	}
 
 	for _, line := range flowStrs {

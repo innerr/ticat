@@ -86,6 +86,8 @@ func dumpFlow(
 	maxTrivial int,
 	depth int) bool {
 
+	sep := cc.Cmds.Strs.PathSep
+
 	metFlows := map[string]bool{}
 	for i, cmd := range flow.Cmds[fromCmdIdx:] {
 		if cmd.IsEmpty() {
@@ -96,7 +98,9 @@ func dumpFlow(
 			if i < len(executedFlow.Cmds) {
 				executedCmd = executedFlow.GetCmd(i)
 			} else {
-				return false
+				// TODO: better display
+				name := strings.Join(cmd.Path(), sep)
+				executedCmd = &core.ExecutedCmd{Cmd: name}
 			}
 		}
 		ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, running,

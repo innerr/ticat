@@ -175,10 +175,14 @@ func (self *Executor) executeCmd(
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
-		succeeded = tryDelayAndStepByStep(cc, env)
-		if !succeeded {
-			return
-		}
+	}
+	succeeded = tryDelayAndStepByStep(cc, env)
+	if !succeeded {
+		return
+	}
+	succeeded = tryBreakBefore(cc, env, cmd)
+	if !succeeded {
+		return
 	}
 
 	last := cmd.LastCmdNode()
@@ -334,6 +338,17 @@ func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
 			curr = curr.GetOrAddSub(seg)
 		}
 	}
+}
+
+func tryBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
+	name := strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep)
+	if !cc.BreakPoints.BreakBefore(name) {
+		return true
+	}
+	cc.Screen.Print(display.ColorTip("[confirm]", env) + " paused by break-point command " +
+		display.ColorCmd("["+name+"]", env) + ", type " +
+		display.ColorWarn("'y'", env) + " and press enter:\n")
+	return utils.UserConfirm()
 }
 
 func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) bool {
