@@ -148,18 +148,21 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
+	// TODO: add find-strs
 	cmds.AddSub("tail-sub", "~").
 		RegPowerCmd(DumpTailCmdSub,
 			"display commands on the branch of the last command").
 		SetQuiet().
 		SetPriority()
 
+	// TODO: add find-strs
 	cmds.AddSub("tail-sub-with-usage", "~~").
 		RegPowerCmd(DumpTailCmdSubUsage,
 			"display commands on the branch of the last command, with usage").
 		SetQuiet().
 		SetPriority()
 
+	// TODO: add find-strs
 	cmds.AddSub("tail-sub-with-details", "~~~").
 		RegPowerCmd(DumpTailCmdSubDetails,
 			"display commands on the branch of the last command, with details").
@@ -363,6 +366,13 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"list executed/ing sessions").
 		SetAllowTailModeCall()
 	addFindStrArgs(list)
+	list.AddArg("session-id", "", "session", "id")
+
+	list.AddSub("retry", "r", "R").
+		RegAdHotFlowCmd(ListSessionRetry,
+			//"find a session by find-strs and id, if it's failed, retry running from the error point").
+			"find a session by id, if it's failed, retry running from the error point").
+		AddArg("session-id", "", "session", "id")
 
 	listDesc := list.AddSub("desc", "desc-less", "-").
 		RegPowerCmd(ListedSessionDescLess,
@@ -371,6 +381,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	addFindStrArgs(listDesc)
 	listDesc.AddArg("trivial", "1", "triv", "tri", "t", "T")
 	listDesc.AddArg("depth", "32", "d", "D")
+	listDesc.AddArg("session-id", "", "session", "id")
 
 	listDescMore := list.AddSub("desc-more", "+").
 		RegPowerCmd(ListedSessionDescMore,
@@ -379,6 +390,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	addFindStrArgs(listDescMore)
 	listDescMore.AddArg("trivial", "1", "triv", "tri", "t", "T")
 	listDescMore.AddArg("depth", "32", "d", "D")
+	listDescMore.AddArg("session-id", "", "session", "id")
 
 	listDescFull := list.AddSub("desc-full", "++").
 		RegPowerCmd(ListedSessionDescFull,
@@ -387,6 +399,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	addFindStrArgs(listDescFull)
 	listDescFull.AddArg("trivial", "1", "triv", "tri", "t", "T")
 	listDescFull.AddArg("depth", "32", "d", "D")
+	listDescFull.AddArg("session-id", "", "session", "id")
 
 	last := cmds.AddSub("last", "l", "L")
 	last.RegPowerCmd(LastSession,
@@ -410,6 +423,12 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		AddArg("trivial", "1", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
+	/*
+		last.AddSub("retry", "r", "R").
+			RegAdHotFlowCmd(LastSessionRetry,
+				"if the last session failed, retry running from the error point")
+	*/
+
 	cmds.AddSub("remove-all", "clean", "clear", "--").
 		RegPowerCmd(RemoveAllSessions,
 			"clean executed sessions")
@@ -419,6 +438,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"clean executed sessions by find-strs").
 		SetAllowTailModeCall()
 	addFindStrArgs(remove)
+	remove.AddArg("session-id", "", "session", "id")
 
 	cmds.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
 		RegPowerCmd(SetSessionsKeepDur,

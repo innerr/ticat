@@ -23,11 +23,15 @@ const (
 	CmdTypeFile       CmdType = "executable-file"
 	CmdTypeEmptyDir   CmdType = "dir-with-no-executable"
 	CmdTypeDirWithCmd CmdType = "dir-with-executable-file"
+	CmdTypeAdHotFlow  CmdType = "adhot-flow"
 )
 
 type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) (succeeded bool)
+
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
+
+type AdHotFlowCmd func(argv ArgVals, cc *Cli, env *Env) (flow []string, masks []*ExecuteMask)
 
 type Depend struct {
 	OsCmd  string
@@ -50,6 +54,7 @@ type Cmd struct {
 	args              Args
 	normal            NormalCmd
 	power             PowerCmd
+	adhotFlow         AdHotFlowCmd
 	cmdLine           string
 	flow              []string
 	envOps            EnvOps
@@ -71,6 +76,7 @@ func defaultCmd(owner *CmdTree, help string) *Cmd {
 		args:              newArgs(),
 		normal:            nil,
 		power:             nil,
+		adhotFlow:         nil,
 		cmdLine:           "",
 		flow:              nil,
 		envOps:            newEnvOps(),
@@ -98,6 +104,13 @@ func NewPowerCmd(owner *CmdTree, help string, cmd PowerCmd) *Cmd {
 	c := defaultCmd(owner, help)
 	c.ty = CmdTypePower
 	c.power = cmd
+	return c
+}
+
+func NewAdHotFlowCmd(owner *CmdTree, help string, adhotFlow AdHotFlowCmd) *Cmd {
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeAdHotFlow
+	c.adhotFlow = adhotFlow
 	return c
 }
 
@@ -141,6 +154,7 @@ func (self *Cmd) Execute(
 	argv ArgVals,
 	cc *Cli,
 	env *Env,
+	mask *ExecuteMask,
 	flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, ok bool) {
 
@@ -149,7 +163,7 @@ func (self *Cmd) Execute(
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Begin, int(begin.Unix()))
 	}
 
-	newCurrCmdIdx, ok = self.execute(argv, cc, env, flow, currCmdIdx)
+	newCurrCmdIdx, ok = self.execute(argv, cc, env, mask, flow, currCmdIdx)
 	if !ok {
 		// Normally the command should print info before return false, so no need to panic
 		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
@@ -187,8 +201,21 @@ func (self *Cmd) execute(
 	argv ArgVals,
 	cc *Cli,
 	env *Env,
+	mask *ExecuteMask,
 	flow *ParsedCmds,
 	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
+
+	// TODO: this logic should be in upper layer
+	if mask != nil && mask.OverWriteStartEnv != nil {
+		p := env
+		for p != nil && p.LayerType() != EnvLayerSession {
+			p.CleanCurrLayer()
+			p = p.Parent()
+		}
+		if p != nil {
+			mask.OverWriteStartEnv.WriteCurrLayerTo(p)
+		}
+	}
 
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env)
@@ -199,7 +226,7 @@ func (self *Cmd) execute(
 				err = r.(error)
 			}
 			if !self.HasSubFlow() {
-				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err)
+				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
 			}
 			if r != nil {
 				panic(r)
@@ -207,7 +234,12 @@ func (self *Cmd) execute(
 		}()
 	}
 
-	newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, flow, currCmdIdx)
+	if !shouldExecByMask(mask) && !self.HasSubFlow() {
+		cc.Screen.Print("(skipped)\n")
+		newCurrCmdIdx, succeeded = currCmdIdx, true
+	} else {
+		newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow, currCmdIdx)
+	}
 	return
 }
 
@@ -215,6 +247,7 @@ func (self *Cmd) executeByType(
 	argv ArgVals,
 	cc *Cli,
 	env *Env,
+	mask *ExecuteMask,
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
@@ -230,13 +263,15 @@ func (self *Cmd) executeByType(
 	case CmdTypeDirWithCmd:
 		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
 	case CmdTypeFlow:
-		return currCmdIdx, self.executeFlow(argv, cc, env)
+		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeFileNFlow:
-		succeeded := self.executeFlow(argv, cc, env)
-		if succeeded {
+		succeeded := self.executeFlow(argv, cc, env, mask)
+		if succeeded && shouldExecByMask(mask) {
 			succeeded = self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx])
 		}
 		return currCmdIdx, succeeded
+	case CmdTypeAdHotFlow:
+		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeEmpty:
 		return currCmdIdx, true
 	default:
@@ -246,7 +281,7 @@ func (self *Cmd) executeByType(
 }
 
 func (self *Cmd) HasSubFlow() bool {
-	return self.ty == CmdTypeFlow || self.ty == CmdTypeFileNFlow
+	return self.ty == CmdTypeFlow || self.ty == CmdTypeFileNFlow || self.ty == CmdTypeAdHotFlow
 }
 
 func (self *Cmd) MatchFind(findStr string) bool {
@@ -408,6 +443,14 @@ func (self *Cmd) DisplayHelpStr() string {
 	return self.help
 }
 
+func (self *Cmd) IsBuiltinCmd() bool {
+	return self.ty == CmdTypeNormal || self.ty == CmdTypePower
+}
+
+func (self *Cmd) HasCmdLine() bool {
+	return len(self.cmdLine) != 0
+}
+
 func (self *Cmd) IsNoExecutableCmd() bool {
 	if len(self.val2env.EnvKeys()) > 0 {
 		return false
@@ -468,18 +511,31 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 			return true
 		}
 	}
+	if self.adhotFlow != nil {
+		fr2 := reflect.ValueOf(self.adhotFlow)
+		if fr1.Pointer() == fr2.Pointer() {
+			return true
+		}
+	}
 	return false
 }
 
 // TODO: move to parser ?
+// TODO: read and parse session file too many times for CmdTypeAdHotFlow, cache it
 func (self *Cmd) RenderedFlowStrs(
 	argv ArgVals,
+	cc *Cli,
 	env *Env,
-	allowFlowTemplateRenderError bool) (flow []string, fullyRendered bool) {
+	allowFlowTemplateRenderError bool) (flow []string, masks []*ExecuteMask, fullyRendered bool) {
 
 	fullyRendered = true
 
-	for _, line := range self.flow {
+	flowStrs := self.flow
+	if self.ty == CmdTypeAdHotFlow {
+		flowStrs, masks = self.adhotFlow(argv, cc, env)
+	}
+
+	for _, line := range flowStrs {
 		rendereds, lineFullyRendered := renderTemplateStr(line, "flow", self, argv, env, allowFlowTemplateRenderError)
 		for _, rendered := range rendereds {
 			flow = append(flow, rendered)
@@ -508,8 +564,8 @@ func StripFlowForExecute(flow []string, sequenceSep string) []string {
 	return output
 }
 
-func (self *Cmd) Flow(argv ArgVals, env *Env, allowFlowTemplateRenderError bool) (flow []string, rendered bool) {
-	flow, rendered = self.RenderedFlowStrs(argv, env, allowFlowTemplateRenderError)
+func (self *Cmd) Flow(argv ArgVals, cc *Cli, env *Env, allowFlowTemplateRenderError bool) (flow []string, masks []*ExecuteMask, rendered bool) {
+	flow, masks, rendered = self.RenderedFlowStrs(argv, cc, env, allowFlowTemplateRenderError)
 	if !rendered || len(flow) == 0 {
 		return
 	}
@@ -533,8 +589,9 @@ func FlowStrsToStr(flowStrs []string) string {
 	return strings.Join(flowStrs, " ")
 }
 
-func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) (succeeded bool) {
-	flow, _ := self.Flow(argv, env, false)
+// TODO: flow must not have argv, is it OK?
+func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask) (succeeded bool) {
+	flow, masks, _ := self.Flow(argv, cc, env, false)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnSubFlowStart(FlowStrsToStr(flow))
@@ -544,7 +601,13 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env) (succeeded bool) {
 			}
 		}()
 	}
-	succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flowEnv, flow...)
+	if mask != nil && len(mask.SubFlow) != 0 {
+		if len(masks) != 0 {
+			// TODO: handle masks confliction
+		}
+		masks = mask.SubFlow
+	}
+	succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flowEnv, masks, flow...)
 	return
 }
 
@@ -607,4 +670,8 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 
 	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
 	return true
+}
+
+func shouldExecByMask(mask *ExecuteMask) bool {
+	return (mask == nil || mask.ExecPolicy == ExecPolicyExec)
 }

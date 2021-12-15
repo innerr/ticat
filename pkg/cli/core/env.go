@@ -285,6 +285,16 @@ func (self Env) Flatten(
 	return res
 }
 
+func (self Env) WriteCurrLayerTo(env *Env) {
+	for k, v := range self.pairs {
+		env.Set(k, v.Raw)
+	}
+}
+
+func (self *Env) CleanCurrLayer() {
+	self.pairs = map[string]EnvVal{}
+}
+
 func (self *Env) flatten(
 	includeDefault bool,
 	filterPrefixs []string,

@@ -22,7 +22,9 @@ type ExecutedCmd struct {
 	SubFlow    *ExecutedFlow
 	FinishEnv  *Env
 	Unexecuted bool
+	NoSelfErr  bool
 	Succeeded  bool
+	Skipped    bool
 	Err        []string
 }
 
@@ -56,6 +58,25 @@ func ParseExecutedFlow(path ExecutedStatusFilePath) *ExecutedFlow {
 	return parseExecutedFlow(path, lines)
 }
 
+func (self *ExecutedFlow) GenExecMasks() (masks []*ExecuteMask) {
+	for _, cmd := range self.Cmds {
+		var subMasks []*ExecuteMask
+		if cmd.SubFlow != nil {
+			subMasks = cmd.SubFlow.GenExecMasks()
+		}
+		policy := ExecPolicyExec
+		if cmd.Succeeded {
+			policy = ExecPolicySkip
+		}
+		masks = append(masks, &ExecuteMask{cmd.Cmd, cmd.StartEnv, policy, subMasks})
+	}
+	return
+}
+
+func (self *ExecutedFlow) IsOneCmdSession(cmd string) bool {
+	return len(self.Cmds) == 1 && self.Cmds[0].Cmd == cmd
+}
+
 func (self *ExecutedFlow) MatchFind(findStrs []string) bool {
 	if len(findStrs) == 0 {
 		return true
@@ -80,6 +101,20 @@ func (self *ExecutedFlow) GetCmd(idx int) *ExecutedCmd {
 		return nil
 	}
 	return cmd.SubFlow.Cmds[0]
+}
+
+func (self *ExecutedFlow) GatherSubFlowResult() (succeeded bool, skipped bool) {
+	succeeded = true
+	skipped = true
+	for _, cmd := range self.Cmds {
+		if !cmd.Succeeded {
+			succeeded = false
+		}
+		if !cmd.Skipped {
+			skipped = false
+		}
+	}
+	return
 }
 
 func parseExecutedFlow(path ExecutedStatusFilePath, lines []string) (executed *ExecutedFlow) {
@@ -132,8 +167,8 @@ func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (
 				break
 			}
 			if len(lines) != 0 {
-				panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has extra %v lines",
-					path.Short(), len(lines)))
+				panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', level %d, has extra %v lines",
+					path.Short(), level, len(lines)))
 			}
 			return cmds, nil, false
 		}
@@ -160,9 +195,10 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		} else if len(subflow.Cmds) != 1 {
 			panic(fmt.Errorf("[ParseExecutedFlow] expect only one cmd in delayed task"))
 		}
-		cmd.SubFlow = subflow
 		cmd.IsDelay = true
-		cmd.Succeeded = true
+		cmd.SubFlow = subflow
+		cmd.Succeeded, cmd.Skipped = subflow.GatherSubFlowResult()
+		cmd.NoSelfErr = true
 		return cmd, lines, true
 	}
 
@@ -177,7 +213,8 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 			panic(fmt.Errorf("[ParseExecutedFlow] bad subflow in executed status file '%s', has extra %v lines",
 				path.Short(), len(lines)))
 		}
-		cmd.Succeeded = ok
+
+		// Subflow don't have result marks
 		subflow := &ExecutedFlow{}
 		flowStr, subflowLines, ok := parseMarkedOneLineContent(path, subflowLines, "flow", level+1)
 		if ok {
@@ -185,6 +222,8 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		} else {
 			panic(fmt.Errorf("[ParseExecutedFlow] expect 'flow' mark"))
 		}
+		cmd.NoSelfErr = ok
+
 		cmds, subflowRemain, ok := parseExecutedCmds(path, subflowLines, level+1)
 		if len(subflowRemain) != 0 {
 			panic(fmt.Errorf("[ParseExecutedFlow] bad lines of subflow in status file '%s'", path.Short()))
@@ -194,6 +233,7 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		}
 		subflow.Cmds = cmds
 		cmd.SubFlow = subflow
+		cmd.Succeeded, cmd.Skipped = subflow.GatherSubFlowResult()
 	}
 
 	finishEnvLines, lines, ok := parseMarkedContent(path, lines, "env-finish", level)
@@ -201,7 +241,7 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		cmd.FinishEnv = parseEnvLines(path, finishEnvLines, level)
 	}
 
-	succeeded, lines, ok := parseMarkedOneLineContent(path, lines, "result", level)
+	result, lines, ok := parseMarkedOneLineContent(path, lines, "result", level)
 	if !ok {
 		if cmd.SubFlow != nil {
 			return cmd, lines, true
@@ -209,7 +249,9 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 			return nil, lines, false
 		}
 	}
-	cmd.Succeeded = (succeeded == "true")
+	cmd.Skipped = (result == "skipped")
+	cmd.NoSelfErr = (result == "succeeded")
+	cmd.Succeeded = cmd.Skipped || cmd.NoSelfErr
 
 	errLines, lines, ok := parseMarkedContent(path, lines, "error", level)
 	if ok {

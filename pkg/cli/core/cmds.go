@@ -68,13 +68,14 @@ func (self *CmdTree) Execute(
 	sysArgv SysArgVals,
 	cc *Cli,
 	env *Env,
+	mask *ExecuteMask,
 	flow *ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
 	if self.cmd == nil {
 		return currCmdIdx, true
 	} else {
-		return self.cmd.Execute(argv, cc, env, flow, currCmdIdx)
+		return self.cmd.Execute(argv, cc, env, mask, flow, currCmdIdx)
 	}
 }
 
@@ -184,6 +185,12 @@ func (self *CmdTree) RegFlowCmd(flow []string, help string) *Cmd {
 func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
 	self.cmdConflictCheck(help, "RegPowerCmd")
 	self.cmd = NewPowerCmd(self, help, cmd)
+	return self.cmd
+}
+
+func (self *CmdTree) RegAdHotFlowCmd(cmd AdHotFlowCmd, help string) *Cmd {
+	self.cmdConflictCheck(help, "RegAdHotFlowCmd")
+	self.cmd = NewAdHotFlowCmd(self, help, cmd)
 	return self.cmd
 }
 
