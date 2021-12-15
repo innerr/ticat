@@ -205,7 +205,38 @@ func CheckGitRepoStatus(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	panic("TODO")
+	assertNotTailMode(flow, currCmdIdx)
+
+	cmd := flow.Cmds[currCmdIdx]
+	if !isOsCmdExists("git") {
+		panic(core.NewCmdError(cmd, "cant't find 'git'"))
+	}
+
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+
+	path := getHubPath(env, cmd)
+
+	metaPath := getReposInfoPath(env, cmd)
+	fieldSep := env.GetRaw("strs.proto-sep")
+	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
+
+	for _, info := range infos {
+		if len(findStrs) != 0 {
+			filtered := false
+			for _, filterStr := range findStrs {
+				if !matchFindRepoInfo(info, filterStr) {
+					filtered = true
+					break
+				}
+			}
+			if filtered {
+				continue
+			}
+		}
+		meta.CheckRepoGitStatus(cc.Screen, env, path, info.Addr)
+	}
+
+	return currCmdIdx, true
 }
 
 func UpdateHub(
@@ -516,11 +547,11 @@ func MoveSavedFlowsToLocalDir(
 	return currCmdIdx, true
 }
 
-func listHub(screen core.Screen, env *core.Env, infos []meta.RepoInfo, filterStrs ...string) {
+func listHub(screen core.Screen, env *core.Env, infos []meta.RepoInfo, findStrs ...string) {
 	for _, info := range infos {
-		if len(filterStrs) != 0 {
+		if len(findStrs) != 0 {
 			filtered := false
-			for _, filterStr := range filterStrs {
+			for _, filterStr := range findStrs {
 				if !matchFindRepoInfo(info, filterStr) {
 					filtered = true
 					break
