@@ -153,9 +153,9 @@ func dumpFlowCmd(
 	cmdSkipped := func() bool {
 		return executedCmd != nil && executedCmd.Skipped
 	}
-	cmdOkButSubFailed := func() bool {
-		return cmdFailed() && executedCmd.NoSelfErr
-	}
+	//cmdOkButSubFailed := func() bool {
+	//	return cmdFailed() && executedCmd.NoSelfErr
+	//}
 
 	notFold := func() bool {
 		return cmdFailed() || maxTrivial > 0 && maxDepth > 0
@@ -203,13 +203,19 @@ func dumpFlowCmd(
 	}
 
 	dumpCmdHelp(cic.Help(), cmdEnv, args, prt)
+
+	var startEnv map[string]string
+	if !cmdSkipped() {
+		startEnv = dumpExecutedStartEnv(cmdEnv, prt, args, executedCmd)
+	}
+
 	dumpCmdExecutedLog(cmdEnv, args, executedCmd, prt)
 	dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
 
-	if !cmdSkipped() && !cmdOkButSubFailed() {
-		dumpCmdArgv(cic, argv, cmdEnv, originEnv, prt, args, writtenKeys)
+	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
+		dumpCmdArgv(cic, argv, cmdEnv, originEnv, prt, args, executedCmd, writtenKeys)
 		dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, args, writtenKeys)
-		dumpEnvOpsInFlow(cic, argv, cmdEnv, prt, args, executedCmd)
+		dumpEnvOpsDefinition(cic, argv, cmdEnv, prt, args, executedCmd)
 		dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
 	}
 
@@ -252,8 +258,12 @@ func dumpFlowCmd(
 			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || cmdFailed() {
+					depthMark := ""
+					if executedCmd != nil && !args.Skeleton {
+						depthMark = fmt.Sprintf(" L%v", depth+1)
+					}
 					if !foldSubFlow() {
-						prt(2, ColorFlowing("--->>>", env))
+						prt(2, ColorFlowing("--->>>"+depthMark, env))
 					}
 					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 					err := parsedFlow.FirstErr()
@@ -279,10 +289,10 @@ func dumpFlowCmd(
 					}
 					exeMark := ""
 					if cic.Type() == core.CmdTypeFileNFlow {
-						exeMark = ColorCmd(" +", env)
+						exeMark += ColorCmd(" +", env)
 					}
 					if !foldSubFlow() {
-						prt(2, ColorFlowing("<<<---", env)+exeMark)
+						prt(2, ColorFlowing("<<<---"+depthMark, env)+exeMark)
 					}
 				}
 			}
@@ -293,7 +303,6 @@ func dumpFlowCmd(
 		"failed to execute env-op cmd in flow desc")
 
 	if !cmdSkipped() {
-		startEnv := dumpExecutedEnvFull(cmdEnv, prt, args, executedCmd)
 		dumpExecutedModifiedEnv(env, prt, args, startEnv, executedCmd)
 	}
 
@@ -528,9 +537,17 @@ func dumpCmdArgv(
 	originEnv *core.Env,
 	prt func(indentLvl int, msg string),
 	args *DumpFlowArgs,
+	executedCmd *core.ExecutedCmd,
 	writtenKeys FlowWrittenKeys) {
 
-	if !args.Skeleton {
+	if args.Skeleton || args.Simple && executedCmd != nil {
+		for name, val := range argv {
+			if !val.Provided {
+				continue
+			}
+			prt(1, " "+ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
+		}
+	} else {
 		args := cic.Args()
 		arg2env := cic.GetArg2Env()
 		argLines := DumpEffectedArgs(originEnv, arg2env, &args, argv, writtenKeys)
@@ -540,17 +557,10 @@ func dumpCmdArgv(
 		for _, line := range argLines {
 			prt(2, line)
 		}
-	} else {
-		for name, val := range argv {
-			if !val.Provided {
-				continue
-			}
-			prt(1, " "+ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
-		}
 	}
 }
 
-func dumpEnvOpsInFlow(
+func dumpEnvOpsDefinition(
 	cic *core.Cmd,
 	argv core.ArgVals,
 	env *core.Env,
@@ -579,7 +589,7 @@ func dumpEnvOpsInFlow(
 }
 
 // TODO: env-before-execute => env-full-trace
-func dumpExecutedEnvFull(
+func dumpExecutedStartEnv(
 	env *core.Env,
 	prt func(indentLvl int, msg string),
 	args *DumpFlowArgs,
