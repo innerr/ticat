@@ -21,8 +21,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.execute-delay-sec", 0)
 	env.SetBool("sys.interact", true)
 
-	env.Set("sys.version", "1.0.1")
-	env.Set("sys.dev.name", "marsh")
+	env.Set("sys.version", "1.1")
+	env.Set("sys.dev.name", "second-wind")
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
