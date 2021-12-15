@@ -103,7 +103,7 @@ func main() {
 	screen := core.NewStdScreen(os.Stdout, os.Stderr)
 
 	// Commands' input and output
-	cmdIO := core.CmdIO{os.Stdin, os.Stdout, os.Stderr}
+	cmdIO := core.NewCmdIO(os.Stdin, os.Stdout, os.Stderr)
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
 	cc := core.NewCli(screen, tree, cliParser, abbrs, cmdIO)

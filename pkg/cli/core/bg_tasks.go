@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"sync"
 )
@@ -14,16 +15,43 @@ type CmdIO struct {
 	CmdStderr io.Writer
 }
 
-func (self CmdIO) SetupCmd(cmd *exec.Cmd) {
+func NewCmdIO(stdio io.Reader, stdout io.Writer, stderr io.Writer) *CmdIO {
+	return &CmdIO{stdio, stdout, stderr}
+}
+
+func (self *CmdIO) SetupForExec(cmd *exec.Cmd, logFilePath string) (logger io.WriteCloser) {
+	if len(logFilePath) != 0 {
+		file, err := os.OpenFile(logFilePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL|os.O_SYNC, 0644)
+		if err != nil {
+			panic(fmt.Errorf("[CmdIO.SetupForExec] open log file failed: %v", err))
+		}
+		logger = file
+	}
+
 	if self.CmdStdin != nil {
 		cmd.Stdin = self.CmdStdin
 	}
-	if self.CmdStdout != nil {
-		cmd.Stdout = self.CmdStdout
+
+	if logger == nil {
+		if self.CmdStdout != nil {
+			cmd.Stdout = self.CmdStdout
+		}
+		if self.CmdStderr != nil {
+			cmd.Stderr = self.CmdStderr
+		}
+	} else {
+		if self.CmdStdout != nil {
+			cmd.Stdout = io.MultiWriter(self.CmdStdout, logger)
+		} else {
+			cmd.Stdout = logger
+		}
+		if self.CmdStderr != nil {
+			cmd.Stderr = io.MultiWriter(self.CmdStderr, logger)
+		} else {
+			cmd.Stderr = self.CmdStderr
+		}
 	}
-	if self.CmdStderr != nil {
-		cmd.Stderr = self.CmdStderr
-	}
+	return
 }
 
 type BgStdout struct {

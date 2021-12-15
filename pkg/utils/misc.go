@@ -2,7 +2,9 @@ package utils
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -16,6 +18,40 @@ import (
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
+}
+
+func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []string) {
+	file, err := os.Open(path)
+	if err != nil {
+		panic(fmt.Errorf("[ReadLastLines] %v", err))
+	}
+	defer file.Close()
+
+	stat, err := os.Stat(path)
+	if int64(bufSize) >= stat.Size() {
+		bufSize = int(stat.Size())
+	}
+
+	buf := make([]byte, bufSize)
+	start := stat.Size() - int64(bufSize)
+	if start < 0 {
+		start = 0
+	}
+	_, err = file.ReadAt(buf, start)
+	if err != nil && !errors.Is(err, io.EOF) {
+		panic(fmt.Errorf("[ReadLastLines] %v", err))
+	}
+
+	for _, line := range strings.Split(string(buf), "\n") {
+		if len(strings.TrimSpace(line)) != 0 {
+			lines = append(lines, line)
+		}
+	}
+
+	if len(lines) > maxLines {
+		lines = lines[len(lines)-maxLines:]
+	}
+	return
 }
 
 func UserConfirm() (yes bool) {
