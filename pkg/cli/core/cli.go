@@ -36,11 +36,11 @@ type Cli struct {
 	Executor      Executor
 	Helps         *Helps
 	BgTasks       *BgTasks
-	CmdIO         CmdIO
+	CmdIO         *CmdIO
 	FlowStatus    *ExecutingFlow
 }
 
-func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO CmdIO) *Cli {
+func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO) *Cli {
 	return &Cli{
 		screen,
 		cmds,
@@ -62,6 +62,7 @@ func (self *Cli) SetFlowStatusWriter(status *ExecutingFlow) {
 	self.FlowStatus = status
 }
 
+// Shadow copy
 func (self *Cli) Copy() *Cli {
 	return &Cli{
 		self.Screen,
@@ -90,11 +91,7 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		self.Executor,
 		self.Helps,
 		self.BgTasks,
-		CmdIO{
-			nil,
-			bgStdout,
-			bgStdout,
-		},
+		NewCmdIO(nil, bgStdout, bgStdout),
 		nil,
 	}
 }

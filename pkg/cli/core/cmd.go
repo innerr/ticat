@@ -527,7 +527,7 @@ func (self *Cmd) shouldWriteLogFile() bool {
 
 func (self *Cmd) genLogFileName() string {
 	name := self.owner.DisplayPath()
-	return fmt.Sprintf("%s.%s.%v", name, time.Now().Format("2006-01-02_15-04-05"), rand.Int())
+	return fmt.Sprintf("%s_%s_%v", time.Now().Format("20060102-150405"), name, rand.Uint32())
 }
 
 // TODO: move to parser ?
@@ -681,7 +681,10 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	}
 	cmd := exec.Command(bin, args...)
 
-	cc.CmdIO.SetupCmd(cmd)
+	logger := cc.CmdIO.SetupForExec(cmd, logFilePath)
+	if logger != nil {
+		defer logger.Close()
+	}
 
 	err := cmd.Run()
 	if err != nil {
@@ -691,6 +694,10 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 			argv,
 			bin,
 			sessionPath,
+			logFilePath,
+		}
+		if logger != nil {
+			logger.Close()
 		}
 		panic(err)
 	}

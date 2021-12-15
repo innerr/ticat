@@ -163,6 +163,7 @@ type RunCmdFileFailed struct {
 	Argv        ArgVals
 	Bin         string
 	SessionPath string
+	LogFilePath string
 }
 
 func (self RunCmdFileFailed) Error() string {

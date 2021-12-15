@@ -92,6 +92,8 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			"    - '"+cic.CmdLine()+"'",
 			"session-path:",
 			"    - '"+e.SessionPath+"'",
+			"log-file:",
+			"    - '"+e.LogFilePath+"'",
 			"",
 			"command detail:")
 		printer.Finish()

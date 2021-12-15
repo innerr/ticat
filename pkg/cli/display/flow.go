@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 func DumpFlow(
@@ -202,6 +203,7 @@ func dumpFlowCmd(
 	}
 
 	dumpCmdHelp(cic.Help(), cmdEnv, args, prt)
+	dumpCmdExecutedLog(cmdEnv, args, executedCmd, prt)
 	dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
 
 	if !cmdSkipped() && !cmdOkButSubFailed() {
@@ -306,6 +308,35 @@ func dumpCmdHelp(help string, env *core.Env, args *DumpFlowArgs, prt func(indent
 		prt(1, " "+ColorHelp("'"+help+"'", env))
 	} else {
 		prt(1, ColorHelp("'"+help+"'", env))
+	}
+}
+
+func dumpCmdExecutedLog(
+	env *core.Env,
+	args *DumpFlowArgs,
+	executedCmd *core.ExecutedCmd,
+	prt func(indentLvl int, msg string)) {
+
+	if executedCmd == nil || len(executedCmd.LogFilePath) == 0 {
+		return
+	}
+
+	if (args.Skeleton || args.Simple) && executedCmd.Succeeded {
+		return
+	}
+	if executedCmd.Succeeded {
+		prt(1, ColorProp("- execute-log:", env))
+	} else {
+		prt(1, ColorError("- execute-log:", env))
+	}
+	prt(2, executedCmd.LogFilePath)
+
+	lines := utils.ReadLogFileLastLines(executedCmd.LogFilePath, 1024*16, 16)
+	if len(lines) != 0 {
+		prt(2, ColorExplain("...", env))
+	}
+	for _, line := range lines {
+		prt(2, ColorExplain(line, env))
 	}
 }
 

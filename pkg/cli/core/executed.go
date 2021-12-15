@@ -16,16 +16,17 @@ type ExecutedStatusFilePath struct {
 }
 
 type ExecutedCmd struct {
-	Cmd        string
-	IsDelay    bool
-	StartEnv   *Env
-	SubFlow    *ExecutedFlow
-	FinishEnv  *Env
-	Unexecuted bool
-	NoSelfErr  bool
-	Succeeded  bool
-	Skipped    bool
-	Err        []string
+	Cmd         string
+	LogFilePath string
+	IsDelay     bool
+	StartEnv    *Env
+	SubFlow     *ExecutedFlow
+	FinishEnv   *Env
+	Unexecuted  bool
+	NoSelfErr   bool
+	Succeeded   bool
+	Skipped     bool
+	Err         []string
 }
 
 type ExecutedFlow struct {
@@ -185,6 +186,10 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 	cmd = &ExecutedCmd{
 		Cmd: strings.TrimSpace(cmdStr),
 	}
+	logFilePath, lines, ok := parseMarkedOneLineContent(path, lines, "log", level)
+	if ok {
+		cmd.LogFilePath = strings.TrimSpace(logFilePath)
+	}
 
 	tid, lines, ok := parseMarkedOneLineContent(path, lines, "scheduled", level)
 	if ok {
@@ -299,10 +304,6 @@ func parseMarkedContent(path ExecutedStatusFilePath, lines []string,
 	remain = lines
 	if len(lines) == 0 {
 		return
-	}
-
-	if lines[0] == emptyMarkStr(mark, level) {
-		return nil, lines[1:], true
 	}
 
 	markStart := markStartStr(mark, level)
