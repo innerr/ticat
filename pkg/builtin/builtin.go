@@ -77,36 +77,71 @@ func RegisterCmdsLocatingCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	// TODO: reg list
-	mods := cmds.AddSub("cmds", "c", "C").
-		RegPowerCmd(DumpCmdList,
-			"list/find commands").
-		SetAllowTailModeCall()
-	addFindStrArgs(mods)
+	addDumpCmdsArgs := func(cmd *core.Cmd) {
+		addFindStrArgs(cmd)
+		cmd.SetAllowTailModeCall().
+			AddArg("cmd-path", "", "path", "p", "P").
+			AddArg("source", "", "repo", "src", "s", "S").
+			AddArg("tag", "", "t", "T").
+			AddArg("depth", "1", "d", "D")
+	}
 
-	tree := mods.AddSub("tree", "t", "T")
-	tree.RegPowerCmd(DumpCmdTree,
-		"list builtin and loaded commands").
-		SetAllowTailModeCall().
-		AddArg("cmd-path", "", "path", "p", "P")
-	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S").
-		RegPowerCmd(DumpCmdTreeSkeleton,
-			"list builtin and loaded commands, skeleton only").
-		SetAllowTailModeCall().
-		AddArg("cmd-path", "", "path", "p", "P").
-		AddArg("recursive", "true", "r", "R")
+	list := cmds.AddSub("cmds", "c", "C").
+		RegPowerCmd(DumpCmds,
+			"list commands by command-path-branch, find-strs, source and tag")
+	addDumpCmdsArgs(list)
 
-	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
-		RegPowerCmd(DumpCmdList,
+	listMore := list.AddSub("more", "m", "M").
+		RegPowerCmd(DumpCmdsMore,
+			"list commands by command-path-branch, find-strs, source and tag, with usage info")
+	addDumpCmdsArgs(listMore)
+
+	listFull := list.AddSub("full", "f", "F").
+		RegPowerCmd(DumpCmdsFull,
+			"list commands by command-path-branch, find-strs, source and tag, with full info")
+	addDumpCmdsArgs(listFull)
+
+	tree := list.AddSub("tree", "t", "T").
+		RegPowerCmd(DumpCmdsTree,
+			"list commands in tree form by command-path-branch, find-strs, source and tag")
+	addDumpCmdsArgs(tree)
+
+	treeMore := tree.AddSub("more", "m", "M").
+		RegPowerCmd(DumpCmdsTreeMore,
+			"list commands in tree form by command-path-branch, find-strs, source and tag, with usage info")
+	addDumpCmdsArgs(treeMore)
+
+	treeFull := tree.AddSub("full", "f", "F").
+		RegPowerCmd(DumpCmdsTreeFull,
+			"list commands in tree form by command-path-branch, find-strs, source and tag, with full info")
+	addDumpCmdsArgs(treeFull)
+
+	/*
+		/*
+		list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
+			RegPowerCmd(DumpCmdList,
+				"list builtin and loaded commands").
+			SetAllowTailModeCall()
+		addFindStrArgs(list)
+
+		listSimple := list.AddSub("simple", "sim", "s", "S").
+			RegPowerCmd(DumpCmdListSimple,
+				"list builtin and loaded commands in lite style").
+			SetAllowTailModeCall()
+		addFindStrArgs(listSimple)
+
+		tree := mods.AddSub("tree", "t", "T")
+		tree.RegPowerCmd(DumpCmdTree,
 			"list builtin and loaded commands").
-		SetAllowTailModeCall()
-	addFindStrArgs(list)
-
-	listSimple := list.AddSub("simple", "sim", "s", "S").
-		RegPowerCmd(DumpCmdListSimple,
-			"list builtin and loaded commands in lite style").
-		SetAllowTailModeCall()
-	addFindStrArgs(listSimple)
+			SetAllowTailModeCall().
+			AddArg("cmd-path", "", "path", "p", "P")
+		tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S").
+			RegPowerCmd(DumpCmdTreeSkeleton,
+				"list builtin and loaded commands, skeleton only").
+			SetAllowTailModeCall().
+			AddArg("cmd-path", "", "path", "p", "P").
+			AddArg("recursive", "true", "r", "R")
+	*/
 }
 
 func RegisterTagsCmds(cmds *core.CmdTree) {
@@ -464,7 +499,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	desc.AddArg("depth", "32", "d", "D")
 	desc.AddArg("session-id", "", "session", "id")
 
-	descMore := desc.Owner().AddSub("more", "m", "M").
+	descMore := desc.AddSub("more", "m", "M").
 		RegPowerCmd(ListedSessionDescMore,
 			"desc executed/ing session with more details").
 		SetAllowTailModeCall()

@@ -149,7 +149,7 @@ func FindByTags(
 		return currCmdIdx, true
 	}
 
-	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...).SetFindByTags().SetSkeleton()
+	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...).AddFindByTags().SetSkeleton()
 	display.DumpCmds(cc.Cmds, cc.Screen, env, dumpArgs)
 	return currCmdIdx, true
 }
