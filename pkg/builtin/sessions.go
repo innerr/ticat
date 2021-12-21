@@ -211,10 +211,10 @@ func lastSessionDesc(
 	return currCmdIdx, true
 }
 
-func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
+func SessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
 	id := argv.GetRaw("session-id")
 	if len(id) == 0 {
-		panic(fmt.Errorf("[ListSessionRetry] arg 'session-id' is empty"))
+		panic(fmt.Errorf("[SessionRetry] arg 'session-id' is empty"))
 	}
 
 	sessions := findSessions(nil, id, cc, env)
@@ -222,7 +222,7 @@ func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []st
 		return
 	}
 	if len(sessions) > 1 {
-		panic(fmt.Errorf("[ListSessionRetry] should never happen"))
+		panic(fmt.Errorf("[SessionRetry] should never happen"))
 	}
 
 	return retrySession(sessions[0])

@@ -99,7 +99,7 @@ func noSessionCmds(flow *core.ParsedCmds) bool {
 	}
 
 	funcs := []interface{}{
-		builtin.ListSessionRetry,
+		builtin.SessionRetry,
 		//builtin.LastSessionRetry,
 	}
 	for _, it := range funcs {

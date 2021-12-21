@@ -110,12 +110,12 @@ func main() {
 
 	// Modules and env loaders
 	bootstrap := `
-		B.E.L.R:
-		B.M.L.E:
-		B.E.L.L:
-		B.M.L.F:
-		B.M.L.H:
-		B.D.L.P:
+		builtin.env.load.runtime:
+		builtin.mod.load.ext-executor:
+		builtin.env.load.local:
+		builtin.mod.load.flows:
+		builtin.mod.load.hub:
+		builtin.display.load.platform:
 	`
 
 	// TODO: handle error by types
