@@ -19,9 +19,9 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 		builtin.GlobalFindCmdWithDetails,
 		builtin.DumpTailCmdWithUsage,
 		builtin.DumpTailCmdWithDetails,
-		builtin.DumpTailCmdSub,
-		builtin.DumpTailCmdSubWithUsage,
-		builtin.DumpTailCmdSubWithDetails,
+		//builtin.DumpTailCmdSub,
+		//builtin.DumpTailCmdSubWithUsage,
+		//builtin.DumpTailCmdSubWithDetails,
 		builtin.DumpFlowAll,
 		builtin.DumpFlowAllSimple,
 		builtin.DumpFlow,
@@ -51,11 +51,12 @@ func isStartWithSearchCmd(flow *core.ParsedCmds) (isSearch bool) {
 		return
 	}
 	funcs := []interface{}{
-		builtin.DumpTailCmdWithUsage,
-		builtin.DumpTailCmdWithDetails,
-		builtin.DumpTailCmdSub,
-		builtin.DumpTailCmdSubWithUsage,
-		builtin.DumpTailCmdSubWithDetails,
+		builtin.GlobalFindCmd,
+		builtin.GlobalFindCmdWithUsage,
+		builtin.GlobalFindCmdWithDetails,
+		builtin.DumpCmds,
+		builtin.DumpCmdsWithUsage,
+		builtin.DumpCmdsWithDetails,
 	}
 	for _, it := range funcs {
 		if last.IsTheSameFunc(it) {

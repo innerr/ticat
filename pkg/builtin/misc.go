@@ -115,7 +115,7 @@ func DbgPanicCmdError(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	panic(core.NewCmdError(flow.Cmds[currCmdIdx], "this is a specified-panic test command"))
+	panic(core.NewCmdError(flow.Cmds[currCmdIdx], "this is a specified-error-type panic test command"))
 }
 
 func DbgError(

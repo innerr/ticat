@@ -9,9 +9,10 @@ import (
 func RegisterCmds(cmds *core.CmdTree) {
 	RegisterCmdAndHelpCmds(cmds)
 	RegisterTagsCmds(cmds)
-
+	RegisterTailSubCmds(cmds)
 	RegisterCmdsFindingCmds(cmds)
-	RegisterCmdsLocatingCmds(cmds)
+	RegisterCmdsListCmds(cmds)
+
 	RegisterFlowDescCmds(cmds)
 
 	RegisterHubManageCmds(cmds)
@@ -39,51 +40,98 @@ func RegisterCmds(cmds *core.CmdTree) {
 func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 	find := cmds.AddSub("find", "search").
 		RegPowerCmd(GlobalFindCmd,
-			"find commands with strings").
+			"search commands by find-strs").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(find)
 
+	findShort := cmds.AddSub("/").
+		RegPowerCmd(GlobalFindCmd,
+			"shortcut of [find]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(findShort)
+
 	findUsage := find.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
 		RegPowerCmd(GlobalFindCmdWithUsage,
-			"find commands with strings, with details").
+			"search commands by find-strings, with usage info").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(findUsage)
 
+	findUsageShort := cmds.AddSub("//").
+		RegPowerCmd(GlobalFindCmdWithUsage,
+			"shortcut of [find.with-usage]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(findUsageShort)
+
 	findDetail := find.AddSub("with-full-info", "full-info", "full", "f", "F").
 		RegPowerCmd(GlobalFindCmdWithDetails,
-			"find commands with strings, with full details").
+			"search commands with strings, with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(findDetail)
+
+	findDetailShort := cmds.AddSub("///").
+		RegPowerCmd(GlobalFindCmdWithDetails,
+			"shortcut of [find.with-full-info]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(findDetailShort)
 }
 
-func RegisterCmdsLocatingCmds(cmds *core.CmdTree) {
-	cmds.AddSub("sub", "tail-sub", "~").
+func RegisterTailSubCmds(cmds *core.CmdTree) {
+	sub := cmds.AddSub("tail-sub", "ts").
 		RegPowerCmd(DumpTailCmdSub,
 			"display commands on the branch of the last command").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail-sub-with-usage", "~~").
+	cmds.AddSub("~").
+		RegPowerCmd(DumpTailCmdSub,
+			"shortcut of [tail-sub]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+
+	sub.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
 		RegPowerCmd(DumpTailCmdSubWithUsage,
-			"display commands on the branch of the last command, with usage").
+			"display commands on the branch of the last command, with usage info").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 
-	cmds.AddSub("tail-sub-with-details", "~~~").
+	cmds.AddSub("~~").
+		RegPowerCmd(DumpTailCmdSubWithUsage,
+			"shortcut of [tail-sub.with-usage]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+
+	sub.AddSub("with-full-info", "full-info", "full", "f", "F").
 		RegPowerCmd(DumpTailCmdSubWithDetails,
-			"display commands on the branch of the last command, with details").
+			"display commands on the branch of the last command, with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 
+	sub.AddSub("~~~").
+		RegPowerCmd(DumpTailCmdSubWithDetails,
+			"shortcut of [tail-sub.with-full-info]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+}
+
+func RegisterCmdsListCmds(cmds *core.CmdTree) {
 	addDumpCmdsArgs := func(cmd *core.Cmd) {
 		cmd.SetPriority().
 			SetQuiet().
@@ -171,12 +219,16 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 		RegPowerCmd(DumpCmdUsage,
 			"display command usage").
 		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority().
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	cmd.AddSub("full", "f", "F").
 		RegPowerCmd(DumpCmdWithDetails,
 			"display command full info").
 		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority().
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	cmds.AddSub("=").
@@ -610,7 +662,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 
 	panicTest.AddSub("cmd").
 		RegPowerCmd(DbgPanicCmdError,
-			"for specified-panic test").
+			"for specified-error-type panic test").
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 

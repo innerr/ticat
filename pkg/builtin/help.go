@@ -43,45 +43,6 @@ func DumpTailCmdWithDetails(
 	return clearFlow(flow)
 }
 
-func DumpTailCmdSub(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
-	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	return clearFlow(flow)
-}
-
-func DumpTailCmdSubWithUsage(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage()
-	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	return clearFlow(flow)
-}
-
-func DumpTailCmdSubWithDetails(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
-	dumpArgs := display.NewDumpCmdArgs()
-	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	return clearFlow(flow)
-}
-
 func GlobalFindCmd(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -186,4 +147,54 @@ func SelfHelp(
 	assertNotTailMode(flow, currCmdIdx)
 	display.PrintSelfHelp(cc.Screen, env)
 	return currCmdIdx, true
+}
+
+func DumpTailCmdSub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
+	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, dumpArgs)
+}
+
+func DumpTailCmdSubWithUsage(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage()
+	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, dumpArgs)
+}
+
+func DumpTailCmdSubWithDetails(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	dumpArgs := display.NewDumpCmdArgs()
+	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, dumpArgs)
+}
+
+func dumpTailCmdSub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	dumpArgs *display.DumpCmdArgs) (int, bool) {
+
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
+	cmdPath := flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
+	return clearFlow(flow)
 }
