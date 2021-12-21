@@ -10,6 +10,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterCmdAndHelpCmds(cmds)
 	RegisterTagsCmds(cmds)
 
+	RegisterCmdsFindingCmds(cmds)
 	RegisterCmdsLocatingCmds(cmds)
 	RegisterFlowDescCmds(cmds)
 
@@ -35,55 +36,63 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterNoopCmds(cmds)
 }
 
+func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
+	find := cmds.AddSub("find", "search").
+		RegPowerCmd(GlobalFindCmd,
+			"find commands with strings").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(find)
+
+	findUsage := find.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
+		RegPowerCmd(GlobalFindCmdWithUsage,
+			"find commands with strings, with details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(findUsage)
+
+	findDetail := find.AddSub("with-full-info", "full-info", "full", "f", "F").
+		RegPowerCmd(GlobalFindCmdWithDetails,
+			"find commands with strings, with full details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(findDetail)
+}
+
 func RegisterCmdsLocatingCmds(cmds *core.CmdTree) {
-	/*
-		find := cmds.AddSub("find", "search", "/").
-			RegPowerCmd(GlobalFindCmd,
-				"find commands with strings").
-			SetPriority()
-		addFindStrArgs(find)
-
-		findUsage := cmds.AddSub("find-detail", "//").
-			RegPowerCmd(GlobalFindCmdWithUsage,
-				"find commands with strings, with details").
-			SetPriority()
-		addFindStrArgs(findUsage)
-
-		findDetail := cmds.AddSub("find-detail", "///").
-			RegPowerCmd(GlobalFindCmdWithDetail,
-				"find commands with strings, with details").
-			SetPriority()
-		addFindStrArgs(findDetail)
-	*/
-
-	// TODO: add find-strs
 	cmds.AddSub("sub", "tail-sub", "~").
 		RegPowerCmd(DumpTailCmdSub,
 			"display commands on the branch of the last command").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 
-	// TODO: add find-strs
 	cmds.AddSub("tail-sub-with-usage", "~~").
-		RegPowerCmd(DumpTailCmdSubUsage,
+		RegPowerCmd(DumpTailCmdSubWithUsage,
 			"display commands on the branch of the last command, with usage").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 
-	// TODO: add find-strs
 	cmds.AddSub("tail-sub-with-details", "~~~").
-		RegPowerCmd(DumpTailCmdSubDetails,
+		RegPowerCmd(DumpTailCmdSubWithDetails,
 			"display commands on the branch of the last command, with details").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 
 	addDumpCmdsArgs := func(cmd *core.Cmd) {
-		addFindStrArgs(cmd)
-		cmd.SetAllowTailModeCall().
+		cmd.SetPriority().
+			SetQuiet().
+			SetAllowTailModeCall().
 			AddArg("cmd-path", "", "path", "p", "P").
 			AddArg("source", "", "repo", "src", "s", "S").
 			AddArg("tag", "", "t", "T").
 			AddArg("depth", "1", "d", "D")
+		addFindStrArgs(cmd)
 	}
 
 	list := cmds.AddSub("cmds", "c", "C").
@@ -91,30 +100,22 @@ func RegisterCmdsLocatingCmds(cmds *core.CmdTree) {
 			"list commands by command-path-branch, find-strs, source and tag")
 	addDumpCmdsArgs(list)
 
-	listMore := list.AddSub("more", "m", "M").
-		RegPowerCmd(DumpCmdsMore,
+	listMore := list.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
+		RegPowerCmd(DumpCmdsWithUsage,
 			"list commands by command-path-branch, find-strs, source and tag, with usage info")
 	addDumpCmdsArgs(listMore)
 
-	listFull := list.AddSub("full", "f", "F").
-		RegPowerCmd(DumpCmdsFull,
+	listFull := list.AddSub("with-full-info", "full-info", "full", "f", "F").
+		RegPowerCmd(DumpCmdsWithDetails,
 			"list commands by command-path-branch, find-strs, source and tag, with full info")
 	addDumpCmdsArgs(listFull)
 
-	tree := list.AddSub("tree", "t", "T").
+	list.AddSub("tree", "t", "T").
 		RegPowerCmd(DumpCmdsTree,
-			"list commands in tree form by command-path-branch, find-strs, source and tag")
-	addDumpCmdsArgs(tree)
-
-	treeMore := tree.AddSub("more", "m", "M").
-		RegPowerCmd(DumpCmdsTreeMore,
-			"list commands in tree form by command-path-branch, find-strs, source and tag, with usage info")
-	addDumpCmdsArgs(treeMore)
-
-	treeFull := tree.AddSub("full", "f", "F").
-		RegPowerCmd(DumpCmdsTreeFull,
-			"list commands in tree form by command-path-branch, find-strs, source and tag, with full info")
-	addDumpCmdsArgs(treeFull)
+			"list commands in tree form by command-path-branch").
+		SetAllowTailModeCall().
+		AddArg("cmd-path", "", "path", "p", "P").
+		AddArg("depth", "1", "d", "D")
 
 	/*
 		/*
@@ -173,20 +174,20 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	cmd.AddSub("full", "f", "F").
-		RegPowerCmd(DumpCmdFull,
+		RegPowerCmd(DumpCmdWithDetails,
 			"display command full info").
 		SetAllowTailModeCall().
 		AddArg("cmd-path", "", "path", "p", "P")
 
 	cmds.AddSub("=").
-		RegPowerCmd(DumpTailCmdUsage,
+		RegPowerCmd(DumpTailCmdWithUsage,
 			"shortcut of [cmd], if at the end of a flow:\n   * display usage of the last command\n   * flow will not execute").
 		SetQuiet().
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p", "P")
 
-	cmds.AddSub("==").
-		RegPowerCmd(DumpTailCmdInfo,
+	cmds.AddSub("==", "===").
+		RegPowerCmd(DumpTailCmdWithDetails,
 			"shortcut of [cmd], if at the end of a flow:\n   * display full info of the last command\n   * flow will not execute").
 		SetQuiet().
 		SetPriority().
@@ -210,10 +211,17 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 		AddArg("depth", "32", "d", "D")
 	cmds.AddSub("--").
 		RegPowerCmd(DumpFlowSkeleton,
-			"shortcut of [desc], unfold more trivial subflows").
+			"shortcut of [desc], unfold more(2L) trivial subflows").
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "2", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+	cmds.AddSub("---").
+		RegPowerCmd(DumpFlowSkeleton,
+			"shortcut of [desc], unfold more(3L) trivial subflows").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "3", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
 	desc.AddSub("more", "m", "M").
@@ -232,10 +240,17 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 		AddArg("depth", "32", "d", "D")
 	cmds.AddSub("++").
 		RegPowerCmd(DumpFlowAllSimple,
-			"shortcut of [desc.more], unfold more trivial subflows").
+			"shortcut of [desc.more], unfold more(2L) trivial subflows").
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "2", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+	cmds.AddSub("+++").
+		RegPowerCmd(DumpFlowAllSimple,
+			"shortcut of [desc.more], unfold more(3L) trivial subflows").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "3", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
 	desc.AddSub("full", "f", "F").

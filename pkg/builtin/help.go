@@ -7,7 +7,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func DumpTailCmdUsage(
+func DumpTailCmdWithUsage(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -25,7 +25,7 @@ func DumpTailCmdUsage(
 	return clearFlow(flow)
 }
 
-func DumpTailCmdInfo(
+func DumpTailCmdWithDetails(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -56,7 +56,7 @@ func DumpTailCmdSub(
 	return clearFlow(flow)
 }
 
-func DumpTailCmdSubUsage(
+func DumpTailCmdSubWithUsage(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -69,7 +69,7 @@ func DumpTailCmdSubUsage(
 	return clearFlow(flow)
 }
 
-func DumpTailCmdSubDetails(
+func DumpTailCmdSubWithDetails(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -82,7 +82,6 @@ func DumpTailCmdSubDetails(
 	return clearFlow(flow)
 }
 
-/*
 func GlobalFindCmd(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -109,7 +108,7 @@ func GlobalFindCmdWithUsage(
 	return clearFlow(flow)
 }
 
-func GlobalFindCmdWithDetail(
+func GlobalFindCmdWithDetails(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -121,7 +120,6 @@ func GlobalFindCmdWithDetail(
 	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", true)
 	return clearFlow(flow)
 }
-*/
 
 func ListTags(
 	argv core.ArgVals,
@@ -149,7 +147,7 @@ func FindByTags(
 		return currCmdIdx, true
 	}
 
-	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...).AddFindByTags().SetSkeleton()
+	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...).SetFindByTags().SetSkeleton()
 	display.DumpCmds(cc.Cmds, cc.Screen, env, dumpArgs)
 	return currCmdIdx, true
 }

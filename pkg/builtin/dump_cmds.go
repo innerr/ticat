@@ -16,7 +16,7 @@ func DumpCmds(
 	return dumpCmds(argv, cc, env, flow, currCmdIdx, dumpArgs)
 }
 
-func DumpCmdsMore(
+func DumpCmdsWithUsage(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -27,7 +27,7 @@ func DumpCmdsMore(
 	return dumpCmds(argv, cc, env, flow, currCmdIdx, dumpArgs)
 }
 
-func DumpCmdsFull(
+func DumpCmdsWithDetails(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -46,29 +46,19 @@ func DumpCmdsTree(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().NoFlatten()
-	return dumpCmds(argv, cc, env, flow, currCmdIdx, dumpArgs)
-}
 
-func DumpCmdsTreeMore(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+	cmds := cc.Cmds
+	if len(cmdPath) != 0 {
+		cmds = cmds.GetSubByPath(cmdPath, true)
+	}
 
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoFlatten()
-	return dumpCmds(argv, cc, env, flow, currCmdIdx, dumpArgs)
-}
+	if len(argv.GetRaw("depth")) != 0 {
+		dumpArgs.SetMaxDepth(argv.GetInt("depth"))
+	}
 
-func DumpCmdsTreeFull(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	dumpArgs := display.NewDumpCmdArgs().NoFlatten()
-	return dumpCmds(argv, cc, env, flow, currCmdIdx, dumpArgs)
+	display.DumpCmdsWithTips(cmds, cc.Screen, env, dumpArgs, cmdPath, false)
+	return clearFlow(flow)
 }
 
 func dumpCmds(
@@ -80,6 +70,9 @@ func dumpCmds(
 	dumpArgs *display.DumpCmdArgs) (int, bool) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	if len(findStrs) != 0 {
+		dumpArgs.AddFindStrs(findStrs...)
+	}
 
 	cmdPath := argv.GetRaw("cmd-path")
 	cmds := cc.Cmds
@@ -87,13 +80,25 @@ func dumpCmds(
 		cmds = cmds.GetSubByPath(cmdPath, true)
 	}
 
-	//source := argv.GetRaw("source")
-	//tag := argv.GetRaw("tag")
-	//depth := argv.GetRaw("depth")
+	tag := argv.GetRaw("tag")
+	if len(tag) != 0 {
+		if len(findStrs) != 0 {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx], "not support mix-search with tag and find-strs now"))
+		}
+		dumpArgs.AddFindStrs(tag).SetFindByTags()
+	}
 
-	dumpArgs.AddFindStrs(findStrs...)
+	source := argv.GetRaw("source")
+	if len(source) != 0 {
+		dumpArgs.SetSource(source)
+	}
+
+	if len(argv.GetRaw("depth")) != 0 {
+		dumpArgs.SetMaxDepth(argv.GetInt("depth"))
+	}
+
 	display.DumpCmdsWithTips(cmds, cc.Screen, env, dumpArgs, cmdPath, false)
-	return currCmdIdx, true
+	return clearFlow(flow)
 }
 
 /*
@@ -180,7 +185,7 @@ func DumpCmdUsage(
 	return currCmdIdx, true
 }
 
-func DumpCmdFull(
+func DumpCmdWithDetails(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,

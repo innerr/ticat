@@ -10,6 +10,7 @@ import (
 type CmdTreeStrs struct {
 	SelfName                 string
 	RootDisplayName          string
+	BuiltinName              string
 	BuiltinDisplayName       string
 	PathSep                  string
 	PathAlterSeps            string
@@ -27,7 +28,7 @@ type CmdTreeStrs struct {
 }
 
 func CmdTreeStrsForTest() *CmdTreeStrs {
-	return &CmdTreeStrs{"self", "<root>", "<builtin>",
+	return &CmdTreeStrs{"self", "<root>", "builtin", "<builtin>",
 		".", ".", "|", ":", "--", "=", ".", "\t", ",", "[[", "]]", "*", "@"}
 }
 
@@ -121,19 +122,6 @@ func (self *CmdTree) Tags() []string {
 
 func (self *CmdTree) Trivial() int {
 	return self.trivial
-}
-
-func (self *CmdTree) MatchTags(tags ...string) bool {
-	tagSet := map[string]bool{}
-	for _, tag := range self.tags {
-		tagSet[tag] = true
-	}
-	for _, tag := range tags {
-		if !tagSet[tag] {
-			return false
-		}
-	}
-	return true
 }
 
 func (self *CmdTree) MatchWriteKey(key string) bool {
@@ -324,6 +312,41 @@ func (self *CmdTree) Depth() int {
 	} else {
 		return self.parent.Depth() + 1
 	}
+}
+
+func (self *CmdTree) MatchSource(source string) bool {
+	if len(source) == 0 {
+		return true
+	}
+	if len(self.source) == 0 {
+		return strings.Index(self.Strs.BuiltinName, source) >= 0
+	}
+	return strings.Index(self.source, source) >= 0
+}
+
+func (self *CmdTree) MatchTags(tags ...string) bool {
+	for _, tag := range tags {
+		for _, it := range self.tags {
+			if strings.Index(it, tag) >= 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// TODO: unused
+func (self *CmdTree) MatchExactTags(tags ...string) bool {
+	tagSet := map[string]bool{}
+	for _, tag := range self.tags {
+		tagSet[tag] = true
+	}
+	for _, tag := range tags {
+		if !tagSet[tag] {
+			return false
+		}
+	}
+	return true
 }
 
 func (self *CmdTree) MatchFind(findStrs ...string) bool {

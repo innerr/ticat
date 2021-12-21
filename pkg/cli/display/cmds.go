@@ -137,10 +137,12 @@ type DumpCmdArgs struct {
 	FindByTags    bool
 	IndentSize    int
 	MatchWriteKey string
+	Source        string
+	MaxDepth      int
 }
 
 func NewDumpCmdArgs() *DumpCmdArgs {
-	return &DumpCmdArgs{false, true, true, true, nil, false, 4, ""}
+	return &DumpCmdArgs{false, true, true, true, nil, false, 4, "", "", 0}
 }
 
 func (self *DumpCmdArgs) NoShowShowUsage() *DumpCmdArgs {
@@ -184,17 +186,36 @@ func (self *DumpCmdArgs) SetMatchWriteKey(key string) *DumpCmdArgs {
 	return self
 }
 
+func (self *DumpCmdArgs) SetSource(source string) *DumpCmdArgs {
+	self.Source = source
+	return self
+}
+
+func (self *DumpCmdArgs) SetMaxDepth(depth int) *DumpCmdArgs {
+	self.MaxDepth = depth
+	return self
+}
+
 func (self *DumpCmdArgs) MatchFind(cmd *core.CmdTree) bool {
-	if self.FindByTags {
-		return cmd.MatchTags(self.FindStrs...)
+	if len(self.MatchWriteKey) != 0 && !cmd.MatchWriteKey(self.MatchWriteKey) {
+		return false
 	}
-	if len(self.MatchWriteKey) != 0 {
-		return cmd.MatchWriteKey(self.MatchWriteKey)
+	if len(self.FindStrs) != 0 {
+		if self.FindByTags {
+			if !cmd.MatchTags(self.FindStrs...) {
+				return false
+			}
+		} else {
+			if !cmd.MatchFind(self.FindStrs...) {
+				return false
+			}
+		}
 	}
-	if cmd.MatchFind(self.FindStrs...) {
-		return true
+	if len(self.Source) != 0 && !cmd.MatchSource(self.Source) {
+		return false
 	}
-	return false
+
+	return true
 }
 
 func dumpCmd(

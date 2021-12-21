@@ -11,14 +11,17 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	if last == nil {
 		return false
 	}
-	// Equal to funcs which clear flow
+	// This list equals to funcs which will do 'clear-the-flow'
 	allows := []interface{}{
 		builtin.SaveFlow,
-		builtin.DumpTailCmdInfo,
+		builtin.GlobalFindCmd,
+		builtin.GlobalFindCmdWithUsage,
+		builtin.GlobalFindCmdWithDetails,
+		builtin.DumpTailCmdWithUsage,
+		builtin.DumpTailCmdWithDetails,
 		builtin.DumpTailCmdSub,
-		builtin.DumpTailCmdSubUsage,
-		builtin.DumpTailCmdSubDetails,
-		builtin.DumpTailCmdUsage,
+		builtin.DumpTailCmdSubWithUsage,
+		builtin.DumpTailCmdSubWithDetails,
 		builtin.DumpFlowAll,
 		builtin.DumpFlowAllSimple,
 		builtin.DumpFlow,
@@ -26,6 +29,9 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 		builtin.DumpFlowDepends,
 		builtin.DumpFlowSkeleton,
 		builtin.DumpFlowEnvOpsCheckResult,
+		builtin.DumpCmds,
+		builtin.DumpCmdsWithUsage,
+		builtin.DumpCmdsWithDetails,
 	}
 	for _, allow := range allows {
 		if last.IsTheSameFunc(allow) {
@@ -45,10 +51,11 @@ func isStartWithSearchCmd(flow *core.ParsedCmds) (isSearch bool) {
 		return
 	}
 	funcs := []interface{}{
-		builtin.DumpTailCmdInfo,
+		builtin.DumpTailCmdWithUsage,
+		builtin.DumpTailCmdWithDetails,
 		builtin.DumpTailCmdSub,
-		builtin.DumpTailCmdSubUsage,
-		builtin.DumpTailCmdSubDetails,
+		builtin.DumpTailCmdSubWithUsage,
+		builtin.DumpTailCmdSubWithDetails,
 	}
 	for _, it := range funcs {
 		if last.IsTheSameFunc(it) {

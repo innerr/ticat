@@ -22,6 +22,7 @@ func main() {
 	defEnv := env.GetLayer(core.EnvLayerDefault)
 	defEnv.Set("strs.self-name", SelfName)
 	defEnv.Set("strs.list-sep", ListSep)
+	defEnv.Set("strs.cmd-builtin-name", CmdBuiltinName)
 	defEnv.Set("strs.cmd-builtin-display-name", CmdBuiltinDisplayName)
 	defEnv.Set("strs.meta-ext", MetaExt)
 	defEnv.Set("strs.flow-ext", FlowExt)
@@ -57,6 +58,7 @@ func main() {
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
 		SelfName,
 		CmdRootDisplayName,
+		CmdBuiltinName,
 		CmdBuiltinDisplayName,
 		CmdPathSep,
 		CmdPathAlterSeps,
@@ -145,6 +147,7 @@ const (
 	SelfName                 string = "ticat"
 	ListSep                  string = ","
 	CmdRootDisplayName       string = "<root>"
+	CmdBuiltinName           string = "builtin"
 	CmdBuiltinDisplayName    string = "<builtin>"
 	Spaces                   string = "\t\n\r "
 	AbbrsSep                 string = "|"
