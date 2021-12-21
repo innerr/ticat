@@ -12,14 +12,14 @@ func DumpCmdsWithTips(
 	env *core.Env,
 	args *DumpCmdArgs,
 	displayCmdPath string,
-	isLessMore bool) {
+	isLessMore bool) (allShown bool) {
 
 	prt := func(text ...interface{}) {
 		PrintTipTitle(screen, env, text...)
 	}
 
 	buf := NewCacheScreen()
-	dumpCmd(buf, env, cmds, args, -cmds.Depth())
+	allShown = dumpCmd(buf, env, cmds, args, -cmds.Depth(), 0)
 
 	findStr := strings.Join(args.FindStrs, " ")
 	selfName := env.GetRaw("strs.self-name")
@@ -117,15 +117,17 @@ func DumpCmdsWithTips(
 				SuggestFindCmdsLess(env))
 		}
 	}
+
+	return
 }
 
 func DumpCmds(
 	cmds *core.CmdTree,
 	screen core.Screen,
 	env *core.Env,
-	args *DumpCmdArgs) {
+	args *DumpCmdArgs) (allShown bool) {
 
-	dumpCmd(screen, env, cmds, args, -cmds.Depth())
+	return dumpCmd(screen, env, cmds, args, -cmds.Depth(), 0)
 }
 
 type DumpCmdArgs struct {
@@ -223,7 +225,8 @@ func dumpCmd(
 	env *core.Env,
 	cmd *core.CmdTree,
 	args *DumpCmdArgs,
-	indentAdjust int) {
+	indentAdjust int,
+	depth int) (allShown bool) {
 
 	if cmd == nil || cmd.IsHidden() {
 		return
@@ -397,11 +400,16 @@ func dumpCmd(
 		}
 	}
 
-	if args.Recursive {
+	allShown = true
+	if args.Recursive && (args.MaxDepth == 0 || depth < args.MaxDepth) {
 		for _, name := range cmd.SubNames() {
-			dumpCmd(screen, env, cmd.GetSub(name), args, indentAdjust)
+			subShown := dumpCmd(screen, env, cmd.GetSub(name), args, indentAdjust, depth+1)
+			allShown = allShown && subShown
 		}
+	} else {
+		allShown = !cmd.HasSub()
 	}
+	return allShown
 }
 
 func dumpIsAutoTimerKey(env *core.Env, cmd *core.Cmd, key string) string {

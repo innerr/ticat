@@ -139,7 +139,7 @@ func RegisterCmdsListCmds(cmds *core.CmdTree) {
 			AddArg("cmd-path", "", "path", "p", "P").
 			AddArg("source", "", "repo", "src", "s", "S").
 			AddArg("tag", "", "t", "T").
-			AddArg("depth", "1", "d", "D")
+			AddArg("depth", "0", "d", "D")
 		addFindStrArgs(cmd)
 	}
 

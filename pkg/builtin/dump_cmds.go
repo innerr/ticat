@@ -1,6 +1,8 @@
 package builtin
 
 import (
+	"fmt"
+
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
@@ -47,17 +49,34 @@ func DumpCmdsTree(
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().NoFlatten()
 
-	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+	cmdPath := ""
 	cmds := cc.Cmds
-	if len(cmdPath) != 0 {
+	if len(argv.GetRaw("cmd-path")) != 0 {
+		cmdPath = tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
 		cmds = cmds.GetSubByPath(cmdPath, true)
 	}
 
+	depth := 0
 	if len(argv.GetRaw("depth")) != 0 {
-		dumpArgs.SetMaxDepth(argv.GetInt("depth"))
+		depth = argv.GetInt("depth")
+		dumpArgs.SetMaxDepth(depth)
 	}
 
-	display.DumpCmdsWithTips(cmds, cc.Screen, env, dumpArgs, cmdPath, false)
+	buf := display.NewCacheScreen()
+	allShown := display.DumpCmds(cmds, buf, env, dumpArgs)
+
+	text := ""
+	if len(cmdPath) == 0 {
+		text = "the tree of all commands:"
+	} else {
+		text = "the tree branch of '" + cmdPath + "'"
+	}
+	if !allShown {
+		text += fmt.Sprintf(", some are not showed by arg depth='%d'", depth)
+	}
+
+	display.PrintTipTitle(cc.Screen, env, text)
+	buf.WriteTo(cc.Screen)
 	return clearFlow(flow)
 }
 
@@ -100,64 +119,6 @@ func dumpCmds(
 	display.DumpCmdsWithTips(cmds, cc.Screen, env, dumpArgs, cmdPath, false)
 	return clearFlow(flow)
 }
-
-/*
-func DumpCmdListSimple(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().AddFindStrs(findStrs...)
-	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
-	return currCmdIdx, true
-}
-
-func DumpCmdList(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
-	dumpArgs := display.NewDumpCmdArgs().AddFindStrs(findStrs...)
-	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", false)
-	return currCmdIdx, true
-}
-
-func DumpCmdTree(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
-	dumpArgs := display.NewDumpCmdArgs().NoFlatten()
-	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	return currCmdIdx, true
-}
-
-func DumpCmdTreeSkeleton(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	recursive := argv.GetBool("recursive")
-	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
-	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().NoFlatten()
-	if !recursive {
-		dumpArgs.NoRecursive()
-	}
-	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
-	return currCmdIdx, true
-}
-*/
 
 func DumpCmdsWhoWriteKey(
 	argv core.ArgVals,
