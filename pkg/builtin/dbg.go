@@ -17,6 +17,8 @@ func DbgEcho(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	arg := argv.GetRaw("message")
 	if len(arg) == 0 {
 		cc.Screen.Print("(arg 'message' is empty)")
@@ -54,6 +56,7 @@ func DbgDelayExecute(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
 	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec", argv.GetInt("seconds"))
 	return currCmdIdx, true
 }
@@ -64,6 +67,8 @@ func DbgBreakBefore(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
 
 	listSep := env.GetRaw("strs.list-sep")
 	cmdList := strings.Split(argv.GetRaw("break-points"), listSep)

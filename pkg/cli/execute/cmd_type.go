@@ -14,7 +14,6 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	// Equal to funcs which clear flow
 	allows := []interface{}{
 		builtin.SaveFlow,
-		builtin.DumpCmdNoRecursive,
 		builtin.DumpTailCmdInfo,
 		builtin.DumpTailCmdSub,
 		builtin.DumpTailCmdSubUsage,

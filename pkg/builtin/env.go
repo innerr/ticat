@@ -90,6 +90,8 @@ func MapEnvKeyValueToAnotherKey(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src-key")
 	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest-key")
 
@@ -299,6 +301,8 @@ func EnvAssertEqual(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
 	val := argv.GetRaw("val")
 	envVal := env.GetRaw(key)
@@ -316,6 +320,8 @@ func EnvAssertNotExists(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
 
 	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
 

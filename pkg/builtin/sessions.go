@@ -16,6 +16,8 @@ func SetSessionsKeepDur(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	env = env.GetLayer(core.EnvLayerSession)
 	key := "sys.session.keep-status-duration"
 	env.SetDur(key, argv.GetRaw("duration"))
@@ -29,6 +31,8 @@ func RemoveAllSessions(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
 
 	cleaned, runnings := core.CleanSessions(env)
 	var line string
@@ -153,6 +157,8 @@ func LastSession(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	sessions := core.ListSessions(env, nil, "")
 	if len(sessions) == 0 {
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
@@ -169,6 +175,7 @@ func LastSessionDescLess(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
 	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, false)
 }
 
@@ -179,6 +186,7 @@ func LastSessionDescMore(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
 	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, true)
 }
 
@@ -189,6 +197,7 @@ func LastSessionDescFull(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
 	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, false, true, true)
 }
 

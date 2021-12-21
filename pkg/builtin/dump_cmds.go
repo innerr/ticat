@@ -34,7 +34,20 @@ func DumpCmdList(
 	return currCmdIdx, true
 }
 
-func DumpCmdNoRecursive(
+func DumpCmdUsage(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
+	dumpCmdsByPath(cc, env, dumpArgs, cmdPath)
+	return currCmdIdx, true
+}
+
+func DumpCmdFull(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,

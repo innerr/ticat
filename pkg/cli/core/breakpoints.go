@@ -1,9 +1,7 @@
 package core
 
 import (
-	"fmt"
 	"sort"
-	"strings"
 )
 
 type BreakPoints struct {
@@ -17,11 +15,7 @@ func NewBreakPoints() *BreakPoints {
 
 func (self *BreakPoints) SetBefore(cc *Cli, env *Env, cmdList []string) (verifiedCmds []string) {
 	for _, cmd := range cmdList {
-		parsed := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, cmd)
-		if len(parsed.Cmds) != 1 || parsed.FirstErr() != nil {
-			panic(fmt.Errorf("[BreakPoints.SetBefore] invalid break-point cmd name '%s'", cmd))
-		}
-		verifiedCmd := strings.Join(parsed.Cmds[0].Path(), cc.Cmds.Strs.PathSep)
+		verifiedCmd := cc.ParseCmd(cmd, true)
 		verifiedCmds = append(verifiedCmds, verifiedCmd)
 		self.Before[verifiedCmd] = true
 	}
