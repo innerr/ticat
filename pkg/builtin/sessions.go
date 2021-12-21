@@ -330,7 +330,7 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, env *core.Env,
 	skeleton, showEnvFull bool, showModifiedEnv bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	if skeleton {
 		if !showEnvFull && !showModifiedEnv {
 			dumpArgs.SetSkeleton()

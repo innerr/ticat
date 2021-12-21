@@ -20,8 +20,6 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 		builtin.DumpTailCmdSubUsage,
 		builtin.DumpTailCmdSubDetails,
 		builtin.DumpTailCmdUsage,
-		builtin.GlobalHelpMoreInfo,
-		builtin.GlobalHelpLessInfo,
 		builtin.DumpFlowAll,
 		builtin.DumpFlowAllSimple,
 		builtin.DumpFlow,
@@ -48,8 +46,6 @@ func isStartWithSearchCmd(flow *core.ParsedCmds) (isSearch bool) {
 		return
 	}
 	funcs := []interface{}{
-		builtin.GlobalHelpMoreInfo,
-		builtin.GlobalHelpLessInfo,
 		builtin.DumpTailCmdInfo,
 		builtin.DumpTailCmdSub,
 		builtin.DumpTailCmdSubUsage,

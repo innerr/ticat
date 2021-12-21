@@ -1,9 +1,6 @@
 package builtin
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
@@ -48,32 +45,6 @@ func RegisterCmdsLocatingCmds(cmds *core.CmdTree) {
 			"show usage of a command").
 		SetQuiet().
 		SetPriority()
-
-	LessHelpStr := "desc the flow about to execute"
-	MoreHelpStr := LessHelpStr + ", with details"
-
-	for i := 1; i < 6; i++ {
-		defTrivial := fmt.Sprintf("%d", i)
-		cmdSuffix := ""
-		if i > 1 {
-			cmdSuffix += fmt.Sprintf("-%d", i)
-		}
-		cmds.AddSub("more"+cmdSuffix, strings.Repeat("+", i)).
-			RegPowerCmd(GlobalHelpMoreInfo,
-				MoreHelpStr).
-			SetQuiet().
-			SetPriority().
-			AddArg("trivial", defTrivial, "triv", "tri", "t", "T").
-			AddArg("depth", "32", "d", "D")
-
-		cmds.AddSub("less"+cmdSuffix, strings.Repeat("-", i)).
-			RegPowerCmd(GlobalHelpLessInfo,
-				LessHelpStr).
-			SetQuiet().
-			SetPriority().
-			AddArg("trivial", defTrivial, "triv", "tri", "t", "T").
-			AddArg("depth", "32", "d", "D")
-	}
 
 	find := cmds.AddSub("find", "search", "/").
 		RegPowerCmd(GlobalFindCmd,
@@ -163,27 +134,51 @@ func RegisterCmdsLocatingCmds(cmds *core.CmdTree) {
 }
 
 func RegisterFlowDescCmds(cmds *core.CmdTree) {
-	desc := cmds.AddSub("desc").
-		RegPowerCmd(DumpFlowAll,
-			"desc the flow about to execute").
+	desc := cmds.AddSub("desc", "-").
+		RegPowerCmd(DumpFlowSkeleton,
+			"desc the flow execution in skeleton style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
-	desc.AddSub("simple", "sim", "s", "S").
+	cmds.AddSub("--").
+		RegPowerCmd(DumpFlowSkeleton,
+			"the same as desc, unfold more trivial subflows").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "2", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	desc.AddSub("more", "m", "M").
 		RegPowerCmd(DumpFlowAllSimple,
 			"desc the flow about to execute in lite style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
-	desc.AddSub("skeleton", "sk", "sl", "st").
-		RegPowerCmd(DumpFlowSkeleton,
-			"desc the flow about to execute, skeleton only").
+	cmds.AddSub("+").
+		RegPowerCmd(DumpFlowAllSimple,
+			"shortcut of desc.more").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
+	cmds.AddSub("++").
+		RegPowerCmd(DumpFlowAllSimple,
+			"shortcut of desc.more, unfold more trivial subflows").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "2", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	desc.AddSub("full", "f", "F").
+		RegPowerCmd(DumpFlowAll,
+			"desc the flow about to execute with details").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
 	desc.AddSub("dependencies", "depends", "depend", "dep", "os-cmd", "os").
 		RegPowerCmd(DumpFlowDepends,
 			"list the depended os-commands of the flow").
@@ -195,19 +190,26 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	descFlow := desc.AddSub("flow", "f", "F").
-		RegPowerCmd(DumpFlow,
-			"desc the flow execution").
+	descFlow := desc.AddSub("flow", "fl").
+		RegPowerCmd(DumpFlowSkeleton,
+			"desc the flow execution in skeleton style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
-	descFlow.AddSub("simple", "sim", "s", "S").
+	descFlow.AddSub("more", "m", "M").
 		RegPowerCmd(DumpFlowSimple,
 			"desc the flow execution in lite style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+	descFlow.AddSub("full", "f", "F").
+		RegPowerCmd(DumpFlow,
+			"desc the flow execution with details").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 }
 
@@ -440,29 +442,25 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc executed/ing session").
 		SetAllowTailModeCall()
 	addFindStrArgs(desc)
-	desc.AddArg("trivial", "1", "triv", "tri", "t", "T")
+	desc.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
 	desc.AddArg("depth", "32", "d", "D")
 	desc.AddArg("session-id", "", "session", "id")
 
-	regDescMore := func(parent *core.CmdTree, name string, abbrs ...string) {
-		descMore := parent.AddSub(name, abbrs...).
-			RegPowerCmd(ListedSessionDescMore,
-				"desc executed/ing session with more details").
-			SetAllowTailModeCall()
-		addFindStrArgs(descMore)
-		descMore.AddArg("trivial", "1", "triv", "tri", "t", "T")
-		descMore.AddArg("depth", "32", "d", "D")
-		descMore.AddArg("session-id", "", "session", "id")
-	}
-	//regDescMore(sessions, "+")
-	regDescMore(desc.Owner(), "more", "m", "M")
+	descMore := desc.Owner().AddSub("more", "m", "M").
+		RegPowerCmd(ListedSessionDescMore,
+			"desc executed/ing session with more details").
+		SetAllowTailModeCall()
+	addFindStrArgs(descMore)
+	descMore.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
+	descMore.AddArg("depth", "32", "d", "D")
+	descMore.AddArg("session-id", "", "session", "id")
 
 	descFull := desc.AddSub("full", "f", "F").
 		RegPowerCmd(ListedSessionDescFull,
 			"desc executed/ing session with full details").
 		SetAllowTailModeCall()
 	addFindStrArgs(descFull)
-	descFull.AddArg("trivial", "1", "triv", "tri", "t", "T")
+	descFull.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
 	descFull.AddArg("depth", "32", "d", "D")
 	descFull.AddArg("session-id", "", "session", "id")
 
@@ -473,19 +471,19 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	lastDesc := last.AddSub("desc", "d", "D", "-")
 	lastDesc.RegPowerCmd(LastSessionDescLess,
 		"desc the execution status of last session").
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
 	lastDesc.AddSub("more", "m", "M").
 		RegPowerCmd(LastSessionDescMore,
 			"desc the execution status of last session with more details").
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
 	lastDesc.AddSub("full", "f", "F").
 		RegPowerCmd(LastSessionDescFull,
 			"desc the execution status of last session with full details").
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
 	/*

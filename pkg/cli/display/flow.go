@@ -219,7 +219,11 @@ func dumpFlowCmd(
 	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
 		dumpCmdArgv(cic, argv, cmdEnv, originEnv, prt, args, executedCmd, writtenKeys)
 		dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, args, writtenKeys)
+	}
+	if !cmdSkipped() && cmdFailed() || executedCmd == nil || (!args.Skeleton && !args.Simple) {
 		dumpEnvOpsDefinition(cic, argv, cmdEnv, prt, args, executedCmd)
+	}
+	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
 		dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
 	}
 
@@ -577,7 +581,7 @@ func dumpEnvOpsDefinition(
 	if args.Skeleton {
 		return
 	}
-	if args.Simple && executedCmd != nil {
+	if args.Simple && executedCmd != nil && !args.ShowExecutedEnvFull {
 		return
 	}
 

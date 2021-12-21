@@ -5,26 +5,6 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
 
-func GlobalHelpMoreInfo(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	return DumpFlowAllSimple(argv, cc, env, flow, currCmdIdx)
-}
-
-func GlobalHelpLessInfo(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	return DumpFlowSkeleton(argv, cc, env, flow, currCmdIdx)
-}
-
 func DumpTailCmdInfo(
 	_ core.ArgVals,
 	cc *core.Cli,
