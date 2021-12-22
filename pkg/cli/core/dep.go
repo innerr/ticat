@@ -75,31 +75,3 @@ func collectDepends(
 		}
 	}
 }
-
-func TryExeEnvOpCmds(
-	argv ArgVals,
-	cc *Cli,
-	env *Env,
-	flow *ParsedCmds,
-	currCmdIdx int,
-	envOpCmds []EnvOpCmd,
-	checker *EnvOpsChecker,
-	errString string) {
-
-	cmd := flow.Cmds[currCmdIdx].LastCmd()
-	for _, it := range envOpCmds {
-		if !cmd.IsTheSameFunc(it.Func) {
-			continue
-		}
-		newCC := cc.Copy()
-		newCC.Screen = &QuietScreen{}
-		_, succeeded := cmd.Execute(argv, newCC, env, nil, flow, currCmdIdx)
-		if !succeeded {
-			panic(NewCmdError(flow.Cmds[currCmdIdx], errString))
-		}
-		if checker != nil {
-			it.Action(checker, argv)
-		}
-		break
-	}
-}

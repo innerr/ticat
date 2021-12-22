@@ -547,7 +547,9 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	sessions := cmds.AddSub("sessions", "session", "s", "S")
 	sessionsCmd := sessions.RegPowerCmd(ListSessions,
 		"list or find executed and executing sessions").
-		SetAllowTailModeCall()
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
 	addFindStrArgs(sessionsCmd)
 	sessionsCmd.AddArg("session-id", "", "session", "id")
 
@@ -615,9 +617,12 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	remove := sessions.AddSub("remove", "delete", "rm").
 		RegPowerCmd(FindAndRemoveSessions,
 			"clear executed sessions by find-strs").
-		SetAllowTailModeCall()
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
 	addFindStrArgs(remove)
 	remove.AddArg("session-id", "", "session", "id")
+	remove.AddArg("remove-running", "false", "force")
 
 	remove.AddSub("all", "a", "A").
 		RegPowerCmd(RemoveAllSessions,

@@ -330,8 +330,8 @@ func EnvAssertNotExists(
 
 func GetTerminalWidth() (row int, col int) {
 	row, col = utils.GetTerminalWidth()
-	if col > 160 {
-		col = 160
-	}
+	//if col > 160 {
+	//	col = 160
+	//}
 	return
 }

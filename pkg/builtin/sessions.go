@@ -54,15 +54,27 @@ func ListSessions(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, false)
+	if len(sessions) == 0 {
+		return clearFlow(flow)
+	} else if len(sessions) != 1 {
+		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%d sessions matched:", len(sessions)))
+	}
+
+	screen := display.NewCacheScreen()
 	for _, it := range sessions {
 		if it.Cleaning {
-			dumpSession(it, env, cc.Screen, "expired")
+			dumpSession(it, env, screen, "expired")
 		} else {
-			dumpSession(it, env, cc.Screen, "")
+			dumpSession(it, env, screen, "")
 		}
 	}
-	return currCmdIdx, true
+	screen.WriteTo(cc.Screen)
+	if display.TooMuchOutput(env, screen) {
+		display.PrintTipTitle(cc.Screen, env,
+			fmt.Sprintf("too many sessions(%d), add more find-strs to filter them", len(sessions)))
+	}
+	return clearFlow(flow)
 }
 
 func FindAndRemoveSessions(
@@ -72,18 +84,33 @@ func FindAndRemoveSessions(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
+	force := argv.GetBool("remove-running")
+
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, true)
+	cleaneds := 0
 	for _, it := range sessions {
 		status := "removed"
-		cleaned, running := core.CleanSession(it, env)
+		cleaned, running := core.CleanSession(it, env, force)
 		if running {
-			status = "running, untouched"
+			if cleaned {
+				status = display.ColorWarn("running, force removed", env)
+			} else {
+				status = display.ColorWarn("running, untouched", env)
+			}
 		} else if !cleaned {
-			status = "remove failed"
+			status = display.ColorError("remove failed", env)
+		}
+		if cleaned {
+			cleaneds += 1
 		}
 		dumpSession(it, env, cc.Screen, status)
 	}
-	return currCmdIdx, true
+
+	if len(sessions) > 1 {
+		display.PrintTipTitle(cc.Screen, env,
+			fmt.Sprintf("%d of %d sessions removed", cleaneds, len(sessions)))
+	}
+	return clearFlow(flow)
 }
 
 func ListedSessionDescLess(
@@ -126,7 +153,7 @@ func listedSessionDesc(
 	showEnvFull bool,
 	showModifiedEnv bool) (int, bool) {
 
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, false)
 
 	handleTooMany := func() {
 		descSession(sessions[0], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
@@ -272,10 +299,14 @@ func findSessionsByStrsAndId(
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
-	currCmdIdx int) (sessions []core.SessionStatus) {
+	currCmdIdx int,
+	mustHaveFilter bool) (sessions []core.SessionStatus) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	id := argv.GetRaw("session-id")
+	if mustHaveFilter && len(findStrs) == 0 && len(id) == 0 {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "all args 'session-id' and find-strs are empty"))
+	}
 	return findSessions(findStrs, id, cc, env)
 }
 

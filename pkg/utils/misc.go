@@ -154,6 +154,42 @@ func QuoteStrIfHasSpace(str string) string {
 	return str
 }
 
+// TODO: may not right, use PidExists to do that
+func IsPidRunning(pid int) bool {
+	//err = syscall.Kill(pid, syscall.Signal(0))
+	//return err == nil || err != syscall.ESRCH
+	exists, err := PidExists(pid)
+	if err == nil && !exists {
+		return false
+	}
+	return true
+}
+
+func PidExists(pid int) (bool, error) {
+	proc, err := os.FindProcess(int(pid))
+	if err != nil {
+		return false, err
+	}
+	err = proc.Signal(syscall.Signal(0))
+	if err == nil {
+		return true, nil
+	}
+	if err.Error() == "os: process already finished" {
+		return false, nil
+	}
+	errno, ok := err.(syscall.Errno)
+	if !ok {
+		return false, err
+	}
+	switch errno {
+	case syscall.ESRCH:
+		return false, nil
+	case syscall.EPERM:
+		return true, nil
+	}
+	return false, err
+}
+
 const (
 	GoRoutineIdStrMain = "main"
 	Chars              = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

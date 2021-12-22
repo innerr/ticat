@@ -844,8 +844,9 @@ func mayTrimStr(s string, env *core.Env, limit int) string {
 		if limit <= 3 {
 			return ColorExplain("...", env)
 		}
-		half := limit / 2
-		s = s[0:half-2] + ColorExplain("...", env) + s[len(s)-half+1:]
+		//half := limit / 2
+		//s = s[0:half-2] + ColorExplain("...", env) + s[len(s)-half+1:]
+		s = ColorExplain("...", env) + s[len(s)-limit+3:]
 	}
 	return s
 }
