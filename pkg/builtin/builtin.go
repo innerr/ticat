@@ -358,11 +358,11 @@ func RegisterHubManageCmds(cmds *core.CmdTree) {
 		RegPowerCmd(RemoveAllFromHub,
 			"remove all repos from hub")
 
-	hub.AddSub("init", "++").
+	hub.AddSub("init").
 		RegPowerCmd(AddDefaultGitRepoToHub,
 			"add and pull basic hub-repo to local")
 
-	add := hub.AddSub("add-and-update", "add", "a", "A", "+")
+	add := hub.AddSub("add-and-update", "add", "a", "A")
 	add.RegPowerCmd(AddGitRepoToHub,
 		"add and pull a git address to hub, do update if it already exists").
 		SetAllowTailModeCall().
@@ -444,7 +444,7 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall()
 	addFindStrArgs(envList)
 
-	env.AddSub("save", "persist", "s", "S", "+").
+	env.AddSub("save", "persist", "s", "S").
 		RegPowerCmd(SaveEnvToLocal,
 			"save session env changes to local").
 		SetQuiet()
@@ -490,7 +490,7 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 	addFindStrArgs(flow)
 
 	// TODO: check the new cmd is conflicted with other cmds
-	flow.AddSub("save", "persist", "s", "S", "+").
+	flow.AddSub("save", "persist", "s", "S").
 		RegPowerCmd(SaveFlow,
 			"save current commands as a flow").
 		SetQuiet().

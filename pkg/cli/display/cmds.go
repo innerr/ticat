@@ -263,7 +263,7 @@ func dumpCmd(
 		}
 
 		if !args.Flatten || cic != nil {
-			prt(0, ColorCmd("["+name+"]", env))
+			prt(0, cmdIdStr(cmd, name, env))
 
 			if (!args.Skeleton || args.FindByTags) && len(cmd.Tags()) != 0 {
 				prt(1, ColorTag(" "+tagMark+strings.Join(cmd.Tags(), " "+tagMark), env))
@@ -422,4 +422,18 @@ func dumpIsAutoTimerKey(env *core.Env, cmd *core.Cmd, key string) string {
 		return ColorSymbol(" <- ", env) + ColorExplain("(running elapsed secs)", env)
 	}
 	return ""
+}
+
+func cmdIdStr(cmd *core.CmdTree, name string, env *core.Env) string {
+	frameColor := ColorCmd
+	if !cmd.HasSub() {
+		frameColor = ColorCmdEmpty
+	}
+	cmdColor := ColorCmd
+	if cmd.Cmd() == nil || cmd.Cmd().IsNoExecutableCmd() {
+		cmdColor = ColorCmdEmpty
+	}
+	return frameColor("[", env) +
+		cmdColor(name, env) +
+		frameColor("]", env)
 }
