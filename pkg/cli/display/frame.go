@@ -64,9 +64,9 @@ func FrameCharsNoSlash() *FrameChars {
 func FrameCharsNoBorder() *FrameChars {
 	return &FrameChars{
 		"|", " ",
-		"+", "+", "+",
-		"+", "+", "+",
-		"+", "+", "+",
+		".", " ", ".",
+		" ", "+", " ",
+		"+", " ", "+",
 	}
 }
 

@@ -157,8 +157,11 @@ func getFrameChars(env *core.Env) *FrameChars {
 	name := strings.ToLower(env.Get("display.style").Raw)
 	chars := getFrameCharsByName(env, name)
 	if env.GetInt("display.executor.displayed") == env.GetInt("sys.stack-depth") {
-		chars.H = " "
-		chars.V = " "
+		if env.GetBool("display.utf8") {
+			return FrameCharsAscii()
+		} else {
+			return FrameCharsNoBorder()
+		}
 	}
 	return chars
 }
