@@ -128,7 +128,7 @@ func getFindStrsFromArgv(argv core.ArgVals) (findStrs []string) {
 func addFindStrArgs(cmd *core.Cmd) {
 	cmd.AddArg("1st-str", "", "find-str").
 		AddArg("2nd-str", "").
-		AddArg("3rh-str", "").
+		AddArg("3rd-str", "").
 		AddArg("4th-str", "")
 }
 

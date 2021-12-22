@@ -40,7 +40,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 	find := cmds.AddSub("find", "search").
 		RegPowerCmd(GlobalFindCmds,
-			"search commands by find-strs").
+			"search commands by keywords").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
@@ -94,41 +94,59 @@ func RegisterTailSubCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
+	addFindStrArgs(sub)
+	sub.AddArg("tag", "", "t", "T")
+	sub.AddArg("depth", "0", "d", "D")
 
-	cmds.AddSub("~").
+	subShort := cmds.AddSub("~").
 		RegPowerCmd(DumpTailCmdSub,
 			"shortcut of [tail-sub]").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
+	addFindStrArgs(subShort)
+	subShort.AddArg("tag", "", "t", "T")
+	subShort.AddArg("depth", "0", "d", "D")
 
-	sub.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
+	subMore := sub.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
 		RegPowerCmd(DumpTailCmdSubWithUsage,
 			"display commands on the branch of the last command, with usage info").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
+	addFindStrArgs(subMore)
+	subMore.AddArg("tag", "", "t", "T")
+	subMore.AddArg("depth", "0", "d", "D")
 
-	cmds.AddSub("~~").
+	subMoreShort := cmds.AddSub("~~").
 		RegPowerCmd(DumpTailCmdSubWithUsage,
 			"shortcut of [tail-sub.with-usage]").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
+	addFindStrArgs(subMoreShort)
+	subMoreShort.AddArg("tag", "", "t", "T")
+	subMoreShort.AddArg("depth", "0", "d", "D")
 
-	sub.AddSub("with-full-info", "full-info", "full", "f", "F").
+	subFull := sub.AddSub("with-full-info", "full-info", "full", "f", "F").
 		RegPowerCmd(DumpTailCmdSubWithDetails,
 			"display commands on the branch of the last command, with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
+	addFindStrArgs(subFull)
+	subFull.AddArg("tag", "", "t", "T")
+	subFull.AddArg("depth", "0", "d", "D")
 
-	sub.AddSub("~~~").
+	subFullShort := cmds.AddSub("~~~").
 		RegPowerCmd(DumpTailCmdSubWithDetails,
 			"shortcut of [tail-sub.with-full-info]").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
+	addFindStrArgs(subFullShort)
+	subFullShort.AddArg("tag", "", "t", "T")
+	subFullShort.AddArg("depth", "0", "d", "D")
 }
 
 func RegisterCmdsListCmds(cmds *core.CmdTree) {
@@ -145,17 +163,17 @@ func RegisterCmdsListCmds(cmds *core.CmdTree) {
 
 	list := cmds.AddSub("cmds", "c", "C").
 		RegPowerCmd(DumpCmds,
-			"list commands by command-path-branch, find-strs, source and tag")
+			"list commands by command-path-branch, keywords, source and tag")
 	addDumpCmdsArgs(list)
 
 	listMore := list.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
 		RegPowerCmd(DumpCmdsWithUsage,
-			"list commands by command-path-branch, find-strs, source and tag, with usage info")
+			"list commands by command-path-branch, keywords, source and tag, with usage info")
 	addDumpCmdsArgs(listMore)
 
 	listFull := list.AddSub("with-full-info", "full-info", "full", "f", "F").
 		RegPowerCmd(DumpCmdsWithDetails,
-			"list commands by command-path-branch, find-strs, source and tag, with full info")
+			"list commands by command-path-branch, keywords, source and tag, with full info")
 	addDumpCmdsArgs(listFull)
 
 	list.AddSub("tree", "t", "T").
@@ -235,7 +253,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p", "P")
 
-	cmd.AddSub("full", "f", "F").
+	cmd.AddSub("full", "f", "F", "more", "m", "M").
 		RegPowerCmd(DumpCmdWithDetails,
 			"display command full info").
 		SetAllowTailModeCall().
@@ -567,7 +585,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 
 	sessions.AddSub("retry", "rr", "r", "R").
 		RegAdHotFlowCmd(SessionRetry,
-			//"find a session by find-strs and id, if it's failed, retry running from the error point").
+			//"find a session by keywords and id, if it's failed, retry running from the error point").
 			"find a session by id, if it's failed, retry running from the error point").
 		AddArg("session-id", "", "session", "id")
 
@@ -628,7 +646,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 
 	remove := sessions.AddSub("remove", "delete", "rm").
 		RegPowerCmd(FindAndRemoveSessions,
-			"clear executed sessions by find-strs").
+			"clear executed sessions by keywords").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()

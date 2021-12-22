@@ -21,8 +21,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.execute-delay-sec", 0)
 	env.SetBool("sys.interact", true)
 
-	env.Set("sys.version", "1.1")
-	env.Set("sys.dev.name", "second-wind")
+	env.Set("sys.version", "1.1.1")
+	env.Set("sys.dev.name", "the-hidden-tail")
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
@@ -36,7 +36,7 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.Set("display.example-https-repo", "https://github.com/innerr/tidb.ticat")
 
-	env.SetInt("display.hint.indent.2rd", 45)
+	env.SetInt("display.hint.indent.2rd", 41)
 
 	env.Set("display.utf8.symbols.tip", "💡 ")
 	env.SetInt("display.utf8.symbols.tip.len", 3)
@@ -154,7 +154,7 @@ func LoadLocalEnv(
 	env.GetLayer(core.EnvLayerSession).Deduplicate()
 
 	if !env.Has("display.color") {
-		env.GetLayer(core.EnvLayerSession).SetBool("display.color", !utils.StdoutIsPipe())
+		env.GetLayer(core.EnvLayerDefault).SetBool("display.color", !utils.StdoutIsPipe())
 	}
 
 	return currCmdIdx, true

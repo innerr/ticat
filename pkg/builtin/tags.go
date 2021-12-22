@@ -64,8 +64,7 @@ func findByTags(
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	if len(findStrs) == 0 {
-		display.ListTags(cc.Cmds, cc.Screen, env)
-		return currCmdIdx, true
+		return ListTags(argv, cc, env, flow, currCmdIdx)
 	} else {
 		dumpArgs.AddFindStrs(findStrs...).SetFindByTags()
 	}
@@ -83,20 +82,18 @@ func findByTags(
 	if screen.OutputNum() > 0 {
 		display.PrintTipTitle(cc.Screen, env, "search and found"+findStr)
 	} else {
-		display.PrintTipTitle(cc.Screen, env, "search but no"+findStr+", change find-strs and retry")
+		display.PrintTipTitle(cc.Screen, env, "search but no"+findStr+", change keywords and retry")
 	}
 
 	screen.WriteTo(cc.Screen)
 
 	if display.TooMuchOutput(env, screen) {
 		if !dumpArgs.Skeleton || dumpArgs.ShowUsage {
+			text := append([]string{"get a brief view by:", ""}, display.SuggestFindByTagLite(env)...)
+			display.PrintTipTitle(cc.Screen, env, text)
+		} else if len(findStrs) > 1 {
 			display.PrintTipTitle(cc.Screen, env,
-				// TODO: XXX
-				"get a brief view by using command [tag] for search")
-		} else {
-			display.PrintTipTitle(cc.Screen, env,
-				// TODO: XXX
-				"narrow down results by adding more find-strs")
+				"narrow down results by using less tags")
 		}
 	}
 	return currCmdIdx, true

@@ -33,6 +33,9 @@ func GlobalSuggestCmdTree(env *core.Env) []string {
 	return []string{
 		padR(selfName+" cmds.tree foo", indent) + "- display commands in the branch of 'foo'",
 		padR(selfName+" cmds.tree foo.bar", indent) + "  then browse the tree level by level",
+		"",
+		padR(selfName+" cmds src=git-addr depth=1", indent) + "- display top level commands from 'git-addr'",
+		padR(selfName+" cmds src=git-addr depth=1 path=foo", indent) + "  another way to browse command tree",
 	}
 }
 
@@ -94,7 +97,7 @@ func GlobalSuggestAdvance(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" cmds.tree desc", indent) + "- explore the branch 'desc'",
-		padR("", indent) + "  a command set for describe commands before executing",
+		padR("", indent) + "  a command set to describe commands before executing",
 		padR(selfName+" cmds.tree cmds", indent) + "- a command set to locate commands by branch, source",
 		padR(selfName+" cmds.tree find", indent) + "- a command set to search commands by strings",
 		padR(selfName+" cmds.tree flow", indent) + "- a command set to manage saved flows",
@@ -116,6 +119,13 @@ func SuggestHubBranch(env *core.Env) []string {
 	return []string{
 		padR(selfName+" cmds hub", indent) + explain,
 		padR(selfName+" cmds.full hub", indent) + explain + ", with details",
+	}
+}
+
+func SuggestFindByTagLite(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" tag str1 str2", indent) + "- search commands by tag",
 	}
 }
 

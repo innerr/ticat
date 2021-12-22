@@ -2,7 +2,6 @@ package builtin
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
@@ -24,7 +23,7 @@ func GlobalHelp(
 			display.PrintErrTitle(cc.Screen, env, fmt.Sprintf("'%s' is not a valid command", target))
 		} else {
 			dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
-			dumpCmdByPath(cc, env, dumpArgs, cmdPath)
+			dumpCmdByPath(cc, env, dumpArgs, cmdPath, "")
 		}
 	} else {
 		display.PrintGlobalHelp(cc, env)
@@ -52,7 +51,7 @@ func GlobalFindCmds(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
-	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs)
+	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "", "find.more")
 }
 
 func GlobalFindCmdsWithUsage(
@@ -63,7 +62,7 @@ func GlobalFindCmdsWithUsage(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage()
-	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs)
+	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "find", "find.full")
 }
 
 func GlobalFindCmdsWithDetails(
@@ -74,7 +73,7 @@ func GlobalFindCmdsWithDetails(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpCmdArgs()
-	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs)
+	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "find.more", "")
 }
 
 func globalFindCmds(
@@ -83,60 +82,15 @@ func globalFindCmds(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int,
-	dumpArgs *display.DumpCmdArgs) (int, bool) {
+	dumpArgs *display.DumpCmdArgs,
+	lessDetailCmd string,
+	moreDetailCmd string) (int, bool) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	if len(findStrs) != 0 {
 		dumpArgs.AddFindStrs(findStrs...)
 	}
-
-	findStr := strings.Join(dumpArgs.FindStrs, " ")
-	matchStr := " commands matched '" + findStr + "'"
-	selfName := env.GetRaw("strs.self-name")
-
-	screen := display.NewCacheScreen()
-	display.DumpCmds(cc.Cmds, screen, env, dumpArgs)
-
-	if len(dumpArgs.FindStrs) != 0 {
-		if screen.OutputNum() > 0 {
-			if dumpArgs.Skeleton && screen.OutputNum() <= env.GetInt("display.height")/2 {
-				display.PrintTipTitle(cc.Screen, env, "search and found"+matchStr,
-					"",
-					// TODO: XXX
-					"get more details by using [find.with-usage|with-full-info] for search.")
-			} else {
-				display.PrintTipTitle(cc.Screen, env, "search and found"+matchStr)
-			}
-		} else {
-			display.PrintTipTitle(cc.Screen, env, "search but no"+matchStr+", change find-strs and try again")
-		}
-	} else {
-		if screen.OutputNum() > 0 {
-			display.PrintTipTitle(cc.Screen, env, "all commands loaded to "+selfName+":")
-		} else {
-			display.PrintTipTitle(cc.Screen, env, selfName+" has no loaded commands. (this should never happen)")
-		}
-	}
-
-	screen.WriteTo(cc.Screen)
-
-	if display.TooMuchOutput(env, screen) {
-		if !dumpArgs.Skeleton {
-			display.PrintTipTitle(screen, env,
-				// TODO: XXX
-				"get a brief view by using [find] for search.",
-				"",
-				"or/and locate exact commands by adding more keywords:",
-				"",
-				display.SuggestFindCmds(env))
-		} else {
-			display.PrintTipTitle(screen, env,
-				"locate exact commands by adding more keywords:",
-				"",
-				display.SuggestFindCmdsLess(env))
-		}
-	}
-
+	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", lessDetailCmd, moreDetailCmd)
 	return clearFlow(flow)
 }
 

@@ -327,7 +327,8 @@ func (self *CmdTree) MatchSource(source string) bool {
 func (self *CmdTree) MatchTags(tags ...string) bool {
 	for _, tag := range tags {
 		for _, it := range self.tags {
-			if strings.Index(it, tag) >= 0 {
+			//if strings.Index(it, tag) >= 0 {
+			if it == tag {
 				return true
 			}
 		}

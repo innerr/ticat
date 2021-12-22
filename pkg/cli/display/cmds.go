@@ -12,7 +12,9 @@ func DumpCmdsWithTips(
 	screen core.Screen,
 	env *core.Env,
 	args *DumpCmdArgs,
-	displayCmdPath string) (allShown bool) {
+	displayCmdPath string,
+	lessDetailCmd string,
+	moreDetailCmd string) (allShown bool) {
 
 	if !args.Recursive {
 		panic(fmt.Errorf("should never happen, this func is not for non-recursive dumping display"))
@@ -26,78 +28,75 @@ func DumpCmdsWithTips(
 	allShown = dumpCmd(buf, env, cmds, args, -cmds.Depth(), 0)
 
 	findStr := strings.Join(args.FindStrs, " ")
-	selfName := env.GetRaw("strs.self-name")
+	indent := "    "
 
-	if !args.Recursive {
-		prt("command details:")
-	} else if len(args.FindStrs) != 0 {
-		tip := "search "
-		tag := ""
+	filterLines := []string{}
+	if len(displayCmdPath) != 0 {
+		filterLines = append(filterLines, "- branch:", indent+displayCmdPath)
+	}
+	if len(args.FindStrs) != 0 {
 		if args.FindByTags {
-			if len(args.FindStrs) > 1 {
-				tag = "tags "
-			} else {
-				tag = "tag "
-			}
-		}
-		matchStr := " commands matched " + tag + "'" + findStr + "'"
-		if !cmds.IsRoot() {
-			if buf.OutputNum() > 0 {
-				prt(tip + "branch '" + displayCmdPath + "', found" + matchStr + ":")
-			} else {
-				prt(tip + "branch '" + displayCmdPath + "', no" + matchStr + ".")
-			}
+			filterLines = append(filterLines, "- tags:", indent+findStr)
 		} else {
-			if buf.OutputNum() > 0 {
-				if args.Skeleton && buf.OutputNum() <= 6 {
-					prt(tip+"and found"+matchStr,
-						"",
-						"get more details by using '//' for search.")
-				} else {
-					prt(tip + "and found" + matchStr)
-				}
+			filterLines = append(filterLines, "- keywords:", indent+findStr)
+		}
+	}
+	if len(args.Source) != 0 {
+		filterLines = append(filterLines, "- source:", indent+args.Source)
+	}
+	if len(filterLines) != 0 {
+		filterLines = append([]string{""}, filterLines...)
+	}
+
+	var footerLines []string
+	if allShown {
+		if buf.OutputNum() <= 6 && args.Skeleton && len(moreDetailCmd) > 0 {
+			footerLines = append(footerLines, "", "use '"+moreDetailCmd+"' to show more details")
+		}
+	} else {
+		footerLines = append(footerLines, "", fmt.Sprintf("some may not shown by arg depth='%d'", args.MaxDepth))
+	}
+
+	notShowStr := fmt.Sprintf("some commands are not shown by arg depth='%d'(use '0' to show all)", args.MaxDepth)
+
+	title := ""
+	if buf.OutputNum() > 0 {
+		if len(filterLines) != 0 {
+			title = "found commands matched:"
+		} else {
+			if allShown {
+				title = "all commands:"
 			} else {
-				prt(tip + "but no" + matchStr)
+				title = notShowStr
 			}
 		}
 	} else {
-		if !cmds.IsRoot() {
-			if buf.OutputNum() > 0 {
-				prt("branch '" + displayCmdPath + "' has commands:")
+		if len(filterLines) != 0 {
+			if allShown {
+				title = "no commands matched:"
 			} else {
-				prt("branch '" + displayCmdPath + "' has no commands. (this should never happen)")
+				title = notShowStr
 			}
 		} else {
-			if buf.OutputNum() > 0 {
-				prt("all commands loaded to " + selfName + ":")
-			} else {
-				prt(selfName + " has no loaded commands. (this should never happen)")
-			}
+			panic(fmt.Errorf("should never happen, no loaded commands"))
 		}
 	}
+
+	prt(title, filterLines, footerLines)
 
 	buf.WriteTo(screen)
 
-	if !TooMuchOutput(env, buf) {
-		return
-	}
-
-	if !args.Flatten {
-		prt(
-			"locate exact commands by:",
-			"",
-			SuggestFindCmds(env))
-	} else {
-		if len(args.FindStrs) != 0 {
-			prt("locate exact commands by adding more keywords.")
-		} else {
-			prt(
-				"locate exact commands by:",
-				"",
-				SuggestFindCmds(env))
+	if TooMuchOutput(env, buf) {
+		if (!args.Skeleton || args.ShowUsage) && len(lessDetailCmd) > 0 {
+			prt("get a brief view by using '" + lessDetailCmd + "'")
+		} else if !args.FindByTags {
+			if len(args.FindStrs) != 0 {
+				prt("narrow down results by adding more keywords.")
+			} else {
+				prt("narrow down results by using keywords.")
+			}
 		}
 	}
-
 	return
 }
 
@@ -209,7 +208,7 @@ func dumpCmd(
 	depth int) (allShown bool) {
 
 	if cmd == nil || cmd.IsHidden() {
-		return
+		return true
 	}
 
 	builtinName := cmd.Strs.BuiltinDisplayName
@@ -242,7 +241,8 @@ func dumpCmd(
 			name = cmd.DisplayPath()
 		}
 
-		if !args.Flatten || cic != nil {
+		//if !args.Flatten || cic != nil {
+		if !args.Flatten || cmd.Parent() != nil {
 			prt(0, cmdIdStr(cmd, name, env))
 
 			if (!args.Skeleton || args.FindByTags) && len(cmd.Tags()) != 0 {

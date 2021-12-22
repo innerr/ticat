@@ -72,7 +72,7 @@ func ListSessions(
 	screen.WriteTo(cc.Screen)
 	if display.TooMuchOutput(env, screen) {
 		display.PrintTipTitle(cc.Screen, env,
-			fmt.Sprintf("too many sessions(%d), add more find-strs to filter them", len(sessions)))
+			fmt.Sprintf("too many sessions(%d), add more keywords to filter them", len(sessions)))
 	}
 	return clearFlow(flow)
 }
@@ -160,9 +160,9 @@ func listedSessionDesc(
 		prefix := fmt.Sprintf("more than one sessions(%v) matched, only display the first one, ", len(sessions))
 		findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-strs to filter, or specify arg 'id'")
+			display.PrintErrTitle(cc.Screen, env, prefix+"add more keywords to filter, or specify arg 'id'")
 		} else {
-			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-strs to filter, or specify arg 'id'")
+			display.PrintErrTitle(cc.Screen, env, prefix+"use keywords to filter, or specify arg 'id'")
 		}
 	}
 
@@ -305,7 +305,7 @@ func findSessionsByStrsAndId(
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	id := argv.GetRaw("session-id")
 	if mustHaveFilter && len(findStrs) == 0 && len(id) == 0 {
-		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "all args 'session-id' and find-strs are empty"))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "all args 'session-id' and keywords are empty"))
 	}
 	return findSessions(findStrs, id, cc, env)
 }

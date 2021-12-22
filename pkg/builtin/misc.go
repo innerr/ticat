@@ -154,7 +154,6 @@ func Dummy(
 
 func EnvOpCmds() []core.EnvOpCmd {
 	return []core.EnvOpCmd{
-		///*
 		core.EnvOpCmd{
 			ResetSessionEnv,
 			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
@@ -163,7 +162,6 @@ func EnvOpCmds() []core.EnvOpCmd {
 				}
 				env.GetLayer(core.EnvLayerSession).Clear(false)
 			}},
-		//*/
 		core.EnvOpCmd{
 			ResetLocalEnv,
 			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {

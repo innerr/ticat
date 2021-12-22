@@ -14,7 +14,7 @@ func DumpCmdUsage(
 
 	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
-	dumpCmdByPath(cc, env, dumpArgs, cmdPath)
+	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "cmd.full")
 	return currCmdIdx, true
 }
 
@@ -27,7 +27,7 @@ func DumpCmdWithDetails(
 
 	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
 	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
-	dumpCmdByPath(cc, env, dumpArgs, cmdPath)
+	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "")
 	return currCmdIdx, true
 }
 
@@ -45,7 +45,7 @@ func DumpTailCmdWithUsage(
 		cmdPath = cc.ParseCmd(cmdPath, true)
 	}
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
-	dumpCmdByPath(cc, env, dumpArgs, cmdPath)
+	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "==")
 	return clearFlow(flow)
 }
 
@@ -63,20 +63,24 @@ func DumpTailCmdWithDetails(
 		cmdPath = cc.ParseCmd(cmdPath, true)
 	}
 	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
-	dumpCmdByPath(cc, env, dumpArgs, cmdPath)
+	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "")
 	return clearFlow(flow)
 }
 
-func dumpCmdByPath(cc *core.Cli, env *core.Env, args *display.DumpCmdArgs, path string) {
+func dumpCmdByPath(cc *core.Cli, env *core.Env, args *display.DumpCmdArgs, path string, fullDetailCmd string) {
 	cmds := cc.Cmds
 	if len(path) != 0 {
 		cmds = cmds.GetSubByPath(path, true)
 	}
 	if args.Skeleton {
-		// TODO: XXX
-		display.PrintTipTitle(cc.Screen, env, "command usage:", "", "(use [cmd.with-full-info] to show all info)")
+		if len(fullDetailCmd) != 0 {
+			display.PrintTipTitle(cc.Screen, env,
+				"command usage: (use '"+fullDetailCmd+"' for full details)")
+		} else {
+			display.PrintTipTitle(cc.Screen, env, "command usage:")
+		}
 	} else {
-		display.PrintTipTitle(cc.Screen, env, "command details:")
+		display.PrintTipTitle(cc.Screen, env, "full command details:")
 	}
 	display.DumpCmds(cmds, cc.Screen, env, args)
 }
