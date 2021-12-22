@@ -265,7 +265,7 @@ func dumpFlowCmd(
 				}
 			}
 		} else if !cmdSkipped() {
-			dumpCmdExecutable(cic, env, prt, args)
+			dumpCmdExecutable(cic, env, args, prt, padLenCal, lineLimit)
 		}
 
 		if cic.HasSubFlow() {
@@ -473,23 +473,28 @@ func dumpCmdDisplayName(
 func dumpCmdExecutable(
 	cic *core.Cmd,
 	env *core.Env,
+	args *DumpFlowArgs,
 	prt func(indentLvl int, msg string),
-	args *DumpFlowArgs) {
+	padLenCal func(indentLvl int) int,
+	lineLimit int) {
 
 	if args.Simple || args.Skeleton {
 		return
 	}
 
+	padLen := padLenCal(2)
+	limit := lineLimit - padLen
+
 	if cic.Type() == core.CmdTypeEmptyDir {
 		prt(1, ColorProp("- dir:", env))
-		prt(2, cic.CmdLine())
+		prt(2, mayTrimStr(cic.CmdLine(), env, limit))
 	} else {
 		prt(1, ColorProp("- executable:", env))
-		prt(2, cic.CmdLine())
+		prt(2, mayTrimStr(cic.CmdLine(), env, limit))
 	}
 	if len(cic.MetaFile()) != 0 {
 		prt(1, ColorProp("- meta:", env))
-		prt(2, cic.MetaFile())
+		prt(2, mayTrimStr(cic.MetaFile(), env, limit))
 	}
 }
 

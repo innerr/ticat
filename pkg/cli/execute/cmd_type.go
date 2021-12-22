@@ -14,9 +14,9 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 	// This list equals to funcs which will do 'clear-the-flow'
 	allows := []interface{}{
 		builtin.SaveFlow,
-		builtin.GlobalFindCmd,
-		builtin.GlobalFindCmdWithUsage,
-		builtin.GlobalFindCmdWithDetails,
+		builtin.GlobalFindCmds,
+		builtin.GlobalFindCmdsWithUsage,
+		builtin.GlobalFindCmdsWithDetails,
 		builtin.DumpTailCmdWithUsage,
 		builtin.DumpTailCmdWithDetails,
 		//builtin.DumpTailCmdSub,
@@ -51,9 +51,9 @@ func isStartWithSearchCmd(flow *core.ParsedCmds) (isSearch bool) {
 		return
 	}
 	funcs := []interface{}{
-		builtin.GlobalFindCmd,
-		builtin.GlobalFindCmdWithUsage,
-		builtin.GlobalFindCmdWithDetails,
+		builtin.GlobalFindCmds,
+		builtin.GlobalFindCmdsWithUsage,
+		builtin.GlobalFindCmdsWithDetails,
 		builtin.DumpCmds,
 		builtin.DumpCmdsWithUsage,
 		builtin.DumpCmdsWithDetails,

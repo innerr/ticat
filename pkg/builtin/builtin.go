@@ -39,7 +39,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 
 func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 	find := cmds.AddSub("find", "search").
-		RegPowerCmd(GlobalFindCmd,
+		RegPowerCmd(GlobalFindCmds,
 			"search commands by find-strs").
 		SetAllowTailModeCall().
 		SetQuiet().
@@ -47,7 +47,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 	addFindStrArgs(find)
 
 	findShort := cmds.AddSub("/").
-		RegPowerCmd(GlobalFindCmd,
+		RegPowerCmd(GlobalFindCmds,
 			"shortcut of [find]").
 		SetAllowTailModeCall().
 		SetQuiet().
@@ -55,7 +55,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 	addFindStrArgs(findShort)
 
 	findUsage := find.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
-		RegPowerCmd(GlobalFindCmdWithUsage,
+		RegPowerCmd(GlobalFindCmdsWithUsage,
 			"search commands by find-strings, with usage info").
 		SetAllowTailModeCall().
 		SetQuiet().
@@ -63,7 +63,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 	addFindStrArgs(findUsage)
 
 	findUsageShort := cmds.AddSub("//").
-		RegPowerCmd(GlobalFindCmdWithUsage,
+		RegPowerCmd(GlobalFindCmdsWithUsage,
 			"shortcut of [find.with-usage]").
 		SetAllowTailModeCall().
 		SetQuiet().
@@ -71,7 +71,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 	addFindStrArgs(findUsageShort)
 
 	findDetail := find.AddSub("with-full-info", "full-info", "full", "f", "F").
-		RegPowerCmd(GlobalFindCmdWithDetails,
+		RegPowerCmd(GlobalFindCmdsWithDetails,
 			"search commands with strings, with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
@@ -79,7 +79,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 	addFindStrArgs(findDetail)
 
 	findDetailShort := cmds.AddSub("///").
-		RegPowerCmd(GlobalFindCmdWithDetails,
+		RegPowerCmd(GlobalFindCmdsWithDetails,
 			"shortcut of [find.with-full-info]").
 		SetAllowTailModeCall().
 		SetQuiet().
@@ -198,11 +198,23 @@ func RegisterTagsCmds(cmds *core.CmdTree) {
 		RegPowerCmd(ListTags,
 			"list all tags")
 
-	findTag := cmds.AddSub("tag", cmds.Strs.TagMark).
+	findByTag := cmds.AddSub("tag", cmds.Strs.TagMark).
 		RegPowerCmd(FindByTags,
 			"list commands having the specified tags").
 		SetAllowTailModeCall()
-	addFindStrArgs(findTag)
+	addFindStrArgs(findByTag)
+
+	byTagUsage := findByTag.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
+		RegPowerCmd(FindByTagsWithUsage,
+			"list commands having the specified tags, with usage info").
+		SetAllowTailModeCall()
+	addFindStrArgs(byTagUsage)
+
+	byTagDetails := findByTag.AddSub("with-full-info", "full-info", "full", "f", "F").
+		RegPowerCmd(FindByTagsWithDetails,
+			"list commands having the specified tags, with full details").
+		SetAllowTailModeCall()
+	addFindStrArgs(byTagDetails)
 }
 
 func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {

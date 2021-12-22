@@ -1,6 +1,7 @@
 package display
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -11,8 +12,11 @@ func DumpCmdsWithTips(
 	screen core.Screen,
 	env *core.Env,
 	args *DumpCmdArgs,
-	displayCmdPath string,
-	isGlobalSearch bool) (allShown bool) {
+	displayCmdPath string) (allShown bool) {
+
+	if !args.Recursive {
+		panic(fmt.Errorf("should never happen, this func is not for non-recursive dumping display"))
+	}
 
 	prt := func(text ...interface{}) {
 		PrintTipTitle(screen, env, text...)
@@ -23,16 +27,6 @@ func DumpCmdsWithTips(
 
 	findStr := strings.Join(args.FindStrs, " ")
 	selfName := env.GetRaw("strs.self-name")
-
-	if len(args.MatchWriteKey) != 0 {
-		if buf.OutputNum() > 0 {
-			prt("all commands which write key '" + args.MatchWriteKey + "':")
-		} else {
-			prt("no command writes key '" + args.MatchWriteKey + "':")
-		}
-		buf.WriteTo(screen)
-		return
-	}
 
 	if !args.Recursive {
 		prt("command details:")
@@ -55,7 +49,7 @@ func DumpCmdsWithTips(
 			}
 		} else {
 			if buf.OutputNum() > 0 {
-				if args.Skeleton && buf.OutputNum() <= 6 && isGlobalSearch {
+				if args.Skeleton && buf.OutputNum() <= 6 {
 					prt(tip+"and found"+matchStr,
 						"",
 						"get more details by using '//' for search.")
@@ -84,7 +78,7 @@ func DumpCmdsWithTips(
 
 	buf.WriteTo(screen)
 
-	if !args.Recursive || !TooMuchOutput(env, buf) {
+	if !TooMuchOutput(env, buf) {
 		return
 	}
 
@@ -94,27 +88,13 @@ func DumpCmdsWithTips(
 			"",
 			SuggestFindCmds(env))
 	} else {
-		if !isGlobalSearch {
-			if len(args.FindStrs) != 0 {
-				prt("locate exact commands by adding more keywords.")
-			} else {
-				prt(
-					"locate exact commands by:",
-					"",
-					SuggestFindCmds(env))
-			}
-		} else if !args.Skeleton {
-			prt(
-				"get a brief view by using '/' for search.",
-				"",
-				"or/and locate exact commands by adding more keywords:",
-				"",
-				SuggestFindCmds(env))
+		if len(args.FindStrs) != 0 {
+			prt("locate exact commands by adding more keywords.")
 		} else {
 			prt(
-				"locate exact commands by adding more keywords:",
+				"locate exact commands by:",
 				"",
-				SuggestFindCmdsLess(env))
+				SuggestFindCmds(env))
 		}
 	}
 

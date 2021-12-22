@@ -36,7 +36,7 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.Set("display.example-https-repo", "https://github.com/innerr/tidb.ticat")
 
-	env.SetInt("display.hint.indent.2rd", 38)
+	env.SetInt("display.hint.indent.2rd", 45)
 
 	env.Set("display.utf8.symbols.tip", "💡 ")
 	env.SetInt("display.utf8.symbols.tip.len", 3)
