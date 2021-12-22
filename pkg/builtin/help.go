@@ -148,7 +148,7 @@ func DumpCmdsTree(
 		text = "the tree branch of '" + cmdPath + "'"
 	}
 	if !allShown {
-		text += fmt.Sprintf(", some are not showed by arg depth='%d'", depth)
+		text += fmt.Sprintf(", some may not shown by arg depth='%d'", depth)
 	}
 
 	display.PrintTipTitle(cc.Screen, env, text)

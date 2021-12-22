@@ -28,23 +28,26 @@ func DumpCmdsWithTips(
 	allShown = dumpCmd(buf, env, cmds, args, -cmds.Depth(), 0)
 
 	findStr := strings.Join(args.FindStrs, " ")
-	indent := "    "
+
+	padPropName := func(s string) string {
+		return s + rpt(" ", 12-len(s))
+	}
 
 	filterLines := []string{}
 	if len(displayCmdPath) != 0 {
-		filterLines = append(filterLines, "- branch:", indent+displayCmdPath)
+		filterLines = append(filterLines, padPropName("- branch:")+displayCmdPath)
+	}
+	if len(args.Source) != 0 {
+		filterLines = append(filterLines, padPropName("- source:")+args.Source)
 	}
 	if len(args.FindStrs) != 0 {
 		if args.FindByTags {
-			filterLines = append(filterLines, "- tags:", indent+findStr)
+			filterLines = append(filterLines, padPropName("- tags:")+findStr)
 		} else {
-			filterLines = append(filterLines, "- keywords:", indent+findStr)
+			filterLines = append(filterLines, padPropName("- keywords:")+findStr)
 		}
 	}
-	if len(args.Source) != 0 {
-		filterLines = append(filterLines, "- source:", indent+args.Source)
-	}
-	if len(filterLines) != 0 {
+	if len(filterLines) > 0 {
 		filterLines = append([]string{""}, filterLines...)
 	}
 
@@ -57,8 +60,6 @@ func DumpCmdsWithTips(
 		footerLines = append(footerLines, "", fmt.Sprintf("some may not shown by arg depth='%d'", args.MaxDepth))
 	}
 
-	notShowStr := fmt.Sprintf("some commands are not shown by arg depth='%d'(use '0' to show all)", args.MaxDepth)
-
 	title := ""
 	if buf.OutputNum() > 0 {
 		if len(filterLines) != 0 {
@@ -67,16 +68,12 @@ func DumpCmdsWithTips(
 			if allShown {
 				title = "all commands:"
 			} else {
-				title = notShowStr
+				title = "commands:"
 			}
 		}
 	} else {
 		if len(filterLines) != 0 {
-			if allShown {
-				title = "no commands matched:"
-			} else {
-				title = notShowStr
-			}
+			title = "no commands matched:"
 		} else {
 			panic(fmt.Errorf("should never happen, no loaded commands"))
 		}
