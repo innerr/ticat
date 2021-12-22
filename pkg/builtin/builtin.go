@@ -773,11 +773,10 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		"one-cmd", "one")
 
 	cmds.AddSub("set-width", "width", "wid", "w", "W").
-		RegEmptyCmd(
-			"set display width").
+		RegPowerCmd(SetDisplayWidth,
+			"set display width, if arg 'width' is empty or 0, set width to screen size").
 		SetQuiet().
-		AddArg("width", "120", "wid", "w", "W").
-		AddArg2Env("display.width", "width")
+		AddArg("width", "", "wid", "w", "W")
 
 	RegisterVerbCmds(cmds)
 }

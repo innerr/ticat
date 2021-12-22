@@ -29,6 +29,9 @@ func (self ArgVals) GetInt(name string) int {
 			name,
 		})
 	}
+	if len(val.Raw) == 0 {
+		return 0
+	}
 	intVal, err := strconv.Atoi(val.Raw)
 	if err != nil {
 		panic(ArgValErrWrongType{

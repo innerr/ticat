@@ -12,7 +12,7 @@ func DumpCmdsWithTips(
 	env *core.Env,
 	args *DumpCmdArgs,
 	displayCmdPath string,
-	isLessMore bool) (allShown bool) {
+	isGlobalSearch bool) (allShown bool) {
 
 	prt := func(text ...interface{}) {
 		PrintTipTitle(screen, env, text...)
@@ -55,7 +55,7 @@ func DumpCmdsWithTips(
 			}
 		} else {
 			if buf.OutputNum() > 0 {
-				if args.Skeleton && buf.OutputNum() <= 6 && isLessMore {
+				if args.Skeleton && buf.OutputNum() <= 6 && isGlobalSearch {
 					prt(tip+"and found"+matchStr,
 						"",
 						"get more details by using '//' for search.")
@@ -94,7 +94,7 @@ func DumpCmdsWithTips(
 			"",
 			SuggestFindCmds(env))
 	} else {
-		if !isLessMore {
+		if !isGlobalSearch {
 			if len(args.FindStrs) != 0 {
 				prt("locate exact commands by adding more keywords.")
 			} else {

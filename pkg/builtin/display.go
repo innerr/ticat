@@ -36,3 +36,21 @@ func SetDisplayStyle(
 	env.Set("display.style", style)
 	return currCmdIdx, true
 }
+
+func SetDisplayWidth(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	width := argv.GetInt("width")
+	if width == 0 {
+		_, width = GetTerminalWidth()
+	}
+	env = env.GetLayer(core.EnvLayerSession)
+	env.SetInt("display.width", width)
+	return currCmdIdx, true
+}
