@@ -219,7 +219,7 @@ func dumpFlowCmd(
 		startEnv = dumpExecutedStartEnv(cmdEnv, prt, padLenCal, args, executedCmd, lineLimit)
 	}
 
-	dumpCmdExecutedLog(cmdEnv, args, executedCmd, prt)
+	dumpCmdExecutedLog(cmdEnv, args, executedCmd, prt, padLenCal, lineLimit)
 	dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
 
 	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
@@ -338,28 +338,43 @@ func dumpCmdExecutedLog(
 	env *core.Env,
 	args *DumpFlowArgs,
 	executedCmd *core.ExecutedCmd,
-	prt func(indentLvl int, msg string)) {
+	prt func(indentLvl int, msg string),
+	padLenCal func(indentLvl int) int,
+	lineLimit int) {
 
 	if executedCmd == nil || len(executedCmd.LogFilePath) == 0 {
 		return
 	}
-
 	if (args.Skeleton || args.Simple) && executedCmd.Succeeded {
 		return
 	}
+
+	padLen := padLenCal(2)
+	limit := lineLimit - padLen
+
 	if executedCmd.Succeeded {
 		prt(1, ColorProp("- execute-log:", env))
 	} else {
 		prt(1, ColorError("- execute-log:", env))
 	}
-	prt(2, executedCmd.LogFilePath)
+	prt(2, mayTrimStr(executedCmd.LogFilePath, env, limit))
 
 	lines := utils.ReadLogFileLastLines(executedCmd.LogFilePath, 1024*16, 16)
 	if len(lines) != 0 {
 		prt(2, ColorExplain("...", env))
 	}
 	for _, line := range lines {
-		prt(2, ColorExplain(line, env))
+		i := 0
+		for {
+			j := i + limit
+			if j < len(line) {
+				prt(2, ColorExplain(line[i:j], env))
+				i = j
+			} else {
+				prt(2, ColorExplain(line[i:], env))
+				break
+			}
+		}
 	}
 }
 
@@ -687,18 +702,24 @@ func dumpExecutedModifiedEnv(
 	for k, v := range startEnv {
 		op := ""
 		limit := lineLimit
-		prefixLen := padLen + len(k) + 3
+		tipLen := 4
+		afterV, hasAfter := finishEnv[k]
+		if !hasAfter {
+			tipLen += 9
+		} else {
+			tipLen += 14
+		}
+		prefixLen := padLen + len(k) + 3 + tipLen
 		val := mayQuoteMayTrimStr(v, env, limit-prefixLen)
 		if len(val) != len(v) {
 			limit = 0
 		}
-		newV, ok := finishEnv[k]
-		if !ok {
+		if !hasAfter {
 			op = ColorSymbol(" <- ", env) + ColorTip("(deleted)", env)
-		} else if newV != v {
+		} else if afterV != v {
 			op = ColorSymbol(" <- ", env) + ColorTip("(modified to) ", env)
 			prefixLen += len(val) + len(op) - ColorExtraLen(env, "symbol", "tip")
-			op = op + mayQuoteMayTrimStr(newV, env, limit-prefixLen)
+			op = op + mayQuoteMayTrimStr(afterV, env, limit-prefixLen)
 		} else {
 			continue
 		}
@@ -809,6 +830,10 @@ func getCmdTrivial(parsedCmd core.ParsedCmd) (trivial int) {
 }
 
 func mayQuoteMayTrimStr(s string, env *core.Env, limit int) string {
+	return mayTrimStr(mayQuoteStr(s), env, limit)
+}
+
+func mayTrimStr(s string, env *core.Env, limit int) string {
 	if len(s) > limit {
 		if limit <= 1 {
 			return ColorExplain(".", env)
@@ -822,7 +847,7 @@ func mayQuoteMayTrimStr(s string, env *core.Env, limit int) string {
 		half := limit / 2
 		s = s[0:half-2] + ColorExplain("...", env) + s[len(s)-half+1:]
 	}
-	return mayQuoteStr(s)
+	return s
 }
 
 type DumpFlowArgs struct {
