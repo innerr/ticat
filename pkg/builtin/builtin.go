@@ -448,17 +448,6 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall()
 	addFindStrArgs(env)
 
-	assert := env.AddSub("assert")
-	assert.AddSub("equal").
-		RegPowerCmd(EnvAssertEqual,
-			"assert the value of a key in env equal to specified value").
-		AddArg("key", "", "k", "K").
-		AddArg("val", "", "value", "v", "V")
-	assert.AddSub("not-exists").
-		RegPowerCmd(EnvAssertNotExists,
-			"assert the key not in env").
-		AddArg("key", "", "k", "K")
-
 	env.AddSub("tree", "t", "T").
 		RegPowerCmd(DumpEnvTree,
 			"list all env layers and values in tree format")
@@ -479,13 +468,6 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 			"save session env changes to local").
 		SetQuiet()
 
-	env.AddSub("mapping", "map").
-		RegPowerCmd(MapEnvKeyValueToAnotherKey,
-			"read src-key's value and write to dest-key").
-		AddArg("src-key", "", "source-key", "source", "src", "from").
-		AddArg("dest-key", "", "dest", "to").
-		AddEnvOp("[[dest-key]]", core.EnvOpTypeWrite)
-
 	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
 		RegPowerCmd(RemoveEnvValAndSaveToLocal,
 			"remove specified env value and save changes to local").
@@ -505,6 +487,42 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 			"find which commands provide the value of the specified key").
 		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")
+
+	assert := env.AddSub("assert")
+	assert.AddSub("equal").
+		RegPowerCmd(EnvAssertEqual,
+			"assert the value of a key in env equal to specified value").
+		AddArg("key", "", "k", "K").
+		AddArg("value", "", "val", "v", "V")
+	assert.AddSub("not-exists").
+		RegPowerCmd(EnvAssertNotExists,
+			"assert the key not in env").
+		AddArg("key", "", "k", "K")
+
+	env.AddSub("mapping", "map").
+		RegPowerCmd(MapEnvKeyValueToAnotherKey,
+			"read src-key's value and write to dest-key").
+		AddArg("src-key", "", "source-key", "source", "src", "from").
+		AddArg("dest-key", "", "dest", "to").
+		AddEnvOp("[[dest-key]]", core.EnvOpTypeWrite)
+
+	env.AddSub("set").
+		RegPowerCmd(SetEnvKeyValue,
+			"set key-value to env in current session").
+		AddArg("key", "", "k", "K").
+		AddArg("value", "", "val", "v", "V")
+
+	env.AddSub("add").
+		RegPowerCmd(AddEnvKeyValue,
+			"add key-value to env in current session, throws error if old value exists").
+		AddArg("key", "", "k", "K").
+		AddArg("value", "", "val", "v", "V")
+
+	env.AddSub("update").
+		RegPowerCmd(UpdateEnvKeyValue,
+			"update key-value in env, throws error if old value not exists").
+		AddArg("key", "", "k", "K").
+		AddArg("value", "", "val", "v", "V")
 
 	registerSimpleSwitch(abbrs,
 		"borrowing commands' abbrs when setting env key-values",

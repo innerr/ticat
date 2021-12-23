@@ -80,26 +80,6 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	mod.GetOrAddSub("realname").AddAbbrs("real", "r", "R")
 }
 
-func MapEnvKeyValueToAnotherKey(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	assertNotTailMode(flow, currCmdIdx)
-
-	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src-key")
-	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest-key")
-
-	env = env.GetLayer(core.EnvLayerSession)
-	value := env.GetRaw(src)
-	env.Set(dest, value)
-
-	cc.Screen.Print(display.KeyValueDisplayStr(dest, value, env) + "\n")
-	return currCmdIdx, true
-}
-
 func LoadRuntimeEnv(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -261,6 +241,138 @@ func ResetSessionEnv(
 	return currCmdIdx, true
 }
 
+func EnvAssertEqual(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	val := argv.GetRaw("value")
+	envVal := env.GetRaw(key)
+
+	if val != envVal {
+		panic(fmt.Errorf("assert env '%s' = '%s' failed, is '%s'", key, val, envVal))
+	}
+	cc.Screen.Print(display.KeyValueDisplayStr(key, val, env) + "\n")
+	return currCmdIdx, true
+}
+
+func EnvAssertNotExists(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+
+	if env.Has(key) {
+		panic(fmt.Errorf("assert key '%s' not in env failed", key))
+	}
+	return currCmdIdx, true
+}
+
+func MapEnvKeyValueToAnotherKey(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src-key")
+	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest-key")
+
+	env = env.GetLayer(core.EnvLayerSession)
+	value := env.GetRaw(src)
+	env.Set(dest, value)
+
+	cc.Screen.Print(display.KeyValueDisplayStr(dest, value, env) + "\n")
+	return currCmdIdx, true
+}
+
+func SetEnvKeyValue(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	value := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+
+	env = env.GetLayer(core.EnvLayerSession)
+	env.Set(key, value)
+
+	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
+	return currCmdIdx, true
+}
+
+func UpdateEnvKeyValue(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	value := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+
+	env = env.GetLayer(core.EnvLayerSession)
+	_, ok := env.GetEx(key)
+	if !ok {
+		cc.Screen.Print(display.ColorError(fmt.Sprintf("env key '%s' not exists\n", key), env))
+		return currCmdIdx, false
+	}
+	env.Set(key, value)
+
+	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
+	return currCmdIdx, true
+}
+
+func AddEnvKeyValue(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	value := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+
+	env = env.GetLayer(core.EnvLayerSession)
+	_, ok := env.GetEx(key)
+	if ok {
+		cc.Screen.Print(display.ColorError(fmt.Sprintf("env key '%s' already exists\n", key), env))
+		return currCmdIdx, false
+	}
+	env.Set(key, value)
+
+	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
+	return currCmdIdx, true
+}
+
+func GetTerminalWidth() (row int, col int) {
+	row, col = utils.GetTerminalWidth()
+	//if col > 160 {
+	//	col = 160
+	//}
+	return
+}
+
 func getEnvLocalFilePath(env *core.Env, cmd core.ParsedCmd) string {
 	path := env.GetRaw("sys.paths.data")
 	file := env.GetRaw("strs.env-file-name")
@@ -289,49 +401,4 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.mod.realname", true)
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 14)
-}
-
-func EnvAssertEqual(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	assertNotTailMode(flow, currCmdIdx)
-
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
-	val := argv.GetRaw("val")
-	envVal := env.GetRaw(key)
-
-	if val != envVal {
-		panic(fmt.Errorf("assert env '%s' = '%s' failed, is '%s'", key, val, envVal))
-	}
-	cc.Screen.Print(display.KeyValueDisplayStr(key, val, env) + "\n")
-	return currCmdIdx, true
-}
-
-func EnvAssertNotExists(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	assertNotTailMode(flow, currCmdIdx)
-
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
-
-	if env.Has(key) {
-		panic(fmt.Errorf("assert key '%s' not in env failed", key))
-	}
-	return currCmdIdx, true
-}
-
-func GetTerminalWidth() (row int, col int) {
-	row, col = utils.GetTerminalWidth()
-	//if col > 160 {
-	//	col = 160
-	//}
-	return
 }
