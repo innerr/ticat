@@ -6,110 +6,141 @@ import (
 
 func GlobalSuggestExeCmds(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	sep := ColorProp("-", env)
+	indent += ColorExtraLen(env, "cmd")
 	return []string{
-		padR(selfName+" cmd1 : cmd2 : cmd3", indent) + "- execute commands one by one,",
-		padR("", indent+2) + "similar to unix-pipe, just use ':' instead of '|'",
+		padCmdR(selfName+" cmd1 : cmd2 : cmd3", indent, env) + sep +
+			" execute commands one by one,",
+		padCmdR("", indent, env) + "  similar to unix-pipe, just use ':' instead of '|'",
 	}
 }
 
 func GlobalSuggestExeCmdsWithArgs(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	sep := ColorProp("-", env)
+	indent += ColorExtraLen(env, "cmd")
 	return []string{
-		padR(selfName+" echo msg=hi : sleep 1s", indent) +
-			"- an example of executing commands",
+		padCmdR(selfName+" echo msg=hi : sleep 1s", indent, env) + sep +
+			" an example of executing commands",
 	}
 }
 
 func GlobalSuggestShowCmdInfo(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	sep := ColorProp("-", env)
+	indent += ColorExtraLen(env, "cmd")
 	return []string{
-		padR(selfName+" cmd      echo", indent) + "- show usage of command 'echo'",
-		padR(selfName+" cmd.full echo", indent) + "- show full details of command 'echo'",
+		padCmdR(selfName+" cmd      echo", indent, env) + sep + " show usage of command 'echo'",
+		padCmdR(selfName+" cmd.full echo", indent, env) + sep + " show full details of command 'echo'",
 	}
 }
 
 func GlobalSuggestCmdTree(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" cmds.tree foo", indent) + "- display commands in the branch of 'foo'",
-		padR(selfName+" cmds.tree foo.bar", indent) + "  then browse the tree level by level",
+		padCmdR(selfName+" cmds.tree foo", indent, env) + sep +
+			" display commands in the branch of 'foo'",
+		padCmdR(selfName+" cmds.tree foo.bar", indent, env) +
+			"  then browse the tree level by level",
 		"",
-		padR(selfName+" cmds src=git-addr depth=1", indent) + "- display top level commands from 'git-addr'",
-		padR(selfName+" cmds src=git-addr depth=1 path=foo", indent) + "  another way to browse command tree",
+		padCmdR(selfName+" cmds src=git-addr depth=1", indent, env) + sep +
+			" display top level commands from 'git-addr'",
+		padCmdR(selfName+" cmds src=git-addr depth=1 path=foo", indent, env) +
+			"  another way to browse command tree",
 	}
 }
 
 func GlobalSuggestListCmds(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" cmds path=foo src=git-addr", indent) + "- display commands from 'git-addr' in the branch of 'foo'",
-		padR(selfName+" cmds      foo     git-addr", indent) + "  same as above",
-		padR(selfName+" cmds.full foo     git-addr", indent) + "  same as above, with full details",
+		padCmdR(selfName+" cmds path=foo src=git-addr", indent, env) + sep +
+			" display commands from 'git-addr' in the branch of 'foo'",
+		padCmdR(selfName+" cmds      foo     git-addr", indent, env) + "  same as above",
+		padCmdR(selfName+" cmds.full foo     git-addr", indent, env) + "  same as above, with full details",
 	}
 }
 
 func GlobalSuggestFindCmds(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" find      str1 str2", indent) + "- search commands",
-		padR(selfName+" find.more str1 str2", indent) + "  and display more info",
+		padCmdR(selfName+" find      str1 str2", indent, env) + sep + " search commands",
+		padCmdR(selfName+" find.more str1 str2", indent, env) + "  same as above, display more info",
 	}
 }
 
 func GlobalSuggestHubAdd(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" hub.init", indent) +
-			"- get more commands by adding a default git repo",
-		padR(selfName+" hub.add innerr/tidb."+selfName, indent) +
-			"- get more commands by adding a git repo,",
-		padR("", indent+2) + "could be a full git address",
+		padCmdR(selfName+" hub.init", indent, env) + sep +
+			" get more commands by adding a default git repo",
+		padCmdR(selfName+" hub.add innerr/tidb."+selfName, indent, env) + sep +
+			" get more commands by adding a git repo,",
+		padCmdR("", indent, env) + "  could be a full git address",
 	}
 }
 
 func GlobalSuggestFlowAdd(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" echo hi : sleep 1s :flow.save foo", indent) +
-			"- create a flow 'foo' by 'flow.save' for convenient",
-		padR(selfName+" foo", indent) + "- execute command 'foo'",
+		padCmdR(selfName+" echo hi : sleep 1s :flow.save foo", indent, env) + sep +
+			" create a flow 'foo' by 'flow.save' for convenient",
+		padCmdR(selfName+" foo", indent, env) + sep + " execute command 'foo'",
 	}
 }
 
 func GlobalSuggestDesc(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" foo :desc", indent) + "- show the plan graphic of 'foo' without executing it",
-		padR(selfName+" foo :desc.more", indent) + "  same as above, with more details",
+		padCmdR(selfName+" foo :desc", indent, env) + sep +
+			" show the plan graphic of 'foo' without executing it",
+		padCmdR(selfName+" foo :desc.more", indent, env) + "  same as above, with more details",
 	}
 }
 
 func GlobalSuggestSessions(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" sessions.last", indent) + "- show the status of last execution",
-		padR(selfName+" sessions.last.desc", indent) + "- show the executed graphic of last session",
-		padR(selfName+" sessions str1 str2", indent) + "- search executed sessions",
+		padCmdR(selfName+" sessions.last", indent, env) + sep + " show the status of last execution",
+		padCmdR(selfName+" sessions.last.desc", indent, env) + sep + " show the executed graphic of last session",
+		padCmdR(selfName+" sessions str1 str2", indent, env) + sep + " search executed sessions",
 	}
 }
 
 func GlobalSuggestAdvance(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" cmds.tree desc", indent) + "- explore the branch 'desc'",
-		padR("", indent) + "  a command set to describe commands before executing",
-		padR(selfName+" cmds.tree cmds", indent) + "- a command set to locate commands by branch, source",
-		padR(selfName+" cmds.tree find", indent) + "- a command set to search commands by strings",
-		padR(selfName+" cmds.tree flow", indent) + "- a command set to manage saved flows",
-		padR(selfName+" cmds.tree hub", indent) + "- a command set to manage command source(repo or dir)",
-		padR(selfName+" cmds.tree sessions", indent) + "- a command set to manage executed sessions",
+		padCmdR(selfName+" cmds.tree desc", indent, env) + sep + " explore the branch 'desc'",
+		padCmdR("", indent, env) + "  a command set to describe commands before executing",
+		padCmdR(selfName+" cmds.tree cmds", indent, env) + sep + " a command set to locate commands by branch, source",
+		padCmdR(selfName+" cmds.tree find", indent, env) + sep + " a command set to search commands by strings",
+		padCmdR(selfName+" cmds.tree flow", indent, env) + sep + " a command set to manage saved flows",
+		padCmdR(selfName+" cmds.tree hub", indent, env) + sep + " a command set to manage command source(repo or dir)",
+		padCmdR(selfName+" cmds.tree sessions", indent, env) + sep + " a command set to manage executed sessions",
 	}
 }
 
 func GlobalSuggestShortcut(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
 	return []string{
-		padR(selfName+" find shortcut", indent) + "- show shortcut commands",
+		padCmdR(selfName+" find shortcut", indent, env) + sep + " show shortcut commands",
 	}
 }
 
@@ -250,4 +281,9 @@ func getSuggestArgs(env *core.Env) (selfName string, explainIndent int) {
 	selfName = env.GetRaw("strs.self-name")
 	explainIndent = env.GetInt("display.hint.indent.2rd")
 	return
+}
+
+func padCmdR(s string, indent int, env *core.Env) string {
+	s = ColorCmd(s, env)
+	return padR(s, indent)
 }
