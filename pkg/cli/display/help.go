@@ -80,7 +80,7 @@ func PrintSelfHelp(screen core.Screen, env *core.Env) {
 		selfName+": workflow automating in unix-pipe style")
 
 	pln("")
-	screen.Print("usage:\n")
+	screen.Print(ColorHelp("usage:\n", env))
 
 	list := []func(*core.Env) []string{
 		GlobalSuggestExeCmds,
