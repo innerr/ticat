@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Screen interface {
@@ -98,4 +99,16 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		nil,
 		NewBreakPoints(),
 	}
+}
+
+func (self *Cli) ParseCmd(cmd string, panicOnError bool) (verifiedCmdPath string) {
+	parsed := self.Parser.Parse(self.Cmds, self.EnvAbbrs, cmd)
+	if len(parsed.Cmds) != 1 || parsed.FirstErr() != nil {
+		if panicOnError {
+			panic(fmt.Errorf("[Cli.ParseCmd] invalid cmd name '%s'", cmd))
+		} else {
+			return
+		}
+	}
+	return strings.Join(parsed.Cmds[0].Path(), self.Cmds.Strs.PathSep)
 }

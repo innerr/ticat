@@ -22,6 +22,7 @@ func main() {
 	defEnv := env.GetLayer(core.EnvLayerDefault)
 	defEnv.Set("strs.self-name", SelfName)
 	defEnv.Set("strs.list-sep", ListSep)
+	defEnv.Set("strs.cmd-builtin-name", CmdBuiltinName)
 	defEnv.Set("strs.cmd-builtin-display-name", CmdBuiltinDisplayName)
 	defEnv.Set("strs.meta-ext", MetaExt)
 	defEnv.Set("strs.flow-ext", FlowExt)
@@ -57,6 +58,7 @@ func main() {
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
 		SelfName,
 		CmdRootDisplayName,
+		CmdBuiltinName,
 		CmdBuiltinDisplayName,
 		CmdPathSep,
 		CmdPathAlterSeps,
@@ -110,12 +112,12 @@ func main() {
 
 	// Modules and env loaders
 	bootstrap := `
-		B.E.L.R:
-		B.M.L.E:
-		B.E.L.L:
-		B.M.L.F:
-		B.M.L.H:
-		B.D.L.P:
+		builtin.env.load.runtime:
+		builtin.mod.load.ext-executor:
+		builtin.env.load.local:
+		builtin.mod.load.flows:
+		builtin.mod.load.hub:
+		builtin.display.load.platform:
 	`
 
 	// TODO: handle error by types
@@ -145,6 +147,7 @@ const (
 	SelfName                 string = "ticat"
 	ListSep                  string = ","
 	CmdRootDisplayName       string = "<root>"
+	CmdBuiltinName           string = "builtin"
 	CmdBuiltinDisplayName    string = "<builtin>"
 	Spaces                   string = "\t\n\r "
 	AbbrsSep                 string = "|"

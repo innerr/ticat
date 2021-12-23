@@ -15,6 +15,8 @@ func ExecCmds(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	cmdStr := argv.GetRaw("command")
 	if cmdStr == "" {
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],

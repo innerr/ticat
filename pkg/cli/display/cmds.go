@@ -1,6 +1,7 @@
 package display
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -12,120 +13,97 @@ func DumpCmdsWithTips(
 	env *core.Env,
 	args *DumpCmdArgs,
 	displayCmdPath string,
-	isLessMore bool) {
+	lessDetailCmd string,
+	moreDetailCmd string) (allShown bool) {
+
+	if !args.Recursive {
+		panic(fmt.Errorf("should never happen, this func is not for non-recursive dumping display"))
+	}
 
 	prt := func(text ...interface{}) {
 		PrintTipTitle(screen, env, text...)
 	}
 
 	buf := NewCacheScreen()
-	dumpCmd(buf, env, cmds, args, -cmds.Depth())
+	allShown = dumpCmd(buf, env, cmds, args, -cmds.Depth(), 0)
 
 	findStr := strings.Join(args.FindStrs, " ")
-	selfName := env.GetRaw("strs.self-name")
 
-	if len(args.MatchWriteKey) != 0 {
-		if buf.OutputNum() > 0 {
-			prt("all commands which write key '" + args.MatchWriteKey + "':")
-		} else {
-			prt("no command writes key '" + args.MatchWriteKey + "':")
-		}
-		buf.WriteTo(screen)
-		return
+	padPropName := func(s string) string {
+		return s + rpt(" ", 12-len(s))
 	}
 
-	if !args.Recursive {
-		prt("command details:")
-	} else if len(args.FindStrs) != 0 {
-		tip := "search "
-		tag := ""
+	filterLines := []string{}
+	if len(displayCmdPath) != 0 {
+		filterLines = append(filterLines, padPropName("- branch:")+displayCmdPath)
+	}
+	if len(args.Source) != 0 {
+		filterLines = append(filterLines, padPropName("- source:")+args.Source)
+	}
+	if len(args.FindStrs) != 0 {
 		if args.FindByTags {
-			if len(args.FindStrs) > 1 {
-				tag = "tags "
-			} else {
-				tag = "tag "
-			}
-		}
-		matchStr := " commands matched " + tag + "'" + findStr + "'"
-		if !cmds.IsRoot() {
-			if buf.OutputNum() > 0 {
-				prt(tip + "branch '" + displayCmdPath + "', found" + matchStr + ":")
-			} else {
-				prt(tip + "branch '" + displayCmdPath + "', no" + matchStr + ".")
-			}
+			filterLines = append(filterLines, padPropName("- tags:")+findStr)
 		} else {
-			if buf.OutputNum() > 0 {
-				if args.Skeleton && buf.OutputNum() <= 6 && isLessMore {
-					prt(tip+"and found"+matchStr,
-						"",
-						"get more details by using '//' for search.")
-				} else {
-					prt(tip + "and found" + matchStr)
-				}
+			filterLines = append(filterLines, padPropName("- keywords:")+findStr)
+		}
+	}
+	if len(filterLines) > 0 {
+		filterLines = append([]string{""}, filterLines...)
+	}
+
+	var footerLines []string
+	if allShown {
+		if buf.OutputNum() <= 6 && args.Skeleton && len(moreDetailCmd) > 0 {
+			footerLines = append(footerLines, "", "use '"+moreDetailCmd+"' to show more details")
+		}
+	} else {
+		footerLines = append(footerLines, "", fmt.Sprintf("some may not shown by arg depth='%d'", args.MaxDepth))
+	}
+
+	title := ""
+	if buf.OutputNum() > 0 {
+		if len(filterLines) != 0 {
+			title = "found commands matched:"
+		} else {
+			if allShown {
+				title = "all commands:"
 			} else {
-				prt(tip + "but no" + matchStr)
+				title = "commands:"
 			}
 		}
 	} else {
-		if !cmds.IsRoot() {
-			if buf.OutputNum() > 0 {
-				prt("branch '" + displayCmdPath + "' has commands:")
-			} else {
-				prt("branch '" + displayCmdPath + "' has no commands. (this should never happen)")
-			}
+		if len(filterLines) != 0 {
+			title = "no commands matched:"
 		} else {
-			if buf.OutputNum() > 0 {
-				prt("all commands loaded to " + selfName + ":")
-			} else {
-				prt(selfName + " has no loaded commands. (this should never happen)")
-			}
+			panic(fmt.Errorf("should never happen, no loaded commands"))
 		}
 	}
+
+	prt(title, filterLines, footerLines)
 
 	buf.WriteTo(screen)
 
-	if !args.Recursive || !TooMuchOutput(env, buf) {
-		return
-	}
-
-	if !args.Flatten {
-		prt(
-			"locate exact commands by:",
-			"",
-			SuggestFindCmds(env))
-	} else {
-		if !isLessMore {
+	if TooMuchOutput(env, buf) {
+		if (!args.Skeleton || args.ShowUsage) && len(lessDetailCmd) > 0 {
+			prt("get a brief view by using '" + lessDetailCmd + "'")
+		} else if !args.FindByTags {
 			if len(args.FindStrs) != 0 {
-				prt("locate exact commands by adding more keywords.")
+				prt("narrow down results by adding more keywords.")
 			} else {
-				prt(
-					"locate exact commands by:",
-					"",
-					SuggestFindCmds(env))
+				prt("narrow down results by using keywords.")
 			}
-		} else if !args.Skeleton {
-			prt(
-				"get a brief view by using '/' for search.",
-				"",
-				"or/and locate exact commands by adding more keywords:",
-				"",
-				SuggestFindCmds(env))
-		} else {
-			prt(
-				"locate exact commands by adding more keywords:",
-				"",
-				SuggestFindCmdsLess(env))
 		}
 	}
+	return
 }
 
 func DumpCmds(
 	cmds *core.CmdTree,
 	screen core.Screen,
 	env *core.Env,
-	args *DumpCmdArgs) {
+	args *DumpCmdArgs) (allShown bool) {
 
-	dumpCmd(screen, env, cmds, args, -cmds.Depth())
+	return dumpCmd(screen, env, cmds, args, -cmds.Depth(), 0)
 }
 
 type DumpCmdArgs struct {
@@ -137,10 +115,12 @@ type DumpCmdArgs struct {
 	FindByTags    bool
 	IndentSize    int
 	MatchWriteKey string
+	Source        string
+	MaxDepth      int
 }
 
 func NewDumpCmdArgs() *DumpCmdArgs {
-	return &DumpCmdArgs{false, true, true, true, nil, false, 4, ""}
+	return &DumpCmdArgs{false, true, true, true, nil, false, 4, "", "", 0}
 }
 
 func (self *DumpCmdArgs) NoShowShowUsage() *DumpCmdArgs {
@@ -184,17 +164,36 @@ func (self *DumpCmdArgs) SetMatchWriteKey(key string) *DumpCmdArgs {
 	return self
 }
 
+func (self *DumpCmdArgs) SetSource(source string) *DumpCmdArgs {
+	self.Source = source
+	return self
+}
+
+func (self *DumpCmdArgs) SetMaxDepth(depth int) *DumpCmdArgs {
+	self.MaxDepth = depth
+	return self
+}
+
 func (self *DumpCmdArgs) MatchFind(cmd *core.CmdTree) bool {
-	if self.FindByTags {
-		return cmd.MatchTags(self.FindStrs...)
+	if len(self.MatchWriteKey) != 0 && !cmd.MatchWriteKey(self.MatchWriteKey) {
+		return false
 	}
-	if len(self.MatchWriteKey) != 0 {
-		return cmd.MatchWriteKey(self.MatchWriteKey)
+	if len(self.FindStrs) != 0 {
+		if self.FindByTags {
+			if !cmd.MatchTags(self.FindStrs...) {
+				return false
+			}
+		} else {
+			if !cmd.MatchFind(self.FindStrs...) {
+				return false
+			}
+		}
 	}
-	if cmd.MatchFind(self.FindStrs...) {
-		return true
+	if len(self.Source) != 0 && !cmd.MatchSource(self.Source) {
+		return false
 	}
-	return false
+
+	return true
 }
 
 func dumpCmd(
@@ -202,10 +201,11 @@ func dumpCmd(
 	env *core.Env,
 	cmd *core.CmdTree,
 	args *DumpCmdArgs,
-	indentAdjust int) {
+	indentAdjust int,
+	depth int) (allShown bool) {
 
 	if cmd == nil || cmd.IsHidden() {
-		return
+		return true
 	}
 
 	builtinName := cmd.Strs.BuiltinDisplayName
@@ -238,8 +238,9 @@ func dumpCmd(
 			name = cmd.DisplayPath()
 		}
 
-		if !args.Flatten || cic != nil {
-			prt(0, ColorCmd("["+name+"]", env))
+		//if !args.Flatten || cic != nil {
+		if !args.Flatten || cmd.Parent() != nil {
+			prt(0, cmdIdStr(cmd, name, env))
 
 			if (!args.Skeleton || args.FindByTags) && len(cmd.Tags()) != 0 {
 				prt(1, ColorTag(" "+tagMark+strings.Join(cmd.Tags(), " "+tagMark), env))
@@ -376,11 +377,16 @@ func dumpCmd(
 		}
 	}
 
-	if args.Recursive {
+	allShown = true
+	if args.Recursive && (args.MaxDepth == 0 || depth < args.MaxDepth) {
 		for _, name := range cmd.SubNames() {
-			dumpCmd(screen, env, cmd.GetSub(name), args, indentAdjust)
+			subShown := dumpCmd(screen, env, cmd.GetSub(name), args, indentAdjust, depth+1)
+			allShown = allShown && subShown
 		}
+	} else {
+		allShown = !cmd.HasSub()
 	}
+	return allShown
 }
 
 func dumpIsAutoTimerKey(env *core.Env, cmd *core.Cmd, key string) string {
@@ -393,4 +399,18 @@ func dumpIsAutoTimerKey(env *core.Env, cmd *core.Cmd, key string) string {
 		return ColorSymbol(" <- ", env) + ColorExplain("(running elapsed secs)", env)
 	}
 	return ""
+}
+
+func cmdIdStr(cmd *core.CmdTree, name string, env *core.Env) string {
+	frameColor := ColorCmd
+	if !cmd.HasSub() {
+		frameColor = ColorCmdEmpty
+	}
+	cmdColor := ColorCmd
+	if cmd.Cmd() == nil || cmd.Cmd().IsNoExecutableCmd() {
+		cmdColor = ColorCmdEmpty
+	}
+	return frameColor("[", env) +
+		cmdColor(name, env) +
+		frameColor("]", env)
 }

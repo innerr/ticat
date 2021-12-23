@@ -1,121 +1,348 @@
 package builtin
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
 // TODO: register the env kvs these commands will modify
 
 func RegisterCmds(cmds *core.CmdTree) {
-	RegisterExecutorCmds(cmds)
-	RegisterEnvCmds(cmds)
-	RegisterVerbCmds(cmds)
-	RegisterTrivialCmds(cmds)
-	RegisterFlowCmds(cmds)
-	RegisterHubCmds(cmds)
-	RegisterSessionCmds(cmds.AddSub("sessions", "s", "S").RegEmptyCmd("manage sessions").Owner())
-	RegisterDbgCmds(cmds.AddSub("dbg").RegEmptyCmd("debug related commands").Owner())
-	RegisterMiscCmds(cmds)
-	RegisterBgCmds(cmds.AddSub("background", "bg").RegEmptyCmd("background tasks management").Owner())
-	RegisterDisplayCmds(cmds.AddSub("display", "disp", "dis", "di").RegEmptyCmd("display related commands").Owner())
-	RegisterBuiltinCmds(cmds.AddSub("builtin", "b", "B").RegEmptyCmd("internal commands, mostly for init loading").Owner().SetHidden())
+	RegisterCmdAndHelpCmds(cmds)
+	RegisterTagsCmds(cmds)
+	RegisterTailSubCmds(cmds)
+	RegisterCmdsFindingCmds(cmds)
+	RegisterCmdsListCmds(cmds)
+
+	RegisterFlowDescCmds(cmds)
+
+	RegisterHubManageCmds(cmds)
+	RegisterEnvManageCmds(cmds)
+	RegisterFlowManageCmds(cmds)
+	RegisterBgManageCmds(cmds)
+
+	RegisterSessionCmds(cmds)
+	RegisterDbgCmds(cmds.AddSub(
+		"dbg").RegEmptyCmd(
+		"debug related commands").Owner())
+	RegisterDisplayCmds(cmds.AddSub(
+		"display", "disp", "d", "D").RegEmptyCmd(
+		"display related commands").Owner())
+
+	RegisterBuiltinCmds(cmds.AddSub(
+		"builtin").RegEmptyCmd(
+		"internal commands, mostly for init loading").Owner().SetHidden())
+
+	RegisterTimerCmds(cmds)
+	RegisterOsCmds(cmds)
+	RegisterNoopCmds(cmds)
 }
 
-func RegisterExecutorCmds(cmds *core.CmdTree) {
-	help := cmds.AddSub("help", "-help", "-HELP", "-h", "-H", "?")
-	help.RegCmd(GlobalHelp,
-		"get help")
-	help.AddSub(cmds.Strs.SelfName, "self").
-		RegCmd(SelfHelp,
-			"get "+cmds.Strs.SelfName+" usage help")
-
-	cmds.AddSub("usage", "args", "arg", "=").
-		RegPowerCmd(DumpTailCmdUsage,
-			"show usage of a command").
-		SetQuiet().
-		SetPriority()
-
-	cmds.AddSub("system", "sys").
-		RegPowerCmd(ExecCmds,
-			"execute os command in bash").
-		AddArg("command", "", "cmd")
-
-	for i := 1; i < 6; i++ {
-		defTrivial := fmt.Sprintf("%d", i)
-		cmdSuffix := ""
-		if i > 1 {
-			cmdSuffix += fmt.Sprintf("-%d", i)
-		}
-		cmds.AddSub("more"+cmdSuffix, strings.Repeat("+", i)).
-			RegPowerCmd(GlobalHelpMoreInfo,
-				MoreHelpStr).
-			SetQuiet().
-			SetPriority().
-			AddArg("trivial", defTrivial, "triv", "tri", "t", "T").
-			AddArg("depth", "32", "d", "D")
-
-		cmds.AddSub("less"+cmdSuffix, strings.Repeat("-", i)).
-			RegPowerCmd(GlobalHelpLessInfo,
-				LessHelpStr).
-			SetQuiet().
-			SetPriority().
-			AddArg("trivial", defTrivial, "triv", "tri", "t", "T").
-			AddArg("depth", "32", "d", "D")
-	}
-
-	find := cmds.AddSub("find", "search", "/").
-		RegPowerCmd(GlobalFindCmd,
-			"find commands with strings").
+func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
+	find := cmds.AddSub("find", "search").
+		RegPowerCmd(GlobalFindCmds,
+			"search commands by keywords").
 		SetAllowTailModeCall().
+		SetQuiet().
 		SetPriority()
 	addFindStrArgs(find)
 
-	findUsage := cmds.AddSub("find-detail", "//").
-		RegPowerCmd(GlobalFindCmdWithUsage,
-			"find commands with strings, with details").
+	findShort := cmds.AddSub("/").
+		RegPowerCmd(GlobalFindCmds,
+			"shortcut of [find]").
 		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(findShort)
+
+	findUsage := find.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
+		RegPowerCmd(GlobalFindCmdsWithUsage,
+			"search commands by find-strings, with usage info").
+		SetAllowTailModeCall().
+		SetQuiet().
 		SetPriority()
 	addFindStrArgs(findUsage)
 
-	findDetail := cmds.AddSub("find-detail", "///").
-		RegPowerCmd(GlobalFindCmdWithDetail,
-			"find commands with strings, with details").
+	findUsageShort := cmds.AddSub("//").
+		RegPowerCmd(GlobalFindCmdsWithUsage,
+			"shortcut of [find.with-usage]").
 		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(findUsageShort)
+
+	findDetail := find.AddSub("with-full-info", "full-info", "full", "f", "F").
+		RegPowerCmd(GlobalFindCmdsWithDetails,
+			"search commands with strings, with full details").
+		SetAllowTailModeCall().
+		SetQuiet().
 		SetPriority()
 	addFindStrArgs(findDetail)
 
-	findTag := cmds.AddSub("tags", "tag", cmds.Strs.TagMark).
-		RegPowerCmd(FindByTags,
-			"list commands having the specified tags").
+	findDetailShort := cmds.AddSub("///").
+		RegPowerCmd(GlobalFindCmdsWithDetails,
+			"shortcut of [find.with-full-info]").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
-	addFindStrArgs(findTag)
+	addFindStrArgs(findDetailShort)
+}
 
-	desc := cmds.AddSub("desc", "d", "D").
-		RegPowerCmd(DumpFlowAll,
-			"desc the flow about to execute").
+func RegisterTailSubCmds(cmds *core.CmdTree) {
+	sub := cmds.AddSub("tail-sub", "ts").
+		RegPowerCmd(DumpTailCmdSub,
+			"display commands on the branch of the last command").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(sub)
+	sub.AddArg("tag", "", "t", "T")
+	sub.AddArg("depth", "0", "d", "D")
+
+	subShort := cmds.AddSub("~").
+		RegPowerCmd(DumpTailCmdSub,
+			"shortcut of [tail-sub]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(subShort)
+	subShort.AddArg("tag", "", "t", "T")
+	subShort.AddArg("depth", "0", "d", "D")
+
+	subMore := sub.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
+		RegPowerCmd(DumpTailCmdSubWithUsage,
+			"display commands on the branch of the last command, with usage info").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(subMore)
+	subMore.AddArg("tag", "", "t", "T")
+	subMore.AddArg("depth", "0", "d", "D")
+
+	subMoreShort := cmds.AddSub("~~").
+		RegPowerCmd(DumpTailCmdSubWithUsage,
+			"shortcut of [tail-sub.with-usage]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(subMoreShort)
+	subMoreShort.AddArg("tag", "", "t", "T")
+	subMoreShort.AddArg("depth", "0", "d", "D")
+
+	subFull := sub.AddSub("with-full-info", "full-info", "full", "f", "F").
+		RegPowerCmd(DumpTailCmdSubWithDetails,
+			"display commands on the branch of the last command, with full details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(subFull)
+	subFull.AddArg("tag", "", "t", "T")
+	subFull.AddArg("depth", "0", "d", "D")
+
+	subFullShort := cmds.AddSub("~~~").
+		RegPowerCmd(DumpTailCmdSubWithDetails,
+			"shortcut of [tail-sub.with-full-info]").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(subFullShort)
+	subFullShort.AddArg("tag", "", "t", "T")
+	subFullShort.AddArg("depth", "0", "d", "D")
+}
+
+func RegisterCmdsListCmds(cmds *core.CmdTree) {
+	addDumpCmdsArgs := func(cmd *core.Cmd) {
+		cmd.SetPriority().
+			SetQuiet().
+			SetAllowTailModeCall().
+			AddArg("cmd-path", "", "path", "p", "P").
+			AddArg("source", "", "repo", "src", "s", "S").
+			AddArg("tag", "", "t", "T").
+			AddArg("depth", "0", "d", "D")
+		addFindStrArgs(cmd)
+	}
+
+	list := cmds.AddSub("cmds", "c", "C").
+		RegPowerCmd(DumpCmds,
+			"list commands by command-path-branch, keywords, source and tag")
+	addDumpCmdsArgs(list)
+
+	listMore := list.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
+		RegPowerCmd(DumpCmdsWithUsage,
+			"list commands by command-path-branch, keywords, source and tag, with usage info")
+	addDumpCmdsArgs(listMore)
+
+	listFull := list.AddSub("with-full-info", "full-info", "full", "f", "F").
+		RegPowerCmd(DumpCmdsWithDetails,
+			"list commands by command-path-branch, keywords, source and tag, with full info")
+	addDumpCmdsArgs(listFull)
+
+	list.AddSub("tree", "t", "T").
+		RegPowerCmd(DumpCmdsTree,
+			"list commands in tree form by command-path-branch").
+		SetAllowTailModeCall().
+		AddArg("cmd-path", "", "path", "p", "P").
+		AddArg("depth", "1", "d", "D")
+
+	/*
+		/*
+		list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
+			RegPowerCmd(DumpCmdList,
+				"list builtin and loaded commands").
+			SetAllowTailModeCall()
+		addFindStrArgs(list)
+
+		listSimple := list.AddSub("simple", "sim", "s", "S").
+			RegPowerCmd(DumpCmdListSimple,
+				"list builtin and loaded commands in lite style").
+			SetAllowTailModeCall()
+		addFindStrArgs(listSimple)
+
+		tree := mods.AddSub("tree", "t", "T")
+		tree.RegPowerCmd(DumpCmdTree,
+			"list builtin and loaded commands").
+			SetAllowTailModeCall().
+			AddArg("cmd-path", "", "path", "p", "P")
+		tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S").
+			RegPowerCmd(DumpCmdTreeSkeleton,
+				"list builtin and loaded commands, skeleton only").
+			SetAllowTailModeCall().
+			AddArg("cmd-path", "", "path", "p", "P").
+			AddArg("recursive", "true", "r", "R")
+	*/
+}
+
+func RegisterTagsCmds(cmds *core.CmdTree) {
+	cmds.AddSub("tags").
+		RegPowerCmd(ListTags,
+			"list all tags")
+
+	findByTag := cmds.AddSub("tag", cmds.Strs.TagMark).
+		RegPowerCmd(FindByTags,
+			"list commands having the specified tags").
+		SetAllowTailModeCall()
+	addFindStrArgs(findByTag)
+
+	byTagUsage := findByTag.AddSub("with-usage", "usage", "usg", "u", "U", "more", "m", "M").
+		RegPowerCmd(FindByTagsWithUsage,
+			"list commands having the specified tags, with usage info").
+		SetAllowTailModeCall()
+	addFindStrArgs(byTagUsage)
+
+	byTagDetails := findByTag.AddSub("with-full-info", "full-info", "full", "f", "F").
+		RegPowerCmd(FindByTagsWithDetails,
+			"list commands having the specified tags, with full details").
+		SetAllowTailModeCall()
+	addFindStrArgs(byTagDetails)
+}
+
+func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
+	help := cmds.AddSub("help", "-help", "-HELP", "-h", "-H", "?")
+	help.RegPowerCmd(GlobalHelp,
+		"get help").
+		AddArg("target", "")
+
+	help.AddSub(cmds.Strs.SelfName, "self").
+		RegPowerCmd(SelfHelp,
+			"get "+cmds.Strs.SelfName+" usage help")
+
+	cmd := cmds.AddSub("cmd").
+		RegPowerCmd(DumpCmdUsage,
+			"display command usage").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("cmd-path", "", "path", "p", "P")
+
+	cmd.AddSub("full", "f", "F", "more", "m", "M").
+		RegPowerCmd(DumpCmdWithDetails,
+			"display command full info").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority().
+		AddArg("cmd-path", "", "path", "p", "P")
+
+	cmds.AddSub("=").
+		RegPowerCmd(DumpTailCmdWithUsage,
+			"shortcut of [cmd], if at the end of a flow:\n   * display usage of the last command\n   * flow will not execute").
+		SetQuiet().
+		SetPriority().
+		AddArg("cmd-path", "", "path", "p", "P")
+
+	cmds.AddSub("==", "===").
+		RegPowerCmd(DumpTailCmdWithDetails,
+			"shortcut of [cmd], if at the end of a flow:\n   * display full info of the last command\n   * flow will not execute").
+		SetQuiet().
+		SetPriority().
+		AddArg("cmd-path", "", "path", "p", "P")
+}
+
+func RegisterFlowDescCmds(cmds *core.CmdTree) {
+	desc := cmds.AddSub("desc").
+		RegPowerCmd(DumpFlowSkeleton,
+			"desc the flow execution in skeleton style").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
-	desc.AddSub("simple", "sim", "s", "S").
+	cmds.AddSub("-").
+		RegPowerCmd(DumpFlowSkeleton,
+			"shortcut of [desc]").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+	cmds.AddSub("--").
+		RegPowerCmd(DumpFlowSkeleton,
+			"shortcut of [desc], unfold more(2L) trivial subflows").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "2", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+	cmds.AddSub("---").
+		RegPowerCmd(DumpFlowSkeleton,
+			"shortcut of [desc], unfold more(3L) trivial subflows").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "3", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	desc.AddSub("more", "m", "M").
 		RegPowerCmd(DumpFlowAllSimple,
 			"desc the flow about to execute in lite style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
-	desc.AddSub("skeleton", "sk", "sl", "st", "-").
-		RegPowerCmd(DumpFlowSkeleton,
-			"desc the flow about to execute, skeleton only").
+	cmds.AddSub("+").
+		RegPowerCmd(DumpFlowAllSimple,
+			"shortcut of [desc.more]").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
+	cmds.AddSub("++").
+		RegPowerCmd(DumpFlowAllSimple,
+			"shortcut of [desc.more], unfold more(2L) trivial subflows").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "2", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+	cmds.AddSub("+++").
+		RegPowerCmd(DumpFlowAllSimple,
+			"shortcut of [desc.more], unfold more(3L) trivial subflows").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "3", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	desc.AddSub("full", "f", "F").
+		RegPowerCmd(DumpFlowAll,
+			"desc the flow about to execute with details").
+		SetQuiet().
+		SetPriority().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
 	desc.AddSub("dependencies", "depends", "depend", "dep", "os-cmd", "os").
 		RegPowerCmd(DumpFlowDepends,
 			"list the depended os-commands of the flow").
@@ -127,139 +354,94 @@ func RegisterExecutorCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	descFlow := desc.AddSub("flow", "f", "F").
-		RegPowerCmd(DumpFlow,
-			"desc the flow execution").
+	descFlow := desc.AddSub("flow", "fl").
+		RegPowerCmd(DumpFlowSkeleton,
+			"desc the flow execution in skeleton style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
-	descFlow.AddSub("simple", "sim", "s", "S", "-").
+	descFlow.AddSub("more", "m", "M").
 		RegPowerCmd(DumpFlowSimple,
 			"desc the flow execution in lite style").
 		SetQuiet().
 		SetPriority().
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
-
-	cmds.AddSub("tail-info", "==").
-		RegPowerCmd(DumpTailCmdInfo,
-			"display the last command info, sub tree commands will not show").
+	descFlow.AddSub("full", "f", "F").
+		RegPowerCmd(DumpFlow,
+			"desc the flow execution with details").
 		SetQuiet().
-		SetPriority()
-
-	// TODO: add find-strs
-	cmds.AddSub("tail-sub", "~").
-		RegPowerCmd(DumpTailCmdSub,
-			"display commands on the branch of the last command").
-		SetQuiet().
-		SetPriority()
-
-	// TODO: add find-strs
-	cmds.AddSub("tail-sub-with-usage", "~~").
-		RegPowerCmd(DumpTailCmdSubUsage,
-			"display commands on the branch of the last command, with usage").
-		SetQuiet().
-		SetPriority()
-
-	// TODO: add find-strs
-	cmds.AddSub("tail-sub-with-details", "~~~").
-		RegPowerCmd(DumpTailCmdSubDetails,
-			"display commands on the branch of the last command, with details").
-		SetQuiet().
-		SetPriority()
-
-	// TODO: asign 'cmds' to a freq-use command
-	mods := cmds.AddSub("cmds", "cmd", "c", "C").
-		RegPowerCmd(DumpCmdNoRecursive,
-			"display command info").
-		SetAllowTailModeCall().
-		AddArg("cmd-path", "", "path", "p", "P")
-
-	tree := mods.AddSub("tree", "t", "T")
-	tree.RegPowerCmd(DumpCmdTree,
-		"list builtin and loaded commands").
-		SetAllowTailModeCall().
-		AddArg("cmd-path", "", "path", "p", "P")
-	tree.AddSub("simple", "sim", "skeleton", "sk", "sl", "st", "s", "S", "-").
-		RegPowerCmd(DumpCmdTreeSkeleton,
-			"list builtin and loaded commands, skeleton only").
-		AddArg("cmd-path", "", "path", "p", "P").
-		AddArg("recursive", "true", "r", "R")
-
-	list := mods.AddSub("list", "ls", "flatten", "flat", "f", "F").
-		RegPowerCmd(DumpCmdList,
-			"list builtin and loaded commands").
-		SetAllowTailModeCall()
-	addFindStrArgs(list)
-
-	listSimple := list.AddSub("simple", "sim", "s", "S", "-").
-		RegPowerCmd(DumpCmdListSimple,
-			"list builtin and loaded commands in lite style").
-		SetAllowTailModeCall()
-	addFindStrArgs(listSimple)
+		SetPriority().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
 }
 
-func RegisterFlowCmds(cmds *core.CmdTree) {
-	listFlowsHelpStr := "list local saved but unlinked (to any repo) flows"
-	flow := cmds.AddSub("flow", "fl", "f", "F").
-		RegPowerCmd(ListFlows,
-			listFlowsHelpStr).
+func RegisterHubManageCmds(cmds *core.CmdTree) {
+	hub := cmds.AddSub("hub", "h", "H").
+		RegPowerCmd(ListHub,
+			"list dir and repo info in hub").
 		SetAllowTailModeCall()
-	addFindStrArgs(flow)
+	addFindStrArgs(hub)
 
-	// TODO: check the new cmd is conflicted with other cmds
-	flow.AddSub("save", "persist", "s", "S", "+").
-		RegPowerCmd(SaveFlow,
-			"save current commands as a flow").
-		SetQuiet().
-		SetPriority().
-		AddArg("to-cmd-path", "", "path", "p", "P")
+	hub.AddSub("clear", "clean").
+		RegPowerCmd(RemoveAllFromHub,
+			"remove all repos from hub")
 
-	flow.AddSub("set-help-str", "help", "h", "H").
-		RegPowerCmd(SetFlowHelpStr,
-			"set help str to a saved flow").
-		SetQuiet().
-		AddArg("cmd-path", "", "path", "p", "P").
-		AddArg("help-str", "", "help", "h", "H")
+	hub.AddSub("init").
+		RegPowerCmd(AddDefaultGitRepoToHub,
+			"add and pull basic hub-repo to local")
 
-	// TODO: check the new cmd is conflicted with other cmds
-	flow.AddSub("rename", "rn").
-		RegPowerCmd(RenameFlow,
-			"rename a saved flow").
-		AddArg("src", "", "src-cmd", "s", "S").
-		AddArg("dest", "", "dest-cmd", "d", "D")
-
-	flow.AddSub("remove", "rm", "delete", "del", "-").
-		RegPowerCmd(RemoveFlow,
-			"remove a saved flow").
+	add := hub.AddSub("add-and-update", "add", "a", "A")
+	add.RegPowerCmd(AddGitRepoToHub,
+		"add and pull a git address to hub, do update if it already exists").
 		SetAllowTailModeCall().
-		SetPriority().
-		AddArg("cmd-path", "", "path", "p", "P")
+		AddArg("git-address", "", "git", "address", "addr")
 
-	flowList := flow.AddSub("list-local", "list", "ls").
-		RegPowerCmd(ListFlows,
-			listFlowsHelpStr).
-		SetAllowTailModeCall()
-	addFindStrArgs(flowList)
+	repoStatus := hub.AddSub("git-status", "status").
+		RegPowerCmd(CheckGitRepoStatus,
+			"check git status for all repos")
+	addFindStrArgs(repoStatus)
 
-	flow.AddSub("load", "l", "L").
-		RegPowerCmd(LoadFlowsFromDir,
-			"load flows from local dir").
+	add.AddSub("local-dir", "local", "l", "L").
+		RegPowerCmd(AddLocalDirToHub,
+			"add a local dir (could be a git repo) to hub").
+		SetAllowTailModeCall().
 		AddArg("path", "", "p", "P")
 
-	flow.AddSub("clear", "reset", "--").
-		RegPowerCmd(RemoveAllFlows,
-			"remove all flows saved in local")
+	purge := hub.AddSub("purge", "p", "P")
+	purge.RegPowerCmd(PurgeInactiveRepoFromHub,
+		"remove an inactive repo from hub").
+		SetAllowTailModeCall().
+		AddArg("find-str", "", "s", "S")
+	purge.AddSub("purge-all-inactive", "all", "inactive", "a", "A").
+		RegPowerCmd(PurgeAllInactiveReposFromHub,
+			"remove all inactive repos from hub")
 
-	flow.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
+	hub.AddSub("update-all", "update", "u", "U").
+		RegPowerCmd(UpdateHub,
+			"update all repos and mods defined in hub")
+
+	hub.AddSub("enable-repo", "enable", "ena", "en", "e", "E").
+		RegPowerCmd(EnableRepoInHub,
+			"enable matched git repos in hub").
+		SetAllowTailModeCall().
+		AddArg("find-str", "", "s", "S")
+
+	hub.AddSub("disable-repo", "disable", "dis", "d", "D").
+		RegPowerCmd(DisableRepoInHub,
+			"disable matched git repos in hub").
+		SetAllowTailModeCall().
+		AddArg("find-str", "", "s", "S")
+
+	hub.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
 		RegPowerCmd(MoveSavedFlowsToLocalDir,
-			MoveFlowsToDirHelpStr).
+			moveFlowsToDirHelpStr).
 		SetAllowTailModeCall().
 		AddArg("path", "", "p", "P")
 }
 
-func RegisterEnvCmds(cmds *core.CmdTree) {
+func RegisterEnvManageCmds(cmds *core.CmdTree) {
 	env := cmds.AddSub("env", "e", "E").
 		RegPowerCmd(DumpEssentialEnvFlattenVals,
 			"list essential env values in flatten format").
@@ -288,11 +470,11 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 
 	envList := env.AddSub("list", "ls", "flatten", "flat", "f", "F").
 		RegPowerCmd(DumpEnvFlattenVals,
-			"list env values in flatten format").
+			"list all env values in flatten format").
 		SetAllowTailModeCall()
 	addFindStrArgs(envList)
 
-	env.AddSub("save", "persist", "s", "S", "+").
+	env.AddSub("save", "persist", "s", "S").
 		RegPowerCmd(SaveEnvToLocal,
 			"save session env changes to local").
 		SetQuiet()
@@ -304,23 +486,23 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		AddArg("dest-key", "", "dest", "to").
 		AddEnvOp("[[dest-key]]", core.EnvOpTypeWrite)
 
-	env.AddSub("remove-and-save", "remove", "rm", "delete", "del", "-").
+	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
 		RegPowerCmd(RemoveEnvValAndSaveToLocal,
 			"remove specified env value and save changes to local").
 		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")
 
-	env.AddSub("reset-session", "reset", "--").
+	env.AddSub("reset-session", "reset").
 		RegPowerCmd(ResetSessionEnv,
 			"clear all env values in current session")
 
-	env.AddSub("reset-and-save", "clear", "---").
+	env.AddSub("clear-and-save", "clean-and-save", "clear", "clean").
 		RegPowerCmd(ResetLocalEnv,
 			"clear all local saved env values")
 
 	env.AddSub("who-write", "ww").
 		RegPowerCmd(DumpCmdsWhoWriteKey,
-			"find which commands write the specified key").
+			"find which commands provide the value of the specified key").
 		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")
 
@@ -330,97 +512,130 @@ func RegisterEnvCmds(cmds *core.CmdTree) {
 		"cmd")
 }
 
-func RegisterVerbCmds(cmds *core.CmdTree) {
-	cmds.AddSub("quiet", "q", "Q").
-		RegPowerCmd(SetQuietMode,
-			"change into quiet mode").
-		SetQuiet()
+func RegisterFlowManageCmds(cmds *core.CmdTree) {
+	flow := cmds.AddSub("flow", "fl", "f", "F").
+		RegPowerCmd(ListFlows,
+			"list local saved but unlinked (to any repo) flows").
+		SetAllowTailModeCall()
+	addFindStrArgs(flow)
 
-	verbose := cmds.AddSub("verbose", "verb", "v", "V")
-
-	verbose.RegPowerCmd(SetVerbMode,
-		"change into verbose mode").
-		SetQuiet()
-
-	verbose.AddSub("default", "def", "d", "D").
-		RegPowerCmd(SetToDefaultVerb,
-			"set to default verbose mode").
-		SetQuiet()
-
-	verbose.AddSub("increase", "inc", "v+", "+").
-		RegPowerCmd(IncreaseVerb,
-			"increase verbose").
+	// TODO: check the new cmd is conflicted with other cmds
+	flow.AddSub("save", "persist", "s", "S").
+		RegPowerCmd(SaveFlow,
+			"save current commands as a flow").
 		SetQuiet().
-		AddArg("volume", "1", "vol", "v", "V")
+		SetPriority().
+		AddArg("to-cmd-path", "", "path", "p", "P")
 
-	verbose.AddSub("decrease", "dec", "v-", "-").
-		RegPowerCmd(DecreaseVerb,
-			"decrease verbose").
+	flow.AddSub("set-help-str", "help", "h", "H").
+		RegPowerCmd(SetFlowHelpStr,
+			"set help str to a saved flow").
 		SetQuiet().
-		AddArg("volume", "1", "vol", "v", "V")
+		AddArg("cmd-path", "", "path", "p", "P").
+		AddArg("help-str", "", "help", "h", "H")
+
+	// TODO: check the new cmd is conflicted with other cmds
+	flow.AddSub("rename", "rn").
+		RegPowerCmd(RenameFlow,
+			"rename a saved flow").
+		AddArg("src", "", "src-cmd", "s", "S").
+		AddArg("dest", "", "dest-cmd", "d", "D")
+
+	flow.AddSub("remove", "rm", "delete", "del").
+		RegPowerCmd(RemoveFlow,
+			"remove a saved flow").
+		SetAllowTailModeCall().
+		AddArg("cmd-path", "", "path", "p", "P")
+
+	flow.AddSub("load", "l", "L").
+		RegPowerCmd(LoadFlowsFromDir,
+			"load flows from local dir").
+		SetAllowTailModeCall().
+		AddArg("path", "", "p", "P")
+
+	flow.AddSub("clear", "clean").
+		RegPowerCmd(RemoveAllFlows,
+			"remove all flows saved in local")
+
+	flow.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
+		RegPowerCmd(MoveSavedFlowsToLocalDir,
+			moveFlowsToDirHelpStr).
+		SetAllowTailModeCall().
+		AddArg("path", "", "p", "P")
+}
+
+func RegisterBgManageCmds(cmds *core.CmdTree) {
+	bg := cmds.AddSub("background", "bg").
+		RegEmptyCmd(
+			"background tasks management")
+	bg.AddSub("wait").
+		RegPowerCmd(WaitForAllBgTasksFinish,
+			"wait for all tasks/threads to finish in current(must be main) thread")
 }
 
 func RegisterSessionCmds(cmds *core.CmdTree) {
-	list := cmds.AddSub("list", "ls").
-		RegPowerCmd(ListSessions,
-			"list executed/ing sessions").
-		SetAllowTailModeCall()
-	addFindStrArgs(list)
-	list.AddArg("session-id", "", "session", "id")
+	sessions := cmds.AddSub("sessions", "session", "s", "S")
+	sessionsCmd := sessions.RegPowerCmd(ListSessions,
+		"list or find executed and executing sessions").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(sessionsCmd)
+	sessionsCmd.AddArg("session-id", "", "session", "id")
 
-	list.AddSub("retry", "rr", "r", "R").
-		RegAdHotFlowCmd(ListSessionRetry,
-			//"find a session by find-strs and id, if it's failed, retry running from the error point").
+	sessions.AddSub("retry", "rr", "r", "R").
+		RegAdHotFlowCmd(SessionRetry,
+			//"find a session by keywords and id, if it's failed, retry running from the error point").
 			"find a session by id, if it's failed, retry running from the error point").
 		AddArg("session-id", "", "session", "id")
 
-	listDesc := list.AddSub("desc", "desc-less", "-").
+	desc := sessions.AddSub("desc", "d", "D", "-").
 		RegPowerCmd(ListedSessionDescLess,
 			"desc executed/ing session").
 		SetAllowTailModeCall()
-	addFindStrArgs(listDesc)
-	listDesc.AddArg("trivial", "1", "triv", "tri", "t", "T")
-	listDesc.AddArg("depth", "32", "d", "D")
-	listDesc.AddArg("session-id", "", "session", "id")
+	addFindStrArgs(desc)
+	desc.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
+	desc.AddArg("depth", "32", "d", "D")
+	desc.AddArg("session-id", "", "session", "id")
 
-	listDescMore := list.AddSub("desc-more", "+").
+	descMore := desc.AddSub("more", "m", "M").
 		RegPowerCmd(ListedSessionDescMore,
 			"desc executed/ing session with more details").
 		SetAllowTailModeCall()
-	addFindStrArgs(listDescMore)
-	listDescMore.AddArg("trivial", "1", "triv", "tri", "t", "T")
-	listDescMore.AddArg("depth", "32", "d", "D")
-	listDescMore.AddArg("session-id", "", "session", "id")
+	addFindStrArgs(descMore)
+	descMore.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
+	descMore.AddArg("depth", "32", "d", "D")
+	descMore.AddArg("session-id", "", "session", "id")
 
-	listDescFull := list.AddSub("desc-full", "++").
+	descFull := desc.AddSub("full", "f", "F").
 		RegPowerCmd(ListedSessionDescFull,
 			"desc executed/ing session with full details").
 		SetAllowTailModeCall()
-	addFindStrArgs(listDescFull)
-	listDescFull.AddArg("trivial", "1", "triv", "tri", "t", "T")
-	listDescFull.AddArg("depth", "32", "d", "D")
-	listDescFull.AddArg("session-id", "", "session", "id")
+	addFindStrArgs(descFull)
+	descFull.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
+	descFull.AddArg("depth", "32", "d", "D")
+	descFull.AddArg("session-id", "", "session", "id")
 
-	last := cmds.AddSub("last", "l", "L")
+	last := sessions.AddSub("last", "l", "L")
 	last.RegPowerCmd(LastSession,
 		"show last session")
 
-	last.AddSub("desc", "desc-less", "-").
-		RegPowerCmd(LastSessionDescLess,
-			"desc the execution status of last session").
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+	lastDesc := last.AddSub("desc", "d", "D", "-")
+	lastDesc.RegPowerCmd(LastSessionDescLess,
+		"desc the execution status of last session").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
-	last.AddSub("desc-more", "+").
+	lastDesc.AddSub("more", "m", "M").
 		RegPowerCmd(LastSessionDescMore,
 			"desc the execution status of last session with more details").
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
-	last.AddSub("desc-full", "++").
+	lastDesc.AddSub("full", "f", "F").
 		RegPowerCmd(LastSessionDescFull,
 			"desc the execution status of last session with full details").
-		AddArg("trivial", "1", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
 	/*
@@ -429,177 +644,26 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 				"if the last session failed, retry running from the error point")
 	*/
 
-	cmds.AddSub("remove-all", "clean", "clear", "--").
-		RegPowerCmd(RemoveAllSessions,
-			"clean executed sessions")
-
-	remove := cmds.AddSub("remove", "delete", "rm").
+	remove := sessions.AddSub("remove", "delete", "rm").
 		RegPowerCmd(FindAndRemoveSessions,
-			"clean executed sessions by find-strs").
-		SetAllowTailModeCall()
+			"clear executed sessions by keywords").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
 	addFindStrArgs(remove)
 	remove.AddArg("session-id", "", "session", "id")
+	remove.AddArg("remove-running", "false", "force")
 
-	cmds.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
+	remove.AddSub("all", "a", "A").
+		RegPowerCmd(RemoveAllSessions,
+			"clear all executed sessions")
+
+	sessions.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
 		RegPowerCmd(SetSessionsKeepDur,
 			"set the keeping duration of executed sessions").
 		AddArg("duration", "72h", "dur")
 }
 
-func RegisterHubCmds(cmds *core.CmdTree) {
-	listHubHelpStr := "list dir and repo info in hub"
-	hub := cmds.AddSub("hub", "h", "H").
-		RegPowerCmd(ListHub,
-			listHubHelpStr).
-		SetAllowTailModeCall()
-	addFindStrArgs(hub)
-
-	hub.AddSub("clear", "reset", "--").
-		RegPowerCmd(RemoveAllFromHub,
-			"remove all repos from hub")
-
-	hub.AddSub("init", "++").
-		RegPowerCmd(AddDefaultGitRepoToHub,
-			"add and pull basic hub-repo to local")
-
-	add := hub.AddSub("add-and-update", "add", "a", "A", "+")
-	add.RegPowerCmd(AddGitRepoToHub,
-		"add and pull a git address to hub, do update if it already exists").
-		SetAllowTailModeCall().
-		AddArg("git-address", "", "git", "address", "addr")
-
-	repoStatus := hub.AddSub("git-status", "status").
-		RegPowerCmd(CheckGitRepoStatus,
-			"check git status for all repos")
-	addFindStrArgs(repoStatus)
-
-	add.AddSub("local-dir", "local", "l", "L").
-		RegPowerCmd(AddLocalDirToHub,
-			"add a local dir (could be a git repo) to hub").
-		SetAllowTailModeCall().
-		AddArg("path", "", "p", "P")
-
-	hubList := hub.AddSub("list", "ls").
-		RegPowerCmd(ListHub,
-			listHubHelpStr).
-		SetAllowTailModeCall()
-	addFindStrArgs(hubList)
-
-	purge := hub.AddSub("purge", "p", "P", "-")
-	purge.RegPowerCmd(PurgeInactiveRepoFromHub,
-		"remove an inactive repo from hub").
-		SetAllowTailModeCall().
-		AddArg("find-str", "", "s", "S")
-	purge.AddSub("purge-all-inactive", "all", "inactive", "a", "A", "-").
-		RegPowerCmd(PurgeAllInactiveReposFromHub,
-			"remove all inactive repos from hub")
-
-	hub.AddSub("update-all", "update", "u", "U").
-		RegPowerCmd(UpdateHub,
-			"update all repos and mods defined in hub")
-
-	hub.AddSub("enable-repo", "enable", "ena", "en", "e", "E").
-		RegPowerCmd(EnableRepoInHub,
-			"enable matched git repos in hub").
-		SetAllowTailModeCall().
-		AddArg("find-str", "", "s", "S")
-
-	hub.AddSub("disable-repo", "disable", "dis", "d", "D").
-		RegPowerCmd(DisableRepoInHub,
-			"disable matched git repos in hub").
-		SetAllowTailModeCall().
-		AddArg("find-str", "", "s", "S")
-
-	hub.AddSub("move-flows-to-dir", "move", "mv", "m", "M").
-		RegPowerCmd(MoveSavedFlowsToLocalDir,
-			MoveFlowsToDirHelpStr).
-		SetAllowTailModeCall().
-		AddArg("path", "", "p", "P")
-}
-
-func RegisterBuiltinCmds(cmds *core.CmdTree) {
-	env := cmds.AddSub("env", "e", "E")
-
-	envLoad := env.AddSub("load", "l", "L")
-
-	envLoad.AddSub("local", "l", "L").
-		RegPowerCmd(LoadLocalEnv,
-			"load env values from local").
-		SetQuiet()
-
-	envLoad.AddSub("runtime", "rt", "r", "R").
-		RegPowerCmd(LoadRuntimeEnv,
-			"setup runtime env values").
-		SetQuiet()
-
-	mod := cmds.AddSub("mod", "mods", "m", "M")
-
-	modLoad := mod.AddSub("load", "l", "L")
-
-	modLoad.AddSub("flows", "flows", "f", "F").
-		RegPowerCmd(LoadFlows,
-			"load saved flows from local")
-
-	modLoad.AddSub("ext-exec", "ext", "e", "E").
-		RegPowerCmd(SetExtExec,
-			"load default setting of how to run a executable file by ext name")
-
-	modLoad.AddSub("hub", "h", "H").
-		RegPowerCmd(LoadModsFromHub,
-			"load flows and mods from local hub")
-
-	cmds.AddSub("display", "disp", "dis", "di", "d", "D").
-		AddSub("load", "l", "L").
-		AddSub("platform", "p", "P").
-		RegPowerCmd(LoadPlatformDisplay,
-			"load platform(OS) specialized display settings").
-		SetQuiet()
-}
-
-func RegisterTrivialCmds(cmds *core.CmdTree) {
-	cmds.AddSub("noop").
-		RegPowerCmd(Noop,
-			"do exactly nothing")
-
-	cmds.AddSub("dummy", "dmy", "dm").
-		RegPowerCmd(Dummy,
-			"dummy command for testing")
-
-	cmds.AddSub("sleep", "slp").
-		RegPowerCmd(Sleep,
-			"sleep for specified duration").
-		AddArg("duration", "1s", "dur", "d", "D")
-}
-
-func RegisterBgCmds(cmds *core.CmdTree) {
-	cmds.AddSub("wait").
-		RegPowerCmd(WaitForAllBgTasksFinish,
-			"wait for all tasks/threads to finish in current(must be main) thread")
-}
-
-func RegisterMiscCmds(cmds *core.CmdTree) {
-	cmds.AddSub("mark-time", "time").
-		RegPowerCmd(MarkTime,
-			"set current timestamp to the specified key").
-		AddArg("write-to-key", "", "key", "k", "K").
-		AddEnvOp("[[write-to-key]]", core.EnvOpTypeWrite)
-
-	timer := cmds.AddSub("timer")
-	timer.AddSub("begin").
-		RegPowerCmd(TimerBegin,
-			"start timer, set current timestamp to the specified key").
-		AddArg("begin-key", "", "key", "k", "K").
-		AddEnvOp("[[begin-key]]", core.EnvOpTypeWrite)
-	timer.AddSub("elapsed", "elapse", "end").
-		RegPowerCmd(TimerElapsed,
-			"set elapsed seconds to the specified key").
-		AddArg("begin-key", "", "begin").
-		AddArg("write-to-key", "", "key", "k", "K").
-		AddEnvOp("[[begin-key]]", core.EnvOpTypeRead).
-		AddEnvOp("[[write-to-key]]", core.EnvOpTypeWrite)
-}
-
-// This cmds are for debug
 func RegisterDbgCmds(cmds *core.CmdTree) {
 	registerSimpleSwitch(cmds,
 		"step by step on executing",
@@ -613,20 +677,17 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 
 	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
 		RegPowerCmd(DbgDelayExecute,
-			"wait for a while before executing each commands").
+			"wait for specified duration before executing each commands").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")
 
 	breaks := cmds.AddSub("breaks", "break")
 	breaks.AddSub("before", "at").
 		RegPowerCmd(DbgBreakBefore,
-			"setup break points, will pause before specified commands").
+			// TODO: get 'sep' from env or other config
+			"setup break points, will pause before specified commands\nuse ',' to seperate multipy commands").
+		SetQuiet().
 		AddArg("break-points", "", "cmds")
-
-	cmds.AddSub("echo").
-		RegPowerCmd(DbgEcho,
-			"print message from argv").
-		AddArg("message", "", "msg", "m", "M")
 
 	panicTest := cmds.AddSub("panic")
 	panicTest.RegPowerCmd(DbgPanic,
@@ -636,7 +697,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 
 	panicTest.AddSub("cmd").
 		RegPowerCmd(DbgPanicCmdError,
-			"for specified-panic test").
+			"for specified-error-type panic test").
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 
@@ -747,11 +808,128 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		"one-cmd", "one")
 
 	cmds.AddSub("set-width", "width", "wid", "w", "W").
-		RegEmptyCmd(
-			"set display width").
+		RegPowerCmd(SetDisplayWidth,
+			"set display width, if arg 'width' is empty or 0, set width to screen size").
 		SetQuiet().
-		AddArg("width", "120", "wid", "w", "W").
-		AddArg2Env("display.width", "width")
+		AddArg("width", "", "wid", "w", "W")
+
+	RegisterVerbCmds(cmds)
+}
+
+func RegisterVerbCmds(cmds *core.CmdTree) {
+	cmds.AddSub("quiet", "q", "Q").
+		RegPowerCmd(SetQuietMode,
+			"change into quiet mode").
+		SetQuiet()
+
+	verbose := cmds.AddSub("verbose", "verb", "v", "V")
+
+	verbose.RegPowerCmd(SetVerbMode,
+		"change into verbose mode").
+		SetQuiet()
+
+	verbose.AddSub("default", "def", "d", "D").
+		RegPowerCmd(SetToDefaultVerb,
+			"set to default verbose mode").
+		SetQuiet()
+
+	verbose.AddSub("increase", "inc").
+		RegPowerCmd(IncreaseVerb,
+			"increase verbose").
+		SetQuiet().
+		AddArg("volume", "1", "vol", "v", "V")
+
+	verbose.AddSub("decrease", "dec").
+		RegPowerCmd(DecreaseVerb,
+			"decrease verbose").
+		SetQuiet().
+		AddArg("volume", "1", "vol", "v", "V")
+}
+
+func RegisterBuiltinCmds(cmds *core.CmdTree) {
+	env := cmds.AddSub("env", "e", "E")
+
+	envLoad := env.AddSub("load", "l", "L")
+
+	envLoad.AddSub("local", "l", "L").
+		RegPowerCmd(LoadLocalEnv,
+			"load env values from local")
+
+	envLoad.AddSub("runtime", "rt", "r", "R").
+		RegPowerCmd(LoadRuntimeEnv,
+			"setup runtime env values")
+
+	mod := cmds.AddSub("mod", "mods", "m", "M")
+
+	modLoad := mod.AddSub("load", "l", "L")
+
+	modLoad.AddSub("flows", "flows", "f", "F").
+		RegPowerCmd(LoadFlows,
+			"load saved flows from local")
+
+	modLoad.AddSub("ext-executor", "ext-exec", "ext", "e", "E").
+		RegPowerCmd(SetExtExec,
+			"load default setting of how to run a executable file by ext name")
+
+	modLoad.AddSub("hub", "h", "H").
+		RegPowerCmd(LoadModsFromHub,
+			"load flows and mods from local hub")
+
+	cmds.AddSub("display", "disp", "dis", "di", "d", "D").
+		AddSub("load", "l", "L").
+		AddSub("platform", "p", "P").
+		RegPowerCmd(LoadPlatformDisplay,
+			"load platform(OS) specialized display settings")
+}
+
+func RegisterTimerCmds(cmds *core.CmdTree) {
+	cmds.AddSub("mark-time", "time").
+		RegPowerCmd(MarkTime,
+			"set current timestamp to the specified key").
+		AddArg("write-to-key", "", "key", "k", "K").
+		AddEnvOp("[[write-to-key]]", core.EnvOpTypeWrite)
+
+	timer := cmds.AddSub("timer")
+	timer.AddSub("begin").
+		RegPowerCmd(TimerBegin,
+			"start timer, set current timestamp to the specified key").
+		AddArg("begin-key", "", "key", "k", "K").
+		AddEnvOp("[[begin-key]]", core.EnvOpTypeWrite)
+
+	timer.AddSub("elapsed", "elapse", "end").
+		RegPowerCmd(TimerElapsed,
+			"set elapsed seconds to the specified key").
+		AddArg("begin-key", "", "begin").
+		AddArg("write-to-key", "", "key", "k", "K").
+		AddEnvOp("[[begin-key]]", core.EnvOpTypeRead).
+		AddEnvOp("[[write-to-key]]", core.EnvOpTypeWrite)
+}
+
+func RegisterOsCmds(cmds *core.CmdTree) {
+	cmds.AddSub("bash").
+		RegPowerCmd(ExecCmds,
+			"execute os command in bash").
+		AddArg("command", "", "cmd")
+
+	cmds.AddSub("sleep", "slp").
+		RegPowerCmd(Sleep,
+			"sleep for specified duration").
+		AddArg("duration", "1s", "dur", "d", "D")
+
+	cmds.AddSub("echo").
+		RegPowerCmd(DbgEcho,
+			"print message from argv").
+		AddArg("message", "", "msg", "m", "M")
+}
+
+func RegisterNoopCmds(cmds *core.CmdTree) {
+	cmds.AddSub("noop").
+		RegPowerCmd(Noop,
+			"do exactly nothing")
+
+	cmds.AddSub("dummy", "dmy", "dm").
+		RegPowerCmd(Dummy,
+			"dummy command for testing")
 }
 
 func registerSimpleSwitch(
@@ -773,8 +951,8 @@ func registerSimpleSwitchEx(
 
 	cmd := parent.AddSub(name, abbrs...)
 	self := cmd.RegEmptyCmd("enable " + function).SetQuiet()
-	on := cmd.AddSub("on", "yes", "y", "Y", "1", "+").RegEmptyCmd("enable " + function).SetQuiet()
-	off := cmd.AddSub("off", "no", "n", "N", "0", "-").RegEmptyCmd("disable " + function).SetQuiet()
+	on := cmd.AddSub("on", "yes", "y", "Y", "1").RegEmptyCmd("enable " + function).SetQuiet()
+	off := cmd.AddSub("off", "no", "n", "N", "0").RegEmptyCmd("disable " + function).SetQuiet()
 
 	for _, key := range keys {
 		self.AddVal2Env(key, "true")
@@ -785,11 +963,8 @@ func registerSimpleSwitchEx(
 	return self.Owner()
 }
 
-const LessHelpStr = "desc the flow about to execute"
-const MoreHelpStr = LessHelpStr + ", with details"
-
-const MoveFlowsToDirHelpStr = `move all saved flows to a local dir (could be a git repo).
-auto move:
+const moveFlowsToDirHelpStr = `move all saved flows to a local dir (could be a git repo).
+will do auto move if:
     * if one(and only one) local(not linked to a repo) dir exists in hub
     * and the arg "path" is empty
     then flows will move to that dir`

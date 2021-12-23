@@ -35,7 +35,7 @@ func DumpFlow(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
-		SetMaxTrivial(argv.GetInt("trivial"))
+		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 	return clearFlow(flow)
 }
@@ -48,7 +48,7 @@ func DumpFlowSimple(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).
-		SetMaxTrivial(argv.GetInt("trivial"))
+		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 	return clearFlow(flow)
 }
@@ -61,7 +61,7 @@ func DumpFlowSkeleton(
 	currCmdIdx int) (int, bool) {
 
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).
-		SetMaxTrivial(argv.GetInt("trivial"))
+		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 
 	deps := core.Depends{}
@@ -127,7 +127,7 @@ func DumpFlowEnvOpsCheckResult(
 		cmds := flow.Cmds[currCmdIdx+1:]
 		display.DumpEnvOpsCheckResult(cc.Screen, cmds, env, result, cc.Cmds.Strs.PathSep)
 	} else {
-		display.PrintTipTitle(cc.Screen, env, "all env-ops are satisfied, can directly run")
+		display.PrintTipTitle(cc.Screen, env, "all env-ops are satisfied, this command can directly run")
 	}
 
 	return clearFlow(flow)
@@ -142,7 +142,7 @@ func dumpFlowAll(
 	simple bool) (int, bool) {
 
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
-		SetMaxTrivial(argv.GetInt("trivial"))
+		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	dumpArgs.Simple = simple
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 

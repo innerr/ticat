@@ -18,6 +18,9 @@ func (self Env) SetInt(name string, val int) {
 
 func (self Env) GetInt(name string) int {
 	val := self.Get(name).Raw
+	if len(val) == 0 {
+		return 0
+	}
 	intVal, err := strconv.Atoi(val)
 	if err != nil {
 		panic(EnvValErrWrongType{

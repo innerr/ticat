@@ -100,6 +100,8 @@ func RenameFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	srcCmdPath, srcFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "src")
 	destCmdPath, destFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, false, "dest")
 
@@ -153,6 +155,8 @@ func RemoveAllFlows(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
 
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
@@ -247,6 +251,8 @@ func SetFlowHelpStr(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
 
 	help := argv.GetRaw("help-str")
 	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")

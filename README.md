@@ -18,10 +18,6 @@ $> make
 ```
 Recommend to set `ticat/bin` to system `$PATH`, it's handy.
 
-### TL; DR
-Nobody likes reading docs, **ticat** has lots of hints in usage,
-we could close this page and just use it.
-
 ## Run jobs shared by others
 
 ### Add repo to **ticat**

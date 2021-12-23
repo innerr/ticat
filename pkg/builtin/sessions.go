@@ -16,6 +16,8 @@ func SetSessionsKeepDur(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	env = env.GetLayer(core.EnvLayerSession)
 	key := "sys.session.keep-status-duration"
 	env.SetDur(key, argv.GetRaw("duration"))
@@ -29,6 +31,8 @@ func RemoveAllSessions(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
 
 	cleaned, runnings := core.CleanSessions(env)
 	var line string
@@ -50,15 +54,27 @@ func ListSessions(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, false)
+	if len(sessions) == 0 {
+		return clearFlow(flow)
+	} else if len(sessions) != 1 {
+		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%d sessions matched:", len(sessions)))
+	}
+
+	screen := display.NewCacheScreen()
 	for _, it := range sessions {
 		if it.Cleaning {
-			dumpSession(it, env, cc.Screen, "expired")
+			dumpSession(it, env, screen, "expired")
 		} else {
-			dumpSession(it, env, cc.Screen, "")
+			dumpSession(it, env, screen, "")
 		}
 	}
-	return currCmdIdx, true
+	screen.WriteTo(cc.Screen)
+	if display.TooMuchOutput(env, screen) {
+		display.PrintTipTitle(cc.Screen, env,
+			fmt.Sprintf("too many sessions(%d), add more keywords to filter them", len(sessions)))
+	}
+	return clearFlow(flow)
 }
 
 func FindAndRemoveSessions(
@@ -68,18 +84,33 @@ func FindAndRemoveSessions(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
+	force := argv.GetBool("remove-running")
+
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, true)
+	cleaneds := 0
 	for _, it := range sessions {
 		status := "removed"
-		cleaned, running := core.CleanSession(it, env)
+		cleaned, running := core.CleanSession(it, env, force)
 		if running {
-			status = "running, untouched"
+			if cleaned {
+				status = display.ColorWarn("running, force removed", env)
+			} else {
+				status = display.ColorWarn("running, untouched", env)
+			}
 		} else if !cleaned {
-			status = "remove failed"
+			status = display.ColorError("remove failed", env)
+		}
+		if cleaned {
+			cleaneds += 1
 		}
 		dumpSession(it, env, cc.Screen, status)
 	}
-	return currCmdIdx, true
+
+	if len(sessions) > 1 {
+		display.PrintTipTitle(cc.Screen, env,
+			fmt.Sprintf("%d of %d sessions removed", cleaneds, len(sessions)))
+	}
+	return clearFlow(flow)
 }
 
 func ListedSessionDescLess(
@@ -122,16 +153,16 @@ func listedSessionDesc(
 	showEnvFull bool,
 	showModifiedEnv bool) (int, bool) {
 
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx)
+	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, false)
 
 	handleTooMany := func() {
 		descSession(sessions[0], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
 		prefix := fmt.Sprintf("more than one sessions(%v) matched, only display the first one, ", len(sessions))
 		findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, prefix+"add more find-strs to filter, or specify arg 'id'")
+			display.PrintErrTitle(cc.Screen, env, prefix+"add more keywords to filter, or specify arg 'id'")
 		} else {
-			display.PrintErrTitle(cc.Screen, env, prefix+"pass find-strs to filter, or specify arg 'id'")
+			display.PrintErrTitle(cc.Screen, env, prefix+"use keywords to filter, or specify arg 'id'")
 		}
 	}
 
@@ -153,6 +184,8 @@ func LastSession(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	sessions := core.ListSessions(env, nil, "")
 	if len(sessions) == 0 {
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
@@ -169,6 +202,7 @@ func LastSessionDescLess(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
 	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, false)
 }
 
@@ -179,6 +213,7 @@ func LastSessionDescMore(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
 	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, true)
 }
 
@@ -189,6 +224,7 @@ func LastSessionDescFull(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
 	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, false, true, true)
 }
 
@@ -211,10 +247,10 @@ func lastSessionDesc(
 	return currCmdIdx, true
 }
 
-func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
+func SessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
 	id := argv.GetRaw("session-id")
 	if len(id) == 0 {
-		panic(fmt.Errorf("[ListSessionRetry] arg 'session-id' is empty"))
+		panic(fmt.Errorf("[SessionRetry] arg 'session-id' is empty"))
 	}
 
 	sessions := findSessions(nil, id, cc, env)
@@ -222,7 +258,7 @@ func ListSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []st
 		return
 	}
 	if len(sessions) > 1 {
-		panic(fmt.Errorf("[ListSessionRetry] should never happen"))
+		panic(fmt.Errorf("[SessionRetry] should never happen"))
 	}
 
 	return retrySession(sessions[0])
@@ -263,10 +299,14 @@ func findSessionsByStrsAndId(
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
-	currCmdIdx int) (sessions []core.SessionStatus) {
+	currCmdIdx int,
+	mustHaveFilter bool) (sessions []core.SessionStatus) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	id := argv.GetRaw("session-id")
+	if mustHaveFilter && len(findStrs) == 0 && len(id) == 0 {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "all args 'session-id' and keywords are empty"))
+	}
 	return findSessions(findStrs, id, cc, env)
 }
 
@@ -330,7 +370,7 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, env *core.Env,
 	skeleton, showEnvFull bool, showModifiedEnv bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("trivial"))
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	if skeleton {
 		if !showEnvFull && !showModifiedEnv {
 			dumpArgs.SetSkeleton()

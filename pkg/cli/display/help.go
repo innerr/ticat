@@ -83,13 +83,18 @@ func PrintSelfHelp(screen core.Screen, env *core.Env) {
 	screen.Print("usage:\n")
 
 	list := []func(*core.Env) []string{
-		SuggestExeCmds,
-		SuggestExeCmdsWithArgs,
-		SuggestListCmds,
-		SuggestFindCmds,
-		SuggestHubAdd,
-		SuggestFlowAdd,
-		SuggestDesc,
+		GlobalSuggestExeCmds,
+		GlobalSuggestExeCmdsWithArgs,
+		GlobalSuggestShowCmdInfo,
+		GlobalSuggestCmdTree,
+		GlobalSuggestListCmds,
+		GlobalSuggestFindCmds,
+		GlobalSuggestHubAdd,
+		GlobalSuggestFlowAdd,
+		GlobalSuggestDesc,
+		GlobalSuggestSessions,
+		GlobalSuggestAdvance,
+		GlobalSuggestShortcut,
 	}
 
 	for _, fun := range list {

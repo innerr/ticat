@@ -200,7 +200,11 @@ func (self *Executor) executeCmd(
 				// This cmdEnv is different from env, it included values from 'val2env' and 'arg2env'
 				cmdEnv, argv = cmd.ApplyMappingGenEnvAndArgv(
 					env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+				if width > 0 {
+					cmdEnv.SetInt("display.executor.displayed", cmdEnv.GetInt("sys.stack-depth"))
+				}
 				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx)
+				cmdEnv.SetInt("display.executor.displayed", 0)
 			} else {
 				dur := sysArgv.GetDelayDuration()
 				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
@@ -436,10 +440,10 @@ func asyncExecute(
 		statusPath := filepath.Join(sessionDir, statusFileName)
 		cc.SetFlowStatusWriter(core.NewExecutingFlow(statusPath, flow, env))
 
-		envBgSession := env.GetLayer(core.EnvLayerSession)
-		envBgSession.Set("session", sessionDir)
-		envBgSession.SetBool("display.one-cmd", true)
-		envBgSession.SetBool("sys.in-bg-task", true)
+		bgSessionEnv := env.GetLayer(core.EnvLayerSession)
+		bgSessionEnv.Set("session", sessionDir)
+		bgSessionEnv.SetBool("display.one-cmd", true)
+		bgSessionEnv.SetBool("sys.in-bg-task", true)
 
 		task := cc.BgTasks.GetOrAddTask(tid, name, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
 		tidChan <- tid
@@ -465,9 +469,13 @@ func asyncExecute(
 			width = display.RenderCmdStack(stackLines, env, cc.Screen)
 		}
 
+		if width > 0 {
+			env.SetInt("display.executor.displayed", env.GetInt("sys.stack-depth"))
+		}
 		start := time.Now()
 		_, ok := cic.Execute(argv, cc, env, mask, flow, currCmdIdx)
 		elapsed := time.Now().Sub(start)
+		env.SetInt("display.executor.displayed", 0)
 		if !ok {
 			// Should already panic inside cmd.Execute
 			panic(fmt.Errorf("delay-command fail, thread: %s", tid))

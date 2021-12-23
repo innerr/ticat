@@ -155,7 +155,15 @@ func PrintSwitchingThreadDisplay(preTid string, info core.BgTaskInfo, env *core.
 
 func getFrameChars(env *core.Env) *FrameChars {
 	name := strings.ToLower(env.Get("display.style").Raw)
-	return getFrameCharsByName(env, name)
+	chars := getFrameCharsByName(env, name)
+	if env.GetInt("display.executor.displayed") == env.GetInt("sys.stack-depth") {
+		if env.GetBool("display.utf8") {
+			return FrameCharsAscii()
+		} else {
+			return FrameCharsNoBorder()
+		}
+	}
+	return chars
 }
 
 func getFrameCharsByName(env *core.Env, name string) *FrameChars {

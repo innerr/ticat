@@ -119,7 +119,7 @@ func (self FirstArg2EnvProviders) Get(key string) (matched *ParsedCmd) {
 
 type EnvOpCmd struct {
 	Func   interface{}
-	Action func(*EnvOpsChecker, ArgVals)
+	Action func(*EnvOpsChecker, ArgVals, *Env)
 }
 
 func (self *EnvOpsChecker) Reset() {
@@ -265,6 +265,26 @@ func checkEnvOps(
 
 		parsedFlow, flowEnv := renderSubFlowOnChecking(last, cc, argv, cmdEnv)
 		checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs)
+	}
+}
+
+func TryExeEnvOpCmds(
+	argv ArgVals,
+	cc *Cli,
+	env *Env,
+	flow *ParsedCmds,
+	currCmdIdx int,
+	envOpCmds []EnvOpCmd,
+	checker *EnvOpsChecker,
+	errString string) {
+
+	cmd := flow.Cmds[currCmdIdx].LastCmd()
+	for _, it := range envOpCmds {
+		if !cmd.IsTheSameFunc(it.Func) {
+			continue
+		}
+		it.Action(checker, argv, env)
+		break
 	}
 }
 

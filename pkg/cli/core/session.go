@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 type SessionStatus struct {
@@ -56,8 +58,7 @@ func ListSessions(env *Env, findStrs []string, mustMatchDirName string) (session
 		if !status.MatchFind(findStrs) {
 			continue
 		}
-		err = syscall.Kill(oldSessionPid, syscall.Signal(0))
-		running := !(err != nil && err == syscall.ESRCH)
+		running := utils.IsPidRunning(oldSessionPid)
 		cleaning := oldSessionStartTs.Add(keepDur).Before(now)
 		sessions = append(sessions, SessionStatus{dir, oldSessionPid, oldSessionStartTs, running, cleaning, status})
 	}
@@ -81,8 +82,7 @@ func CleanSessions(env *Env) (cleaned uint, runnings uint) {
 		if !ok {
 			continue
 		}
-		err = syscall.Kill(oldSessionPid, syscall.Signal(0))
-		running := !(err != nil && err == syscall.ESRCH)
+		running := utils.IsPidRunning(oldSessionPid)
 		if !running {
 			err = os.RemoveAll(filepath.Join(sessionsRoot, dir.Name()))
 			if err == nil {
@@ -95,25 +95,24 @@ func CleanSessions(env *Env) (cleaned uint, runnings uint) {
 	return
 }
 
-func CleanSession(session SessionStatus, env *Env) (cleaned bool, running bool) {
+func CleanSession(session SessionStatus, env *Env, force bool) (cleaned bool, running bool) {
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
 		panic(fmt.Errorf("[CleanSession] can't get sessions' root path"))
 	}
 
-	err := syscall.Kill(session.Pid, syscall.Signal(0))
-	running = !(err != nil && err == syscall.ESRCH)
-	if running {
-		return false, true
+	running = utils.IsPidRunning(session.Pid)
+	if running && !force {
+		return false, running
 	}
 
 	sessionDir := filepath.Join(sessionsRoot, session.DirName)
-	err = os.RemoveAll(sessionDir)
+	err := os.RemoveAll(sessionDir)
 	if err != nil {
 		//panic(fmt.Sprintf("[CleanSession] can't remove session dir '%s'", sessionDir))
-		return false, false
+		return false, running
 	}
-	return true, false
+	return true, running
 }
 
 func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,

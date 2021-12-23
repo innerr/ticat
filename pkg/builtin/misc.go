@@ -115,7 +115,7 @@ func DbgPanicCmdError(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	panic(core.NewCmdError(flow.Cmds[currCmdIdx], "this is a specified-panic test command"))
+	panic(core.NewCmdError(flow.Cmds[currCmdIdx], "this is a specified-error-type panic test command"))
 }
 
 func DbgError(
@@ -156,25 +156,45 @@ func EnvOpCmds() []core.EnvOpCmd {
 	return []core.EnvOpCmd{
 		core.EnvOpCmd{
 			ResetSessionEnv,
-			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
-				checker.Reset()
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				if checker != nil {
+					checker.Reset()
+				}
+				env.GetLayer(core.EnvLayerSession).Clear(false)
 			}},
 		core.EnvOpCmd{
 			ResetLocalEnv,
-			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
-				checker.Reset()
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				if checker != nil {
+					checker.Reset()
+				}
+				env.GetLayer(core.EnvLayerSession).Clear(false)
 			}},
 		core.EnvOpCmd{RemoveEnvValAndSaveToLocal,
-			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
-				checker.RemoveKeyStat(argv.GetRaw("key"))
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				key := argv.GetRaw("key")
+				if checker != nil {
+					checker.RemoveKeyStat(key)
+				}
+				env.DeleteEx(key, core.EnvLayerDefault)
 			}},
 		core.EnvOpCmd{MarkTime,
-			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
-				checker.SetKeyWritten(argv.GetRaw("write-to-key"))
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				key := argv.GetRaw("write-to-key")
+				if checker != nil {
+					checker.SetKeyWritten(key)
+				}
+				env.GetLayer(core.EnvLayerSession).
+					Set(key, "<dummy-fake-key-for-env-op-check-only-from-MarkTime>")
 			}},
 		core.EnvOpCmd{MapEnvKeyValueToAnotherKey,
-			func(checker *core.EnvOpsChecker, argv core.ArgVals) {
-				checker.SetKeyWritten(argv.GetRaw("dest-key"))
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				key := argv.GetRaw("dest-key")
+				if checker != nil {
+					checker.SetKeyWritten(key)
+				}
+				env.GetLayer(core.EnvLayerSession).
+					Set(key, "<dummy-fake-key-for-env-op-check-only-from-MapEnvKeyValueToAnotherKey>")
 			}},
 	}
 }

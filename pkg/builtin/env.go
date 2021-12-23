@@ -21,8 +21,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.execute-delay-sec", 0)
 	env.SetBool("sys.interact", true)
 
-	env.Set("sys.version", "1.1")
-	env.Set("sys.dev.name", "second-wind")
+	env.Set("sys.version", "1.1.1")
+	env.Set("sys.dev.name", "the-hidden-tail")
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
@@ -30,16 +30,13 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
-	row, col := utils.GetTerminalWidth()
-	if col > 160 {
-		col = 160
-	}
+	row, col := GetTerminalWidth()
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
 
 	env.Set("display.example-https-repo", "https://github.com/innerr/tidb.ticat")
 
-	env.SetInt("display.hint.indent.2rd", 38)
+	env.SetInt("display.hint.indent.2rd", 41)
 
 	env.Set("display.utf8.symbols.tip", "💡 ")
 	env.SetInt("display.utf8.symbols.tip.len", 3)
@@ -89,6 +86,8 @@ func MapEnvKeyValueToAnotherKey(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
 
 	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src-key")
 	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest-key")
@@ -155,7 +154,7 @@ func LoadLocalEnv(
 	env.GetLayer(core.EnvLayerSession).Deduplicate()
 
 	if !env.Has("display.color") {
-		env.GetLayer(core.EnvLayerSession).SetBool("display.color", !utils.StdoutIsPipe())
+		env.GetLayer(core.EnvLayerDefault).SetBool("display.color", !utils.StdoutIsPipe())
 	}
 
 	return currCmdIdx, true
@@ -299,6 +298,8 @@ func EnvAssertEqual(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
 	val := argv.GetRaw("val")
 	envVal := env.GetRaw(key)
@@ -317,10 +318,20 @@ func EnvAssertNotExists(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	assertNotTailMode(flow, currCmdIdx)
+
 	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
 
 	if env.Has(key) {
 		panic(fmt.Errorf("assert key '%s' not in env failed", key))
 	}
 	return currCmdIdx, true
+}
+
+func GetTerminalWidth() (row int, col int) {
+	row, col = utils.GetTerminalWidth()
+	//if col > 160 {
+	//	col = 160
+	//}
+	return
 }
