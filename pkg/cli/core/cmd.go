@@ -52,6 +52,7 @@ type Cmd struct {
 	quiet             bool
 	priority          bool
 	allowTailModeCall bool
+	unLog             bool
 	args              Args
 	normal            NormalCmd
 	power             PowerCmd
@@ -74,6 +75,7 @@ func defaultCmd(owner *CmdTree, help string) *Cmd {
 		quiet:             false,
 		priority:          false,
 		allowTailModeCall: false,
+		unLog:             false,
 		args:              newArgs(),
 		normal:            nil,
 		power:             nil,
@@ -384,6 +386,11 @@ func (self *Cmd) SetAllowTailModeCall() *Cmd {
 	return self
 }
 
+func (self *Cmd) SetUnLog() *Cmd {
+	self.unLog = true
+	return self
+}
+
 func (self *Cmd) SetPriority() *Cmd {
 	self.priority = true
 	return self
@@ -520,6 +527,9 @@ func (self *Cmd) genLogFilePath(env *Env) string {
 }
 
 func (self *Cmd) shouldWriteLogFile() bool {
+	if self.unLog {
+		return false
+	}
 	return self.ty == CmdTypeFile ||
 		self.ty == CmdTypeDirWithCmd ||
 		self.ty == CmdTypeFileNFlow
