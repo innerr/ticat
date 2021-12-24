@@ -47,6 +47,7 @@ func RegMod(
 	}
 
 	regTrivial(meta, mod)
+	regUnLog(meta, cmd)
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
 	regArgs(meta, cmd, abbrsSep)
@@ -98,6 +99,23 @@ func regTrivial(meta *meta_file.MetaFile, mod *core.CmdTree) {
 		panic(fmt.Errorf("[regTrivial] trivial string '%s' is not int: '%v'", val, err))
 	}
 	mod.SetTrivial(trivial)
+}
+
+func regUnLog(meta *meta_file.MetaFile, cmd *core.Cmd) {
+	for _, key := range []string{"nolog", "unlog", "interactive"} {
+		val := meta.Get(key)
+		if len(val) == 0 {
+			continue
+		}
+		unLog, err := strconv.ParseBool(val)
+		if err != nil {
+			panic(fmt.Errorf("[regUnLog] unlog value string '%s' is not bool: '%v'", val, err))
+		}
+		if unLog {
+			cmd.SetUnLog()
+		}
+		return
+	}
 }
 
 func regTags(meta *meta_file.MetaFile, mod *core.CmdTree) {
