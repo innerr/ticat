@@ -703,9 +703,16 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 	breaks.AddSub("before", "at").
 		RegPowerCmd(DbgBreakBefore,
 			// TODO: get 'sep' from env or other config
-			"setup break points, will pause before specified commands\nuse ',' to seperate multipy commands").
+			"setup before-command break points, use ',' to seperate multipy commands").
 		SetQuiet().
-		AddArg("break-points", "", "cmds")
+		AddArg("break-points", "", "break-point", "cmds", "cmd")
+
+	breaks.AddSub("after", "post").
+		RegPowerCmd(DbgBreakAfter,
+			// TODO: get 'sep' from env or other config
+			"setup after-command break points, use ',' to seperate multipy commands").
+		SetQuiet().
+		AddArg("break-points", "", "break-point", "cmds", "cmd")
 
 	panicTest := cmds.AddSub("panic")
 	panicTest.RegPowerCmd(DbgPanic,

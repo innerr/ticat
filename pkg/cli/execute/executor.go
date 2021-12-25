@@ -36,6 +36,14 @@ func NewExecutor(
 	}
 }
 
+func (self *Executor) Clone() core.Executor {
+	return NewExecutor(
+		self.sessionFileName,
+		self.sessionStatusFileName,
+		self.callerNameBootstrap,
+		self.callerNameEntry)
+}
+
 func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input ...string) bool {
 	overWriteBootstrap := env.Get("sys.bootstrap").Raw
 	if len(overWriteBootstrap) != 0 {
@@ -233,6 +241,11 @@ func (self *Executor) executeCmd(
 			cc.Screen.Print("\n")
 		}
 	}
+
+	succeeded = tryBreakAfter(cc, env, cmd)
+	if !succeeded {
+		return
+	}
 	return
 }
 
@@ -342,34 +355,6 @@ func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
 			curr = curr.GetOrAddSub(seg)
 		}
 	}
-}
-
-func tryBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
-	name := strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep)
-	if !cc.BreakPoints.BreakBefore(name) {
-		return true
-	}
-	cc.Screen.Print(display.ColorTip("[confirm]", env) + " paused by break-point command " +
-		display.ColorCmd("["+name+"]", env) + ", type " +
-		display.ColorWarn("'y'", env) + " and press enter:\n")
-	return utils.UserConfirm()
-}
-
-func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) bool {
-	delaySec := env.GetInt("sys.execute-delay-sec")
-	if delaySec > 0 {
-		for i := 0; i < delaySec; i++ {
-			time.Sleep(time.Second)
-			cc.Screen.Print(".")
-		}
-		cc.Screen.Print("\n")
-	}
-	if env.GetBool("sys.step-by-step") {
-		cc.Screen.Print(display.ColorTip("[confirm]", env) + " type " +
-			display.ColorWarn("'y'", env) + " and press enter:\n")
-		return utils.UserConfirm()
-	}
-	return true
 }
 
 func stackStepIn(caller string, env *core.Env) {

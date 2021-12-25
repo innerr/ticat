@@ -26,6 +26,7 @@ type ExecuteMask struct {
 
 type Executor interface {
 	Execute(caller string, cc *Cli, env *Env, masks []*ExecuteMask, input ...string) bool
+	Clone() Executor
 }
 
 type Cli struct {
@@ -92,7 +93,7 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		self.Parser,
 		self.EnvAbbrs,
 		NewTolerableErrs(),
-		self.Executor,
+		self.Executor.Clone(),
 		self.Helps,
 		self.BgTasks,
 		NewCmdIO(nil, bgStdout, bgStdout),

@@ -160,7 +160,9 @@ func getFrameChars(env *core.Env) *FrameChars {
 		if env.GetBool("display.utf8") {
 			return FrameCharsAscii()
 		} else {
-			return FrameCharsNoBorder()
+			// TODO: have bugs
+			//return FrameCharsNoBorder()
+			return FrameCharsAscii()
 		}
 	}
 	return chars

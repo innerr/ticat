@@ -72,7 +72,7 @@ func DbgBreakBefore(
 
 	listSep := env.GetRaw("strs.list-sep")
 	cmdList := strings.Split(argv.GetRaw("break-points"), listSep)
-	verifiedCmds := cc.BreakPoints.SetBefore(cc, env, cmdList)
+	verifiedCmds := cc.BreakPoints.SetBefores(cc, env, cmdList)
 
 	env.GetLayer(core.EnvLayerSession).Set("sys.breaks.before", strings.Join(verifiedCmds, listSep))
 
@@ -83,6 +83,32 @@ func DbgBreakBefore(
 		}
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "will not pause before any commands")
+	}
+	return currCmdIdx, true
+}
+
+func DbgBreakAfter(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	listSep := env.GetRaw("strs.list-sep")
+	cmdList := strings.Split(argv.GetRaw("break-points"), listSep)
+	verifiedCmds := cc.BreakPoints.SetAfters(cc, env, cmdList)
+
+	env.GetLayer(core.EnvLayerSession).Set("sys.breaks.after", strings.Join(verifiedCmds, listSep))
+
+	if len(verifiedCmds) != 0 {
+		display.PrintTipTitle(cc.Screen, env, "will pause after those commands:")
+		for _, cmd := range verifiedCmds {
+			cc.Screen.Print(display.ColorCmd("["+cmd+"]", env) + "\n")
+		}
+	} else {
+		display.PrintTipTitle(cc.Screen, env, "after-command break points are cleared")
 	}
 	return currCmdIdx, true
 }
