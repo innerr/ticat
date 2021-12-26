@@ -83,8 +83,9 @@ func ParseExecutedFlow(path ExecutedStatusFilePath) *ExecutedFlow {
 	// Consider it's normal if ok=false but all lines are parsed
 	executed, lines, ok := parseExecutedFlow(path, lines, 0)
 	if !ok && len(lines) != 0 {
-		panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has %v lines unparsed",
-			path.Short(), len(lines)))
+		sample := getSampleLines(lines)
+		panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has %v lines unparsed: %s",
+			path.Short(), len(lines), sample))
 	}
 	return executed
 }
@@ -231,21 +232,22 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		cmd.SubFlow, subflowLines, ok = parseExecutedFlow(path, subflowLines, level+1)
 		if !ok {
 			if len(subflowLines) != 0 {
-				panic(fmt.Errorf("[ParseExecutedFlow] bad subflow lines in status file '%s', has %v lines unparsed",
-					path.Short(), len(subflowLines)))
+				sample := getSampleLines(subflowLines)
+				panic(fmt.Errorf("[ParseExecutedFlow] bad subflow lines in status file '%s', has %v lines unparsed: %s",
+					path.Short(), len(subflowLines), sample))
 			}
 			return cmd, lines, false
 		}
 	}
 
-	cmd.FinishTs, lines, ok = parseMarkedTime(path, lines, "cmd-finish-time", level)
-	if !ok {
-		return cmd, lines, false
-	}
-
 	finishEnvLines, lines, ok := parseMarkedContent(path, lines, "env-finish", level)
 	if ok {
 		cmd.FinishEnv = parseEnvLines(path, finishEnvLines, level)
+	}
+
+	cmd.FinishTs, lines, ok = parseMarkedTime(path, lines, "cmd-finish-time", level)
+	if !ok {
+		return cmd, lines, false
 	}
 
 	cmd.Result, lines, ok = parseCmdOrFlowResult(path, lines, "cmd-result", level, ExecutedResultError)
@@ -376,4 +378,15 @@ func parseMarkedContent(path ExecutedStatusFilePath, lines []string,
 	}
 
 	return lines, nil, false
+}
+
+func getSampleLines(lines []string) string {
+	sample := []string{}
+	for i, line := range lines {
+		if i > 3 {
+			break
+		}
+		sample = append(sample, strings.TrimSpace(line))
+	}
+	return strings.Join(sample, " ")
 }

@@ -81,12 +81,12 @@ func (self *ExecutingFlow) OnAsyncTaskSchedule(flow *ParsedCmds, index int, env 
 func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, succeeded bool, err error, skipped bool) {
 	buf := bytes.NewBuffer(nil)
 
-	now := time.Now().Format(SessionTimeFormat)
-	buf.Write([]byte(markedOneLineContent("cmd-finish-time", self.level, now)))
-
 	writeCmdEnv(buf, env, "env-finish", self.level)
 
 	result := ExecutedResultError
+	now := time.Now().Format(SessionTimeFormat)
+	buf.Write([]byte(markedOneLineContent("cmd-finish-time", self.level, now)))
+
 	if succeeded {
 		if skipped {
 			result = ExecutedResultSkipped
@@ -122,8 +122,6 @@ func (self *ExecutingFlow) OnSubFlowFinish(env *Env, succeeded bool, skipped boo
 
 	now := time.Now().Format(SessionTimeFormat)
 	buf.Write([]byte(markedOneLineContent("flow-finish-time", self.level, now)))
-
-	writeCmdEnv(buf, env, "env-finish", self.level)
 
 	result := ExecutedResultError
 	if succeeded {

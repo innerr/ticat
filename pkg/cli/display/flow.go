@@ -269,7 +269,7 @@ func dumpFlowCmd(
 			dumpCmdExecutable(cic, env, args, prt, padLenCal, lineLimit)
 		}
 
-		if cic.HasSubFlow() && !cmdSkipped() && executedCmd.Result != core.ExecutedResultUnRun {
+		if cic.HasSubFlow() && !cmdSkipped() && (executedCmd == nil || executedCmd.Result != core.ExecutedResultUnRun) {
 			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || cmdFailed() {
