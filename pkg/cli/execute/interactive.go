@@ -22,11 +22,13 @@ const (
 )
 
 func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd,
-	breakByPrev bool, lastCmdInFlow bool) BreakPointAction {
+	breakByPrev bool, lastCmdInFlow bool, bootstrap bool) BreakPointAction {
 
 	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev)
 	if bpa == BPAContinue {
-		tryDelay(cc, env)
+		if !bootstrap && !cmd.LastCmdNode().IsQuiet() {
+			tryDelay(cc, env, "sys.execute-delay-sec")
+		}
 	} else if bpa == BPAStepIn {
 		env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-in", true)
 		bpa = BPAContinue
@@ -96,15 +98,12 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	return readUserBPAChoice(reason, choices, bpas, true, cc.Screen, env)
 }
 
-func tryDelay(cc *core.Cli, env *core.Env) {
-	delaySec := env.GetInt("sys.execute-delay-sec")
-	if delaySec > 0 {
-		for i := 0; i < delaySec; i++ {
-			time.Sleep(time.Second)
-			cc.Screen.Print(".")
-		}
-		cc.Screen.Print("\n")
+func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool) BreakPointAction {
+	bpa := tryBreakAfter(cc, env, cmd)
+	if bpa == BPAContinue && !bootstrap && !cmd.LastCmdNode().IsQuiet() {
+		tryDelay(cc, env, "sys.execute-delay-sec.at-end")
 	}
+	return bpa
 }
 
 func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAction {
@@ -123,6 +122,17 @@ func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAc
 		true,
 		cc.Screen,
 		env)
+}
+
+func tryDelay(cc *core.Cli, env *core.Env, delayKey string) {
+	delaySec := env.GetInt(delayKey)
+	if delaySec > 0 {
+		for i := 0; i < delaySec; i++ {
+			time.Sleep(time.Second)
+			cc.Screen.Print(".")
+		}
+		cc.Screen.Print("\n")
+	}
 }
 
 func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput bool,

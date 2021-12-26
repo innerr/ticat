@@ -61,6 +61,18 @@ func DbgDelayExecute(
 	return currCmdIdx, true
 }
 
+func DbgDelayExecuteAtEnd(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec.at-end", argv.GetInt("seconds"))
+	return currCmdIdx, true
+}
+
 func DbgBreakAtBegin(
 	argv core.ArgVals,
 	cc *core.Cli,

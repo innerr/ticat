@@ -54,8 +54,8 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 	}
 	ok := self.execute(self.callerNameEntry, cc, env, nil, false, false, input...)
 	builtin.WaitAllBgTasks(cc, env)
-	if cc.FlowStatus != nil && ok {
-		cc.FlowStatus.OnFlowFinish()
+	if cc.FlowStatus != nil {
+		cc.FlowStatus.OnFlowFinish(ok)
 	}
 	return ok
 }
@@ -191,7 +191,7 @@ func (self *Executor) executeCmd(
 
 	last := cmd.LastCmdNode()
 
-	bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow)
+	bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow, bootstrap)
 	if bpa == BPASkip {
 		mask = copyMask(last.DisplayPath(), mask)
 		mask.ExecPolicy = core.ExecPolicySkip
@@ -250,7 +250,7 @@ func (self *Executor) executeCmd(
 		}
 	}
 
-	bpa = tryBreakAfter(cc, env, cmd)
+	bpa = tryDelayAndBreakAfter(cc, env, cmd, bootstrap)
 	if bpa != BPAContinue {
 		return
 	}
@@ -479,9 +479,7 @@ func asyncExecute(
 				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}
-		if ok {
-			cc.FlowStatus.OnFlowFinish()
-		}
+		cc.FlowStatus.OnFlowFinish(ok)
 		task.OnFinish()
 
 	}(dur, argv, cc, env, flow, currCmdIdx)

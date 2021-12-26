@@ -696,9 +696,15 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		"sys.panic.recover",
 		"recover")
 
-	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
+	delay := cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
 		RegPowerCmd(DbgDelayExecute,
 			"wait for specified duration before executing each commands").
+		SetQuiet().
+		AddArg("seconds", "3", "second", "sec", "s", "S")
+
+	delay.AddSub("at-end", "at-finish", "post-execute", "end", "finish").
+		RegPowerCmd(DbgDelayExecuteAtEnd,
+			"wait for specified duration after executing each commands").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")
 

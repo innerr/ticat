@@ -213,16 +213,19 @@ func (self *Cmd) execute(
 			if r != nil {
 				err = r.(error)
 			}
-			if !self.HasSubFlow() {
-				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
-			}
+			// TODO: remove these after test
+			//if !self.HasSubFlow() {
+			cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
+			//}
 			if r != nil {
 				panic(r)
 			}
 		}()
 	}
 
-	if !shouldExecByMask(mask) && !self.HasSubFlow() {
+	// TODO: remove these after test
+	//if !shouldExecByMask(mask) && !self.HasSubFlow() {
+	if !shouldExecByMask(mask) {
 		// TODO: print this outside core pkg, so it can be colorize
 		cc.Screen.Print("(skipped)\n")
 		newCurrCmdIdx, succeeded = currCmdIdx, true
@@ -631,11 +634,13 @@ func (self *Cmd) executePowerCmd(
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask) (succeeded bool) {
 	flow, masks, _ := self.Flow(argv, cc, env, false)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
+	skipped := false
+
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnSubFlowStart(FlowStrsToStr(flow))
 		defer func() {
 			if succeeded {
-				cc.FlowStatus.OnSubFlowFinish(flowEnv)
+				cc.FlowStatus.OnSubFlowFinish(flowEnv, succeeded, skipped)
 			}
 		}()
 	}
@@ -645,7 +650,13 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 		}
 		masks = mask.SubFlow
 	}
-	succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flowEnv, masks, flow...)
+	if shouldExecByMask(mask) {
+		succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flowEnv, masks, flow...)
+	} else {
+		cc.Screen.Print("(skipped+)\n")
+		succeeded = true
+		skipped = true
+	}
 	return
 }
 

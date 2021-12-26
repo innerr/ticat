@@ -64,6 +64,8 @@ func DumpFlowEx(
 		PrintTipTitle(cc.Screen, env, "flow executing description:")
 	}
 
+	// TODO: show executed status and duration here
+
 	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
 	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, running,
 		writtenKeys, args.MaxDepth, args.MaxTrivial, 0)
@@ -100,7 +102,7 @@ func dumpFlow(
 			} else {
 				// TODO: better display
 				name := strings.Join(cmd.Path(), sep)
-				executedCmd = &core.ExecutedCmd{Cmd: name}
+				executedCmd = core.NewExecutedCmd(name)
 			}
 		}
 		ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, running,
@@ -156,14 +158,11 @@ func dumpFlowCmd(
 	trivialDelta := getCmdTrivial(parsedCmd)
 
 	cmdFailed := func() bool {
-		return executedCmd != nil && !executedCmd.Succeeded
+		return executedCmd != nil && executedCmd.Result != core.ExecutedResultSucceeded
 	}
 	cmdSkipped := func() bool {
-		return executedCmd != nil && executedCmd.Skipped
+		return executedCmd != nil && executedCmd.Result == core.ExecutedResultSkipped
 	}
-	//cmdOkButSubFailed := func() bool {
-	//	return cmdFailed() && executedCmd.NoSelfErr
-	//}
 
 	notFold := func() bool {
 		return cmdFailed() || maxTrivial > 0 && maxDepth > 0
@@ -268,7 +267,7 @@ func dumpFlowCmd(
 			dumpCmdExecutable(cic, env, args, prt, padLenCal, lineLimit)
 		}
 
-		if cic.HasSubFlow() {
+		if cic.HasSubFlow() && !cmdSkipped() {
 			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || cmdFailed() {
@@ -345,14 +344,14 @@ func dumpCmdExecutedLog(
 	if executedCmd == nil || len(executedCmd.LogFilePath) == 0 {
 		return
 	}
-	if (args.Skeleton || args.Simple) && executedCmd.Succeeded {
+	if (args.Skeleton || args.Simple) && executedCmd.Result == core.ExecutedResultSucceeded {
 		return
 	}
 
 	padLen := padLenCal(2)
 	limit := lineLimit - padLen
 
-	if executedCmd.Succeeded {
+	if executedCmd.Result == core.ExecutedResultSucceeded {
 		prt(1, ColorProp("- execute-log:", env))
 	} else {
 		prt(1, ColorError("- execute-log:", env))
@@ -389,17 +388,17 @@ func dumpCmdExecutedErr(
 	}
 
 	if !args.Skeleton {
-		if len(executedCmd.Err) != 0 {
+		if len(executedCmd.ErrStrs) != 0 {
 			prt(1, ColorError("- err-msg:", env))
 		}
-		for _, line := range executedCmd.Err {
+		for _, line := range executedCmd.ErrStrs {
 			prt(2, ColorError(strings.TrimSpace(line), env))
 		}
 	} else {
-		if len(executedCmd.Err) != 0 {
+		if len(executedCmd.ErrStrs) != 0 {
 			prt(0, "  "+ColorError(" - err-msg:", env))
 		}
-		for _, line := range executedCmd.Err {
+		for _, line := range executedCmd.ErrStrs {
 			prt(2, ColorError(strings.TrimSpace(line), env))
 		}
 	}
@@ -453,18 +452,21 @@ func dumpCmdDisplayName(
 				ColorCmd("["+executedCmd.Cmd+"]", env)
 			return name, false
 		}
-		if executedCmd.Unexecuted {
-			name += ColorExplain(" - ", env) + ColorExplain("un-run", env)
-		} else if running {
-			name += ColorExplain(" - ", env) + ColorError("not-done", env)
-		} else if executedCmd.Skipped {
-			name += ColorExplain(" - ", env) + ColorExplain("skipped", env)
-		} else if executedCmd.Succeeded {
-			name += ColorExplain(" - ", env) + ColorCmdDone("OK", env)
-		} else if executedCmd.NoSelfErr {
-			name += ColorExplain(" - ", env) + ColorWarn("failed", env)
+		resultStr := string(executedCmd.Result)
+		if executedCmd.Result == core.ExecutedResultError {
+			name += ColorExplain(" - ", env) + ColorError(resultStr, env)
+		} else if executedCmd.Result == core.ExecutedResultSucceeded {
+			name += ColorExplain(" - ", env) + ColorCmdDone(resultStr, env)
+		} else if executedCmd.Result == core.ExecutedResultSkipped {
+			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
+		} else if executedCmd.Result == core.ExecutedResultIncompleted {
+			if running {
+				name += ColorExplain(" - ", env) + ColorError("running", env)
+			} else {
+				name += ColorExplain(" - ", env) + ColorWarn("failed", env)
+			}
 		} else {
-			name += ColorExplain(" - ", env) + ColorError("ERR", env)
+			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
 		}
 	}
 	return name, true
@@ -636,7 +638,11 @@ func dumpExecutedStartEnv(
 	executedCmd *core.ExecutedCmd,
 	lineLimit int) (startEnv map[string]string) {
 
-	if executedCmd != nil && executedCmd.StartEnv != nil {
+	if executedCmd == nil {
+		return
+	}
+
+	if executedCmd.StartEnv != nil {
 		startEnv = executedCmd.StartEnv.FlattenAll()
 	}
 
@@ -650,7 +656,7 @@ func dumpExecutedStartEnv(
 		return
 	}
 
-	if !args.ShowExecutedEnvFull && !(executedCmd != nil && !executedCmd.NoSelfErr) {
+	if !args.ShowExecutedEnvFull && (executedCmd.Result != core.ExecutedResultError) {
 		return
 	}
 
@@ -689,10 +695,10 @@ func dumpExecutedModifiedEnv(
 		// TODO:
 		// return
 	}
-	if !args.ShowExecutedModifiedEnv && executedCmd.Succeeded {
+	if !args.ShowExecutedModifiedEnv && executedCmd.Result == core.ExecutedResultSucceeded {
 		return
 	}
-	if executedCmd.FinishEnv == nil && !executedCmd.Succeeded {
+	if executedCmd.FinishEnv == nil && executedCmd.Result != core.ExecutedResultSucceeded {
 		return
 	}
 
@@ -743,10 +749,10 @@ func dumpExecutedModifiedEnv(
 
 	sort.Strings(lines)
 	if !args.Skeleton {
-		if len(lines) != 0 || !executedCmd.Succeeded {
+		if len(lines) != 0 || executedCmd.Result != core.ExecutedResultSucceeded {
 			prt(1, ColorProp("- env-modified:", env))
 		}
-		if len(lines) == 0 && !executedCmd.Succeeded {
+		if len(lines) == 0 && executedCmd.Result != core.ExecutedResultSucceeded {
 			prt(2, ColorExplain("(none)", env))
 		} else {
 			for _, line := range lines {
@@ -754,10 +760,10 @@ func dumpExecutedModifiedEnv(
 			}
 		}
 	} else {
-		if len(lines) != 0 || !executedCmd.Succeeded {
+		if len(lines) != 0 || executedCmd.Result != core.ExecutedResultSucceeded {
 			prt(0, "  "+ColorProp(" - env-modified:", env))
 		}
-		if len(lines) == 0 && !executedCmd.Succeeded {
+		if len(lines) == 0 && executedCmd.Result != core.ExecutedResultSucceeded {
 			prt(2, ColorExplain("(none)", env))
 		} else {
 			for _, line := range lines {
