@@ -103,6 +103,7 @@ func dumpFlow(
 				// TODO: better display
 				name := strings.Join(cmd.Path(), sep)
 				executedCmd = core.NewExecutedCmd(name)
+				executedCmd.Result = core.ExecutedResultUnRun
 			}
 		}
 		ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, running,
@@ -158,7 +159,8 @@ func dumpFlowCmd(
 	trivialDelta := getCmdTrivial(parsedCmd)
 
 	cmdFailed := func() bool {
-		return executedCmd != nil && executedCmd.Result != core.ExecutedResultSucceeded
+		return executedCmd != nil && executedCmd.Result != core.ExecutedResultSucceeded &&
+			executedCmd.Result != core.ExecutedResultSkipped
 	}
 	cmdSkipped := func() bool {
 		return executedCmd != nil && executedCmd.Result == core.ExecutedResultSkipped
@@ -267,7 +269,7 @@ func dumpFlowCmd(
 			dumpCmdExecutable(cic, env, args, prt, padLenCal, lineLimit)
 		}
 
-		if cic.HasSubFlow() && !cmdSkipped() {
+		if cic.HasSubFlow() && !cmdSkipped() && executedCmd.Result != core.ExecutedResultUnRun {
 			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || cmdFailed() {
@@ -465,6 +467,8 @@ func dumpCmdDisplayName(
 			} else {
 				name += ColorExplain(" - ", env) + ColorWarn("failed", env)
 			}
+		} else if executedCmd.Result == core.ExecutedResultUnRun {
+			name += ColorExplain(" - ", env) + ColorError(resultStr, env)
 		} else {
 			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
 		}
