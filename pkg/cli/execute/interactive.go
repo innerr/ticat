@@ -17,23 +17,27 @@ const (
 	BPAStepIn   = "step in subflow"
 	BPAContinue = "continue"
 	BPASkip     = "skip current, stop before next command"
-	BPAAbort    = "abort executing"
+	BPAQuit     = "quit executing"
 )
 
 func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, breakByPrev bool) BreakPointAction {
 	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev)
 	if bpa == BPAContinue {
 		tryDelay(cc, env)
+	} else if bpa == BPAStepIn {
+		env.GetLayer(core.EnvLayerSession).SetBool("sys.step-in-subflow", true)
+		bpa = BPAContinue
 	}
 	return bpa
 }
 
 func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, breakByPrev bool) BreakPointAction {
 	stepByStep := env.GetBool("sys.step-by-step")
+	stepIn := env.GetBool("sys.step-in-subflow")
 	name := strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep)
 	breakBefore := cc.BreakPoints.BreakBefore(name)
 
-	if !breakBefore && !stepByStep && !breakByPrev {
+	if !breakBefore && !stepByStep && !stepIn && !breakByPrev {
 		return BPAContinue
 	}
 
@@ -41,19 +45,28 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	var choices []string
 	if stepByStep {
 		reason = display.ColorTip("step-by-step", env)
-		choices = []string{"c", "a"}
+		choices = []string{"c"}
 	} else if breakBefore {
 		reason = display.ColorTip("break-point: before command ", env) + display.ColorCmd("["+name+"]", env)
-		choices = []string{"c", "s", "a"}
+		choices = []string{"c", "s"}
+	} else if stepIn {
+		env.GetLayer(core.EnvLayerSession).Delete("sys.step-in-subflow")
+		reason = display.ColorTip("step in subflow", env)
+		choices = []string{"c", "s"}
 	} else if breakByPrev {
 		reason = display.ColorTip("previous choice", env)
-		choices = []string{"c", "s", "a"}
+		choices = []string{"c", "s"}
 	}
+
+	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow() {
+		choices = append(choices, "t")
+	}
+	choices = append(choices, "q")
 
 	bpas := BPAs{
 		"c": BPAContinue,
 		"s": BPASkip,
-		"a": BPAAbort,
+		"q": BPAQuit,
 		"t": BPAStepIn,
 	}
 	return readUserBPAChoice(reason, choices, bpas, true, cc.Screen, env)
@@ -78,10 +91,10 @@ func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAc
 	reason := display.ColorTip("break-point: after command ", env) + display.ColorCmd("["+name+"]", env)
 	return readUserBPAChoice(
 		reason,
-		[]string{"c", "a"},
+		[]string{"c", "q"},
 		BPAs{
 			"c": BPAContinue,
-			"a": BPAAbort,
+			"q": BPAQuit,
 		},
 		true,
 		cc.Screen,
@@ -112,7 +125,7 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 			line = strings.ToLower(line)
 		}
 		if action, ok := actions[line]; ok {
-			if action == BPAAbort {
+			if action == BPAQuit {
 				panic(fmt.Errorf("aborted by user"))
 			}
 			return action
