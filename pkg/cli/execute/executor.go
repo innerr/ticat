@@ -156,7 +156,8 @@ func (self *Executor) executeFlow(
 		if i < len(masks) {
 			mask = masks[i]
 		}
-		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, env, mask, flow, i, breakAtNext)
+		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, env, mask, flow, i,
+			breakAtNext, i+1 == len(flow.Cmds))
 		if !succeeded {
 			return false
 		}
@@ -172,7 +173,8 @@ func (self *Executor) executeCmd(
 	mask *core.ExecuteMask,
 	flow *core.ParsedCmds,
 	currCmdIdx int,
-	breakByPrev bool) (newCurrCmdIdx int, succeeded bool, breakAtNext bool) {
+	breakByPrev bool,
+	lastCmdInFlow bool) (newCurrCmdIdx int, succeeded bool, breakAtNext bool) {
 
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
@@ -189,17 +191,16 @@ func (self *Executor) executeCmd(
 
 	last := cmd.LastCmdNode()
 
-	bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev)
+	bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow)
 	if bpa == BPASkip {
 		mask = copyMask(last.DisplayPath(), mask)
 		mask.ExecPolicy = core.ExecPolicySkip
 		breakAtNext = true
+	} else if bpa == BPAStepOver {
+		breakAtNext = true
 	} else if bpa != BPAContinue {
 		return
 	}
-	// TODO
-	//BPAStepOver
-	//BPAStepInSubFlow
 
 	start := time.Now()
 	if last != nil {
