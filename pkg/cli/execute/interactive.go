@@ -160,7 +160,7 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 		}
 		if action, ok := actions[line]; ok {
 			if action == BPAQuit {
-				panic(fmt.Errorf("aborted by user"))
+				panic(core.NewAbortByUserErr())
 			}
 			return action
 		}

@@ -186,7 +186,9 @@ func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (
 			if _, _, ok := parseMarkedOneLineContent(path, lines, "flow-finish-time", level); ok {
 				break
 			}
-			return cmds, lines, false
+			if len(lines) != 0 {
+				return cmds, lines, false
+			}
 		}
 		cmds = append(cmds, cmd)
 	}

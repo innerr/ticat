@@ -215,7 +215,9 @@ func (self *Cmd) execute(
 			}
 			// TODO: remove these after test
 			//if !self.HasSubFlow() {
-			cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
+			if err == nil || err.(*AbortByUserErr) == nil {
+				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
+			}
 			//}
 			if r != nil {
 				panic(r)
