@@ -30,10 +30,9 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 	} else if bpa == BPAStepIn {
 		env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-in", true)
 		bpa = BPAContinue
-	} else if bpa == BPAStepOver {
-		// This env status is for cross-flow step-out
+	} else if bpa == BPAStepOver || bpa == BPASkip {
 		if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
-			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-over", true)
+			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
 		}
 	}
 	return bpa
@@ -43,51 +42,56 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	atBegin := cc.BreakPoints.AtBegin()
 	stepByStep := env.GetBool("sys.step-by-step")
 	stepIn := env.GetBool("sys.breakpoint.status.step-in")
-	stepOver := env.GetBool("sys.breakpoint.status.step-over")
+	stepOut := env.GetBool("sys.breakpoint.status.step-out")
 	name := strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep)
 	breakBefore := cc.BreakPoints.BreakBefore(name)
 
-	if !atBegin && !breakBefore && !stepByStep && !stepIn && !stepOver && !breakByPrev {
+	if !atBegin && !breakBefore && !stepByStep && !stepIn && !stepOut && !breakByPrev {
 		return BPAContinue
 	}
 
 	choices := []string{}
 	var reason string
 
-	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow() {
+	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow() && !stepByStep {
 		choices = append(choices, "t")
 	}
 
 	if atBegin {
 		cc.BreakPoints.SetAtBegin(false)
 		reason = display.ColorTip("break-point: at begin", env)
-		choices = append(choices, "s")
+		choices = append(choices, "s", "d", "c")
 	} else if stepByStep {
 		reason = display.ColorTip("step-by-step", env)
+		choices = append(choices, "c")
 	} else if breakBefore {
 		reason = display.ColorTip("break-point: before command ", env) + display.ColorCmd("["+name+"]", env)
-		choices = append(choices, "s")
+		choices = append(choices, "s", "d", "c")
 	} else if stepIn {
 		env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.step-in")
 		reason = display.ColorTip("just stepped in", env)
-		choices = append(choices, "s")
-	} else if stepOver {
-		env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.step-over")
+		choices = append(choices, "s", "d", "c")
+	} else if stepOut {
+		env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.step-out")
 		reason = display.ColorTip("just stepped out", env)
-		choices = append(choices, "s")
+		choices = append(choices, "s", "d", "c")
 	} else if breakByPrev {
 		reason = display.ColorTip("previous choice", env)
-		choices = append(choices, "s")
+		choices = append(choices, "s", "d", "c")
 	}
 
-	choices = append(choices, "d", "c", "q")
+	choices = append(choices, "q")
 
-	bpas := BPAs{
+	all := BPAs{
 		"c": BPAContinue,
 		"s": BPASkip,
 		"q": BPAQuit,
 		"t": BPAStepIn,
 		"d": BPAStepOver,
+	}
+	bpas := BPAs{}
+	for _, k := range choices {
+		bpas[k] = all[k]
 	}
 	return readUserBPAChoice(reason, choices, bpas, true, cc.Screen, env)
 }

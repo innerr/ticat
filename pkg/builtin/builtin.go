@@ -675,6 +675,9 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	remove.AddSub("all", "a", "A").
 		RegPowerCmd(RemoveAllSessions,
 			"clear all executed sessions")
+	sessions.AddSub("clear", "clean").
+		RegPowerCmd(RemoveAllSessions,
+			"clear all executed sessions")
 
 	sessions.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
 		RegPowerCmd(SetSessionsKeepDur,

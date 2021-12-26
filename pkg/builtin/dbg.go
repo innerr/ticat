@@ -70,6 +70,9 @@ func DbgBreakAtBegin(
 
 	assertNotTailMode(flow, currCmdIdx)
 	cc.BreakPoints.SetAtBegin(true)
+	if 1 == len(flow.Cmds)-1 {
+		env.GetLayer(core.EnvLayerSession).SetBool("display.one-cmd", true)
+	}
 	return currCmdIdx, true
 }
 
