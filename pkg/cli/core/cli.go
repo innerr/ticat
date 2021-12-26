@@ -24,6 +24,14 @@ type ExecuteMask struct {
 	SubFlow           []*ExecuteMask
 }
 
+func NewExecuteMask(cmd string) *ExecuteMask {
+	return &ExecuteMask{cmd, nil, ExecPolicyExec, nil}
+}
+
+func (self *ExecuteMask) Copy() *ExecuteMask {
+	return &ExecuteMask{self.Cmd, self.OverWriteStartEnv, self.ExecPolicy, self.SubFlow}
+}
+
 type Executor interface {
 	Execute(caller string, cc *Cli, env *Env, masks []*ExecuteMask, input ...string) bool
 	Clone() Executor

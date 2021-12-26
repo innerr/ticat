@@ -148,6 +148,7 @@ func (self *Executor) executeFlow(
 	masks []*core.ExecuteMask,
 	input []string) bool {
 
+	breakAtNext := false
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool
@@ -155,7 +156,7 @@ func (self *Executor) executeFlow(
 		if i < len(masks) {
 			mask = masks[i]
 		}
-		i, succeeded = self.executeCmd(cc, bootstrap, cmd, env, mask, flow, i)
+		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, env, mask, flow, i, breakAtNext)
 		if !succeeded {
 			return false
 		}
@@ -170,7 +171,8 @@ func (self *Executor) executeCmd(
 	env *core.Env,
 	mask *core.ExecuteMask,
 	flow *core.ParsedCmds,
-	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
+	currCmdIdx int,
+	breakByPrev bool) (newCurrCmdIdx int, succeeded bool, breakAtNext bool) {
 
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
@@ -184,16 +186,21 @@ func (self *Executor) executeCmd(
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
 	}
-	succeeded = tryDelayAndStepByStep(cc, env)
-	if !succeeded {
-		return
-	}
-	succeeded = tryBreakBefore(cc, env, cmd)
-	if !succeeded {
-		return
-	}
 
 	last := cmd.LastCmdNode()
+
+	bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev)
+	if bpa == BPASkip {
+		mask = copyMask(last.DisplayPath(), mask)
+		mask.ExecPolicy = core.ExecPolicySkip
+		breakAtNext = true
+	} else if bpa != BPAContinue {
+		return
+	}
+	// TODO
+	//BPAStepOver
+	//BPAStepInSubFlow
+
 	start := time.Now()
 	if last != nil {
 		if last.IsNoExecutableCmd() {
@@ -242,8 +249,8 @@ func (self *Executor) executeCmd(
 		}
 	}
 
-	succeeded = tryBreakAfter(cc, env, cmd)
-	if !succeeded {
+	bpa = tryBreakAfter(cc, env, cmd)
+	if bpa != BPAContinue {
 		return
 	}
 	return
@@ -481,4 +488,13 @@ func asyncExecute(
 	tid = <-tidChan
 	screen.Print(display.ColorExplain("(current command scheduled to thread "+tid+")\n", env))
 	return tid, true
+}
+
+func copyMask(cmd string, mask *core.ExecuteMask) *core.ExecuteMask {
+	if mask != nil {
+		mask = mask.Copy()
+	} else {
+		mask = core.NewExecuteMask(cmd)
+	}
+	return mask
 }

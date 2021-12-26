@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
-	"github.com/pingcap/ticat/pkg/cli/display"
+	//"github.com/pingcap/ticat/pkg/cli/display"
 )
 
 func DbgEcho(
@@ -76,14 +76,16 @@ func DbgBreakBefore(
 
 	env.GetLayer(core.EnvLayerSession).Set("sys.breaks.before", strings.Join(verifiedCmds, listSep))
 
-	if len(verifiedCmds) != 0 {
-		display.PrintTipTitle(cc.Screen, env, "will pause before those commands:")
-		for _, cmd := range verifiedCmds {
-			cc.Screen.Print(display.ColorCmd("["+cmd+"]", env) + "\n")
+	/*
+		if len(verifiedCmds) != 0 {
+			display.PrintTipTitle(cc.Screen, env, "will pause before those commands:")
+			for _, cmd := range verifiedCmds {
+				cc.Screen.Print(display.ColorCmd("["+cmd+"]", env) + "\n")
+			}
+		} else {
+			display.PrintTipTitle(cc.Screen, env, "will not pause before any commands")
 		}
-	} else {
-		display.PrintTipTitle(cc.Screen, env, "will not pause before any commands")
-	}
+	*/
 	return currCmdIdx, true
 }
 
@@ -102,13 +104,15 @@ func DbgBreakAfter(
 
 	env.GetLayer(core.EnvLayerSession).Set("sys.breaks.after", strings.Join(verifiedCmds, listSep))
 
-	if len(verifiedCmds) != 0 {
-		display.PrintTipTitle(cc.Screen, env, "will pause after those commands:")
-		for _, cmd := range verifiedCmds {
-			cc.Screen.Print(display.ColorCmd("["+cmd+"]", env) + "\n")
+	/*
+		if len(verifiedCmds) != 0 {
+			display.PrintTipTitle(cc.Screen, env, "will pause after those commands:")
+			for _, cmd := range verifiedCmds {
+				cc.Screen.Print(display.ColorCmd("["+cmd+"]", env) + "\n")
+			}
+		} else {
+			display.PrintTipTitle(cc.Screen, env, "after-command break points are cleared")
 		}
-	} else {
-		display.PrintTipTitle(cc.Screen, env, "after-command break points are cleared")
-	}
+	*/
 	return currCmdIdx, true
 }

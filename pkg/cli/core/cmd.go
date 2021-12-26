@@ -223,6 +223,7 @@ func (self *Cmd) execute(
 	}
 
 	if !shouldExecByMask(mask) && !self.HasSubFlow() {
+		// TODO: print this outside core pkg, so it can be colorize
 		cc.Screen.Print("(skipped)\n")
 		newCurrCmdIdx, succeeded = currCmdIdx, true
 	} else {
