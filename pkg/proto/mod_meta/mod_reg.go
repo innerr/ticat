@@ -102,7 +102,7 @@ func regTrivial(meta *meta_file.MetaFile, mod *core.CmdTree) {
 }
 
 func regUnLog(meta *meta_file.MetaFile, cmd *core.Cmd) {
-	for _, key := range []string{"nolog", "unlog", "interactive"} {
+	for _, key := range []string{"nolog", "unlog", "interact", "interactive"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
 			continue

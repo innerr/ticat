@@ -14,10 +14,10 @@ import (
 type BreakPointAction string
 
 const (
-	BPAStepOver = "step over, execute current, stop before next command"
+	BPAStepOver = "step over, execute current, pause before next command"
 	BPAStepIn   = "step in subflow"
 	BPAContinue = "continue"
-	BPASkip     = "skip current, stop before next command"
+	BPASkip     = "skip current, pause before next command"
 	BPAInteract = "interactive mode"
 	BPAQuit     = "quit executing"
 )
@@ -25,7 +25,7 @@ const (
 func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd,
 	breakByPrev bool, lastCmdInFlow bool, bootstrap bool) BreakPointAction {
 
-	if env.GetBool("sys.breakpoint.status.interact") {
+	if env.GetBool("sys.interact.inside") {
 		return BPAContinue
 	}
 
@@ -135,8 +135,8 @@ func tryDelay(cc *core.Cli, env *core.Env, delayKey string) {
 
 func clearBreakPointStatusInEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerSession)
+	env.Delete("sys.interact.leaving")
 	env.Delete("sys.breakpoint.status.step-in")
-	env.Delete("sys.breakpoint.status.interact.leaving")
 	env.Delete("sys.breakpoint.status.step-out")
 }
 
@@ -144,8 +144,8 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 	cc *core.Cli, env *core.Env) BreakPointAction {
 
 	showTitle := func() {
-		cc.Screen.Print(display.ColorTip("[choose]", env) + " paused by '" + reason +
-			"', choose action and press enter:\n")
+		cc.Screen.Print(display.ColorTip("[actions]", env) + " paused by '" + reason +
+			"', choose one and press enter:\n")
 		for _, choice := range choices {
 			action := actions[choice]
 			cc.Screen.Print(display.ColorWarn(choice, env) + ": " + string(action) + "\n")
@@ -172,8 +172,8 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 				panic(core.NewAbortByUserErr())
 			} else if action == BPAInteract {
 				interactiveMode(cc, env, "e")
-				if env.GetBool("sys.breakpoint.status.interact.leaving") {
-					env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.interact.leaving")
+				if env.GetBool("sys.interact.leaving") {
+					env.GetLayer(core.EnvLayerSession).Delete("sys.interact.leaving")
 					return BPAContinue
 				}
 				cc.Screen.Print("\n")
@@ -188,17 +188,18 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 
 func interactiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 	sessionEnv := env.GetLayer(core.EnvLayerSession)
-	sessionEnv.SetBool("sys.breakpoint.status.interact", true)
+	sessionEnv.SetBool("sys.interact.inside", true)
 
 	cc = cc.CopyForInteract()
 	buf := bufio.NewReader(os.Stdin)
 	for {
-		if env.GetBool("sys.breakpoint.status.interact.leaving") {
+		if env.GetBool("sys.interact.leaving") {
 			break
 		}
 		selfName := env.GetRaw("strs.self-name")
-		cc.Screen.Print("\n" + display.ColorExplain("", env) + display.ColorWarn(exitStr+":", env) +
-			display.ColorExplain(" exit interactive mode\n", env))
+		cc.Screen.Print("\n" + display.ColorExplain("", env) + display.ColorWarn(exitStr, env) + ":" +
+			//display.ColorExplain(" exit interactive mode\n", env))
+			" exit interactive mode\n")
 
 		cc.Screen.Print(display.ColorTip(selfName+"> ", env))
 		lineBytes, err := buf.ReadBytes('\n')
@@ -215,7 +216,7 @@ func interactiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 		cc.Executor.Execute("(interact)", cc, env, nil, strings.Fields(line)...)
 	}
 
-	sessionEnv.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.interact", false)
+	sessionEnv.GetLayer(core.EnvLayerSession).Delete("sys.interact.inside")
 }
 
 func getAllBPAs() BPAs {

@@ -16,7 +16,7 @@ const (
 	ExecutedResultSkipped     ExecutedResult = "skipped"
 	ExecutedResultError       ExecutedResult = "ERR"
 	ExecutedResultIncompleted ExecutedResult = "incompleted"
-	ExecutedResultUnRun       ExecutedResult = "un-run"
+	ExecutedResultUnRun       ExecutedResult = "unrun"
 )
 
 type ExecutedStatusFilePath struct {

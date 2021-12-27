@@ -128,6 +128,6 @@ func DbgInteractLeave(
 	assertNotTailMode(flow, currCmdIdx)
 
 	env = env.GetLayer(core.EnvLayerSession)
-	env.SetBool("sys.breakpoint.status.interact.leaving", true)
+	env.SetBool("sys.interact.leaving", true)
 	return currCmdIdx, true
 }

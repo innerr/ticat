@@ -211,12 +211,14 @@ func (self *Cmd) execute(
 			r := recover()
 			handledErr := false
 			var err error
+			isAbort := false
 			if r != nil {
 				handledErr = cc.HandledErrors[r]
 				err = r.(error)
+				_, isAbort = err.(*AbortByUserErr)
 			}
 
-			if r == nil || !handledErr {
+			if (r == nil || !handledErr) && !isAbort {
 				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
 				cc.HandledErrors[r] = true
 			}
@@ -521,6 +523,10 @@ func (self *Cmd) IsTheSameFunc(fun interface{}) bool {
 
 func (self *Cmd) genLogFilePath(env *Env) string {
 	if !self.shouldWriteLogFile() {
+		return ""
+	}
+	// TODO: move this logic to upper layer(executor)
+	if env.GetBool("sys.interact.inside") {
 		return ""
 	}
 	sessionDir := env.GetRaw("session")
