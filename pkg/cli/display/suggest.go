@@ -131,6 +131,7 @@ func GlobalSuggestAdvance(env *core.Env) []string {
 		padCmdR(selfName+" cmds.tree find", indent, env) + sep + " a command set to search commands by strings",
 		padCmdR(selfName+" cmds.tree flow", indent, env) + sep + " a command set to manage saved flows",
 		padCmdR(selfName+" cmds.tree hub", indent, env) + sep + " a command set to manage command source(repo or dir)",
+		padCmdR(selfName+" cmds.tree dbg", indent, env) + sep + " a command set to control executing",
 		padCmdR(selfName+" cmds.tree sessions", indent, env) + sep + " a command set to manage executed sessions",
 	}
 }

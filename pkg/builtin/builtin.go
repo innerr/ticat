@@ -761,7 +761,7 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 	// For compatible only, will remove late
 	cmds.AddSub("echo").
 		RegPowerCmd(DbgEcho,
-			"print message from argv").
+			"! moved to 'echo', this is just for compatible only, will be removed soon").
 		AddArg("message", "", "msg", "m", "M")
 }
 

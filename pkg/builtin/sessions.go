@@ -365,6 +365,8 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 		screen.Print("        " + display.ColorCmdDone(string(session.Status.Result), env) + "\n")
 	} else if session.Status.Result == core.ExecutedResultError {
 		screen.Print("        " + display.ColorError(string(session.Status.Result), env) + "\n")
+	} else if session.Status.Result == core.ExecutedResultIncompleted {
+		screen.Print("        " + display.ColorWarn("failed\n", env))
 	} else {
 		screen.Print("        " + string(session.Status.Result) + "\n")
 	}
@@ -379,7 +381,6 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 			dumpArgs.SetSkeleton()
 		} else {
 			dumpArgs.SetSimple()
-			//dumpArgs.SetSkeleton()
 		}
 	}
 	if showEnvFull {
