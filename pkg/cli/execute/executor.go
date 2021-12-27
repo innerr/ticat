@@ -176,9 +176,15 @@ func (self *Executor) executeCmd(
 	breakByPrev bool,
 	lastCmdInFlow bool) (newCurrCmdIdx int, succeeded bool, breakAtNext bool) {
 
+	// This is a fake apply just for calculate sys args, the env is a clone
+	cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
+		env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+	sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
+
+	// TODO: clean this
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
-	cmdEnv := cmd.GenCmdEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
+	//cmdEnv := cmd.GenCmdEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
 
 	ln := cc.Screen.OutputNum()
 
@@ -191,15 +197,20 @@ func (self *Executor) executeCmd(
 
 	last := cmd.LastCmdNode()
 
-	bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow, bootstrap)
-	if bpa == BPASkip {
-		mask = copyMask(last.DisplayPath(), mask)
-		mask.ExecPolicy = core.ExecPolicySkip
-		breakAtNext = true
-	} else if bpa == BPAStepOver {
-		breakAtNext = true
-	} else if bpa != BPAContinue {
-		return
+	if !sysArgv.IsDelay() {
+		bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow, bootstrap)
+		if bpa == BPASkip {
+			mask = copyMask(last.DisplayPath(), mask)
+			mask.ExecPolicy = core.ExecPolicySkip
+			breakAtNext = true
+		} else if bpa == BPAStepOver {
+			breakAtNext = true
+		} else if bpa != BPAContinue {
+			return
+		}
+	} else {
+		// TODO: maybe use env to pass the breaking status for all cases will be better?
+		breakAtNext = breakByPrev
 	}
 
 	start := time.Now()
@@ -208,10 +219,6 @@ func (self *Executor) executeCmd(
 			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
-			// This is a fake apply just for calculate sys args, the env is a clone
-			cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
-				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-			sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
 			if !sysArgv.IsDelay() {
 				// This cmdEnv is different from env, it included values from 'val2env' and 'arg2env'
 				cmdEnv, argv = cmd.ApplyMappingGenEnvAndArgv(
@@ -250,9 +257,11 @@ func (self *Executor) executeCmd(
 		}
 	}
 
-	bpa = tryDelayAndBreakAfter(cc, env, cmd, bootstrap)
-	if bpa != BPAContinue {
-		return
+	if !sysArgv.IsDelay() {
+		bpa := tryDelayAndBreakAfter(cc, env, cmd, bootstrap)
+		if bpa != BPAContinue {
+			return
+		}
 	}
 	return
 }
@@ -437,6 +446,8 @@ func asyncExecute(
 		bgSessionEnv.Set("session", sessionDir)
 		bgSessionEnv.SetBool("display.one-cmd", true)
 		bgSessionEnv.SetBool("sys.in-bg-task", true)
+
+		clearBreakPointStatusInEnv(bgSessionEnv)
 
 		task := cc.BgTasks.GetOrAddTask(tid, name, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
 		tidChan <- tid

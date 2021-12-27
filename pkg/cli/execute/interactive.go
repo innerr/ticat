@@ -79,7 +79,9 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 		reason = display.ColorTip("just stepped in", env)
 		choices = append(choices, "s", "d", "c")
 	} else if stepOut {
-		env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.step-out")
+		if env.GetBool("sys.breakpoint.status.step-out") {
+			env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.step-out")
+		}
 		reason = display.ColorTip("just stepped out", env)
 		choices = append(choices, "s", "d", "c")
 	} else if breakByPrev {
@@ -131,6 +133,13 @@ func tryDelay(cc *core.Cli, env *core.Env, delayKey string) {
 	}
 }
 
+func clearBreakPointStatusInEnv(env *core.Env) {
+	env = env.GetLayer(core.EnvLayerSession)
+	env.Delete("sys.breakpoint.status.step-in")
+	env.Delete("sys.breakpoint.status.interact.leaving")
+	env.Delete("sys.breakpoint.status.step-out")
+}
+
 func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput bool,
 	cc *core.Cli, env *core.Env) BreakPointAction {
 
@@ -164,7 +173,7 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 			} else if action == BPAInteract {
 				interactiveMode(cc, env, "e")
 				if env.GetBool("sys.breakpoint.status.interact.leaving") {
-					env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.interact.leaving", false)
+					env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.interact.leaving")
 					return BPAContinue
 				}
 				cc.Screen.Print("\n")

@@ -205,6 +205,14 @@ func (self *Cmd) execute(
 
 	logFilePath := self.genLogFilePath(env)
 
+	shouldNotifyFinish := func(err error) bool {
+		if err == nil {
+			return true
+		}
+		_, isAbort := err.(*AbortByUserErr)
+		return !isAbort
+	}
+
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env, logFilePath)
 		defer func() {
@@ -213,20 +221,15 @@ func (self *Cmd) execute(
 			if r != nil {
 				err = r.(error)
 			}
-			// TODO: remove these after test
-			//if !self.HasSubFlow() {
-			if err == nil || err.(*AbortByUserErr) == nil {
+			if shouldNotifyFinish(err) {
 				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
 			}
-			//}
 			if r != nil {
 				panic(r)
 			}
 		}()
 	}
 
-	// TODO: remove these after test
-	//if !shouldExecByMask(mask) && !self.HasSubFlow() {
 	if !shouldExecByMask(mask) {
 		// TODO: print this outside core pkg, so it can be colorize
 		cc.Screen.Print("(skipped)\n")
