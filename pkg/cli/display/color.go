@@ -132,7 +132,8 @@ func ColorCmdDone(origin string, env *core.Env) string {
 }
 
 func ColorCmdDelay(origin string, env *core.Env) string {
-	return colorize(origin, fromColor256(22), env)
+	//return colorize(origin, fromColor256(22), env)
+	return colorize(origin, fromColor256(28), env)
 }
 
 func ColorThread(origin string, env *core.Env) string {

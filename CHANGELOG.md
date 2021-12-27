@@ -5,7 +5,9 @@ All notable changes to this project are documented in this file.
 ## [1.1.1] - 2021-12-23
 
 + New Features
-  + Support breakpoints by using builtin command `dbg.break.at <cmd-list>` [#97](https://github.com/innerr/ticat/pull/97)
+  + Support breakpoints and more executing control
+    + Command `dbg.break.at <cmd-list>` [#97](https://github.com/innerr/ticat/pull/97)
+    + Command `dbg.break.at.begin`, step in/out/over, interactive mode [#106](https://github.com/innerr/ticat/pull/106)
   + Executed sessions management
     + Write logs for each command, shows them in executed session [#95](https://github.com/innerr/ticat/pull/95)
     + Retry an failed session from error point [#93](https://github.com/innerr/ticat/pull/93)
