@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+type ExecutedResult string
+
+const (
+	ExecutedResultSucceeded   ExecutedResult = "OK"
+	ExecutedResultSkipped     ExecutedResult = "skipped"
+	ExecutedResultError       ExecutedResult = "ERR"
+	ExecutedResultIncompleted ExecutedResult = "incompleted"
+	ExecutedResultUnRun       ExecutedResult = "un-run"
+)
+
 type ExecutedStatusFilePath struct {
 	RootPath string
 	DirName  string
@@ -22,19 +32,39 @@ type ExecutedCmd struct {
 	StartEnv    *Env
 	SubFlow     *ExecutedFlow
 	FinishEnv   *Env
-	Unexecuted  bool
-	NoSelfErr   bool
-	Succeeded   bool
-	Skipped     bool
-	Err         []string
+	StartTs     time.Time
+	FinishTs    time.Time
+	Result      ExecutedResult
+	ErrStrs     []string
+}
+
+func NewExecutedCmd(cmd string) *ExecutedCmd {
+	return &ExecutedCmd{Cmd: cmd, Result: ExecutedResultIncompleted}
+}
+
+func (self *ExecutedCmd) CalResultInCaseIncompleted() {
+	if self.Result != ExecutedResultSucceeded && self.Result != ExecutedResultIncompleted {
+		return
+	}
+	if self.SubFlow == nil {
+		return
+	}
+	self.SubFlow.CalResultInCaseIncompleted()
+	self.Result = self.SubFlow.Result
 }
 
 type ExecutedFlow struct {
 	Flow     string
 	DirName  string
 	Cmds     []*ExecutedCmd
-	Executed bool
+	StartTs  time.Time
 	FinishTs time.Time
+	// Result should never be skipped here
+	Result ExecutedResult
+}
+
+func NewExecutedFlow(dirName string) *ExecutedFlow {
+	return &ExecutedFlow{DirName: dirName, Result: ExecutedResultIncompleted}
 }
 
 func (self ExecutedStatusFilePath) Full() string {
@@ -55,8 +85,20 @@ func ParseExecutedFlow(path ExecutedStatusFilePath) *ExecutedFlow {
 	if err != nil {
 		panic(fmt.Errorf("[ParseExecutedFlow] read executed status file '%s' failed: %v", path.Short(), err))
 	}
+
 	lines := strings.Split(string(data), "\n")
-	return parseExecutedFlow(path, lines)
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+
+	// Consider it's normal if ok=false but all lines are parsed
+	executed, lines, ok := parseExecutedFlow(path, lines, 0)
+	if !ok && len(lines) != 0 {
+		sample := getSampleLines(lines)
+		panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has %v lines unparsed: %s",
+			path.Short(), len(lines), sample))
+	}
+	return executed
 }
 
 func (self *ExecutedFlow) GenExecMasks() (masks []*ExecuteMask) {
@@ -66,7 +108,7 @@ func (self *ExecutedFlow) GenExecMasks() (masks []*ExecuteMask) {
 			subMasks = cmd.SubFlow.GenExecMasks()
 		}
 		policy := ExecPolicyExec
-		if cmd.Succeeded {
+		if cmd.Result == ExecutedResultSucceeded {
 			policy = ExecPolicySkip
 		}
 		masks = append(masks, &ExecuteMask{cmd.Cmd, cmd.StartEnv, policy, subMasks})
@@ -104,78 +146,77 @@ func (self *ExecutedFlow) GetCmd(idx int) *ExecutedCmd {
 	return cmd.SubFlow.Cmds[0]
 }
 
-func (self *ExecutedFlow) GatherSubFlowResult() (succeeded bool, skipped bool) {
-	succeeded = true
-	skipped = true
+func (self *ExecutedFlow) CalResultInCaseIncompleted() {
+	if self.Result != ExecutedResultSucceeded && self.Result != ExecutedResultIncompleted {
+		return
+	}
 	for _, cmd := range self.Cmds {
-		if !cmd.Succeeded {
-			succeeded = false
-		}
-		if !cmd.Skipped {
-			skipped = false
+		if cmd.Result == ExecutedResultError {
+			self.Result = cmd.Result
+			break
+		} else if cmd.Result != ExecutedResultError && cmd.Result == ExecutedResultIncompleted {
+			self.Result = cmd.Result
+			break
 		}
 	}
+}
+
+func parseExecutedFlow(path ExecutedStatusFilePath, lines []string,
+	level int) (executed *ExecutedFlow, remain []string, ok bool) {
+
+	executed, _, remain, ok = tryParseExecutedFlow(path, lines, level)
 	return
 }
 
-func parseExecutedFlow(path ExecutedStatusFilePath, lines []string) (executed *ExecutedFlow) {
-	if len(lines) > 0 && lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-	}
+func tryParseExecutedFlow(path ExecutedStatusFilePath, lines []string,
+	level int) (executed *ExecutedFlow, hasDelayCmd bool, remain []string, ok bool) {
 
-	executed = &ExecutedFlow{
-		DirName: path.DirName,
-	}
+	executed = NewExecutedFlow(path.DirName)
 
-	flowStr, lines, ok := parseMarkedOneLineContent(path, lines, "flow", 0)
+	executed.Flow, lines, ok = parseMarkedOneLineContent(path, lines, "flow", level)
 	if !ok {
-		return
+		return executed, hasDelayCmd, lines, false
 	}
-	executed.Flow = flowStr
-
-	cmds, lines, ok := parseExecutedCmds(path, lines, 0)
+	executed.StartTs, lines, ok = parseMarkedTime(path, lines, "flow-start-time", level)
 	if !ok {
-		return
+		return executed, hasDelayCmd, lines, false
 	}
-	executed.Cmds = cmds
 
-	executed.FinishTs, executed.Executed = parseStatusFileEOF(path, lines)
-	return
+	executed.Cmds, hasDelayCmd, lines, ok = parseExecutedCmds(path, lines, level)
+	if !ok {
+		return executed, hasDelayCmd, lines, false
+	}
+
+	executed.FinishTs, lines, ok = parseMarkedTime(path, lines, "flow-finish-time", level)
+	if !ok {
+		return executed, hasDelayCmd, lines, false
+	}
+	executed.Result, lines, ok = parseCmdOrFlowResult(path, lines, "flow-result", level, ExecutedResultIncompleted)
+	return executed, hasDelayCmd, lines, ok
 }
 
-func parseStatusFileEOF(path ExecutedStatusFilePath, lines []string) (finishTs time.Time, ok bool) {
-	if len(lines) != 1 {
-		return
-	}
-	var finishTsStr string
-	finishTsStr, _, ok = parseMarkedOneLineContent(path, lines, StatusFileEOF, 0)
-	if !ok {
-		return
-	}
-	finishTs, err := time.ParseInLocation(SessionTimeFormat, finishTsStr, time.Local)
-	if err != nil {
-		panic(fmt.Errorf("[ParseExecutedFlow] bad finish-ts format '%s' in status file '%s'", finishTsStr, path.Short()))
-	}
-	return finishTs, ok
-}
+func parseExecutedCmds(path ExecutedStatusFilePath, lines []string,
+	level int) (cmds []*ExecutedCmd, hasDelayCmd bool, remain []string, ok bool) {
 
-func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (cmds []*ExecutedCmd, remain []string, ok bool) {
 	for len(lines) != 0 {
 		var cmd *ExecutedCmd
 		cmd, lines, ok = parseExecutedCmd(path, lines, level)
 		if !ok {
-			if _, ok := parseStatusFileEOF(path, lines); ok {
+			if _, _, ok := parseMarkedOneLineContent(path, lines, "flow-finish-time", level); ok {
 				break
 			}
 			if len(lines) != 0 {
-				panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', level %d, has extra %v lines",
-					path.Short(), level, len(lines)))
+				return cmds, hasDelayCmd, lines, false
 			}
-			return cmds, nil, false
 		}
-		cmds = append(cmds, cmd)
+		if cmd.IsDelay {
+			hasDelayCmd = true
+		}
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 	}
-	return cmds, lines, true
+	return cmds, hasDelayCmd, lines, true
 }
 
 func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (cmd *ExecutedCmd, remain []string, ok bool) {
@@ -183,27 +224,20 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 	if !ok {
 		return nil, lines, false
 	}
-	cmd = &ExecutedCmd{
-		Cmd: strings.TrimSpace(cmdStr),
+	cmd = NewExecutedCmd(strings.TrimSpace(cmdStr))
+
+	cmd.StartTs, lines, ok = parseMarkedTime(path, lines, "cmd-start-time", level)
+	if !ok {
+		return cmd, lines, false
 	}
+
 	logFilePath, lines, ok := parseMarkedOneLineContent(path, lines, "log", level)
 	if ok {
 		cmd.LogFilePath = strings.TrimSpace(logFilePath)
 	}
 
-	tid, lines, ok := parseMarkedOneLineContent(path, lines, "scheduled", level)
+	lines, ok = tryParseScheduledCmd(cmd, path, lines, level)
 	if ok {
-		bgSessionPath := ExecutedStatusFilePath{path.RootPath, filepath.Join(path.DirName, tid), path.FileName}
-		subflow := ParseExecutedFlow(bgSessionPath)
-		if len(subflow.Cmds) == 0 {
-			subflow.Cmds = append(subflow.Cmds, &ExecutedCmd{Cmd: cmd.Cmd, Unexecuted: true})
-		} else if len(subflow.Cmds) != 1 {
-			panic(fmt.Errorf("[ParseExecutedFlow] expect only one cmd in delayed task"))
-		}
-		cmd.IsDelay = true
-		cmd.SubFlow = subflow
-		cmd.Succeeded, cmd.Skipped = subflow.GatherSubFlowResult()
-		cmd.NoSelfErr = true
 		return cmd, lines, true
 	}
 
@@ -215,30 +249,17 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 	subflowLines, lines, ok := parseMarkedContent(path, lines, "subflow", level)
 	if len(subflowLines) > 0 {
 		if !ok && len(lines) != 0 {
-			panic(fmt.Errorf("[ParseExecutedFlow] bad subflow in executed status file '%s', has extra %v lines",
-				path.Short(), len(lines)))
+			return cmd, lines, false
 		}
-
-		// Subflow don't have result marks
-		subflow := &ExecutedFlow{}
-		flowStr, subflowLines, ok := parseMarkedOneLineContent(path, subflowLines, "flow", level+1)
-		if ok {
-			subflow.Flow = flowStr
-		} else {
-			panic(fmt.Errorf("[ParseExecutedFlow] expect 'flow' mark"))
+		cmd.SubFlow, subflowLines, ok = parseExecutedFlow(path, subflowLines, level+1)
+		if !ok {
+			if len(subflowLines) != 0 {
+				sample := getSampleLines(subflowLines)
+				panic(fmt.Errorf("[ParseExecutedFlow] bad subflow lines in status file '%s', has %v lines unparsed: %s",
+					path.Short(), len(subflowLines), sample))
+			}
+			return cmd, lines, false
 		}
-		cmd.NoSelfErr = ok
-
-		cmds, subflowRemain, ok := parseExecutedCmds(path, subflowLines, level+1)
-		if len(subflowRemain) != 0 {
-			panic(fmt.Errorf("[ParseExecutedFlow] bad lines of subflow in status file '%s'", path.Short()))
-		}
-		if !ok && len(subflowRemain) != 0 {
-			panic(fmt.Errorf("[ParseExecutedFlow] parse subflow failed in status file '%s'", path.Short()))
-		}
-		subflow.Cmds = cmds
-		cmd.SubFlow = subflow
-		cmd.Succeeded, cmd.Skipped = subflow.GatherSubFlowResult()
 	}
 
 	finishEnvLines, lines, ok := parseMarkedContent(path, lines, "env-finish", level)
@@ -246,26 +267,56 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		cmd.FinishEnv = parseEnvLines(path, finishEnvLines, level)
 	}
 
-	result, lines, ok := parseMarkedOneLineContent(path, lines, "result", level)
+	cmd.FinishTs, lines, ok = parseMarkedTime(path, lines, "cmd-finish-time", level)
 	if !ok {
-		if cmd.SubFlow != nil {
-			return cmd, lines, true
-		} else {
-			return nil, lines, false
-		}
+		return cmd, lines, false
 	}
-	cmd.Skipped = (result == "skipped")
-	cmd.NoSelfErr = (result == "succeeded")
-	cmd.Succeeded = cmd.Skipped || cmd.NoSelfErr
+
+	cmd.Result, lines, ok = parseCmdOrFlowResult(path, lines, "cmd-result", level, ExecutedResultError)
+	cmd.CalResultInCaseIncompleted()
+	if !ok {
+		return cmd, lines, false
+	}
 
 	errLines, lines, ok := parseMarkedContent(path, lines, "error", level)
 	if ok {
 		for _, line := range errLines {
-			cmd.Err = append(cmd.Err, strings.TrimSpace(line))
+			cmd.ErrStrs = append(cmd.ErrStrs, strings.TrimSpace(line))
 		}
 	}
 
 	return cmd, lines, true
+}
+
+func tryParseScheduledCmd(cmd *ExecutedCmd, path ExecutedStatusFilePath, lines []string, level int) (remain []string, ok bool) {
+	tid, lines, ok := parseMarkedOneLineContent(path, lines, "scheduled", level)
+	if !ok {
+		return lines, false
+	}
+	bgSessionPath := ExecutedStatusFilePath{path.RootPath, filepath.Join(path.DirName, tid), path.FileName}
+	subflow := ParseExecutedFlow(bgSessionPath)
+	if len(subflow.Cmds) == 0 {
+		executedCmd := NewExecutedCmd(cmd.Cmd)
+		executedCmd.Result = ExecutedResultIncompleted
+		subflow.Cmds = append(subflow.Cmds, executedCmd)
+	} else if len(subflow.Cmds) != 1 {
+		panic(fmt.Errorf("[ParseExecutedFlow] expect only one cmd in delayed task"))
+	}
+	cmd.IsDelay = true
+	cmd.SubFlow = subflow
+	// The schedule-result is not important, use the execute-result
+	cmd.Result = subflow.Result
+	return lines, true
+}
+
+func parseCmdOrFlowResult(path ExecutedStatusFilePath, lines []string, mark string,
+	level int, defVal ExecutedResult) (result ExecutedResult, remain []string, ok bool) {
+
+	resultStr, lines, ok := parseMarkedOneLineContent(path, lines, mark, level)
+	if !ok {
+		return defVal, lines, false
+	}
+	return ExecutedResult(resultStr), lines, true
 }
 
 func parseEnvLines(path ExecutedStatusFilePath, lines []string, level int) (env *Env) {
@@ -285,6 +336,21 @@ func parseEnvLines(path ExecutedStatusFilePath, lines []string, level int) (env 
 	return env
 }
 
+func parseMarkedTime(path ExecutedStatusFilePath, lines []string, mark string, level int) (ts time.Time, remain []string, ok bool) {
+	var tsStr string
+	tsStr, remain, ok = parseMarkedOneLineContent(path, lines, mark, level)
+	if !ok {
+		return
+	}
+	var err error
+	ts, err = time.ParseInLocation(SessionTimeFormat, tsStr, time.Local)
+	if err != nil {
+		panic(fmt.Errorf("[ParseExecutedFlow] bad ts format '%s' with mark '%s' in status file '%s', err: %s",
+			tsStr, mark, path.Short(), err))
+	}
+	return
+}
+
 func parseMarkedOneLineContent(path ExecutedStatusFilePath, lines []string,
 	mark string, level int) (content string, remain []string, ok bool) {
 
@@ -301,9 +367,8 @@ func parseMarkedOneLineContent(path ExecutedStatusFilePath, lines []string,
 func parseMarkedContent(path ExecutedStatusFilePath, lines []string,
 	mark string, level int) (content []string, remain []string, ok bool) {
 
-	remain = lines
 	if len(lines) == 0 {
-		return
+		return nil, lines, false
 	}
 
 	markStart := markStartStr(mark, level)
@@ -313,7 +378,7 @@ func parseMarkedContent(path ExecutedStatusFilePath, lines []string,
 	}
 
 	if lines[0] != markStart {
-		return nil, remain, false
+		return nil, lines, false
 	}
 	lines = lines[1:]
 
@@ -336,4 +401,15 @@ func parseMarkedContent(path ExecutedStatusFilePath, lines []string,
 	}
 
 	return lines, nil, false
+}
+
+func getSampleLines(lines []string) string {
+	sample := []string{}
+	for i, line := range lines {
+		if i > 3 {
+			break
+		}
+		sample = append(sample, strings.TrimSpace(line))
+	}
+	return strings.Join(sample, " ")
 }

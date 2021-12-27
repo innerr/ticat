@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
-	"github.com/pingcap/ticat/pkg/cli/display"
+	//"github.com/pingcap/ticat/pkg/cli/display"
 )
 
 func DbgEcho(
@@ -61,6 +61,33 @@ func DbgDelayExecute(
 	return currCmdIdx, true
 }
 
+func DbgDelayExecuteAtEnd(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec.at-end", argv.GetInt("seconds"))
+	return currCmdIdx, true
+}
+
+func DbgBreakAtBegin(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+	cc.BreakPoints.SetAtBegin(true)
+	if 1 == len(flow.Cmds)-1 {
+		env.GetLayer(core.EnvLayerSession).SetBool("display.one-cmd", true)
+	}
+	return currCmdIdx, true
+}
+
 func DbgBreakBefore(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -72,17 +99,35 @@ func DbgBreakBefore(
 
 	listSep := env.GetRaw("strs.list-sep")
 	cmdList := strings.Split(argv.GetRaw("break-points"), listSep)
-	verifiedCmds := cc.BreakPoints.SetBefore(cc, env, cmdList)
+	cc.BreakPoints.SetBefores(cc, env, cmdList)
+	return currCmdIdx, true
+}
 
-	env.GetLayer(core.EnvLayerSession).Set("sys.breaks.before", strings.Join(verifiedCmds, listSep))
+func DbgBreakAfter(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
 
-	if len(verifiedCmds) != 0 {
-		display.PrintTipTitle(cc.Screen, env, "will pause before those commands:")
-		for _, cmd := range verifiedCmds {
-			cc.Screen.Print(display.ColorCmd("["+cmd+"]", env) + "\n")
-		}
-	} else {
-		display.PrintTipTitle(cc.Screen, env, "will not pause before any commands")
-	}
+	assertNotTailMode(flow, currCmdIdx)
+
+	listSep := env.GetRaw("strs.list-sep")
+	cmdList := strings.Split(argv.GetRaw("break-points"), listSep)
+	cc.BreakPoints.SetAfters(cc, env, cmdList)
+	return currCmdIdx, true
+}
+
+func DbgInteractLeave(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	env = env.GetLayer(core.EnvLayerSession)
+	env.SetBool("sys.breakpoint.status.interact.leaving", true)
 	return currCmdIdx, true
 }

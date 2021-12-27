@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+// TODO: this session status file format (and code) is bad and dirty, rewrite it
+
 type ExecutingFlow struct {
 	path  string
 	level int
@@ -28,74 +30,129 @@ func NewExecutingFlow(path string, flow *ParsedCmds, env *Env) *ExecutingFlow {
 }
 
 func (self *ExecutingFlow) onFlowStart(flow *ParsedCmds, env *Env) {
+	buf := bytes.NewBuffer(nil)
+
 	trivialMark := env.GetRaw("strs.trivial-mark")
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
-	buf := bytes.NewBuffer(nil)
-	SaveFlow(buf, flow, 0, cmdPathSep, trivialMark, env)
-	flowStr := buf.String()
-	writeMarkedContent(self.path, "flow", 0, flowStr)
+	flowBuf := bytes.NewBuffer(nil)
+	SaveFlow(flowBuf, flow, 0, cmdPathSep, trivialMark, env)
+	buf.Write([]byte(markedContent("flow", 0, flowBuf.String())))
+
+	now := time.Now().Format(SessionTimeFormat)
+	buf.Write([]byte(markedOneLineContent("flow-start-time", self.level, now)))
+
+	writeStatusContent(self.path, buf.String())
 }
 
 func (self *ExecutingFlow) OnCmdStart(flow *ParsedCmds, index int, env *Env, logFilePath string) {
+	buf := bytes.NewBuffer(nil)
+
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
 	cmdName := strings.Join(flow.Cmds[index].Path(), cmdPathSep)
-	buf := bytes.NewBuffer(nil)
 	buf.Write([]byte(markedOneLineContent("cmd", self.level, cmdName)))
+
+	now := time.Now().Format(SessionTimeFormat)
+	buf.Write([]byte(markedOneLineContent("cmd-start-time", self.level, now)))
+
 	if len(logFilePath) != 0 {
 		buf.Write([]byte(markedOneLineContent("log", self.level, logFilePath)))
 	}
+
 	writeCmdEnv(buf, env, "env-start", self.level)
+
 	writeStatusContent(self.path, buf.String())
 }
 
 func (self *ExecutingFlow) OnAsyncTaskSchedule(flow *ParsedCmds, index int, env *Env, tid string) {
+	buf := bytes.NewBuffer(nil)
+
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
 	cmdName := strings.Join(flow.Cmds[index].Path(), cmdPathSep)
-	buf := bytes.NewBuffer(nil)
 	buf.Write([]byte(markedOneLineContent("cmd", self.level, cmdName)))
+
+	now := time.Now().Format(SessionTimeFormat)
+	buf.Write([]byte(markedOneLineContent("cmd-start-time", self.level, now)))
+
 	buf.Write([]byte(markedOneLineContent("scheduled", self.level, tid)))
+
 	writeStatusContent(self.path, buf.String())
 }
 
 func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, succeeded bool, err error, skipped bool) {
 	buf := bytes.NewBuffer(nil)
+
 	writeCmdEnv(buf, env, "env-finish", self.level)
 
-	result := "failed"
+	result := ExecutedResultError
+	now := time.Now().Format(SessionTimeFormat)
+	buf.Write([]byte(markedOneLineContent("cmd-finish-time", self.level, now)))
+
 	if succeeded {
 		if skipped {
-			result = "skipped"
+			result = ExecutedResultSkipped
 		} else {
-			result = "succeeded"
+			result = ExecutedResultSucceeded
 		}
 	}
-	buf.Write([]byte(markedOneLineContent("result", self.level, result)))
+	buf.Write([]byte(markedOneLineContent("cmd-result", self.level, string(result))))
 
 	if err != nil {
 		errLines := strings.Split(err.Error(), "\n")
 		buf.Write([]byte(markedContent("error", self.level, errLines...)))
 	}
+
 	writeStatusContent(self.path, buf.String())
 }
 
 func (self *ExecutingFlow) OnSubFlowStart(flow string) {
 	content := markStartStr("subflow", self.level) + "\n"
+
 	self.level += 1
+
 	content += markedContent("flow", self.level, flow)
+
+	now := time.Now().Format(SessionTimeFormat)
+	content += markedOneLineContent("flow-start-time", self.level, now)
+
 	writeStatusContent(self.path, content)
 }
 
-func (self *ExecutingFlow) OnSubFlowFinish(env *Env) {
-	self.level -= 1
+func (self *ExecutingFlow) OnSubFlowFinish(env *Env, succeeded bool, skipped bool) {
 	buf := bytes.NewBuffer(nil)
+
+	now := time.Now().Format(SessionTimeFormat)
+	buf.Write([]byte(markedOneLineContent("flow-finish-time", self.level, now)))
+
+	result := ExecutedResultError
+	if succeeded {
+		if skipped {
+			result = ExecutedResultSkipped
+		} else {
+			result = ExecutedResultSucceeded
+		}
+	}
+
+	buf.Write([]byte(markedOneLineContent("flow-result", self.level, string(result))))
+
+	self.level -= 1
 	buf.Write([]byte(markFinishStr("subflow", self.level) + "\n"))
-	writeCmdEnv(buf, env, "env-finish", self.level)
+
 	writeStatusContent(self.path, buf.String())
 }
 
-func (self *ExecutingFlow) OnFlowFinish() {
+func (self *ExecutingFlow) OnFlowFinish(succeeded bool) {
+	buf := bytes.NewBuffer(nil)
+
 	now := time.Now().Format(SessionTimeFormat)
-	writeStatusContent(self.path, markedOneLineContent(StatusFileEOF, 0, now))
+	buf.Write([]byte(markedOneLineContent("flow-finish-time", self.level, now)))
+
+	result := ExecutedResultError
+	if succeeded {
+		result = ExecutedResultSucceeded
+	}
+	buf.Write([]byte(markedOneLineContent("flow-result", self.level, string(result))))
+
+	writeStatusContent(self.path, buf.String())
 }
 
 func writeCmdEnv(w io.Writer, env *Env, mark string, level int) {
@@ -180,6 +237,5 @@ const (
 	StatusFileMarkBracketLeft  = "<"
 	StatusFileMarkBracketRight = ">"
 	StatusFileMarkFinishMark   = "/"
-	StatusFileEOF              = "EOF"
 	StatusFileIndent           = "    "
 )

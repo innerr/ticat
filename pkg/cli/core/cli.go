@@ -24,9 +24,20 @@ type ExecuteMask struct {
 	SubFlow           []*ExecuteMask
 }
 
+func NewExecuteMask(cmd string) *ExecuteMask {
+	return &ExecuteMask{cmd, nil, ExecPolicyExec, nil}
+}
+
+func (self *ExecuteMask) Copy() *ExecuteMask {
+	return &ExecuteMask{self.Cmd, self.OverWriteStartEnv, self.ExecPolicy, self.SubFlow}
+}
+
 type Executor interface {
 	Execute(caller string, cc *Cli, env *Env, masks []*ExecuteMask, input ...string) bool
+	Clone() Executor
 }
+
+type HandledErrors map[interface{}]bool
 
 type Cli struct {
 	Screen        Screen
@@ -40,6 +51,7 @@ type Cli struct {
 	CmdIO         *CmdIO
 	FlowStatus    *ExecutingFlow
 	BreakPoints   *BreakPoints
+	HandledErrors HandledErrors
 }
 
 func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO) *Cli {
@@ -55,6 +67,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		cmdIO,
 		nil,
 		NewBreakPoints(),
+		HandledErrors{},
 	}
 }
 
@@ -66,7 +79,7 @@ func (self *Cli) SetFlowStatusWriter(status *ExecutingFlow) {
 }
 
 // Shadow copy
-func (self *Cli) Copy() *Cli {
+func (self *Cli) CopyForInteract() *Cli {
 	return &Cli{
 		self.Screen,
 		self.Cmds,
@@ -79,6 +92,7 @@ func (self *Cli) Copy() *Cli {
 		self.CmdIO,
 		nil,
 		self.BreakPoints,
+		HandledErrors{},
 	}
 }
 
@@ -92,12 +106,13 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		self.Parser,
 		self.EnvAbbrs,
 		NewTolerableErrs(),
-		self.Executor,
+		self.Executor.Clone(),
 		self.Helps,
 		self.BgTasks,
 		NewCmdIO(nil, bgStdout, bgStdout),
 		nil,
 		NewBreakPoints(),
+		HandledErrors{},
 	}
 }
 

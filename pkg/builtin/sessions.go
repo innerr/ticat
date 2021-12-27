@@ -35,6 +35,7 @@ func RemoveAllSessions(
 	assertNotTailMode(flow, currCmdIdx)
 
 	cleaned, runnings := core.CleanSessions(env)
+
 	var line string
 	if cleaned == 0 && runnings == 0 {
 		line = "no executed sessions"
@@ -347,7 +348,7 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago", env)+"\n",
 		time.Now().Sub(session.StartTs).Round(time.Second).String()))
 
-	if session.Status.Executed {
+	if !session.Status.FinishTs.IsZero() {
 		screen.Print(display.ColorProp("    finish-at:\n", env))
 		screen.Print(fmt.Sprintf("        %s\n", session.Status.FinishTs.Format(core.SessionTimeFormat)))
 		screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago, elapsed %s", env)+"\n",
@@ -360,10 +361,14 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 		screen.Print("        " + display.ColorCmdCurr("running", env) + "\n")
 		screen.Print(display.ColorProp("    pid:\n", env))
 		screen.Print(fmt.Sprintf("        %v\n", session.Pid))
-	} else if session.Status.Executed {
-		screen.Print(display.ColorCmdDone("        done\n", env))
+	} else if session.Status.Result == core.ExecutedResultSucceeded {
+		screen.Print("        " + display.ColorCmdDone(string(session.Status.Result), env) + "\n")
+	} else if session.Status.Result == core.ExecutedResultError {
+		screen.Print("        " + display.ColorError(string(session.Status.Result), env) + "\n")
+	} else if session.Status.Result == core.ExecutedResultIncompleted {
+		screen.Print("        " + display.ColorWarn("failed\n", env))
 	} else {
-		screen.Print(display.ColorError("        ERR\n", env))
+		screen.Print("        " + string(session.Status.Result) + "\n")
 	}
 }
 
@@ -376,7 +381,6 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 			dumpArgs.SetSkeleton()
 		} else {
 			dumpArgs.SetSimple()
-			//dumpArgs.SetSkeleton()
 		}
 	}
 	if showEnvFull {
@@ -391,8 +395,10 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 }
 
 func retrySession(session core.SessionStatus) (flow []string, masks []*core.ExecuteMask, ok bool) {
-	if session.Status.Executed {
-		panic(fmt.Errorf("session [%s] had succeeded, nothing to retry", session.DirName))
-	}
+	/*
+		if session.Status.Executed {
+			panic(fmt.Errorf("session [%s] had succeeded, nothing to retry", session.DirName))
+		}
+	*/
 	return []string{session.Status.Flow}, session.Status.GenExecMasks(), true
 }

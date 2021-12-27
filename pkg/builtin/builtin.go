@@ -474,7 +474,8 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")
 
-	env.AddSub("reset-session", "reset").
+	// '--' is for compatible only, will remove late
+	env.AddSub("reset-session", "reset", "--").
 		RegPowerCmd(ResetSessionEnv,
 			"clear all env values in current session")
 
@@ -675,6 +676,9 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	remove.AddSub("all", "a", "A").
 		RegPowerCmd(RemoveAllSessions,
 			"clear all executed sessions")
+	sessions.AddSub("clear", "clean").
+		RegPowerCmd(RemoveAllSessions,
+			"clear all executed sessions")
 
 	sessions.AddSub("set-keep-duration", "set-keep-dur", "keep-duration", "keep-dur", "k-d", "kd").
 		RegPowerCmd(SetSessionsKeepDur,
@@ -693,19 +697,38 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		"sys.panic.recover",
 		"recover")
 
-	cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
+	delay := cmds.AddSub("delay-execute", "delay", "dl", "d", "D").
 		RegPowerCmd(DbgDelayExecute,
 			"wait for specified duration before executing each commands").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")
 
+	delay.AddSub("at-end", "at-finish", "post-execute", "end", "finish").
+		RegPowerCmd(DbgDelayExecuteAtEnd,
+			"wait for specified duration after executing each commands").
+		SetQuiet().
+		AddArg("seconds", "3", "second", "sec", "s", "S")
+
 	breaks := cmds.AddSub("breaks", "break")
-	breaks.AddSub("before", "at").
+
+	breaksAt := breaks.AddSub("at", "before").
 		RegPowerCmd(DbgBreakBefore,
 			// TODO: get 'sep' from env or other config
-			"setup break points, will pause before specified commands\nuse ',' to seperate multipy commands").
+			"setup before-command break points, use ',' to seperate multipy commands").
 		SetQuiet().
-		AddArg("break-points", "", "cmds")
+		AddArg("break-points", "", "break-point", "cmds", "cmd")
+
+	breaksAt.AddSub("begin", "start", "first", "0").
+		RegPowerCmd(DbgBreakAtBegin,
+			"set break point at the first command").
+		SetQuiet()
+
+	breaks.AddSub("after", "post").
+		RegPowerCmd(DbgBreakAfter,
+			// TODO: get 'sep' from env or other config
+			"setup after-command break points, use ',' to seperate multipy commands").
+		SetQuiet().
+		AddArg("break-points", "", "break-point", "cmds", "cmd")
 
 	panicTest := cmds.AddSub("panic")
 	panicTest.RegPowerCmd(DbgPanic,
@@ -729,6 +752,17 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		RegPowerCmd(DbgExecBash,
 			"verify bash in os/exec").
 		SetQuiet()
+
+	cmds.AddSub("interact", "i", "I").
+		AddSub("leave", "l", "L").
+		RegPowerCmd(DbgInteractLeave,
+			"leave interact mode and continue to run")
+
+	// For compatible only, will remove late
+	cmds.AddSub("echo").
+		RegPowerCmd(DbgEcho,
+			"! moved to 'echo', this is just for compatible only, will be removed soon").
+		AddArg("message", "", "msg", "m", "M")
 }
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {

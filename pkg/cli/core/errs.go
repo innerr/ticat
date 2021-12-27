@@ -169,3 +169,14 @@ type RunCmdFileFailed struct {
 func (self RunCmdFileFailed) Error() string {
 	return self.Err
 }
+
+type AbortByUserErr struct {
+}
+
+func (self AbortByUserErr) Error() string {
+	return "aborted by user"
+}
+
+func NewAbortByUserErr() *AbortByUserErr {
+	return &AbortByUserErr{}
+}

@@ -208,13 +208,17 @@ func (self *Cmd) execute(
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env, logFilePath)
 		defer func() {
-			var err error
 			r := recover()
+			handledErr := false
+			var err error
 			if r != nil {
+				handledErr = cc.HandledErrors[r]
 				err = r.(error)
 			}
-			if !self.HasSubFlow() {
+
+			if r == nil || !handledErr {
 				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
+				cc.HandledErrors[r] = true
 			}
 			if r != nil {
 				panic(r)
@@ -222,7 +226,8 @@ func (self *Cmd) execute(
 		}()
 	}
 
-	if !shouldExecByMask(mask) && !self.HasSubFlow() {
+	if !shouldExecByMask(mask) {
+		// TODO: print this outside core pkg, so it can be colorize
 		cc.Screen.Print("(skipped)\n")
 		newCurrCmdIdx, succeeded = currCmdIdx, true
 	} else {
@@ -630,11 +635,13 @@ func (self *Cmd) executePowerCmd(
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask) (succeeded bool) {
 	flow, masks, _ := self.Flow(argv, cc, env, false)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
+	skipped := false
+
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnSubFlowStart(FlowStrsToStr(flow))
 		defer func() {
 			if succeeded {
-				cc.FlowStatus.OnSubFlowFinish(flowEnv)
+				cc.FlowStatus.OnSubFlowFinish(flowEnv, succeeded, skipped)
 			}
 		}()
 	}
@@ -644,7 +651,13 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 		}
 		masks = mask.SubFlow
 	}
-	succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flowEnv, masks, flow...)
+	if shouldExecByMask(mask) {
+		succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flowEnv, masks, flow...)
+	} else {
+		cc.Screen.Print("(skipped+)\n")
+		succeeded = true
+		skipped = true
+	}
 	return
 }
 
@@ -698,7 +711,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 
 	err := cmd.Run()
 	if err != nil {
-		err = RunCmdFileFailed{
+		err = &RunCmdFileFailed{
 			err.Error(),
 			parsedCmd,
 			argv,

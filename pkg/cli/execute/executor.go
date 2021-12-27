@@ -36,6 +36,14 @@ func NewExecutor(
 	}
 }
 
+func (self *Executor) Clone() core.Executor {
+	return NewExecutor(
+		self.sessionFileName,
+		self.sessionStatusFileName,
+		self.callerNameBootstrap,
+		self.callerNameEntry)
+}
+
 func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input ...string) bool {
 	overWriteBootstrap := env.Get("sys.bootstrap").Raw
 	if len(overWriteBootstrap) != 0 {
@@ -46,8 +54,8 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 	}
 	ok := self.execute(self.callerNameEntry, cc, env, nil, false, false, input...)
 	builtin.WaitAllBgTasks(cc, env)
-	if cc.FlowStatus != nil && ok {
-		cc.FlowStatus.OnFlowFinish()
+	if cc.FlowStatus != nil {
+		cc.FlowStatus.OnFlowFinish(ok)
 	}
 	return ok
 }
@@ -140,6 +148,7 @@ func (self *Executor) executeFlow(
 	masks []*core.ExecuteMask,
 	input []string) bool {
 
+	breakAtNext := false
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool
@@ -147,7 +156,8 @@ func (self *Executor) executeFlow(
 		if i < len(masks) {
 			mask = masks[i]
 		}
-		i, succeeded = self.executeCmd(cc, bootstrap, cmd, env, mask, flow, i)
+		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, env, mask, flow, i,
+			breakAtNext, i+1 == len(flow.Cmds))
 		if !succeeded {
 			return false
 		}
@@ -162,11 +172,19 @@ func (self *Executor) executeCmd(
 	env *core.Env,
 	mask *core.ExecuteMask,
 	flow *core.ParsedCmds,
-	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
+	currCmdIdx int,
+	breakByPrev bool,
+	lastCmdInFlow bool) (newCurrCmdIdx int, succeeded bool, breakAtNext bool) {
 
+	// This is a fake apply just for calculate sys args, the env is a clone
+	cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
+		env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+	sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
+
+	// TODO: clean this
 	// The env modifications from input will be popped out after a command is executed
 	// But if a mod modified the env, the modifications stay in session level
-	cmdEnv := cmd.GenCmdEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
+	//cmdEnv := cmd.GenCmdEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
 
 	ln := cc.Screen.OutputNum()
 
@@ -176,26 +194,31 @@ func (self *Executor) executeCmd(
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
 	}
-	succeeded = tryDelayAndStepByStep(cc, env)
-	if !succeeded {
-		return
-	}
-	succeeded = tryBreakBefore(cc, env, cmd)
-	if !succeeded {
-		return
-	}
 
 	last := cmd.LastCmdNode()
+
+	if !sysArgv.IsDelay() {
+		bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow, bootstrap)
+		if bpa == BPASkip {
+			mask = copyMask(last.DisplayPath(), mask)
+			mask.ExecPolicy = core.ExecPolicySkip
+			breakAtNext = true
+		} else if bpa == BPAStepOver {
+			breakAtNext = true
+		} else if bpa != BPAContinue {
+			return
+		}
+	} else {
+		// TODO: maybe use env to pass the breaking status for all cases will be better?
+		breakAtNext = breakByPrev
+	}
+
 	start := time.Now()
 	if last != nil {
 		if last.IsNoExecutableCmd() {
 			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
 			newCurrCmdIdx, succeeded = currCmdIdx, true
 		} else {
-			// This is a fake apply just for calculate sys args, the env is a clone
-			cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
-				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-			sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
 			if !sysArgv.IsDelay() {
 				// This cmdEnv is different from env, it included values from 'val2env' and 'arg2env'
 				cmdEnv, argv = cmd.ApplyMappingGenEnvAndArgv(
@@ -231,6 +254,13 @@ func (self *Executor) executeCmd(
 		last := flow.Cmds[len(flow.Cmds)-1]
 		if last.LastCmd() != nil && !last.LastCmd().IsQuiet() {
 			cc.Screen.Print("\n")
+		}
+	}
+
+	if !sysArgv.IsDelay() {
+		bpa := tryDelayAndBreakAfter(cc, env, cmd, bootstrap)
+		if bpa != BPAContinue {
+			return
 		}
 	}
 	return
@@ -344,34 +374,6 @@ func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
 	}
 }
 
-func tryBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) bool {
-	name := strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep)
-	if !cc.BreakPoints.BreakBefore(name) {
-		return true
-	}
-	cc.Screen.Print(display.ColorTip("[confirm]", env) + " paused by break-point command " +
-		display.ColorCmd("["+name+"]", env) + ", type " +
-		display.ColorWarn("'y'", env) + " and press enter:\n")
-	return utils.UserConfirm()
-}
-
-func tryDelayAndStepByStep(cc *core.Cli, env *core.Env) bool {
-	delaySec := env.GetInt("sys.execute-delay-sec")
-	if delaySec > 0 {
-		for i := 0; i < delaySec; i++ {
-			time.Sleep(time.Second)
-			cc.Screen.Print(".")
-		}
-		cc.Screen.Print("\n")
-	}
-	if env.GetBool("sys.step-by-step") {
-		cc.Screen.Print(display.ColorTip("[confirm]", env) + " type " +
-			display.ColorWarn("'y'", env) + " and press enter:\n")
-		return utils.UserConfirm()
-	}
-	return true
-}
-
 func stackStepIn(caller string, env *core.Env) {
 	env.PlusInt("sys.stack-depth", 1)
 	sep := env.GetRaw("strs.list-sep")
@@ -445,6 +447,8 @@ func asyncExecute(
 		bgSessionEnv.SetBool("display.one-cmd", true)
 		bgSessionEnv.SetBool("sys.in-bg-task", true)
 
+		clearBreakPointStatusInEnv(bgSessionEnv)
+
 		task := cc.BgTasks.GetOrAddTask(tid, name, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
 		tidChan <- tid
 
@@ -486,9 +490,7 @@ func asyncExecute(
 				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}
-		if ok {
-			cc.FlowStatus.OnFlowFinish()
-		}
+		cc.FlowStatus.OnFlowFinish(ok)
 		task.OnFinish()
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
@@ -496,4 +498,13 @@ func asyncExecute(
 	tid = <-tidChan
 	screen.Print(display.ColorExplain("(current command scheduled to thread "+tid+")\n", env))
 	return tid, true
+}
+
+func copyMask(cmd string, mask *core.ExecuteMask) *core.ExecuteMask {
+	if mask != nil {
+		mask = mask.Copy()
+	} else {
+		mask = core.NewExecuteMask(cmd)
+	}
+	return mask
 }

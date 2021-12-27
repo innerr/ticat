@@ -24,7 +24,7 @@ func (self ArgVals) GetRaw(name string) (raw string) {
 func (self ArgVals) GetInt(name string) int {
 	val, ok := self[name]
 	if !ok {
-		panic(ArgValErrNotFound{
+		panic(&ArgValErrNotFound{
 			fmt.Sprintf("[ArgVals.GetInt] arg '%s' not found", name),
 			name,
 		})
@@ -34,7 +34,7 @@ func (self ArgVals) GetInt(name string) int {
 	}
 	intVal, err := strconv.Atoi(val.Raw)
 	if err != nil {
-		panic(ArgValErrWrongType{
+		panic(&ArgValErrWrongType{
 			fmt.Sprintf("[ArgVals.GetInt] arg '%s' = '%s' is not int: %v", name, val.Raw, err),
 			name, val.Raw, "int", err,
 		})
@@ -45,7 +45,7 @@ func (self ArgVals) GetInt(name string) int {
 func (self ArgVals) GetBool(name string) bool {
 	val, ok := self[name]
 	if !ok {
-		panic(ArgValErrNotFound{
+		panic(&ArgValErrNotFound{
 			fmt.Sprintf("[ArgVals.GetBool] arg '%s' not found", name),
 			name,
 		})
