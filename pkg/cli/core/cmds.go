@@ -88,7 +88,7 @@ func (self *CmdTree) cmdConflictCheck(help string, funName string) {
 	if self.cmd.Type() == CmdTypeEmptyDir {
 		return
 	}
-	err := CmdTreeErrExecutableConflicted{
+	err := &CmdTreeErrExecutableConflicted{
 		fmt.Sprintf("reg-cmd conflicted. old-help '%s', new-help '%s'",
 			strings.Split(self.cmd.Help(), "\n")[0],
 			strings.Split(help, "\n")[0]),
@@ -190,7 +190,7 @@ func (self *CmdTree) RegFileNFlowCmd(flow []string, cmd string, help string) *Cm
 
 func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 	if old, ok := self.subs[name]; ok && old.name != name {
-		err := CmdTreeErrSubCmdConflicted{
+		err := &CmdTreeErrSubCmdConflicted{
 			fmt.Sprintf("sub-cmd name conflicted: %s", name),
 			self.Path(),
 			name,
@@ -457,7 +457,7 @@ func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 			continue
 		}
 		if ok {
-			err := CmdTreeErrSubAbbrConflicted{
+			err := &CmdTreeErrSubAbbrConflicted{
 				fmt.Sprintf("%s: sub command abbr name '%s' conflicted, "+
 					"old for '%s', new for '%s'",
 					self.DisplayPath(), abbr, old, name),

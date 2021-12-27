@@ -171,7 +171,7 @@ func templateRenderPanic(in string, cmd *Cmd, targetName string, key string, isM
 	}
 
 	if cmd.args.Has(key) {
-		err := CmdMissedArgValWhenRenderFlow{
+		err := &CmdMissedArgValWhenRenderFlow{
 			"render " + targetName + " template " + multiply + "failed, arg value missed.",
 			cmd.owner.DisplayPath(),
 			cmd.metaFilePath,
@@ -185,7 +185,7 @@ func templateRenderPanic(in string, cmd *Cmd, targetName string, key string, isM
 	} else {
 		argName := cmd.arg2env.GetArgName(cmd, key, true)
 		argIdx := findArgIdx(argName)
-		err := CmdMissedEnvValWhenRenderFlow{
+		err := &CmdMissedEnvValWhenRenderFlow{
 			"render " + targetName + " template " + multiply + "failed, env value missed.",
 			cmd.owner.DisplayPath(),
 			cmd.metaFilePath,

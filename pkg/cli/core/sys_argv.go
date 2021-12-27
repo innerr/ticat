@@ -42,7 +42,7 @@ func (self SysArgVals) GetDelayDuration() time.Duration {
 	delayDur := self[SysArgNameDelay]
 	dur, err := time.ParseDuration(delayDur)
 	if err != nil {
-		panic(ArgValErrWrongType{
+		panic(&ArgValErrWrongType{
 			fmt.Sprintf("[Cmd.AsyncExecute] sys arg '%s = %s' is valid not golang duration format", SysArgNameDelay, delayDur),
 			SysArgNameDelay, delayDur, "golan duration format", err,
 		})

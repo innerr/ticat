@@ -205,24 +205,20 @@ func (self *Cmd) execute(
 
 	logFilePath := self.genLogFilePath(env)
 
-	shouldNotifyFinish := func(err error) bool {
-		if err == nil {
-			return true
-		}
-		_, isAbort := err.(*AbortByUserErr)
-		return !isAbort
-	}
-
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnCmdStart(flow, currCmdIdx, env, logFilePath)
 		defer func() {
-			var err error
 			r := recover()
+			handledErr := false
+			var err error
 			if r != nil {
+				handledErr = cc.HandledErrors[r]
 				err = r.(error)
 			}
-			if shouldNotifyFinish(err) {
+
+			if r == nil || !handledErr {
 				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
+				cc.HandledErrors[r] = true
 			}
 			if r != nil {
 				panic(r)
@@ -715,7 +711,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 
 	err := cmd.Run()
 	if err != nil {
-		err = RunCmdFileFailed{
+		err = &RunCmdFileFailed{
 			err.Error(),
 			parsedCmd,
 			argv,

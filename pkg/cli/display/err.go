@@ -24,8 +24,8 @@ func PrintEmptyDirCmdHint(screen core.Screen, env *core.Env, cmd core.ParsedCmd)
 
 func PrintError(cc *core.Cli, env *core.Env, err error) {
 	switch err.(type) {
-	case core.CmdMissedEnvValWhenRenderFlow:
-		e := err.(core.CmdMissedEnvValWhenRenderFlow)
+	case *core.CmdMissedEnvValWhenRenderFlow:
+		e := err.(*core.CmdMissedEnvValWhenRenderFlow)
 		PrintErrTitle(cc.Screen, env,
 			e.Error(),
 			"",
@@ -46,8 +46,8 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			cc.Screen.Print(rpt(" ", 4) + argInfo + "\n")
 		}
 
-	case core.CmdMissedArgValWhenRenderFlow:
-		e := err.(core.CmdMissedArgValWhenRenderFlow)
+	case *core.CmdMissedArgValWhenRenderFlow:
+		e := err.(*core.CmdMissedArgValWhenRenderFlow)
 		PrintErrTitle(cc.Screen, env,
 			e.Error(),
 			"",
@@ -77,8 +77,8 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		printer.Finish()
 		dumpCmdWithArgv(cc, env, e.Cmd)
 
-	case core.RunCmdFileFailed:
-		e := err.(core.RunCmdFileFailed)
+	case *core.RunCmdFileFailed:
+		e := err.(*core.RunCmdFileFailed)
 		cic := e.Cmd.LastCmd()
 		sep := cc.Cmds.Strs.PathSep
 		cmdName := strings.Join(e.Cmd.MatchedPath(), sep)

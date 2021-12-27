@@ -37,6 +37,8 @@ type Executor interface {
 	Clone() Executor
 }
 
+type HandledErrors map[interface{}]bool
+
 type Cli struct {
 	Screen        Screen
 	Cmds          *CmdTree
@@ -49,6 +51,7 @@ type Cli struct {
 	CmdIO         *CmdIO
 	FlowStatus    *ExecutingFlow
 	BreakPoints   *BreakPoints
+	HandledErrors HandledErrors
 }
 
 func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO) *Cli {
@@ -64,6 +67,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		cmdIO,
 		nil,
 		NewBreakPoints(),
+		HandledErrors{},
 	}
 }
 
@@ -88,6 +92,7 @@ func (self *Cli) CopyForInteract() *Cli {
 		self.CmdIO,
 		nil,
 		self.BreakPoints,
+		HandledErrors{},
 	}
 }
 
@@ -107,6 +112,7 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		NewCmdIO(nil, bgStdout, bgStdout),
 		nil,
 		NewBreakPoints(),
+		HandledErrors{},
 	}
 }
 
