@@ -13,8 +13,8 @@ type ExecutedResult string
 
 const (
 	ExecutedResultSucceeded   ExecutedResult = "OK"
-	ExecutedResultError       ExecutedResult = "ERR"
 	ExecutedResultSkipped     ExecutedResult = "skipped"
+	ExecutedResultError       ExecutedResult = "ERR"
 	ExecutedResultIncompleted ExecutedResult = "incompleted"
 	ExecutedResultUnRun       ExecutedResult = "un-run"
 )
@@ -40,6 +40,17 @@ type ExecutedCmd struct {
 
 func NewExecutedCmd(cmd string) *ExecutedCmd {
 	return &ExecutedCmd{Cmd: cmd, Result: ExecutedResultIncompleted}
+}
+
+func (self *ExecutedCmd) CalResultInCaseIncompleted() {
+	if self.Result != ExecutedResultSucceeded && self.Result != ExecutedResultIncompleted {
+		return
+	}
+	if self.SubFlow == nil {
+		return
+	}
+	self.SubFlow.CalResultInCaseIncompleted()
+	self.Result = self.SubFlow.Result
 }
 
 type ExecutedFlow struct {
@@ -109,18 +120,6 @@ func (self *ExecutedFlow) IsOneCmdSession(cmd string) bool {
 	return len(self.Cmds) == 1 && self.Cmds[0].Cmd == cmd
 }
 
-func (self *ExecutedFlow) CalResultWhenIncompleted() {
-	if self.Result != ExecutedResultIncompleted {
-		return
-	}
-	for _, cmd := range self.Cmds {
-		if cmd.Result == ExecutedResultError {
-			self.Result = cmd.Result
-			break
-		}
-	}
-}
-
 func (self *ExecutedFlow) MatchFind(findStrs []string) bool {
 	if len(findStrs) == 0 {
 		return true
@@ -147,40 +146,58 @@ func (self *ExecutedFlow) GetCmd(idx int) *ExecutedCmd {
 	return cmd.SubFlow.Cmds[0]
 }
 
+func (self *ExecutedFlow) CalResultInCaseIncompleted() {
+	if self.Result != ExecutedResultSucceeded && self.Result != ExecutedResultIncompleted {
+		return
+	}
+	for _, cmd := range self.Cmds {
+		if cmd.Result == ExecutedResultError {
+			self.Result = cmd.Result
+			break
+		} else if cmd.Result != ExecutedResultError && cmd.Result == ExecutedResultIncompleted {
+			self.Result = cmd.Result
+			break
+		}
+	}
+}
+
 func parseExecutedFlow(path ExecutedStatusFilePath, lines []string,
 	level int) (executed *ExecutedFlow, remain []string, ok bool) {
 
-	executed, remain, ok = tryParseExecutedFlow(path, lines, level)
-	executed.CalResultWhenIncompleted()
+	executed, _, remain, ok = tryParseExecutedFlow(path, lines, level)
 	return
 }
 
 func tryParseExecutedFlow(path ExecutedStatusFilePath, lines []string,
-	level int) (executed *ExecutedFlow, remain []string, ok bool) {
+	level int) (executed *ExecutedFlow, hasDelayCmd bool, remain []string, ok bool) {
 
 	executed = NewExecutedFlow(path.DirName)
 
 	executed.Flow, lines, ok = parseMarkedOneLineContent(path, lines, "flow", level)
 	if !ok {
-		return executed, lines, false
+		return executed, hasDelayCmd, lines, false
 	}
 	executed.StartTs, lines, ok = parseMarkedTime(path, lines, "flow-start-time", level)
 	if !ok {
-		return executed, lines, false
+		return executed, hasDelayCmd, lines, false
 	}
-	executed.Cmds, lines, ok = parseExecutedCmds(path, lines, level)
+
+	executed.Cmds, hasDelayCmd, lines, ok = parseExecutedCmds(path, lines, level)
 	if !ok {
-		return executed, lines, false
+		return executed, hasDelayCmd, lines, false
 	}
+
 	executed.FinishTs, lines, ok = parseMarkedTime(path, lines, "flow-finish-time", level)
 	if !ok {
-		return executed, lines, false
+		return executed, hasDelayCmd, lines, false
 	}
 	executed.Result, lines, ok = parseCmdOrFlowResult(path, lines, "flow-result", level, ExecutedResultIncompleted)
-	return executed, lines, ok
+	return executed, hasDelayCmd, lines, ok
 }
 
-func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (cmds []*ExecutedCmd, remain []string, ok bool) {
+func parseExecutedCmds(path ExecutedStatusFilePath, lines []string,
+	level int) (cmds []*ExecutedCmd, hasDelayCmd bool, remain []string, ok bool) {
+
 	for len(lines) != 0 {
 		var cmd *ExecutedCmd
 		cmd, lines, ok = parseExecutedCmd(path, lines, level)
@@ -189,12 +206,17 @@ func parseExecutedCmds(path ExecutedStatusFilePath, lines []string, level int) (
 				break
 			}
 			if len(lines) != 0 {
-				return cmds, lines, false
+				return cmds, hasDelayCmd, lines, false
 			}
 		}
-		cmds = append(cmds, cmd)
+		if cmd.IsDelay {
+			hasDelayCmd = true
+		}
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 	}
-	return cmds, lines, true
+	return cmds, hasDelayCmd, lines, true
 }
 
 func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (cmd *ExecutedCmd, remain []string, ok bool) {
@@ -251,6 +273,7 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 	}
 
 	cmd.Result, lines, ok = parseCmdOrFlowResult(path, lines, "cmd-result", level, ExecutedResultError)
+	cmd.CalResultInCaseIncompleted()
 	if !ok {
 		return cmd, lines, false
 	}

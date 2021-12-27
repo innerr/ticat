@@ -207,11 +207,12 @@ func dumpFlowCmd(
 	}
 
 	showTrivialMark := foldSubFlowByTrivial() && trivialDelta > 0
-	name, ok := dumpCmdDisplayName(cmdEnv, parsedCmd, args, executedCmd, running, showTrivialMark)
+	name, isDelay, ok := dumpCmdDisplayName(cmdEnv, parsedCmd, args, executedCmd, running, showTrivialMark)
 	prt(0, name)
 	if !ok {
 		return false
 	}
+	_ = isDelay
 
 	dumpCmdHelp(cic.Help(), cmdEnv, args, prt)
 
@@ -425,7 +426,7 @@ func dumpCmdDisplayName(
 	args *DumpFlowArgs,
 	executedCmd *core.ExecutedCmd,
 	running bool,
-	showTrivialMark bool) (name string, ok bool) {
+	showTrivialMark bool) (name string, isDelay bool, ok bool) {
 
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
@@ -465,7 +466,7 @@ func dumpCmdDisplayName(
 			// TODO: better display
 			name += ColorSymbol(" - ", env) + ColorError("flow not matched, origin cmd: ", env) +
 				ColorCmd("["+executedCmd.Cmd+"]", env)
-			return name, false
+			return name, sysArgv.IsDelay(), false
 		}
 		resultStr := string(executedCmd.Result)
 		if executedCmd.Result == core.ExecutedResultError {
@@ -486,7 +487,7 @@ func dumpCmdDisplayName(
 			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
 		}
 	}
-	return name, true
+	return name, sysArgv.IsDelay(), true
 }
 
 func dumpCmdExecutable(
