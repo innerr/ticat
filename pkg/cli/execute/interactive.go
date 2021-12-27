@@ -203,7 +203,7 @@ func interactiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 		if line == exitStr {
 			break
 		}
-		cc.Executor.Execute("(interactive)", cc, env, nil, strings.Fields(line)...)
+		cc.Executor.Execute("(interact)", cc, env, nil, strings.Fields(line)...)
 	}
 
 	sessionEnv.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.interact", false)

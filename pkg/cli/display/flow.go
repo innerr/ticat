@@ -3,8 +3,10 @@ package display
 import (
 	"fmt"
 	"math"
+	"regexp"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/utils"
@@ -360,12 +362,23 @@ func dumpCmdExecutedLog(
 	}
 	prt(2, mayTrimStr(executedCmd.LogFilePath, env, limit))
 
-	lines := utils.ReadLogFileLastLines(executedCmd.LogFilePath, 1024*16, 16)
+	lines := utils.ReadLogFileLastLines(executedCmd.LogFilePath, 1024*16, 8)
 	if len(lines) != 0 {
 		prt(2, ColorExplain("...", env))
 	}
 	for _, line := range lines {
 		i := 0
+		line = strings.TrimSpace(line)
+		line = strings.Map(func(r rune) rune {
+			if unicode.IsGraphic(r) {
+				return r
+			}
+			return -1
+		}, line)
+		line = stripTermStyle(line)
+		if len(line) > 2*lineLimit {
+			line = line[0:limit]
+		}
 		for {
 			j := i + limit
 			if j < len(line) {
@@ -924,3 +937,15 @@ func (self FlowWrittenKeys) AddCmd(argv core.ArgVals, env *core.Env, cic *core.C
 		self[k] = true
 	}
 }
+
+func stripTermStyle(str string) string {
+	return re.ReplaceAllString(str, "")
+}
+
+func init() {
+	re = regexp.MustCompile(AnsiChars)
+}
+
+var re *regexp.Regexp
+
+const AnsiChars = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
