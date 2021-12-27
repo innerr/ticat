@@ -356,7 +356,7 @@ func dumpCmdExecutedLog(
 	if executedCmd.Result == core.ExecutedResultSucceeded {
 		prt(1, ColorProp("- execute-log:", env))
 	} else {
-		prt(1, ColorError("- execute-log:", env))
+		prt(1, ColorHighLight("- execute-log:", env))
 	}
 	prt(2, mayTrimStr(executedCmd.LogFilePath, env, limit))
 
@@ -463,12 +463,12 @@ func dumpCmdDisplayName(
 			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
 		} else if executedCmd.Result == core.ExecutedResultIncompleted {
 			if running {
-				name += ColorExplain(" - ", env) + ColorError("running", env)
+				name += ColorExplain(" - ", env) + ColorHighLight("running", env)
 			} else {
 				name += ColorExplain(" - ", env) + ColorWarn("failed", env)
 			}
 		} else if executedCmd.Result == core.ExecutedResultUnRun {
-			name += ColorExplain(" - ", env) + ColorError(resultStr, env)
+			name += ColorExplain(" - ", env) + ColorHighLight(resultStr, env)
 		} else {
 			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
 		}

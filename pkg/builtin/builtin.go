@@ -474,7 +474,8 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")
 
-	env.AddSub("reset-session", "reset").
+	// '--' is for compatible only, will remove late
+	env.AddSub("reset-session", "reset", "--").
 		RegPowerCmd(ResetSessionEnv,
 			"clear all env values in current session")
 
@@ -751,6 +752,17 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		RegPowerCmd(DbgExecBash,
 			"verify bash in os/exec").
 		SetQuiet()
+
+	cmds.AddSub("interact", "i", "I").
+		AddSub("leave", "l", "L").
+		RegPowerCmd(DbgInteractLeave,
+			"leave interact mode and continue to run")
+
+	// For compatible only, will remove late
+	cmds.AddSub("echo").
+		RegPowerCmd(DbgEcho,
+			"print message from argv").
+		AddArg("message", "", "msg", "m", "M")
 }
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {

@@ -18,11 +18,16 @@ const (
 	BPAStepIn   = "step in subflow"
 	BPAContinue = "continue"
 	BPASkip     = "skip current, stop before next command"
+	BPAInteract = "interactive mode"
 	BPAQuit     = "quit executing"
 )
 
 func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd,
 	breakByPrev bool, lastCmdInFlow bool, bootstrap bool) BreakPointAction {
+
+	if env.GetBool("sys.breakpoint.status.interact") {
+		return BPAContinue
+	}
 
 	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev)
 	if bpa == BPAContinue {
@@ -82,20 +87,14 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 		choices = append(choices, "s", "d", "c")
 	}
 
-	choices = append(choices, "q")
+	choices = append(choices, "i", "q")
 
-	all := BPAs{
-		"c": BPAContinue,
-		"s": BPASkip,
-		"q": BPAQuit,
-		"t": BPAStepIn,
-		"d": BPAStepOver,
-	}
+	all := getAllBPAs()
 	bpas := BPAs{}
 	for _, k := range choices {
 		bpas[k] = all[k]
 	}
-	return readUserBPAChoice(reason, choices, bpas, true, cc.Screen, env)
+	return readUserBPAChoice(reason, choices, bpas, true, cc, env)
 }
 
 func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool) BreakPointAction {
@@ -115,12 +114,9 @@ func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAc
 	return readUserBPAChoice(
 		reason,
 		[]string{"c", "q"},
-		BPAs{
-			"c": BPAContinue,
-			"q": BPAQuit,
-		},
+		getAllBPAs(),
 		true,
-		cc.Screen,
+		cc,
 		env)
 }
 
@@ -136,14 +132,18 @@ func tryDelay(cc *core.Cli, env *core.Env, delayKey string) {
 }
 
 func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput bool,
-	screen core.Screen, env *core.Env) BreakPointAction {
+	cc *core.Cli, env *core.Env) BreakPointAction {
 
-	screen.Print(display.ColorTip("[choose]", env) + " paused by '" + reason +
-		"', choose action and press enter:\n")
-	for _, choice := range choices {
-		action := actions[choice]
-		screen.Print(display.ColorWarn(choice, env) + ": " + string(action) + "\n")
+	showTitle := func() {
+		cc.Screen.Print(display.ColorTip("[choose]", env) + " paused by '" + reason +
+			"', choose action and press enter:\n")
+		for _, choice := range choices {
+			action := actions[choice]
+			cc.Screen.Print(display.ColorWarn(choice, env) + ": " + string(action) + "\n")
+		}
 	}
+
+	showTitle()
 
 	buf := bufio.NewReader(os.Stdin)
 	for {
@@ -161,10 +161,62 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 		if action, ok := actions[line]; ok {
 			if action == BPAQuit {
 				panic(core.NewAbortByUserErr())
+			} else if action == BPAInteract {
+				interactiveMode(cc, env, "e")
+				if env.GetBool("sys.breakpoint.status.interact.leaving") {
+					env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.interact.leaving", false)
+					return BPAContinue
+				}
+				cc.Screen.Print("\n")
+				showTitle()
+				continue
 			}
 			return action
 		}
-		screen.Print(display.ColorExplain("(not valid input: "+line+")\n", env))
+		cc.Screen.Print(display.ColorExplain("(not valid input: "+line+")\n", env))
+	}
+}
+
+func interactiveMode(cc *core.Cli, env *core.Env, exitStr string) {
+	sessionEnv := env.GetLayer(core.EnvLayerSession)
+	sessionEnv.SetBool("sys.breakpoint.status.interact", true)
+
+	cc = cc.CopyForInteract()
+	buf := bufio.NewReader(os.Stdin)
+	for {
+		if env.GetBool("sys.breakpoint.status.interact.leaving") {
+			break
+		}
+		selfName := env.GetRaw("strs.self-name")
+		cc.Screen.Print("\n" + display.ColorExplain("", env) + display.ColorWarn(exitStr+":", env) +
+			display.ColorExplain(" exit interactive mode\n", env))
+
+		cc.Screen.Print(display.ColorTip(selfName+"> ", env))
+		lineBytes, err := buf.ReadBytes('\n')
+		if err != nil {
+			panic(fmt.Errorf("[readFromStdin] read from stdin failed: %v", err))
+		}
+		if len(lineBytes) == 0 {
+			continue
+		}
+		line := strings.TrimSpace(string(lineBytes))
+		if line == exitStr {
+			break
+		}
+		cc.Executor.Execute("(interactive)", cc, env, nil, strings.Fields(line)...)
+	}
+
+	sessionEnv.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.interact", false)
+}
+
+func getAllBPAs() BPAs {
+	return BPAs{
+		"c": BPAContinue,
+		"s": BPASkip,
+		"q": BPAQuit,
+		"t": BPAStepIn,
+		"d": BPAStepOver,
+		"i": BPAInteract,
 	}
 }
 

@@ -75,7 +75,7 @@ func (self *Cli) SetFlowStatusWriter(status *ExecutingFlow) {
 }
 
 // Shadow copy
-func (self *Cli) Copy() *Cli {
+func (self *Cli) CopyForInteract() *Cli {
 	return &Cli{
 		self.Screen,
 		self.Cmds,

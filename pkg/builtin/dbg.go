@@ -117,3 +117,17 @@ func DbgBreakAfter(
 	cc.BreakPoints.SetAfters(cc, env, cmdList)
 	return currCmdIdx, true
 }
+
+func DbgInteractLeave(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	env = env.GetLayer(core.EnvLayerSession)
+	env.SetBool("sys.breakpoint.status.interact.leaving", true)
+	return currCmdIdx, true
+}

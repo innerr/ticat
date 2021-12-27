@@ -37,6 +37,8 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"disabled":  3,
 		"explain":   1,
 		"session":   3,
+		"highlight": 3,
+		"interact":  3,
 	}
 	for _, it := range types {
 		extra, ok := lens[it]
@@ -74,6 +76,15 @@ func ColorWarn(origin string, env *core.Env) string {
 
 func ColorError(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(124), env)
+}
+
+func ColorHighLight(origin string, env *core.Env) string {
+	//return colorize(origin, fromColor256(125), env)
+	return colorize(origin, fromColor256(161), env)
+}
+
+func ColorInteract(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(51), env)
 }
 
 func ColorTip(origin string, env *core.Env) string {
