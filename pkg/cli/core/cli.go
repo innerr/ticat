@@ -33,7 +33,7 @@ func (self *ExecuteMask) Copy() *ExecuteMask {
 }
 
 type Executor interface {
-	Execute(caller string, cc *Cli, env *Env, masks []*ExecuteMask, input ...string) bool
+	Execute(caller string, inerrCall bool, cc *Cli, env *Env, masks []*ExecuteMask, input ...string) bool
 	Clone() Executor
 }
 
@@ -73,7 +73,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 
 func (self *Cli) SetFlowStatusWriter(status *ExecutingFlow) {
 	if self.FlowStatus != nil {
-		panic(fmt.Errorf("[SetExecutingFlowStatusLogger] should never happen"))
+		panic(fmt.Errorf("[SetFlowStatusWriter] should never happen"))
 	}
 	self.FlowStatus = status
 }

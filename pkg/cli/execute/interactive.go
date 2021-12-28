@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pingcap/ticat/pkg/builtin"
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
 )
@@ -46,7 +47,7 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 }
 
 func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, breakByPrev bool) BreakPointAction {
-	atBegin := cc.BreakPoints.AtBegin()
+	atBegin := cc.BreakPoints.BreakAtBegin()
 	stepByStep := env.GetBool("sys.step-by-step")
 	stepIn := env.GetBool("sys.breakpoint.status.step-in")
 	stepOut := env.GetBool("sys.breakpoint.status.step-out")
@@ -115,11 +116,28 @@ func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAc
 	reason := display.ColorTip("break-point: after command ", env) + display.ColorCmd("["+name+"]", env)
 	return readUserBPAChoice(
 		reason,
-		[]string{"c", "q"},
+		[]string{"c", "i", "q"},
 		getAllBPAs(),
 		true,
 		cc,
 		env)
+}
+
+func tryBreakAtEnd(cc *core.Cli, env *core.Env) {
+	if !cc.BreakPoints.BreakAtEnd() {
+		return
+	}
+	reason := display.ColorTip("break-point: at main-thread end", env)
+	bpa := readUserBPAChoice(
+		reason,
+		[]string{"c", "i", "q"},
+		getAllBPAs(),
+		true,
+		cc,
+		env)
+	if bpa != BPAContinue {
+		panic(fmt.Errorf("[tryBreakAtEnd] should never happen"))
+	}
 }
 
 func tryDelay(cc *core.Cli, env *core.Env, delayKey string) {
@@ -171,7 +189,8 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 			if action == BPAQuit {
 				panic(core.NewAbortByUserErr())
 			} else if action == BPAInteract {
-				interactiveMode(cc, env, "e")
+				cc.Screen.Print("\n")
+				builtin.InteractiveMode(cc, env, "e")
 				if env.GetBool("sys.interact.leaving") {
 					env.GetLayer(core.EnvLayerSession).Delete("sys.interact.leaving")
 					return BPAContinue
@@ -184,39 +203,6 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 		}
 		cc.Screen.Print(display.ColorExplain("(not valid input: "+line+")\n", env))
 	}
-}
-
-func interactiveMode(cc *core.Cli, env *core.Env, exitStr string) {
-	sessionEnv := env.GetLayer(core.EnvLayerSession)
-	sessionEnv.SetBool("sys.interact.inside", true)
-
-	cc = cc.CopyForInteract()
-	buf := bufio.NewReader(os.Stdin)
-	for {
-		if env.GetBool("sys.interact.leaving") {
-			break
-		}
-		selfName := env.GetRaw("strs.self-name")
-		cc.Screen.Print("\n" + display.ColorExplain("", env) + display.ColorWarn(exitStr, env) + ":" +
-			//display.ColorExplain(" exit interactive mode\n", env))
-			" exit interactive mode\n")
-
-		cc.Screen.Print(display.ColorTip(selfName+"> ", env))
-		lineBytes, err := buf.ReadBytes('\n')
-		if err != nil {
-			panic(fmt.Errorf("[readFromStdin] read from stdin failed: %v", err))
-		}
-		if len(lineBytes) == 0 {
-			continue
-		}
-		line := strings.TrimSpace(string(lineBytes))
-		if line == exitStr {
-			break
-		}
-		cc.Executor.Execute("(interact)", cc, env, nil, strings.Fields(line)...)
-	}
-
-	sessionEnv.GetLayer(core.EnvLayerSession).Delete("sys.interact.inside")
 }
 
 func getAllBPAs() BPAs {

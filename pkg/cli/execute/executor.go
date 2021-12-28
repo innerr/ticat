@@ -53,6 +53,9 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 		return false
 	}
 	ok := self.execute(self.callerNameEntry, cc, env, nil, false, false, input...)
+
+	tryBreakAtEnd(cc, env)
+
 	builtin.WaitAllBgTasks(cc, env)
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnFlowFinish(ok)
@@ -61,8 +64,8 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 }
 
 // Implement core.Executor
-func (self *Executor) Execute(caller string, cc *core.Cli, env *core.Env, masks []*core.ExecuteMask, input ...string) bool {
-	return self.execute(caller, cc, env, masks, false, true, input...)
+func (self *Executor) Execute(caller string, innerCall bool, cc *core.Cli, env *core.Env, masks []*core.ExecuteMask, input ...string) bool {
+	return self.execute(caller, cc, env, masks, false, innerCall, input...)
 }
 
 func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks []*core.ExecuteMask,
@@ -108,7 +111,7 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
-	if !innerCall && !bootstrap {
+	if !innerCall && !bootstrap && !env.GetBool("sys.interact.inside") {
 		noSession := noSessionCmds(flow)
 		if !noSession {
 			statusWriter, ok := core.SessionInit(cc, flow, env, self.sessionFileName, self.sessionStatusFileName)
@@ -393,8 +396,11 @@ func stackStepOut(caller string, callerNameEntry string, env *core.Env) {
 		if stack == callerNameEntry {
 			stack = ""
 		} else {
-			panic(fmt.Errorf("stack string not match when stepping out from '%s', stack: '%s'",
-				caller, stack))
+			fields := strings.Split(stack, sep)
+			if len(fields) != 1 || fields[0] != caller {
+				panic(fmt.Errorf("stack string not match when stepping out from '%s', stack: '%s'",
+					sep+caller, stack))
+			}
 		}
 	} else {
 		stack = stack[0 : len(stack)-len(sep)-len(caller)]

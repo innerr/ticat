@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
-	//"github.com/pingcap/ticat/pkg/cli/display"
 )
 
 func DbgEcho(
@@ -88,6 +87,21 @@ func DbgBreakAtBegin(
 	return currCmdIdx, true
 }
 
+func DbgBreakAtEnd(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+	cc.BreakPoints.SetAtEnd(true)
+	if 1 == len(flow.Cmds)-1 {
+		env.GetLayer(core.EnvLayerSession).SetBool("display.one-cmd", true)
+	}
+	return currCmdIdx, true
+}
+
 func DbgBreakBefore(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -129,5 +143,18 @@ func DbgInteractLeave(
 
 	env = env.GetLayer(core.EnvLayerSession)
 	env.SetBool("sys.interact.leaving", true)
+	return currCmdIdx, true
+}
+
+func DbgInteract(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	InteractiveMode(cc, env, "e")
 	return currCmdIdx, true
 }

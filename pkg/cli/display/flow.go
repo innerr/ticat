@@ -725,10 +725,10 @@ func dumpExecutedModifiedEnv(
 		// TODO:
 		// return
 	}
-	if !args.ShowExecutedModifiedEnv && executedCmd.Result == core.ExecutedResultSucceeded {
+	if !args.ShowExecutedModifiedEnv && executedCmd.Result != core.ExecutedResultError {
 		return
 	}
-	if executedCmd.FinishEnv == nil && executedCmd.Result != core.ExecutedResultSucceeded {
+	if executedCmd.FinishEnv == nil && executedCmd.Result != core.ExecutedResultError {
 		return
 	}
 
