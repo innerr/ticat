@@ -187,7 +187,7 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 		if line == exitStr {
 			break
 		}
-		executorSafeExecute("(interact)", cc, env, nil, strings.Fields(line)...)
+		executorSafeExecute("(interact)", cc, env, nil, core.FlowStrToStrs(line)...)
 	}
 
 	sessionEnv.GetLayer(core.EnvLayerSession).Delete("sys.interact.inside")
@@ -210,6 +210,5 @@ func executorSafeExecute(caller string, cc *core.Cli, env *core.Env, masks []*co
 		}
 	}()
 
-	// TODO: test \" in args
 	cc.Executor.Execute(caller, false, cc, env, masks, input...)
 }
