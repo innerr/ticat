@@ -27,6 +27,12 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 	defer lineReader.Close()
 	lineReader.SetCtrlCAborts(true)
 
+	hiddenCompletion := env.GetBool("display.completion.hidden")
+
+	if !hiddenCompletion {
+		lineReader.SetTabCompletionStyle(liner.TabPrints)
+	}
+
 	lineReader.SetCompleter(func(line string) (res []string) {
 		fields := strings.Fields(line)
 		if len(fields) == 0 {
@@ -50,10 +56,12 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 			return
 		}
 
-		// Double it to let user understand this command exists
-		if cc.Cmds.GetSubByPath(field, false) != nil {
-			res = append(res, prefix+field)
-			res = append(res, prefix+field)
+		if hiddenCompletion {
+			// Double it to let user understand this command exists
+			if cc.Cmds.GetSubByPath(field, false) != nil {
+				res = append(res, prefix+field)
+				res = append(res, prefix+field)
+			}
 		}
 
 		var parentPath []string

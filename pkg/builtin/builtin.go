@@ -788,6 +788,12 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		AddArg("style", "s", "S").
 		SetQuiet()
 
+	completion := cmds.AddSub("completion")
+	registerSimpleSwitch(completion,
+		"hidden style completion",
+		"display.completion.hidden",
+		"hidden")
+
 	utf8 := registerSimpleSwitchEx(cmds,
 		"utf8 display",
 		[]string{"display.utf8", "display.utf8.symbols"},
