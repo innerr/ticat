@@ -63,7 +63,15 @@ func AddrDisplayName(addr string) string {
 }
 
 func GetRepoPath(hubPath string, gitAddr string) string {
-	return filepath.Join(hubPath, filepath.Base(filepath.Dir(gitAddr)), filepath.Base(gitAddr))
+	addr := strings.ToLower(gitAddr)
+	for _, prefix := range []string{"http://", "https://", "git@", "root@"} {
+		addr = strings.TrimPrefix(addr, prefix)
+	}
+	author := filepath.Dir(addr)
+	return filepath.Join(hubPath,
+		filepath.Dir(author),
+		filepath.Base(author),
+		filepath.Base(addr))
 }
 
 func CheckRepoGitStatus(

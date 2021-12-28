@@ -221,6 +221,9 @@ func CheckGitRepoStatus(
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 
 	for _, info := range infos {
+		if len(info.Addr) == 0 {
+			continue
+		}
 		if len(findStrs) != 0 {
 			filtered := false
 			for _, filterStr := range findStrs {

@@ -145,6 +145,15 @@ func GlobalSuggestShortcut(env *core.Env) []string {
 	}
 }
 
+func GlobalSuggestInteract(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	indent += ColorExtraLen(env, "cmd")
+	sep := ColorProp("-", env)
+	return []string{
+		padCmdR(selfName+" dbg.interact", indent, env) + sep + " entry interact-mode",
+	}
+}
+
 func SuggestHubBranch(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	explain := "- branch 'hub' usage"
