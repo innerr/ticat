@@ -91,12 +91,13 @@ type BgTaskInfo struct {
 	Cmd      string
 	Started  bool
 	Finished bool
+	Err      error
 }
 
 type BgTask struct {
 	info           BgTaskInfo
 	stdout         *BgStdout
-	finishNotifier chan interface{}
+	finishNotifier chan error
 	lock           sync.Mutex
 }
 
@@ -107,7 +108,7 @@ func NewBgTask(tid string, cmd string, stdout *BgStdout) *BgTask {
 			Cmd: cmd,
 		},
 		stdout:         stdout,
-		finishNotifier: make(chan interface{}),
+		finishNotifier: make(chan error),
 	}
 }
 
@@ -123,15 +124,16 @@ func (self *BgTask) GetStat() BgTaskInfo {
 	return self.info
 }
 
-func (self *BgTask) OnFinish() {
+func (self *BgTask) OnFinish(err error) {
 	self.lock.Lock()
 	self.info.Finished = true
+	self.info.Err = err
 	self.lock.Unlock()
-	self.finishNotifier <- nil
+	self.finishNotifier <- err
 }
 
-func (self *BgTask) WaitForFinish() {
-	<-self.finishNotifier
+func (self *BgTask) WaitForFinish() error {
+	return <-self.finishNotifier
 }
 
 type BgTasks struct {
