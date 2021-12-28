@@ -710,6 +710,9 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		AddArg("seconds", "3", "second", "sec", "s", "S")
 
 	breaks := cmds.AddSub("breaks", "break")
+	breaks.RegPowerCmd(DbgBreakAtBegin,
+		"set break point at the first command").
+		SetQuiet()
 
 	breaksAt := breaks.AddSub("at", "before").
 		RegPowerCmd(DbgBreakBefore,
@@ -721,6 +724,11 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 	breaksAt.AddSub("begin", "start", "first", "0").
 		RegPowerCmd(DbgBreakAtBegin,
 			"set break point at the first command").
+		SetQuiet()
+
+	breaksAt.AddSub("end", "finish").
+		RegPowerCmd(DbgBreakAtEnd,
+			"set break point after the last command").
 		SetQuiet()
 
 	breaks.AddSub("after", "post").
@@ -753,8 +761,12 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 			"verify bash in os/exec").
 		SetQuiet()
 
-	cmds.AddSub("interact", "i", "I").
-		AddSub("leave", "l", "L").
+	interact := cmds.AddSub("interact", "interactive", "i", "I").
+		RegPowerCmd(DbgInteract,
+			"enter interact mode").
+		SetQuiet()
+
+	interact.AddSub("leave", "l", "L").
 		RegPowerCmd(DbgInteractLeave,
 			"leave interact mode and continue to run")
 

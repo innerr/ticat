@@ -658,7 +658,7 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 		masks = mask.SubFlow
 	}
 	if shouldExecByMask(mask) {
-		succeeded = cc.Executor.Execute(self.owner.DisplayPath(), cc, flowEnv, masks, flow...)
+		succeeded = cc.Executor.Execute(self.owner.DisplayPath(), true, cc, flowEnv, masks, flow...)
 	} else {
 		cc.Screen.Print("(skipped+)\n")
 		succeeded = true

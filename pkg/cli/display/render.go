@@ -156,15 +156,19 @@ func PrintSwitchingThreadDisplay(preTid string, info core.BgTaskInfo, env *core.
 func getFrameChars(env *core.Env) *FrameChars {
 	name := strings.ToLower(env.Get("display.style").Raw)
 	chars := getFrameCharsByName(env, name)
-	if env.GetInt("display.executor.displayed") == env.GetInt("sys.stack-depth") {
-		if env.GetBool("display.utf8") {
-			return FrameCharsAscii()
-		} else {
-			// TODO: have bugs
-			//return FrameCharsNoBorder()
-			return FrameCharsAscii()
+	// TODO: have bug
+	/*
+		// Display a lite frame under another frame
+		if env.GetInt("display.executor.displayed") == env.GetInt("sys.stack-depth") {
+			if env.GetBool("display.utf8") {
+				return FrameCharsAscii()
+			} else {
+				// TODO: have bugs
+				//return FrameCharsNoBorder()
+				return FrameCharsAscii()
+			}
 		}
-	}
+	*/
 	return chars
 }
 
