@@ -56,7 +56,13 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 
 	tryBreakAtEnd(cc, env)
 
-	builtin.WaitAllBgTasks(cc, env)
+	errs := builtin.WaitBgTasks(cc, env, "")
+	for _, err := range errs {
+		display.PrintError(cc, env, err)
+	}
+
+	ok = ok && len(errs) == 0
+
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnFlowFinish(ok)
 	}
@@ -76,7 +82,9 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 	}
 
 	if !innerCall && len(input) == 0 {
-		display.PrintGlobalHelp(cc, env)
+		if !env.GetBool("sys.interact.inside") {
+			display.PrintGlobalHelp(cc, env)
+		}
 		return true
 	}
 
@@ -460,17 +468,19 @@ func asyncExecute(
 
 		time.Sleep(dur)
 
-		defer func() {
-			if !env.GetBool("sys.panic.recover") {
-				return
-			}
-			if r := recover(); r != nil {
-				display.PrintError(cc, env, r.(error))
-				os.Exit(-1)
-			}
-		}()
-
 		task.OnStart()
+
+		defer func() {
+			var err error
+			if !env.GetBool("sys.panic.recover") {
+				// TODO: not sure how to handle if config is not-recover
+			} else {
+				if r := recover(); r != nil {
+					err = r.(error)
+				}
+			}
+			task.OnFinish(err)
+		}()
 
 		stackLines := display.PrintCmdStack(false, cc.Screen, cmd,
 			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, nil, false)
@@ -497,7 +507,6 @@ func asyncExecute(
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}
 		cc.FlowStatus.OnFlowFinish(ok)
-		task.OnFinish()
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
 

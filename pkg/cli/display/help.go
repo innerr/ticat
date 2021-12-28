@@ -8,6 +8,10 @@ import (
 )
 
 func PrintGlobalHelp(cc *core.Cli, env *core.Env) {
+	// TODO: use man page instead of help
+	PrintSelfHelp(cc.Screen, env)
+	return
+
 	if len(cc.Helps.Sections) == 0 {
 		PrintSelfHelp(cc.Screen, env)
 		return

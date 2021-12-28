@@ -61,19 +61,25 @@ func PrintCmdStack(
 		for _, bg := range bgTasks.GetStat() {
 			line := ""
 			lineLen := 0
+			bgCmd := ColorCmdDelay(bg.Cmd, env) + ColorSymbol(" - ", env) + bg.Tid
+			bgCmdLen := len(bg.Cmd) + len(bg.Tid) + 3
 			if bg.Finished {
-				doneStr := "OK"
-				if useUtf8 {
-					doneStr = " ✓"
+				if bg.Err != nil {
+					line += ColorError(" E ", env) + bgCmd
+				} else {
+					doneStr := "OK"
+					if useUtf8 {
+						doneStr = " ✓"
+					}
+					line += ColorCmd(doneStr+" ", env) + bgCmd
 				}
-				line += ColorCmd(doneStr+" ", env) + ColorCmdDelay(bg.Cmd, env)
-				lineLen = 2 + 1 + len(bg.Cmd)
+				lineLen = 3 + bgCmdLen
 			} else if bg.Started {
-				line += ColorCmdCurr(">> ", env) + ColorCmdDelay(bg.Cmd, env)
-				lineLen = len(line) - ColorExtraLen(env, "cmd-curr", "cmd-delay")
+				line += ColorCmdCurr(">> ", env) + bgCmd
+				lineLen = 3 + bgCmdLen
 			} else {
-				line += ColorExplain("zZ ", env) + ColorExplain(bg.Cmd, env)
-				lineLen = len(line) - ColorExtraLen(env, "explain", "explain")
+				line += ColorExplain("zZ ", env) + ColorExplain(bg.Cmd, env) + ColorExplain(" - "+bg.Tid, env)
+				lineLen = len(line) - ColorExtraLen(env, "explain")*3
 			}
 			lines.Bg = append(lines.Bg, line)
 			lines.BgLen = append(lines.BgLen, lineLen)

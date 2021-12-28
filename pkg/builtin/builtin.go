@@ -587,7 +587,11 @@ func RegisterBgManageCmds(cmds *core.CmdTree) {
 	bg := cmds.AddSub("background", "bg").
 		RegEmptyCmd(
 			"background tasks management")
-	bg.AddSub("wait").
+	wait := bg.AddSub("wait").
+		RegPowerCmd(WaitForBgTaskFinish,
+			"wait for a task/thread to finish, if no specify thread id, wait for all").
+		AddArg("thread", "", "id")
+	wait.AddSub("all").
 		RegPowerCmd(WaitForAllBgTasksFinish,
 			"wait for all tasks/threads to finish in current(must be main) thread")
 }

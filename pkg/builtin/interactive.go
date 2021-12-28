@@ -50,9 +50,10 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 			return
 		}
 
+		// Double it to let user understand this command exists
 		if cc.Cmds.GetSubByPath(field, false) != nil {
 			res = append(res, prefix+field)
-			return
+			res = append(res, prefix+field)
 		}
 
 		var parentPath []string
@@ -94,6 +95,7 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 
 		lineReader.AppendHistory(line)
 		executorSafeExecute("(interact)", cc, env, nil, core.FlowStrToStrs(line)...)
+		//cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
 	}
 
 	sessionEnv.GetLayer(core.EnvLayerSession).Delete("sys.interact.inside")
@@ -110,10 +112,13 @@ func executorSafeExecute(caller string, cc *core.Cli, env *core.Env, masks []*co
 	env = env.GetLayer(core.EnvLayerSession)
 	stackDepth := env.GetRaw("sys.stack-depth")
 	stack := env.GetRaw("sys.stack")
+	displayOne := env.GetRaw("display.one-cmd")
+	env.SetBool("display.one-cmd", true)
 
 	defer func() {
 		env.Set("sys.stack-depth", stackDepth)
 		env.Set("sys.stack", stack)
+		env.Set("display.one-cmd", displayOne)
 
 		if !env.GetBool("sys.panic.recover") {
 			return
