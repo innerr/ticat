@@ -155,6 +155,6 @@ func DbgInteract(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	InteractiveMode(cc.CopyForInteract(), env, "e")
+	InteractiveMode(cc, env, "e")
 	return currCmdIdx, true
 }
