@@ -34,6 +34,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
 
+	env.SetBool("display.completion.hidden", false)
+
 	env.Set("display.example-https-repo", "https://github.com/innerr/tidb.ticat")
 
 	env.SetInt("display.hint.indent.2rd", 41)
