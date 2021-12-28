@@ -138,11 +138,20 @@ func (self *CmdTree) GatherNames() (names []string) {
 	}
 	path := self.Path()
 	sep := self.Strs.PathSep
+
+	// Real names first, then abbrs
+	for sub, _ := range self.subs {
+		names = append(names, strings.Join(append(path, sub), sep))
+	}
 	for _, abbrs := range self.subAbbrs {
 		for _, abbr := range abbrs {
+			if _, ok := self.subs[abbr]; ok {
+				continue
+			}
 			names = append(names, strings.Join(append(path, abbr), sep))
 		}
 	}
+
 	for _, sub := range self.subs {
 		names = append(names, sub.GatherNames()...)
 	}
