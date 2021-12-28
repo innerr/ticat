@@ -20,20 +20,55 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 	sessionEnv.SetBool("sys.interact.inside", true)
 
 	seqSep := env.GetRaw("strs.seq-sep")
+	sep := cc.Cmds.Strs.PathSep
 	selfName := env.GetRaw("strs.self-name")
 
 	lineReader := liner.NewLiner()
 	defer lineReader.Close()
 	lineReader.SetCtrlCAborts(true)
 
-	names := cc.Cmds.GatherNames()
 	lineReader.SetCompleter(func(line string) (res []string) {
 		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			return cc.Cmds.GatherSubNames()
+		}
 		field := strings.TrimLeft(fields[len(fields)-1], seqSep)
 		prefix := line[0 : len(line)-len(field)]
-		for _, name := range names {
-			if strings.HasPrefix(name, field) {
-				res = append(res, prefix+name)
+		if len(field) == 0 {
+			return
+		}
+
+		if field[len(field)-1:] == sep {
+			parentPath := field[0 : len(field)-1]
+			parent := cc.Cmds.GetSubByPath(parentPath, false)
+			if parent == nil {
+				return
+			}
+			for _, sub := range parent.GatherSubNames() {
+				res = append(res, prefix+parentPath+sep+sub)
+			}
+			return
+		}
+
+		if cc.Cmds.GetSubByPath(field, false) != nil {
+			res = append(res, prefix+field)
+			return
+		}
+
+		var parentPath []string
+		parent := cc.Cmds
+		brokePath := strings.Split(field, sep)
+		if len(brokePath) > 1 {
+			parentPath = brokePath[:len(brokePath)-1]
+			parent = cc.Cmds.GetSub(parentPath...)
+			if parent == nil {
+				return
+			}
+		}
+		brokeSub := brokePath[len(brokePath)-1]
+		for _, sub := range parent.GatherSubNames() {
+			if strings.HasPrefix(sub, brokeSub) {
+				res = append(res, prefix+strings.Join(append(parentPath, sub), sep))
 			}
 		}
 		return
