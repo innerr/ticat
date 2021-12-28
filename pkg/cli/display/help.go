@@ -99,6 +99,7 @@ func PrintSelfHelp(screen core.Screen, env *core.Env) {
 		GlobalSuggestSessions,
 		GlobalSuggestAdvance,
 		GlobalSuggestShortcut,
+		GlobalSuggestInteract,
 	}
 
 	for _, fun := range list {
