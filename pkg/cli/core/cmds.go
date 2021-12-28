@@ -131,29 +131,18 @@ func (self *CmdTree) MatchWriteKey(key string) bool {
 	return self.cmd.MatchWriteKey(key)
 }
 
-// TODO: slow
-func (self *CmdTree) GatherNames() (names []string) {
-	if self.parent == nil {
-		names = append(names, self.DisplayPath())
-	}
-	path := self.Path()
-	sep := self.Strs.PathSep
-
+func (self *CmdTree) GatherSubNames() (names []string) {
 	// Real names first, then abbrs
 	for sub, _ := range self.subs {
-		names = append(names, strings.Join(append(path, sub), sep))
+		names = append(names, sub)
 	}
 	for _, abbrs := range self.subAbbrs {
 		for _, abbr := range abbrs {
 			if _, ok := self.subs[abbr]; ok {
 				continue
 			}
-			names = append(names, strings.Join(append(path, abbr), sep))
+			names = append(names, abbr)
 		}
-	}
-
-	for _, sub := range self.subs {
-		names = append(names, sub.GatherNames()...)
 	}
 	return names
 }

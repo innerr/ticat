@@ -140,7 +140,7 @@ func PrintFreeSearchResultByParseError(
 	var lines int
 	for len(input) > 0 {
 		screen := NewCacheScreen()
-		dumpArgs := NewDumpCmdArgs().SetSkeleton().SetShowUsage().AddFindStrs(input...)
+		dumpArgs := NewDumpCmdArgs().SetSkeleton().AddFindStrs(input...)
 		DumpCmds(cc.Cmds, screen, env, dumpArgs)
 		lines = screen.OutputNum()
 		if lines <= 0 {
