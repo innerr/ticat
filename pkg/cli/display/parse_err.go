@@ -164,7 +164,7 @@ func PrintFreeSearchResultByParseError(
 		"try to change keywords on the leftside, ",
 		selfName + " will filter results by kewords from left to right.",
 	}
-	if !isSearch {
+	if isSearch {
 		helpStr = append([]string{notValidStr, ""}, helpStr...)
 	}
 	PrintErrTitle(cc.Screen, env, helpStr)

@@ -16,8 +16,14 @@ func ListTags(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	display.PrintTipTitle(cc.Screen, env, "all tags:")
-	display.ListTags(cc.Cmds, cc.Screen, env)
+	screen := display.NewCacheScreen()
+	display.ListTags(cc.Cmds, screen, env)
+	if screen.OutputNum() > 0 {
+		display.PrintTipTitle(cc.Screen, env, "all tags:")
+	} else {
+		display.PrintTipTitle(cc.Screen, env, "no command have tags")
+	}
+	screen.WriteTo(cc.Screen)
 	return currCmdIdx, true
 }
 

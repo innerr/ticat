@@ -36,7 +36,7 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 	lineReader.SetCompleter(func(line string) (res []string) {
 		fields := strings.Fields(line)
 		if len(fields) == 0 {
-			return cc.Cmds.GatherSubNames()
+			return cc.Cmds.GatherSubNames(true, false)
 		}
 		field := strings.TrimLeft(fields[len(fields)-1], seqSep)
 		prefix := line[0 : len(line)-len(field)]
@@ -50,7 +50,7 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 			if parent == nil {
 				return
 			}
-			for _, sub := range parent.GatherSubNames() {
+			for _, sub := range parent.GatherSubNames(true, false) {
 				res = append(res, prefix+parentPath+sep+sub)
 			}
 			return
@@ -75,7 +75,7 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 			}
 		}
 		brokeSub := brokePath[len(brokePath)-1]
-		for _, sub := range parent.GatherSubNames() {
+		for _, sub := range parent.GatherSubNames(true, false) {
 			if strings.HasPrefix(sub, brokeSub) {
 				res = append(res, prefix+strings.Join(append(parentPath, sub), sep))
 			}

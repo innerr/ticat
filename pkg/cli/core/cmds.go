@@ -131,17 +131,23 @@ func (self *CmdTree) MatchWriteKey(key string) bool {
 	return self.cmd.MatchWriteKey(key)
 }
 
-func (self *CmdTree) GatherSubNames() (names []string) {
+func (self *CmdTree) GatherSubNames(includeAbbrs bool, includeShortcuts bool) (names []string) {
 	// Real names first, then abbrs
 	for sub, _ := range self.subs {
-		names = append(names, sub)
+		if includeShortcuts || !isShortcutCmdName(sub) {
+			names = append(names, sub)
+		}
 	}
-	for _, abbrs := range self.subAbbrs {
-		for _, abbr := range abbrs {
-			if _, ok := self.subs[abbr]; ok {
-				continue
+	if includeAbbrs {
+		for _, abbrs := range self.subAbbrs {
+			for _, abbr := range abbrs {
+				if _, ok := self.subs[abbr]; ok {
+					continue
+				}
+				if includeShortcuts || !isShortcutCmdName(abbr) {
+					names = append(names, abbr)
+				}
 			}
-			names = append(names, abbr)
 		}
 	}
 	return names
@@ -508,4 +514,13 @@ func (self *CmdTree) getOrAddSub(source string, addIfNotExists bool, path ...str
 		sub.source = source
 	}
 	return sub.getOrAddSub(source, addIfNotExists, path[1:]...)
+}
+
+func isShortcutCmdName(name string) bool {
+	if len(name) == 0 {
+		return false
+	}
+	c := name[0]
+	normal := (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+	return !normal
 }
