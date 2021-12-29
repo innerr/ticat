@@ -52,7 +52,7 @@ func loadLocalMods(
 			}
 			return nil
 		}
-		if filepath.Base(metaPath) == reposFileName {
+		if metaPath == filepath.Join(root, reposFileName) {
 			return nil
 		}
 

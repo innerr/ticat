@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [1.1.1] - 2021-12-23
+## [1.2.0] - 2021-12-29
 
 + New Features
   + Support breakpoints and more executing control

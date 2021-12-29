@@ -58,6 +58,12 @@ func AddGitRepoToHub(
 
 	addr := tailModeCallArg(flow, currCmdIdx, argv, "git-address")
 	addRepoToHub(addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+
+	initAddr := env.GetRaw("sys.hub.init-repo")
+	if len(initAddr) != 0 {
+		addRepoToHub(initAddr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+	}
+
 	showHubFindTip(cc.Screen, env)
 	return currCmdIdx, true
 }
@@ -77,7 +83,9 @@ func AddDefaultGitRepoToHub(
 			"cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
 	}
 	addRepoToHub(addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
-	showHubFindTip(cc.Screen, env)
+	if argv.GetBool("show-tip") {
+		showHubFindTip(cc.Screen, env)
+	}
 	return currCmdIdx, true
 }
 
@@ -289,9 +297,11 @@ func UpdateHub(
 		meta.WriteReposInfoFile(metaPath, infos, fieldSep)
 	}
 
-	display.PrintTipTitle(cc.Screen, env, fmt.Sprintf(
-		"local dir could also add to %s, use command 'h.add.local'",
-		env.GetRaw("strs.self-name")))
+	if argv.GetBool("show-tip") {
+		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf(
+			"local dir could also add to %s, use command 'h.add.local'",
+			env.GetRaw("strs.self-name")))
+	}
 	return currCmdIdx, true
 }
 
