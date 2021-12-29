@@ -23,6 +23,7 @@ All notable changes to this project are documented in this file.
   + Rename command `dbg.echo` to `echo`
   + Rename command set `verbose` `quiet` to `display.verbose` `display.quiet`
   + Relocate repo local storage dir: `.../<project> => .../<git-server>/<author>/<project>` [#112](https://github.com/innerr/ticat/pull/112)
+  + All capical abbrs of commands and args are removed
 
 ## [1.0.1] - 2021-11-29
 
