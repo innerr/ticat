@@ -20,32 +20,43 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 	sessionEnv.SetBool("sys.interact.inside", true)
 
 	seqSep := env.GetRaw("strs.seq-sep")
+	kvSep := env.GetRaw("strs.env-kv-sep")
 	sep := cc.Cmds.Strs.PathSep
 	selfName := env.GetRaw("strs.self-name")
+	hiddenCompletion := env.GetBool("display.completion.hidden")
 
 	lineReader := liner.NewLiner()
 	defer lineReader.Close()
+
 	lineReader.SetCtrlCAborts(true)
 
-	hiddenCompletion := env.GetBool("display.completion.hidden")
-
-	if !hiddenCompletion {
-		lineReader.SetTabCompletionStyle(liner.TabPrints)
-	}
-
+	// TODO: use parser here
 	lineReader.SetCompleter(func(line string) (res []string) {
+		if !hiddenCompletion {
+			lineReader.SetTabCompletionStyle(liner.TabPrints)
+		} else {
+			lineReader.SetTabCompletionStyle(liner.TabCircular)
+		}
+
 		fields := strings.Fields(line)
 		if len(fields) == 0 {
 			return cc.Cmds.GatherSubNames(true, false)
 		}
-		field := strings.TrimLeft(fields[len(fields)-1], seqSep)
-		prefix := line[0 : len(line)-len(field)]
-		if len(field) == 0 {
+		tailBlanks := line[len(strings.TrimRight(line, " \t")):]
+		last := strings.TrimLeft(fields[len(fields)-1], seqSep)
+
+		hasTailSeqSep := len(last) != len(fields[len(fields)-1])
+		if hasTailSeqSep {
+			lineReader.SetTabCompletionStyle(liner.TabCircular)
+		}
+
+		prefix := line[0 : len(line)-len(last)-len(tailBlanks)]
+		if len(last) == 0 {
 			return
 		}
 
-		if field[len(field)-1:] == sep {
-			parentPath := field[0 : len(field)-1]
+		if last[len(last)-1:] == sep {
+			parentPath := last[0 : len(last)-1]
 			parent := cc.Cmds.GetSubByPath(parentPath, false)
 			if parent == nil {
 				return
@@ -56,17 +67,55 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 			return
 		}
 
-		if hiddenCompletion {
-			// Double it to let user understand this command exists
-			if cc.Cmds.GetSubByPath(field, false) != nil {
-				res = append(res, prefix+field)
-				res = append(res, prefix+field)
+		// TODO: this is very ugly, should use parser here
+		if len(tailBlanks) > 0 {
+			var tailCmd *core.CmdTree
+			var argsInUse []string
+			for i := len(fields) - 1; i >= 0; i-- {
+				if strings.Index(fields[i], seqSep) >= 0 {
+					break
+				}
+				name := strings.Trim(fields[i], seqSep)
+				if len(name) == 0 {
+					continue
+				}
+				if strings.Index(fields[i], kvSep) > 0 {
+					argsInUse = append(argsInUse, fields[i])
+					continue
+				}
+				tailCmd = cc.Cmds.GetSubByPath(name, false)
+			}
+			if tailCmd != nil {
+				lineReader.SetTabCompletionStyle(liner.TabCircular)
+				args := tailCmd.Args()
+				for _, arg := range args.Names() {
+					inUse := false
+					for _, argInUse := range argsInUse {
+						if strings.HasPrefix(argInUse, arg) {
+							inUse = true
+							break
+						}
+					}
+					if !inUse {
+						res = append(res, prefix+last+tailBlanks+arg+kvSep)
+					}
+				}
+			}
+			return
+		}
+
+		tailCmd := cc.Cmds.GetSubByPath(last, false)
+		if tailCmd != nil {
+			if hiddenCompletion {
+				// Double it to let user understand this command exists
+				res = append(res, prefix+last)
+				res = append(res, prefix+last)
 			}
 		}
 
 		var parentPath []string
 		parent := cc.Cmds
-		brokePath := strings.Split(field, sep)
+		brokePath := strings.Split(last, sep)
 		if len(brokePath) > 1 {
 			parentPath = brokePath[:len(brokePath)-1]
 			parent = cc.Cmds.GetSub(parentPath...)
