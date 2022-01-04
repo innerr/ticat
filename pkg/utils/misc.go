@@ -158,14 +158,14 @@ func QuoteStrIfHasSpace(str string) string {
 func IsPidRunning(pid int) bool {
 	//err = syscall.Kill(pid, syscall.Signal(0))
 	//return err == nil || err != syscall.ESRCH
-	exists, err := PidExists(pid)
+	exists, err := IsPidExists(pid)
 	if err == nil && !exists {
 		return false
 	}
 	return true
 }
 
-func PidExists(pid int) (bool, error) {
+func IsPidExists(pid int) (bool, error) {
 	proc, err := os.FindProcess(int(pid))
 	if err != nil {
 		return false, err
@@ -188,6 +188,22 @@ func PidExists(pid int) (bool, error) {
 		return true, nil
 	}
 	return false, err
+}
+
+func IsOsCmdExists(cmd string) bool {
+	path, err := exec.LookPath(cmd)
+	return err == nil && len(path) > 0
+}
+
+func FindPython() (path string) {
+	cmds := []string{"python3", "python", "python2"}
+	for _, cmd := range cmds {
+		path, err := exec.LookPath(cmd)
+		if err == nil && len(path) > 0 {
+			return path
+		}
+	}
+	return
 }
 
 const (

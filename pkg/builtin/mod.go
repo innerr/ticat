@@ -8,6 +8,7 @@ import (
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/proto/mod_meta"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 func SetExtExec(
@@ -21,7 +22,7 @@ func SetExtExec(
 	env = env.GetLayer(core.EnvLayerDefault)
 	env.Set("sys.ext.exec.bash", "bash")
 	env.Set("sys.ext.exec.sh", "sh")
-	env.Set("sys.ext.exec.py", "python")
+	env.Set("sys.ext.exec.py", utils.FindPython())
 	env.Set("sys.ext.exec.go", "go run")
 	return currCmdIdx, true
 }
