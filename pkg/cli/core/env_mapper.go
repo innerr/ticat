@@ -74,8 +74,31 @@ func (self *Arg2Env) Add(envKey string, argName string) {
 	self.nameKeys[argName] = envKey
 }
 
+func (self *Arg2Env) IsEmpty() bool {
+	return len(self.orderedKeys) == 0
+}
+
 func (self *Arg2Env) EnvKeys() []string {
 	return self.orderedKeys
+}
+
+// TODO: put this in use
+func (self *Arg2Env) RenderedEnvKeys(
+	argv ArgVals,
+	env *Env,
+	cmd *Cmd,
+	allowError bool) (renderedKeys []string, origins []string, fullyRendered bool) {
+
+	fullyRendered = true
+	for _, name := range self.orderedKeys {
+		keys, keyFullyRendered := renderTemplateStr(name, "map arg to env", cmd, argv, env, allowError)
+		for _, key := range keys {
+			renderedKeys = append(renderedKeys, key)
+			origins = append(origins, name)
+		}
+		fullyRendered = fullyRendered && keyFullyRendered
+	}
+	return
 }
 
 func (self *Arg2Env) GetArgName(cmd *Cmd, envKey string, allowError bool) string {

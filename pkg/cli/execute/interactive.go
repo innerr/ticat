@@ -15,12 +15,13 @@ import (
 type BreakPointAction string
 
 const (
-	BPAStepOver = "step over, execute current, pause before next command"
-	BPAStepIn   = "step in subflow"
-	BPAContinue = "continue"
-	BPASkip     = "skip current, pause before next command"
-	BPAInteract = "interactive mode"
-	BPAQuit     = "quit executing"
+	BPAStepOver   = "step over, execute current, pause before next command"
+	BPAStepToNext = "step over, pause before next command"
+	BPAStepIn     = "step in subflow"
+	BPAContinue   = "continue"
+	BPASkip       = "skip current, pause before next command"
+	BPAInteract   = "interactive mode"
+	BPAQuit       = "quit executing"
 )
 
 func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd,
@@ -100,9 +101,13 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	return readUserBPAChoice(reason, choices, bpas, true, cc, env)
 }
 
-func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool) BreakPointAction {
+func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool, lastCmdInFlow bool) BreakPointAction {
 	bpa := tryBreakAfter(cc, env, cmd)
-	if bpa == BPAContinue && !bootstrap && !cmd.LastCmdNode().IsQuiet() {
+	if bpa == BPAStepOver {
+		if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
+			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
+		}
+	} else if bpa == BPAContinue && !bootstrap && !cmd.LastCmdNode().IsQuiet() {
 		tryDelay(cc, env, "sys.execute-delay-sec.at-end")
 	}
 	return bpa
@@ -114,13 +119,13 @@ func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAc
 		return BPAContinue
 	}
 	reason := display.ColorTip("break-point: after command ", env) + display.ColorCmd("["+name+"]", env)
-	return readUserBPAChoice(
-		reason,
-		[]string{"c", "i", "q"},
-		getAllBPAs(),
-		true,
-		cc,
-		env)
+	bpas := getAllBPAs()
+	bpas["d"] = BPAStepToNext
+	bpa := readUserBPAChoice(reason, []string{"d", "c", "i", "q"}, bpas, true, cc, env)
+	if bpa == BPAStepToNext {
+		bpa = BPAStepOver
+	}
+	return bpa
 }
 
 func tryBreakAtEnd(cc *core.Cli, env *core.Env) {

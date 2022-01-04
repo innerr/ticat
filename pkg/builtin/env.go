@@ -35,6 +35,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("display.height", row)
 
 	env.SetBool("display.completion.hidden", false)
+	env.SetBool("display.completion.abbr", true)
+	env.SetBool("display.completion.shortcut", false)
 
 	env.Set("display.example-https-repo", "https://github.com/innerr/tidb.ticat")
 
@@ -128,9 +130,11 @@ func LoadLocalEnv(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	kvSep := env.GetRaw("strs.env-kv-sep")
+	kvSep := cc.Cmds.Strs.EnvKeyValSep
+	delMark := cc.Cmds.Strs.EnvValDelAllMark
+
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
-	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep)
+	core.LoadEnvFromFile(env.GetLayer(core.EnvLayerPersisted), path, kvSep, delMark)
 	env.GetLayer(core.EnvLayerPersisted).DeleteInSelfLayer("sys.stack-depth")
 	env.GetLayer(core.EnvLayerPersisted).Deduplicate()
 	env.GetLayer(core.EnvLayerSession).Deduplicate()
@@ -400,7 +404,7 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.env.layer", false)
 	env.SetBool("display.env.default", false)
 	env.SetBool("display.mod.quiet", false)
-	env.SetBool("display.mod.realname", true)
+	env.SetBool("display.mod.realname", false)
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 14)
 }

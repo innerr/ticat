@@ -269,8 +269,10 @@ func (self *Executor) executeCmd(
 	}
 
 	if !sysArgv.IsDelay() {
-		bpa := tryDelayAndBreakAfter(cc, env, cmd, bootstrap)
-		if bpa != BPAContinue {
+		bpa := tryDelayAndBreakAfter(cc, env, cmd, bootstrap, lastCmdInFlow)
+		if bpa == BPAStepOver {
+			breakAtNext = true
+		} else if bpa != BPAContinue {
 			return
 		}
 	}

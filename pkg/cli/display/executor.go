@@ -185,7 +185,7 @@ func PrintCmdStack(
 		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(core.EnvLayerSession),
 			strs.EnvValDelAllMark, strs.PathSep)
 		sysArgv := cmdEnv.GetSysArgv(cmd.Path(), strs.PathSep)
-		name := cmd.DisplayPath(strs.PathSep, printRealname)
+		name := cmd.DisplayMatchedPath(strs.PathSep, printRealname)
 		var line string
 		lineExtraLen := 0
 		endOmitting := (i+1 == displayIdxEnd && i+1 != len(flow))

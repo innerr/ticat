@@ -175,6 +175,25 @@ func (self ParsedCmd) DisplayPath(sep string, displayRealname bool) string {
 	return strings.Join(path, sep)
 }
 
+func (self ParsedCmd) DisplayMatchedPath(sep string, displayRealname bool) string {
+	var path []string
+	var realPath []string
+	for _, seg := range self.Segments {
+		if seg.Matched.Cmd != nil {
+			name := seg.Matched.Name
+			realname := seg.Matched.Cmd.Name()
+			path = append(path, name)
+			realPath = append(realPath, realname)
+		}
+	}
+	pathStr := strings.Join(path, sep)
+	realPathStr := strings.Join(realPath, sep)
+	if !displayRealname || pathStr == realPathStr {
+		return pathStr
+	}
+	return pathStr + " (" + realPathStr + ")"
+}
+
 func (self ParsedCmd) IsAllEmptySegments() bool {
 	if len(self.ParseResult.Input) != 0 {
 		return false

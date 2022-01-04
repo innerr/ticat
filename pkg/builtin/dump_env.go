@@ -89,10 +89,10 @@ func DumpEssentialEnvFlattenVals(
 		}
 	} else if len(findStrs) == 0 {
 		display.PrintTipTitle(cc.Screen, env,
-			"essential env key-values: (use command 'e.ls' to show all)")
+			"essential env key-values: (use command 'env.ls' to show all)")
 	} else {
 		display.PrintTipTitle(cc.Screen, env,
-			"matched essential env key-values: (use command 'e.ls' to show all)")
+			"matched essential env key-values: (use command 'env.ls' to show all)")
 	}
 	screen.WriteTo(cc.Screen)
 	if display.TooMuchOutput(env, screen) {

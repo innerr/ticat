@@ -42,7 +42,7 @@ func EnvOutput(env *Env, writer io.Writer, sep string) error {
 	return nil
 }
 
-func EnvInput(env *Env, reader io.Reader, sep string) error {
+func EnvInput(env *Env, reader io.Reader, sep string, delMark string) error {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
@@ -57,7 +57,11 @@ func EnvInput(env *Env, reader io.Reader, sep string) error {
 		}
 		key := text[0:i]
 		val := text[i+1:]
-		env.Set(key, val)
+		if val == delMark {
+			env.Delete(key)
+		} else {
+			env.Set(key, val)
+		}
 	}
 
 	return nil
@@ -84,7 +88,7 @@ func SaveEnvToFile(env *Env, path string, sep string) {
 	}
 }
 
-func LoadEnvFromFile(env *Env, path string, sep string) {
+func LoadEnvFromFile(env *Env, path string, sep string, delMark string) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -95,7 +99,7 @@ func LoadEnvFromFile(env *Env, path string, sep string) {
 	}
 	defer file.Close()
 
-	err = EnvInput(env, file, sep)
+	err = EnvInput(env, file, sep, delMark)
 	if err != nil {
 		panic(fmt.Errorf("[LoadEnvFromFile] read local env file '%s' failed: %v",
 			path, err))
