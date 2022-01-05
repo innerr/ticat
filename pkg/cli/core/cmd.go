@@ -710,6 +710,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 		args = append(args, argv[k].Raw)
 	}
 	cmd := exec.Command(bin, args...)
+	cmd.Dir = filepath.Dir(self.cmdLine)
 
 	logger := cc.CmdIO.SetupForExec(cmd, logFilePath)
 	if logger != nil {

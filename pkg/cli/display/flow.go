@@ -248,7 +248,7 @@ func dumpFlowCmd(
 		dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
 	}
 
-	if !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow()) {
+	if !foldSubFlow() && !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow()) {
 		metFlow := false
 		if cic.HasSubFlow() {
 			flowStrs, _, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true)
@@ -455,7 +455,7 @@ func dumpCmdDisplayName(
 	sysArgv := env.GetSysArgv(cmd.Path(), sep)
 
 	cmdId := strings.Join(parsedCmd.Path(), sep)
-	if args.Skeleton {
+	if args.Skeleton || args.Simple {
 		name = cmdId
 	} else {
 		name = parsedCmd.DisplayPath(sep, true)
