@@ -190,7 +190,6 @@ func SessionFinish(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string) 
 	SaveEnvToFile(env, path, cc.Cmds.Strs.EnvKeyValSep)
 	return true
 }
-*/
 
 func isNoSessionCmd(flow *ParsedCmds, noSessionCmds []interface{}) bool {
 	if len(flow.Cmds) != 1 {
@@ -204,6 +203,7 @@ func isNoSessionCmd(flow *ParsedCmds, noSessionCmds []interface{}) bool {
 	}
 	return false
 }
+*/
 
 func genSessionDirName() (pid int, now time.Time, dirName string) {
 	pid = os.Getpid()

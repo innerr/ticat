@@ -87,7 +87,8 @@ func dumpEnv(
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			res = append(res, ColorKey(k, env)+ColorSymbol(" = ", env)+flatten[k])
+			v := mayMaskSensitiveVal(k, flatten[k])
+			res = append(res, ColorKey(k, env)+ColorSymbol(" = ", env)+v)
 		}
 		colored = true
 	} else {
