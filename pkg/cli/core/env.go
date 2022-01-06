@@ -322,3 +322,17 @@ func (self *Env) flatten(
 		}
 	}
 }
+
+func IsSensitiveKeyVal(key string, val string) bool {
+	sensitives := []string{
+		"pwd",
+		"password",
+	}
+	key = strings.ToLower(key)
+	for _, it := range sensitives {
+		if strings.Index(key, it) >= 0 && !StrToTrue(val) && !StrToFalse(val) {
+			return true
+		}
+	}
+	return false
+}

@@ -57,3 +57,10 @@ func rpt(char string, count int) string {
 	}
 	return strings.Repeat(char, count)
 }
+
+func mayMaskSensitiveVal(key string, val string) string {
+	if core.IsSensitiveKeyVal(key, val) {
+		val = "***"
+	}
+	return val
+}

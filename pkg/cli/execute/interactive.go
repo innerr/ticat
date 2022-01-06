@@ -107,7 +107,7 @@ func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, boot
 		if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
 			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
 		}
-	} else if bpa == BPAContinue && !bootstrap && !cmd.LastCmdNode().IsQuiet() {
+	} else if bpa == BPAContinue && !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {
 		tryDelay(cc, env, "sys.execute-delay-sec.at-end")
 	}
 	return bpa

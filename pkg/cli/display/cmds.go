@@ -284,6 +284,7 @@ func dumpCmd(
 			for _, name := range argNames {
 				val := args.DefVal(name)
 				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
+				val = mayMaskSensitiveVal(nameStr, val)
 				prt(2, ColorArg(nameStr, env)+ColorSymbol(" = ", env)+mayQuoteStr(val))
 			}
 		}
@@ -294,7 +295,9 @@ func dumpCmd(
 				prt(1, ColorProp("- env-direct-write:", env))
 			}
 			for _, k := range val2env.EnvKeys() {
-				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteStr(val2env.Val(k)))
+				val := val2env.Val(k)
+				val = mayMaskSensitiveVal(k, val)
+				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteStr(val))
 			}
 
 			arg2env := cic.GetArg2Env()
@@ -302,8 +305,10 @@ func dumpCmd(
 				prt(1, ColorProp("- env-from-argv:", env))
 			}
 			for _, k := range arg2env.EnvKeys() {
+				val := arg2env.GetArgName(cic, k, true)
+				val = mayMaskSensitiveVal(k, val)
 				prt(2, ColorKey(k, env)+ColorSymbol(" <- ", env)+
-					ColorArg(mayQuoteStr(arg2env.GetArgName(cic, k, true)), env))
+					ColorArg(mayQuoteStr(val), env))
 			}
 
 			envOps := cic.EnvOps()

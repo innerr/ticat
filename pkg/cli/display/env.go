@@ -31,6 +31,7 @@ func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 }
 
 func KeyValueDisplayStr(key string, value string, env *core.Env) string {
+	value = mayMaskSensitiveVal(key, value)
 	return ColorKey(key, env) + ColorSymbol(" = ", env) + mayQuoteStr(value)
 }
 
@@ -121,7 +122,8 @@ func dumpEnvLayer(
 			}
 		}
 		if !filtered {
-			output = append(output, indent+"- "+k+" = "+mayQuoteStr(v.Raw))
+			raw := mayMaskSensitiveVal(k, v.Raw)
+			output = append(output, indent+"- "+k+" = "+mayQuoteStr(raw))
 		}
 	}
 	if env.Parent() != nil {
