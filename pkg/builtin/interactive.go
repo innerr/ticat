@@ -24,23 +24,27 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 	sep := cc.Cmds.Strs.PathSep
 	selfName := env.GetRaw("strs.self-name")
 	hiddenCompletion := env.GetBool("display.completion.hidden")
+	abbrCompletion := env.GetBool("display.completion.abbr")
+	shortcutCompletion := env.GetBool("display.completion.shortcut")
 
 	lineReader := liner.NewLiner()
 	defer lineReader.Close()
 
 	lineReader.SetCtrlCAborts(true)
 
-	// TODO: use parser here
+	// TODO: this is a mess, but not in top priority, to solve this we need a better parser with original pos info
 	lineReader.SetCompleter(func(line string) (res []string) {
-		if !hiddenCompletion {
-			lineReader.SetTabCompletionStyle(liner.TabPrints)
-		} else {
+		parsed := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, core.FlowStrToStrs(line)...)
+
+		if hiddenCompletion || len(parsed.Cmds) > 1 {
 			lineReader.SetTabCompletionStyle(liner.TabCircular)
+		} else {
+			lineReader.SetTabCompletionStyle(liner.TabPrints)
 		}
 
 		fields := strings.Fields(line)
 		if len(fields) == 0 {
-			return cc.Cmds.GatherSubNames(true, false)
+			return cc.Cmds.GatherSubNames(abbrCompletion, shortcutCompletion)
 		}
 		tailBlanks := line[len(strings.TrimRight(line, " \t")):]
 		last := strings.TrimLeft(fields[len(fields)-1], seqSep)
@@ -61,7 +65,7 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 			if parent == nil {
 				return
 			}
-			for _, sub := range parent.GatherSubNames(true, false) {
+			for _, sub := range parent.GatherSubNames(abbrCompletion, shortcutCompletion) {
 				res = append(res, prefix+parentPath+sep+sub)
 			}
 			return
@@ -124,7 +128,7 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 			}
 		}
 		brokeSub := brokePath[len(brokePath)-1]
-		for _, sub := range parent.GatherSubNames(true, false) {
+		for _, sub := range parent.GatherSubNames(abbrCompletion, shortcutCompletion) {
 			if strings.HasPrefix(sub, brokeSub) {
 				res = append(res, prefix+strings.Join(append(parentPath, sub), sep))
 			}

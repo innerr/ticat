@@ -11,12 +11,12 @@ func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []strin
 		line := k + " = "
 		v, provided := argv[k]
 		if !provided || !v.Provided {
-			line += mayQuoteStr(defV)
+			line += mayQuoteStr(mayMaskSensitiveVal(k, defV))
 		} else {
-			line += mayQuoteStr(v.Raw)
+			line += mayQuoteStr(mayMaskSensitiveVal(k, v.Raw))
 			if printDef {
 				if defV != v.Raw {
-					line += "(def=" + mayQuoteStr(defV) + ")"
+					line += "(def=" + mayQuoteStr(mayMaskSensitiveVal(k, defV)) + ")"
 				} else {
 					line += "(=def)"
 				}
@@ -33,11 +33,12 @@ func DumpProvidedArgs(env *core.Env, args *core.Args, argv core.ArgVals, coloriz
 		if !provided || !v.Provided {
 			continue
 		}
+		val := mayQuoteStr(mayMaskSensitiveVal(k, v.Raw))
 		if colorize {
-			line := ColorArg(k, env) + ColorSymbol(" = ", env) + mayQuoteStr(v.Raw)
+			line := ColorArg(k, env) + ColorSymbol(" = ", env) + val
 			output = append(output, line)
 		} else {
-			line := k + " = " + mayQuoteStr(v.Raw)
+			line := k + " = " + val
 			output = append(output, line)
 		}
 	}
@@ -46,6 +47,7 @@ func DumpProvidedArgs(env *core.Env, args *core.Args, argv core.ArgVals, coloriz
 
 func DumpSysArgs(env *core.Env, sysArgv core.SysArgVals, colorize bool) (output []string) {
 	for k, v := range sysArgv {
+		v = mayMaskSensitiveVal(k, v)
 		if colorize {
 			line := ColorExplain("[sys] ", env) + ColorArg(k, env) +
 				ColorSymbol(" = ", env) + mayQuoteStr(v)

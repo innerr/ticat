@@ -79,7 +79,6 @@ func DbgBreakAtBegin(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx)
 	cc.BreakPoints.SetAtBegin(true)
 	if 1 == len(flow.Cmds)-1 {
 		env.GetLayer(core.EnvLayerSession).SetBool("display.one-cmd", true)
@@ -94,7 +93,6 @@ func DbgBreakAtEnd(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx)
 	cc.BreakPoints.SetAtEnd(true)
 	if 1 == len(flow.Cmds)-1 {
 		env.GetLayer(core.EnvLayerSession).SetBool("display.one-cmd", true)

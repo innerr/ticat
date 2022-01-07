@@ -248,7 +248,7 @@ func dumpFlowCmd(
 		dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
 	}
 
-	if !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow()) {
+	if !foldSubFlow() && !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow()) {
 		metFlow := false
 		if cic.HasSubFlow() {
 			flowStrs, _, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true)
@@ -455,7 +455,7 @@ func dumpCmdDisplayName(
 	sysArgv := env.GetSysArgv(cmd.Path(), sep)
 
 	cmdId := strings.Join(parsedCmd.Path(), sep)
-	if args.Skeleton {
+	if args.Skeleton || args.Simple {
 		name = cmdId
 	} else {
 		name = parsedCmd.DisplayPath(sep, true)
@@ -595,7 +595,7 @@ func dumpCmdEnvValues(
 		for _, k := range keys {
 			v := kvs[k]
 			limit := lineLimit - (padLen + len(k) + 3)
-			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(v.Val, env, limit)+" "+v.Source+"")
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+normalizeValForDisplay(k, v.Val, env, limit)+" "+v.Source+"")
 		}
 	}
 	writtenKeys.AddCmd(argv, env, cic)
@@ -696,13 +696,13 @@ func dumpExecutedStartEnv(
 		prt(1, ColorProp("- env-before-execute:", env))
 		for _, k := range keys {
 			limit := lineLimit - (padLen + len(k) + 3)
-			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(startEnv[k], env, limit))
+			prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+normalizeValForDisplay(k, startEnv[k], env, limit))
 		}
 	} else {
 		prt(0, "  "+ColorProp(" - env-before-execute:", env))
 		for _, k := range keys {
 			limit := lineLimit - (padLen + len(k) + 3)
-			prt(1, "   "+ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(startEnv[k], env, limit))
+			prt(1, "   "+ColorKey(k, env)+ColorSymbol(" = ", env)+normalizeValForDisplay(k, startEnv[k], env, limit))
 		}
 	}
 	return
@@ -751,7 +751,7 @@ func dumpExecutedModifiedEnv(
 			tipLen += 14
 		}
 		prefixLen := padLen + len(k) + 3 + tipLen
-		val := mayQuoteMayTrimStr(v, env, limit-prefixLen)
+		val := normalizeValForDisplay(k, v, env, limit-prefixLen)
 		if len(val) != len(v) {
 			limit = 0
 		}
@@ -760,7 +760,7 @@ func dumpExecutedModifiedEnv(
 		} else if afterV != v {
 			op = ColorSymbol(" <- ", env) + ColorTip("(modified to) ", env)
 			prefixLen += len(val) + len(op) - ColorExtraLen(env, "symbol", "tip")
-			op = op + mayQuoteMayTrimStr(afterV, env, limit-prefixLen)
+			op = op + normalizeValForDisplay(k, afterV, env, limit-prefixLen)
 		} else {
 			continue
 		}
@@ -774,7 +774,7 @@ func dumpExecutedModifiedEnv(
 		}
 		op := ColorSymbol(" <- ", env) + ColorTip("(added)", env)
 		prefixLen := padLen + len(k) + 3 + len(op) - ColorExtraLen(env, "symbol", "tip")
-		lines = append(lines, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteMayTrimStr(v, env, lineLimit-prefixLen)+op)
+		lines = append(lines, ColorKey(k, env)+ColorSymbol(" = ", env)+normalizeValForDisplay(k, v, env, lineLimit-prefixLen)+op)
 	}
 
 	sort.Strings(lines)
@@ -868,6 +868,11 @@ func getCmdTrivial(parsedCmd core.ParsedCmd) (trivial int) {
 	}
 	trivial += cmd.Trivial()
 	return
+}
+
+func normalizeValForDisplay(key string, val string, env *core.Env, limit int) string {
+	val = mayMaskSensitiveVal(key, val)
+	return mayQuoteMayTrimStr(val, env, limit)
 }
 
 func mayQuoteMayTrimStr(s string, env *core.Env, limit int) string {

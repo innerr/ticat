@@ -718,7 +718,8 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 	breaks := cmds.AddSub("breaks", "break")
 	breaks.RegPowerCmd(DbgBreakAtBegin,
 		"set break point at the first command").
-		SetQuiet()
+		SetQuiet().
+		SetPriority()
 
 	breaksAt := breaks.AddSub("at", "before").
 		RegPowerCmd(DbgBreakBefore,
@@ -727,22 +728,24 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		AddArg("break-points", "", "break-point", "cmds", "cmd")
 
-	breaksAt.AddSub("begin", "start", "first", "0").
-		RegPowerCmd(DbgBreakAtBegin,
-			"set break point at the first command").
-		SetQuiet()
-
-	breaksAt.AddSub("end", "finish").
-		RegPowerCmd(DbgBreakAtEnd,
-			"set break point after the last command").
-		SetQuiet()
-
 	breaks.AddSub("after", "post").
 		RegPowerCmd(DbgBreakAfter,
 			// TODO: get 'sep' from env or other config
 			"setup after-command break points, use ',' to seperate multipy commands").
 		SetQuiet().
 		AddArg("break-points", "", "break-point", "cmds", "cmd")
+
+	breaksAt.AddSub("begin", "start", "first", "0").
+		RegPowerCmd(DbgBreakAtBegin,
+			"set break point at the first command").
+		SetQuiet().
+		SetPriority()
+
+	breaksAt.AddSub("end", "finish").
+		RegPowerCmd(DbgBreakAtEnd,
+			"set break point after the last command").
+		SetQuiet().
+		SetPriority()
 
 	panicTest := cmds.AddSub("panic")
 	panicTest.RegPowerCmd(DbgPanic,
@@ -795,6 +798,16 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		"hidden style completion",
 		"display.completion.hidden",
 		"hidden")
+
+	registerSimpleSwitch(completion,
+		"command abbrs completion",
+		"display.completion.abbr",
+		"abbrs", "abbr")
+
+	registerSimpleSwitch(completion,
+		"shortcut command completion",
+		"display.completion.shortcut",
+		"shortcut")
 
 	utf8 := registerSimpleSwitchEx(cmds,
 		"utf8 display",

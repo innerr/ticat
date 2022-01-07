@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func EnvOutput(env *Env, writer io.Writer, sep string) error {
+func EnvOutput(env *Env, writer io.Writer, sep string, skipDefault bool) error {
 	// TODO: move to default config
 	filtered := []string{
 		"session",
@@ -25,7 +25,7 @@ func EnvOutput(env *Env, writer io.Writer, sep string) error {
 	flatten := env.Flatten(true, filtered, false)
 	var keys []string
 	for k, v := range flatten {
-		if defEnv.GetRaw(k) == v {
+		if skipDefault && defEnv.GetRaw(k) == v {
 			continue
 		}
 		keys = append(keys, k)
@@ -42,7 +42,7 @@ func EnvOutput(env *Env, writer io.Writer, sep string) error {
 	return nil
 }
 
-func EnvInput(env *Env, reader io.Reader, sep string) error {
+func EnvInput(env *Env, reader io.Reader, sep string, delMark string) error {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
@@ -57,13 +57,17 @@ func EnvInput(env *Env, reader io.Reader, sep string) error {
 		}
 		key := text[0:i]
 		val := text[i+1:]
-		env.Set(key, val)
+		if val == delMark {
+			env.Delete(key)
+		} else {
+			env.Set(key, val)
+		}
 	}
 
 	return nil
 }
 
-func SaveEnvToFile(env *Env, path string, sep string) {
+func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -71,7 +75,7 @@ func SaveEnvToFile(env *Env, path string, sep string) {
 	}
 	defer file.Close()
 
-	err = EnvOutput(env, file, sep)
+	err = EnvOutput(env, file, sep, skipDefault)
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToFile] write env file '%s' failed: %v", tmp, err))
 	}
@@ -84,7 +88,7 @@ func SaveEnvToFile(env *Env, path string, sep string) {
 	}
 }
 
-func LoadEnvFromFile(env *Env, path string, sep string) {
+func LoadEnvFromFile(env *Env, path string, sep string, delMark string) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -95,14 +99,14 @@ func LoadEnvFromFile(env *Env, path string, sep string) {
 	}
 	defer file.Close()
 
-	err = EnvInput(env, file, sep)
+	err = EnvInput(env, file, sep, delMark)
 	if err != nil {
 		panic(fmt.Errorf("[LoadEnvFromFile] read local env file '%s' failed: %v",
 			path, err))
 	}
 }
 
-func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd) (sessionDir string, sessionPath string) {
+func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd, skipDefault bool) (sessionDir string, sessionPath string) {
 	sep := cc.Cmds.Strs.EnvKeyValSep
 
 	sessionDir = env.GetRaw("session")
@@ -114,6 +118,6 @@ func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd) (sessionDir st
 		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session env file name not found in env"))
 	}
 	sessionPath = filepath.Join(sessionDir, sessionFileName)
-	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
+	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep, skipDefault)
 	return
 }

@@ -456,7 +456,7 @@ func (self *Cmd) IsNoExecutableCmd() bool {
 	if len(self.val2env.EnvKeys()) > 0 {
 		return false
 	}
-	if len(self.arg2env.EnvKeys()) > 0 {
+	if !self.arg2env.IsEmpty() {
 		return false
 	}
 	return self.ty == CmdTypeUninited || self.ty == CmdTypeEmpty || self.ty == CmdTypeEmptyDir
@@ -700,8 +700,9 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	}
 
 	sep := cc.Cmds.Strs.EnvKeyValSep
+	delMark := cc.Cmds.Strs.EnvValDelAllMark
 
-	sessionDir, sessionPath := saveEnvToSessionFile(cc, env, parsedCmd)
+	sessionDir, sessionPath := saveEnvToSessionFile(cc, env, parsedCmd, false)
 
 	args = append(args, self.cmdLine)
 	args = append(args, sessionDir)
@@ -709,6 +710,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 		args = append(args, argv[k].Raw)
 	}
 	cmd := exec.Command(bin, args...)
+	cmd.Dir = filepath.Dir(self.cmdLine)
 
 	logger := cc.CmdIO.SetupForExec(cmd, logFilePath)
 	if logger != nil {
@@ -731,7 +733,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 		panic(err)
 	}
 
-	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep)
+	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep, delMark)
 	return true
 }
 

@@ -128,7 +128,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 
 	sessionPath := filepath.Join(sessionDir, sessionFileName)
 	if len(sessionDir) != 0 {
-		LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep)
+		LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep, cc.Cmds.Strs.EnvValDelAllMark)
 		// NOTE: treat recursive ticat call as non-ticat scripts, not record the executing status
 		//statusPath := filepath.Join(sessionDir, statusFileName)
 		//return NewExecutingFlow(statusPath, flow, env), true
@@ -190,7 +190,6 @@ func SessionFinish(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string) 
 	SaveEnvToFile(env, path, cc.Cmds.Strs.EnvKeyValSep)
 	return true
 }
-*/
 
 func isNoSessionCmd(flow *ParsedCmds, noSessionCmds []interface{}) bool {
 	if len(flow.Cmds) != 1 {
@@ -204,6 +203,7 @@ func isNoSessionCmd(flow *ParsedCmds, noSessionCmds []interface{}) bool {
 	}
 	return false
 }
+*/
 
 func genSessionDirName() (pid int, now time.Time, dirName string) {
 	pid = os.Getpid()

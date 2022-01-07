@@ -89,13 +89,31 @@ func allowParseError(flow *core.ParsedCmds) bool {
 }
 
 func noSessionCmds(flow *core.ParsedCmds) bool {
-	if flow.HasTailMode {
+	if len(flow.Cmds) == 0 {
 		return true
 	}
+	cmd := flow.Cmds[0].LastCmdNode()
+
+	if flow.HasTailMode {
+		funcs := []interface{}{
+			builtin.DbgBreakAtBegin,
+			builtin.DbgBreakAtEnd,
+		}
+		ignore := false
+		for _, it := range funcs {
+			if cmd.Cmd() != nil && cmd.Cmd().IsTheSameFunc(it) {
+				ignore = true
+				break
+			}
+		}
+		if !ignore {
+			return true
+		}
+	}
+
 	if len(flow.Cmds) != 1 {
 		return false
 	}
-	cmd := flow.Cmds[0].LastCmdNode()
 
 	if !cmd.IsBuiltin() {
 		return false
