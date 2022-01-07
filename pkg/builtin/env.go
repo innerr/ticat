@@ -156,7 +156,7 @@ func SaveEnvToLocal(
 	assertNotTailMode(flow, currCmdIdx)
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
-	core.SaveEnvToFile(env, path, kvSep)
+	core.SaveEnvToFile(env, path, kvSep, true)
 	display.PrintTipTitle(cc.Screen, env,
 		"changes of env are saved, could be listed by:",
 		"",
@@ -203,7 +203,7 @@ func RemoveEnvValAndSaveToLocal(
 	if deleted != 0 {
 		kvSep := env.GetRaw("strs.env-kv-sep")
 		path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
-		core.SaveEnvToFile(env.GetLayer(core.EnvLayerSession), path, kvSep)
+		core.SaveEnvToFile(env.GetLayer(core.EnvLayerSession), path, kvSep, true)
 		display.PrintTipTitle(cc.Screen, env, "changes of env are saved")
 	}
 	return currCmdIdx, true

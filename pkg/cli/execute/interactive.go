@@ -33,7 +33,7 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 
 	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev)
 	if bpa == BPAContinue {
-		if !bootstrap && !cmd.LastCmdNode().IsQuiet() {
+		if !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {
 			tryDelay(cc, env, "sys.execute-delay-sec")
 		}
 	} else if bpa == BPAStepIn {

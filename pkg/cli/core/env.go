@@ -327,6 +327,7 @@ func IsSensitiveKeyVal(key string, val string) bool {
 	sensitives := []string{
 		"pwd",
 		"password",
+		"passphrase",
 	}
 	key = strings.ToLower(key)
 	for _, it := range sensitives {

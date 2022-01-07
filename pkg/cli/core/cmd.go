@@ -702,7 +702,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	sep := cc.Cmds.Strs.EnvKeyValSep
 	delMark := cc.Cmds.Strs.EnvValDelAllMark
 
-	sessionDir, sessionPath := saveEnvToSessionFile(cc, env, parsedCmd)
+	sessionDir, sessionPath := saveEnvToSessionFile(cc, env, parsedCmd, false)
 
 	args = append(args, self.cmdLine)
 	args = append(args, sessionDir)
