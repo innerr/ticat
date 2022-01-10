@@ -237,8 +237,10 @@ func dumpFlowCmd(
 	dumpCmdExecutedLog(cmdEnv, args, executedCmd, prt, padLenCal, lineLimit)
 	dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
 
-	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
+	if !cmdSkipped() || executedCmd == nil {
 		dumpCmdArgv(cic, argv, cmdEnv, originEnv, prt, args, executedCmd, writtenKeys)
+	}
+	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
 		dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, padLenCal, args, writtenKeys, lineLimit)
 	}
 	if !cmdSkipped() && cmdFailed() || executedCmd == nil || (!args.Skeleton && !args.Simple) {
@@ -611,7 +613,7 @@ func dumpCmdArgv(
 	executedCmd *core.ExecutedCmd,
 	writtenKeys FlowWrittenKeys) {
 
-	if args.Skeleton || args.Simple && executedCmd != nil {
+	if args.Skeleton {
 		for name, val := range argv {
 			if !val.Provided {
 				continue

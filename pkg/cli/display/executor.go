@@ -45,7 +45,8 @@ func PrintCmdStack(
 		return
 	}
 	flow, currCmdIdx = filterQuietCmds(env, flow, currCmdIdx)
-	if len(flow) == 1 && !env.GetBool("display.one-cmd") {
+	stackDepth := env.GetInt("sys.stack-depth")
+	if len(flow) == 1 && !env.GetBool("display.one-cmd") && stackDepth <= 1 {
 		return
 	}
 	if len(flow) == 0 {
