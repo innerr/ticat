@@ -18,11 +18,7 @@ func DbgEcho(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	arg := argv.GetRaw("message")
-	if len(arg) == 0 {
-		cc.Screen.Print("(arg 'message' is empty)")
-		return currCmdIdx, true
-	}
+	arg := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "message")
 	cc.Screen.Print(fmt.Sprintf("%v\n", arg))
 	return currCmdIdx, true
 }
@@ -154,5 +150,20 @@ func DbgInteract(
 	assertNotTailMode(flow, currCmdIdx)
 
 	InteractiveMode(cc, env, "e")
+	return currCmdIdx, true
+}
+
+func SysSetExtExecutor(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	ext := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "ext")
+	exe := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "executor")
+	env.GetLayer(core.EnvLayerSession).Set("sys.ext.exec."+ext, exe)
 	return currCmdIdx, true
 }
