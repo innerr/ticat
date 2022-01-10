@@ -1009,6 +1009,13 @@ func RegisterOsCmds(cmds *core.CmdTree) {
 		RegPowerCmd(DbgEcho,
 			"print message from argv").
 		AddArg("message", "", "msg", "m")
+
+	sys := cmds.AddSub("sys")
+	sys.AddSub("ext-executor", "ext-exec", "ext-exe").
+		RegPowerCmd(SysSetExtExecutor,
+			"set ext-executor for modules").
+		AddArg("ext", "").
+		AddArg("executor", "", "exec", "exe")
 }
 
 func RegisterNoopCmds(cmds *core.CmdTree) {
