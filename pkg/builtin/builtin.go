@@ -21,6 +21,9 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterBgManageCmds(cmds)
 
 	RegisterSessionCmds(cmds)
+	RegisterBlenderCmds(cmds.AddSub(
+		"blender", "blend").RegEmptyCmd(
+		"a toolbox to modify flows during running").Owner())
 	RegisterDbgCmds(cmds.AddSub(
 		"dbg").RegEmptyCmd(
 		"debug related commands").Owner())
@@ -690,6 +693,12 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		RegPowerCmd(SetSessionsKeepDur,
 			"set the keeping duration of executed sessions").
 		AddArg("duration", "72h", "dur")
+}
+
+func RegisterBlenderCmds(cmds *core.CmdTree) {
+	cmds.AddSub("forest-mode", "forest").
+		RegPowerCmd(BlenderForestMode,
+			"run following commands in forest-mode: reset env on each command, but not reset on their subflows")
 }
 
 func RegisterDbgCmds(cmds *core.CmdTree) {

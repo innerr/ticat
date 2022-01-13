@@ -167,11 +167,18 @@ func (self *Executor) executeFlow(
 		if i < len(masks) {
 			mask = masks[i]
 		}
-		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, env, mask, flow, i,
+		cmdEnv := env
+		if cc.Blender.ForestMode.AtForestTopLvl(env) {
+			cmdEnv = env.Clone()
+		}
+		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, cmdEnv, mask, flow, i,
 			breakAtNext, i+1 == len(flow.Cmds))
 		if !succeeded {
 			return false
 		}
+	}
+	if cc.Blender.ForestMode.AtForestTopLvl(env) {
+		cc.Blender.ForestMode.Pop(env)
 	}
 	return true
 }
