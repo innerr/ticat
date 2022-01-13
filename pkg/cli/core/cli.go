@@ -52,6 +52,7 @@ type Cli struct {
 	FlowStatus    *ExecutingFlow
 	BreakPoints   *BreakPoints
 	HandledErrors HandledErrors
+	Blender       *Blender
 }
 
 func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO) *Cli {
@@ -68,6 +69,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		nil,
 		NewBreakPoints(),
 		HandledErrors{},
+		NewBlender(),
 	}
 }
 
@@ -93,6 +95,7 @@ func (self *Cli) CopyForInteract() *Cli {
 		nil,
 		self.BreakPoints,
 		HandledErrors{},
+		self.Blender,
 	}
 }
 
@@ -113,6 +116,7 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		nil,
 		NewBreakPoints(),
 		HandledErrors{},
+		self.Blender.Clone(),
 	}
 }
 
