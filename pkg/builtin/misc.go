@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -196,5 +197,53 @@ func EnvOpCmds() []core.EnvOpCmd {
 				env.GetLayer(core.EnvLayerSession).
 					Set(key, "<dummy-fake-key-for-env-op-check-only-from-MapEnvKeyValueToAnotherKey>")
 			}},
+	}
+}
+
+func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
+	tag := argv.GetRaw("tag")
+	src := argv.GetRaw("match-source")
+	filter := argv.GetRaw("filter-source")
+
+	result := []*core.CmdTree{}
+	findAllCmdsByTag(tag, src, filter, cc.Cmds, &result)
+
+	if len(result) == 0 {
+		if len(src) == 0 {
+			if len(filter) == 0 {
+				panic(fmt.Errorf("no selftest command with tag '%s'", tag))
+			} else {
+				panic(fmt.Errorf("no selftest command with tag '%s' and source not match '%s'", tag, filter))
+			}
+		} else {
+			if len(filter) == 0 {
+				panic(fmt.Errorf("no selftest command with tag '%s' and source match '%s'", tag, src))
+			} else {
+				panic(fmt.Errorf("no selftest command with tag '%s' and source match '%s' but not match '%s'", tag, src, filter))
+			}
+		}
+		return
+	}
+	ok = true
+	if len(result) != 1 {
+		flow = append(flow, "blender.forest")
+		masks = append(masks, nil)
+	}
+	trivialMark := env.GetRaw("strs.trivial-mark")
+	for _, it := range result {
+		flow = append(flow, trivialMark+it.DisplayPath())
+		masks = append(masks, nil)
+	}
+	return
+}
+
+func findAllCmdsByTag(tag string, src string, filter string, curr *core.CmdTree, output *[]*core.CmdTree) {
+	if curr.MatchTags(tag) &&
+		(len(src) == 0 || strings.Index(curr.Source(), src) >= 0) &&
+		(len(filter) == 0 || strings.Index(curr.Source(), filter) < 0) {
+		*output = append(*output, curr)
+	}
+	for _, name := range curr.SubNames() {
+		findAllCmdsByTag(tag, src, filter, curr.GetSub(name), output)
 	}
 }
