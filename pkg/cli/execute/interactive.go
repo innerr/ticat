@@ -30,6 +30,10 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 	if env.GetBool("sys.interact.inside") {
 		return BPAContinue
 	}
+	if cmd.IsQuiet() {
+		println(cmd.DisplayPath(",", true))
+		return BPAContinue
+	}
 
 	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev)
 	if bpa == BPAContinue {

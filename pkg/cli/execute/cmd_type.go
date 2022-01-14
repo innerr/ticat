@@ -122,6 +122,7 @@ func noSessionCmds(flow *core.ParsedCmds) bool {
 	funcs := []interface{}{
 		builtin.DbgInteract,
 		builtin.SessionRetry,
+		builtin.Selftest,
 		//builtin.LastSessionRetry,
 	}
 	for _, it := range funcs {

@@ -38,6 +38,10 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterTimerCmds(cmds)
 	RegisterOsCmds(cmds)
 	RegisterNoopCmds(cmds)
+
+	cmds.AddSub("selftest").RegAdHotFlowCmd(Selftest,
+		"run all commands having selftest tag").
+		AddArg("tag", "selftest")
 }
 
 func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
@@ -698,7 +702,8 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 func RegisterBlenderCmds(cmds *core.CmdTree) {
 	cmds.AddSub("forest-mode", "forest").
 		RegPowerCmd(BlenderForestMode,
-			"run following commands in forest-mode: reset env on each command, but not reset on their subflows")
+			"run following commands in forest-mode: reset env on each command, but not reset on their subflows").
+		SetQuiet()
 }
 
 func RegisterDbgCmds(cmds *core.CmdTree) {

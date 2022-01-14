@@ -198,3 +198,34 @@ func EnvOpCmds() []core.EnvOpCmd {
 			}},
 	}
 }
+
+func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
+	tag := argv.GetRaw("tag")
+	result := []*core.CmdTree{}
+	findAllCmdsByTag(tag, cc.Cmds, &result)
+
+	ok = true
+	if len(result) == 0 {
+		display.PrintTipTitle(cc.Screen, env,
+			"no command has tag '"+tag+"'")
+		return
+	}
+	if len(result) != 1 {
+		flow = append(flow, "blender.forest")
+		masks = append(masks, nil)
+	}
+	for _, it := range result {
+		flow = append(flow, it.DisplayPath())
+		masks = append(masks, nil)
+	}
+	return
+}
+
+func findAllCmdsByTag(tag string, curr *core.CmdTree, output *[]*core.CmdTree) {
+	if curr.MatchTags(tag) {
+		*output = append(*output, curr)
+	}
+	for _, name := range curr.SubNames() {
+		findAllCmdsByTag(tag, curr.GetSub(name), output)
+	}
+}

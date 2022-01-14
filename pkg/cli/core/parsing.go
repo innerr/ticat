@@ -127,6 +127,11 @@ func (self ParsedCmd) LastCmdNode() (cmd *CmdTree) {
 	return self.Last().Matched.Cmd
 }
 
+func (self ParsedCmd) IsQuiet() bool {
+	last := self.Last().Matched.Cmd
+	return last != nil && last.IsQuiet()
+}
+
 func (self ParsedCmd) AllowTailModeCall() bool {
 	cmd := self.LastCmdNode()
 	return cmd != nil && cmd.AllowTailModeCall()
