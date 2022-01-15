@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -70,7 +71,7 @@ func DumpFlowEx(
 
 	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
 	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, running,
-		false, writtenKeys, args.MaxDepth, args.MaxTrivial, 0)
+		false, writtenKeys, args.MaxDepth, args.MaxTrivial, 0, false)
 	if ok {
 		cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
 	}
@@ -89,7 +90,8 @@ func dumpFlow(
 	writtenKeys FlowWrittenKeys,
 	maxDepth int,
 	maxTrivial int,
-	depth int) bool {
+	depth int,
+	parentIncompleted bool) bool {
 
 	sep := cc.Cmds.Strs.PathSep
 
@@ -112,7 +114,7 @@ func dumpFlow(
 		}
 
 		cmdInBg, ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, running,
-			parentInBg, maxDepth, maxTrivial, depth, metFlows, writtenKeys)
+			parentInBg, maxDepth, maxTrivial, depth, metFlows, writtenKeys, parentIncompleted)
 		if !ok {
 			if parentInBg {
 				return false
@@ -140,7 +142,8 @@ func dumpFlowCmd(
 	maxTrivial int,
 	depth int,
 	metFlows map[string]bool,
-	writtenKeys FlowWrittenKeys) (cmdInBg bool, ok bool) {
+	writtenKeys FlowWrittenKeys,
+	parentIncompleted bool) (cmdInBg bool, ok bool) {
 
 	parsedCmd := flow.Cmds[currCmdIdx]
 	cmd := parsedCmd.Last().Matched.Cmd
@@ -181,7 +184,7 @@ func dumpFlowCmd(
 	}
 
 	notFold := func() bool {
-		return cmdFailed() || maxTrivial > 0 && maxDepth > 0
+		return parentIncompleted || cmdFailed() || maxTrivial > 0 && maxDepth > 0
 	}
 
 	foldSubFlowByTrivial := func() bool {
@@ -199,6 +202,7 @@ func dumpFlowCmd(
 
 	// Folding if too trivial or too deep
 	if !notFold() {
+		println("A", cmd.DisplayPath())
 		core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 			"failed to execute env-op cmd in flow desc")
 
@@ -216,7 +220,7 @@ func dumpFlowCmd(
 				executedFlow = executedCmd.SubFlow
 			}
 			return cmdInBg, dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, running,
-				cmdInBg, writtenKeys, maxDepth-1, maxTrivial-trivialDelta, depth+1)
+				cmdInBg, writtenKeys, maxDepth-1, maxTrivial-trivialDelta, depth+1, cmdFailed() || parentIncompleted)
 		}
 		return cmdInBg, !cmdFailed()
 	}
@@ -318,7 +322,7 @@ func dumpFlowCmd(
 						newMaxDepth -= 1
 					}
 					ok := dumpFlow(cc, subflowEnv, envOpCmds, parsedFlow, 0, args, executedFlow, running,
-						cmdInBg, writtenKeys, newMaxDepth, maxTrivial-trivialDelta, depth+1)
+						cmdInBg, writtenKeys, newMaxDepth, maxTrivial-trivialDelta, depth+1, cmdFailed() || parentIncompleted)
 					if !ok {
 						return cmdInBg, false
 					}
@@ -506,8 +510,12 @@ func dumpCmdDisplayName(
 			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
 		}
 
-		if !executedCmd.StartTs.IsZero() && !executedCmd.FinishTs.IsZero() {
-			dur := executedCmd.FinishTs.Sub(executedCmd.StartTs)
+		if !executedCmd.StartTs.IsZero() {
+			finishTs := executedCmd.FinishTs
+			if finishTs.IsZero() {
+				finishTs = time.Now().Round(time.Second)
+			}
+			dur := finishTs.Sub(executedCmd.StartTs)
 			durStr := formatDuration(dur)
 			name += ColorExplain(" "+durStr, env)
 		}
