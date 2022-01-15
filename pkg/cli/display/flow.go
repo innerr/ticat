@@ -485,6 +485,7 @@ func dumpCmdDisplayName(
 				ColorCmd("["+executedCmd.Cmd+"]", env)
 			return name, false
 		}
+
 		resultStr := string(executedCmd.Result)
 		if executedCmd.Result == core.ExecutedResultError {
 			name += ColorExplain(" - ", env) + ColorError(resultStr, env)
@@ -502,6 +503,12 @@ func dumpCmdDisplayName(
 			name += ColorExplain(" - ", env) + ColorHighLight(resultStr, env)
 		} else {
 			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
+		}
+
+		if !executedCmd.StartTs.IsZero() && !executedCmd.FinishTs.IsZero() {
+			dur := executedCmd.FinishTs.Sub(executedCmd.StartTs)
+			durStr := formatDuration(dur)
+			name += ColorExplain(" "+durStr, env)
 		}
 	}
 	return name, true
