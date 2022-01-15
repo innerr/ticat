@@ -23,6 +23,9 @@ func init() {
 func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []string) {
 	file, err := os.Open(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return
+		}
 		panic(fmt.Errorf("[ReadLastLines] %v", err))
 	}
 	defer file.Close()
