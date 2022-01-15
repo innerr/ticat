@@ -125,11 +125,13 @@ func listSessions(
 		cnt += 1
 	}
 
-	if cnt > 0 {
-		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%d sessions matched:", cnt))
-	} else {
+	if cnt == 0 {
 		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("no session matched"))
 		return clearFlow(flow)
+	} else if cnt == 1 {
+		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("1 session matched:"))
+	} else {
+		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%d sessions matched:", cnt))
 	}
 
 	screen.WriteTo(cc.Screen)

@@ -32,9 +32,7 @@ func LoadDefaultEnv(env *core.Env) {
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
 	row, col := GetTerminalWidth()
-	if col > 100 {
-		col = int(math.Max(float64(col)*4/5, float64(col-20)))
-	}
+	col = adjustDisplayWidth(col)
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
 
@@ -411,4 +409,11 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.mod.realname", false)
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 14)
+}
+
+func adjustDisplayWidth(col int) int {
+	if col > 100 {
+		col = int(math.Max(100+float64(col-100)*4/5, float64(col-20)))
+	}
+	return col
 }

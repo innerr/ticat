@@ -151,6 +151,9 @@ func dumpFlowCmd(
 	if cic == nil {
 		return false, true
 	}
+	if cmd.IsQuiet() && !cmd.HasSub() && !env.GetBool("display.mod.quiet") {
+		return false, true
+	}
 
 	// TODO: this is slow
 	originEnv := env.Clone()
