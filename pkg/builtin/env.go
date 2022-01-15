@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 
@@ -31,6 +32,9 @@ func LoadDefaultEnv(env *core.Env) {
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
 	row, col := GetTerminalWidth()
+	if col > 100 {
+		col = int(math.Max(float64(col)*4/5, float64(col-20)))
+	}
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
 

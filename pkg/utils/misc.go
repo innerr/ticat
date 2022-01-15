@@ -156,8 +156,8 @@ func QuoteStrIfHasSpace(str string) string {
 
 // TODO: may not right, use PidExists to do that
 func IsPidRunning(pid int) bool {
-	//err = syscall.Kill(pid, syscall.Signal(0))
-	//return err == nil || err != syscall.ESRCH
+	// err := syscall.Kill(pid, syscall.Signal(0))
+	// return err == nil || err != syscall.ESRCH
 	exists, err := IsPidExists(pid)
 	if err == nil && !exists {
 		return false

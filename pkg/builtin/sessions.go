@@ -55,26 +55,89 @@ func ListSessions(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	return listSessions(argv, cc, env, flow, currCmdIdx, true, true, true)
+}
+
+func ListSessionsError(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return listSessions(argv, cc, env, flow, currCmdIdx, true, false, false)
+}
+
+func ListSessionsDone(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return listSessions(argv, cc, env, flow, currCmdIdx, false, true, false)
+}
+
+func ListSessionsRunning(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return listSessions(argv, cc, env, flow, currCmdIdx, false, false, true)
+}
+
+func listSessions(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	includeError bool,
+	includeDone bool,
+	includeRunning bool) (int, bool) {
+
 	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, false)
-	if len(sessions) == 0 {
-		return clearFlow(flow)
-	} else if len(sessions) != 1 {
-		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%d sessions matched:", len(sessions)))
-	}
 
 	screen := display.NewCacheScreen()
+	cnt := 0
 	for _, it := range sessions {
+		if it.Running {
+			if !includeRunning {
+				continue
+			}
+		} else {
+			if it.Status != nil {
+				if it.Status.Result == core.ExecutedResultSucceeded && !includeDone {
+					continue
+				}
+				if (it.Status.Result == core.ExecutedResultIncompleted || it.Status.Result == core.ExecutedResultError) && !includeError {
+					continue
+				}
+			}
+		}
 		if it.Cleaning {
 			dumpSession(it, env, screen, "expired")
 		} else {
 			dumpSession(it, env, screen, "")
 		}
+		cnt += 1
 	}
+
+	if cnt > 0 {
+		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%d sessions matched:", cnt))
+	} else {
+		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("no session matched"))
+		return clearFlow(flow)
+	}
+
 	screen.WriteTo(cc.Screen)
 	if display.TooMuchOutput(env, screen) {
 		display.PrintTipTitle(cc.Screen, env,
-			fmt.Sprintf("too many sessions(%d), add more keywords to filter them", len(sessions)))
+			fmt.Sprintf("too many sessions(%d), add more keywords to filter them", cnt))
 	}
+
 	return clearFlow(flow)
 }
 

@@ -609,13 +609,37 @@ func RegisterBgManageCmds(cmds *core.CmdTree) {
 
 func RegisterSessionCmds(cmds *core.CmdTree) {
 	sessions := cmds.AddSub("sessions", "session", "s")
-	sessionsCmd := sessions.RegPowerCmd(ListSessions,
+	sessionsList := sessions.RegPowerCmd(ListSessions,
 		"list or find executed and executing sessions").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
-	addFindStrArgs(sessionsCmd)
-	sessionsCmd.AddArg("session-id", "", "session", "id")
+	addFindStrArgs(sessionsList)
+	sessionsList.AddArg("session-id", "", "session", "id")
+
+	sessionsErr := sessions.AddSub("error", "err", "e").
+		RegPowerCmd(ListSessionsError,
+			"list executed error sessions").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(sessionsErr)
+
+	sessionsDone := sessions.AddSub("done").
+		RegPowerCmd(ListSessionsDone,
+			"list success executed sessions").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(sessionsDone)
+
+	sessionsRunning := sessions.AddSub("running", "run").
+		RegPowerCmd(ListSessionsRunning,
+			"list executing sessions").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority()
+	addFindStrArgs(sessionsRunning)
 
 	sessions.AddSub("retry", "r").
 		RegAdHotFlowCmd(SessionRetry,
