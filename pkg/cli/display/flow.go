@@ -230,7 +230,8 @@ func dumpFlowCmd(
 
 	dumpCmdHelp(cic.Help(), cmdEnv, args, prt)
 
-	lineLimit := env.GetInt("display.width")
+	//lineLimit := env.GetInt("display.width")
+	_, lineLimit := utils.GetTerminalWidth(50, 120)
 
 	var startEnv map[string]string
 	if !cmdSkipped() {

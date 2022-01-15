@@ -18,7 +18,7 @@ func PrintGlobalHelp(cc *core.Cli, env *core.Env) {
 	}
 
 	// TODO: with color output this is not right, disable it by setting to a very big value
-	_, width := utils.GetTerminalWidth()
+	_, width := utils.GetTerminalWidth(50, 100)
 	width = 4096
 
 	pln := func(line string) {

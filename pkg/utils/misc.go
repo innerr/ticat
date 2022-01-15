@@ -75,7 +75,7 @@ type TerminalSize struct {
 	Ypixel uint16
 }
 
-func GetTerminalWidth() (row int, col int) {
+func GetTerminalWidth(defRow int, defCol int) (row int, col int) {
 	size := &TerminalSize{}
 	retCode, _, _ := syscall.Syscall(
 		syscall.SYS_IOCTL,
@@ -83,7 +83,7 @@ func GetTerminalWidth() (row int, col int) {
 		uintptr(syscall.TIOCGWINSZ),
 		uintptr(unsafe.Pointer(size)))
 	if int(retCode) == -1 {
-		return -1, -1
+		return defRow, defCol
 	}
 	return int(size.Row), int(size.Col)
 }

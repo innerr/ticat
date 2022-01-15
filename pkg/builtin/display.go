@@ -4,6 +4,7 @@ import (
 	"runtime"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/utils"
 )
 
 func LoadPlatformDisplay(
@@ -48,7 +49,7 @@ func SetDisplayWidth(
 
 	width := argv.GetInt("width")
 	if width == 0 {
-		_, width = GetTerminalWidth()
+		_, width = utils.GetTerminalWidth(50, 100)
 	}
 	env = env.GetLayer(core.EnvLayerSession)
 	env.SetInt("display.width", width)

@@ -31,7 +31,7 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
-	row, col := GetTerminalWidth()
+	row, col := utils.GetTerminalWidth(50, 100)
 	col = adjustDisplayWidth(col)
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
@@ -371,14 +371,6 @@ func AddEnvKeyValue(
 
 	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
 	return currCmdIdx, true
-}
-
-func GetTerminalWidth() (row int, col int) {
-	row, col = utils.GetTerminalWidth()
-	//if col > 160 {
-	//	col = 160
-	//}
-	return
 }
 
 func getEnvLocalFilePath(env *core.Env, cmd core.ParsedCmd) string {
