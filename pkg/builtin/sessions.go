@@ -126,7 +126,6 @@ func listSessions(
 	}
 
 	if cnt == 0 {
-		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("no session matched"))
 		return clearFlow(flow)
 	} else if cnt == 1 {
 		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("1 session matched:"))
@@ -384,13 +383,13 @@ func findSessions(findStrs []string, id string, cc *core.Cli, env *core.Env) (se
 	if len(sessions) == 0 {
 		if len(id) == 0 {
 			if len(findStrs) > 0 {
-				display.PrintErrTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
+				display.PrintTipTitle(cc.Screen, env, "no executed sessions found by '"+strings.Join(findStrs, " ")+"'")
 			} else {
-				display.PrintErrTitle(cc.Screen, env, "no executed sessions")
+				display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 			}
 		} else {
 			if len(findStrs) > 0 {
-				display.PrintErrTitle(cc.Screen, env,
+				display.PrintTipTitle(cc.Screen, env,
 					"no executed sessions found by '"+strings.Join(findStrs, " ")+"' with id = '"+id+"'")
 			} else {
 				display.PrintErrTitle(cc.Screen, env, "no executed sessiond with id = '"+id+"'")

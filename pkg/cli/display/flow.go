@@ -202,7 +202,6 @@ func dumpFlowCmd(
 
 	// Folding if too trivial or too deep
 	if !notFold() {
-		println("A", cmd.DisplayPath())
 		core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 			"failed to execute env-op cmd in flow desc")
 

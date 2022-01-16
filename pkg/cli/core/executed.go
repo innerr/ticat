@@ -75,6 +75,16 @@ func (self ExecutedStatusFilePath) Short() string {
 	return filepath.Join("...", self.DirName, self.FileName)
 }
 
+func SafeParseExecutedFlow(path ExecutedStatusFilePath) (executed *ExecutedFlow) {
+	defer func() {
+		if r := recover(); r != nil {
+			println(r.(error).Error())
+		}
+	}()
+	executed = ParseExecutedFlow(path)
+	return
+}
+
 func ParseExecutedFlow(path ExecutedStatusFilePath) *ExecutedFlow {
 	file, err := os.Open(path.Full())
 	if err != nil {

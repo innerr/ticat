@@ -204,6 +204,7 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 	tag := argv.GetRaw("tag")
 	src := argv.GetRaw("match-source")
 	filter := argv.GetRaw("filter-source")
+	parallel := argv.GetBool("parallel")
 
 	result := []*core.CmdTree{}
 	findAllCmdsByTag(tag, src, filter, cc.Cmds, &result)
@@ -225,13 +226,21 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 		return
 	}
 	ok = true
-	if len(result) != 1 {
+	if len(result) != 1 && !parallel {
 		flow = append(flow, "blender.forest")
 		masks = append(masks, nil)
 	}
 	trivialMark := env.GetRaw("strs.trivial-mark")
 	for _, it := range result {
-		flow = append(flow, trivialMark+it.DisplayPath())
+		cmd := trivialMark+it.DisplayPath()
+		if parallel {
+			cmd += " %delay=0"
+		}
+		flow = append(flow, cmd)
+		masks = append(masks, nil)
+	}
+	if parallel {
+		flow = append(flow, "background.wait")
 		masks = append(masks, nil)
 	}
 	return
