@@ -43,7 +43,8 @@ func RegisterCmds(cmds *core.CmdTree) {
 		"run all commands having selftest tag, run in forest-mode to keep env clean for each test").
 		AddArg("match-source", "", "match-src", "match", "src").
 		AddArg("filter-source", "", "filter").
-		AddArg("tag", "selftest")
+		AddArg("tag", "selftest").
+		AddArg("parallel", "false", "parall", "paral", "para")
 }
 
 func RegisterCmdsFindingCmds(cmds *core.CmdTree) {

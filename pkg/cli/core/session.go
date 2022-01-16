@@ -54,7 +54,11 @@ func ListSessions(env *Env, findStrs []string, mustMatchDirName string) (session
 			continue
 		}
 
-		status := ParseExecutedFlow(ExecutedStatusFilePath{sessionsRoot, dir, statusFileName})
+		status := SafeParseExecutedFlow(ExecutedStatusFilePath{sessionsRoot, dir, statusFileName})
+		// TODO: better error handling
+		if status == nil {
+			continue
+		}
 		if !status.MatchFind(findStrs) {
 			continue
 		}
