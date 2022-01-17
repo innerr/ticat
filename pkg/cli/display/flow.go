@@ -241,12 +241,13 @@ func dumpFlowCmd(
 		startEnv = dumpExecutedStartEnv(cmdEnv, prt, padLenCal, args, executedCmd, lineLimit)
 	}
 
-	dumpCmdExecutedLog(cmdEnv, args, executedCmd, prt, padLenCal, lineLimit)
-	dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
-
 	if !cmdSkipped() || executedCmd == nil {
 		dumpCmdArgv(cic, argv, cmdEnv, originEnv, prt, args, executedCmd, writtenKeys)
 	}
+
+	dumpCmdExecutedLog(cmdEnv, args, executedCmd, prt, padLenCal, lineLimit)
+	dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
+
 	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
 		dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, padLenCal, args, writtenKeys, lineLimit)
 	}
@@ -379,7 +380,8 @@ func dumpCmdExecutedLog(
 	if executedCmd.Result == core.ExecutedResultSucceeded {
 		prt(1, ColorProp("- execute-log:", env))
 	} else {
-		prt(1, ColorHighLight("- execute-log:", env))
+		//prt(1, ColorHighLight("- execute-log:", env))
+		prt(1, ColorProp("- execute-log:", env))
 	}
 	prt(2, mayTrimStr(executedCmd.LogFilePath, env, limit))
 

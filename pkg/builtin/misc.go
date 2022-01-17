@@ -232,7 +232,7 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 	}
 	trivialMark := env.GetRaw("strs.trivial-mark")
 	for _, it := range result {
-		cmd := trivialMark+it.DisplayPath()
+		cmd := trivialMark + it.DisplayPath()
 		if parallel {
 			cmd += " %delay=0"
 		}

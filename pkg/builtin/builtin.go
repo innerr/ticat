@@ -21,12 +21,15 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterBgManageCmds(cmds)
 
 	RegisterSessionCmds(cmds)
+
 	RegisterBlenderCmds(cmds.AddSub(
 		"blender", "blend").RegEmptyCmd(
 		"a toolbox to modify flows during running").Owner())
+
 	RegisterDbgCmds(cmds.AddSub(
 		"dbg").RegEmptyCmd(
 		"debug related commands").Owner())
+
 	RegisterDisplayCmds(cmds.AddSub(
 		"display", "disp").RegEmptyCmd(
 		"display related commands").Owner())
@@ -35,6 +38,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 		"builtin").RegEmptyCmd(
 		"internal commands, mostly for init loading").Owner().SetHidden())
 
+	RegisterCtrlCmds(cmds)
 	RegisterTimerCmds(cmds)
 	RegisterOsCmds(cmds)
 	RegisterNoopCmds(cmds)
@@ -733,29 +737,7 @@ func RegisterBlenderCmds(cmds *core.CmdTree) {
 		SetQuiet()
 }
 
-func RegisterDbgCmds(cmds *core.CmdTree) {
-	registerSimpleSwitch(cmds,
-		"step by step on executing",
-		"sys.step-by-step",
-		"step-by-step", "step", "confirm", "cfm")
-
-	registerSimpleSwitch(cmds,
-		"recover from internal error and give a frendly message",
-		"sys.panic.recover",
-		"recover")
-
-	delay := cmds.AddSub("delay-execute", "delay").
-		RegPowerCmd(DbgDelayExecute,
-			"wait for specified duration before executing each commands").
-		SetQuiet().
-		AddArg("seconds", "3", "second", "sec", "s", "S")
-
-	delay.AddSub("at-end", "at-finish", "post-execute", "end", "finish").
-		RegPowerCmd(DbgDelayExecuteAtEnd,
-			"wait for specified duration after executing each commands").
-		SetQuiet().
-		AddArg("seconds", "3", "second", "sec", "s", "S")
-
+func RegisterCtrlCmds(cmds *core.CmdTree) {
 	breaks := cmds.AddSub("breaks", "break")
 	breaks.RegPowerCmd(DbgBreakAtBegin,
 		"set break point at the first command").
@@ -787,6 +769,30 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 			"set break point after the last command").
 		SetQuiet().
 		SetPriority()
+
+	registerSimpleSwitch(cmds,
+		"step by step on executing",
+		"sys.step-by-step",
+		"step-by-step", "step", "confirm", "cfm")
+
+	delay := cmds.AddSub("delay-execute", "delay").
+		RegPowerCmd(DbgDelayExecute,
+			"wait for specified duration before executing each commands").
+		SetQuiet().
+		AddArg("seconds", "3", "second", "sec", "s", "S")
+
+	delay.AddSub("after", "at-end", "at-finish", "post-execute", "end", "finish").
+		RegPowerCmd(DbgDelayExecuteAtEnd,
+			"wait for specified duration after executing each commands").
+		SetQuiet().
+		AddArg("seconds", "3", "second", "sec", "s", "S")
+}
+
+func RegisterDbgCmds(cmds *core.CmdTree) {
+	registerSimpleSwitch(cmds,
+		"recover from internal error and give a frendly message",
+		"sys.panic.recover",
+		"recover")
 
 	panicTest := cmds.AddSub("panic")
 	panicTest.RegPowerCmd(DbgPanic,
