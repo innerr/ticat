@@ -33,7 +33,7 @@ func (self *BreakPoints) BreakAtEnd() bool {
 
 func (self *BreakPoints) SetBefores(cc *Cli, env *Env, cmdList []string) (verifiedCmds []string) {
 	for _, cmd := range cmdList {
-		verifiedCmd := cc.NormalizeCmd(cmd, true)
+		verifiedCmd := cc.NormalizeCmd(true, cmd)
 		verifiedCmds = append(verifiedCmds, verifiedCmd)
 		self.Befores[verifiedCmd] = true
 	}
@@ -43,7 +43,7 @@ func (self *BreakPoints) SetBefores(cc *Cli, env *Env, cmdList []string) (verifi
 
 func (self *BreakPoints) SetAfters(cc *Cli, env *Env, cmdList []string) (verifiedCmds []string) {
 	for _, cmd := range cmdList {
-		verifiedCmd := cc.NormalizeCmd(cmd, true)
+		verifiedCmd := cc.NormalizeCmd(true, cmd)
 		verifiedCmds = append(verifiedCmds, verifiedCmd)
 		self.Afters[verifiedCmd] = true
 	}

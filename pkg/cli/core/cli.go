@@ -124,11 +124,21 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 	}
 }
 
-func (self *Cli) ParseCmd(cmd string, panicOnError bool) (parsedCmd ParsedCmd, ok bool) {
-	parsed := self.Parser.Parse(self.Cmds, self.EnvAbbrs, cmd)
-	if len(parsed.Cmds) != 1 || parsed.FirstErr() != nil {
+func (self *Cli) ParseCmd(panicOnError bool, cmdAndArgs ...string) (parsedCmd ParsedCmd, ok bool) {
+	parsed := self.Parser.Parse(self.Cmds, self.EnvAbbrs, cmdAndArgs...)
+	err := parsed.FirstErr()
+	if len(parsed.Cmds) != 1 || err != nil {
 		if panicOnError {
-			panic(fmt.Errorf("[Cli.ParseCmd] invalid cmd name '%s'", cmd))
+			cmdStr := strings.Join(cmdAndArgs, " ")
+			if err != nil {
+				panic(fmt.Errorf("[Cli.ParseCmd] %v", err))
+			}
+			if len(parsed.Cmds) > 1 {
+				panic(fmt.Errorf("[Cli.ParseCmd] too many result commands by parsing '%s': %d",
+					cmdStr, len(parsed.Cmds)))
+			} else {
+				panic(fmt.Errorf("[Cli.ParseCmd] no result command by parsing '%s'", cmdStr))
+			}
 		} else {
 			return
 		}
@@ -136,8 +146,8 @@ func (self *Cli) ParseCmd(cmd string, panicOnError bool) (parsedCmd ParsedCmd, o
 	return parsed.Cmds[0], true
 }
 
-func (self *Cli) NormalizeCmd(cmd string, panicOnError bool) (verifiedCmdPath string) {
-	parsed, ok := self.ParseCmd(cmd, panicOnError)
+func (self *Cli) NormalizeCmd(panicOnError bool, cmd string) (verifiedCmdPath string) {
+	parsed, ok := self.ParseCmd(panicOnError, cmd)
 	if ok {
 		verifiedCmdPath = strings.Join(parsed.Path(), self.Cmds.Strs.PathSep)
 	}

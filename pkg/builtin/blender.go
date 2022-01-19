@@ -30,8 +30,9 @@ func BlenderReplace(
 
 	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src")
 	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest")
-	srcCmd, _ := cc.ParseCmd(src, true)
-	destCmd, _ := cc.ParseCmd(dest, true)
+
+	srcCmd, _ := cc.ParseCmd(true, src)
+	destCmd, _ := cc.ParseCmd(true, core.FlowStrToStrs(dest)...)
 	cc.Blender.AddReplace(srcCmd, destCmd, -1)
 	return currCmdIdx, true
 }

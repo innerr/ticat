@@ -42,7 +42,7 @@ func DumpTailCmdWithUsage(
 	if len(cmdPath) == 0 {
 		cmdPath = flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
 	} else {
-		cmdPath = cc.NormalizeCmd(cmdPath, true)
+		cmdPath = cc.NormalizeCmd(true, cmdPath)
 	}
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
 	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "==")
@@ -60,7 +60,7 @@ func DumpTailCmdWithDetails(
 	if len(cmdPath) == 0 {
 		cmdPath = flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
 	} else {
-		cmdPath = cc.NormalizeCmd(cmdPath, true)
+		cmdPath = cc.NormalizeCmd(true, cmdPath)
 	}
 	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "")
