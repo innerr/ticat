@@ -52,6 +52,7 @@ type Cli struct {
 	FlowStatus    *ExecutingFlow
 	BreakPoints   *BreakPoints
 	HandledErrors HandledErrors
+	ForestMode    *ForestMode
 	Blender       *Blender
 }
 
@@ -69,6 +70,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		nil,
 		NewBreakPoints(),
 		HandledErrors{},
+		NewForestMode(),
 		NewBlender(),
 	}
 }
@@ -95,6 +97,7 @@ func (self *Cli) CopyForInteract() *Cli {
 		nil,
 		self.BreakPoints,
 		HandledErrors{},
+		self.ForestMode,
 		self.Blender,
 	}
 }
@@ -116,11 +119,12 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		nil,
 		NewBreakPoints(),
 		HandledErrors{},
-		self.Blender.Clone(),
+		self.ForestMode.Clone(),
+		NewBlender(),
 	}
 }
 
-func (self *Cli) ParseCmd(cmd string, panicOnError bool) (verifiedCmdPath string) {
+func (self *Cli) ParseCmd(cmd string, panicOnError bool) (parsedCmd ParsedCmd, ok bool) {
 	parsed := self.Parser.Parse(self.Cmds, self.EnvAbbrs, cmd)
 	if len(parsed.Cmds) != 1 || parsed.FirstErr() != nil {
 		if panicOnError {
@@ -129,5 +133,13 @@ func (self *Cli) ParseCmd(cmd string, panicOnError bool) (verifiedCmdPath string
 			return
 		}
 	}
-	return strings.Join(parsed.Cmds[0].Path(), self.Cmds.Strs.PathSep)
+	return parsed.Cmds[0], true
+}
+
+func (self *Cli) NormalizeCmd(cmd string, panicOnError bool) (verifiedCmdPath string) {
+	parsed, ok := self.ParseCmd(cmd, panicOnError)
+	if ok {
+		verifiedCmdPath = strings.Join(parsed.Path(), self.Cmds.Strs.PathSep)
+	}
+	return
 }

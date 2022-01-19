@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"os/exec"
@@ -45,48 +46,50 @@ type AutoTimerKeys struct {
 	Dur   string
 }
 
-type Cmd struct {
-	owner             *CmdTree
-	help              string
-	ty                CmdType
+type CmdFlags struct {
 	quiet             bool
 	priority          bool
 	allowTailModeCall bool
 	unLog             bool
-	args              Args
-	normal            NormalCmd
-	power             PowerCmd
-	adhotFlow         AdHotFlowCmd
-	cmdLine           string
-	flow              []string
-	envOps            EnvOps
-	depends           []Depend
-	metaFilePath      string
-	val2env           *Val2Env
-	arg2env           *Arg2Env
-	autoTimerKeys     AutoTimerKeys
+	blender           bool
+}
+
+type Cmd struct {
+	owner         *CmdTree
+	help          string
+	ty            CmdType
+	flags         *CmdFlags
+	args          Args
+	normal        NormalCmd
+	power         PowerCmd
+	adhotFlow     AdHotFlowCmd
+	cmdLine       string
+	flow          []string
+	envOps        EnvOps
+	depends       []Depend
+	metaFilePath  string
+	val2env       *Val2Env
+	arg2env       *Arg2Env
+	autoTimerKeys AutoTimerKeys
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
 	return &Cmd{
-		owner:             owner,
-		help:              help,
-		ty:                CmdTypeUninited,
-		quiet:             false,
-		priority:          false,
-		allowTailModeCall: false,
-		unLog:             false,
-		args:              newArgs(),
-		normal:            nil,
-		power:             nil,
-		adhotFlow:         nil,
-		cmdLine:           "",
-		flow:              nil,
-		envOps:            newEnvOps(),
-		depends:           nil,
-		metaFilePath:      "",
-		val2env:           newVal2Env(),
-		arg2env:           newArg2Env(),
+		owner:        owner,
+		help:         help,
+		ty:           CmdTypeUninited,
+		flags:        &CmdFlags{},
+		args:         newArgs(),
+		normal:       nil,
+		power:        nil,
+		adhotFlow:    nil,
+		cmdLine:      "",
+		flow:         nil,
+		envOps:       newEnvOps(),
+		depends:      nil,
+		metaFilePath: "",
+		val2env:      newVal2Env(),
+		arg2env:      newArg2Env(),
 	}
 }
 
@@ -313,13 +316,13 @@ func (self *Cmd) MatchFind(findStr string) bool {
 			return true
 		}
 	}
-	if self.quiet && strings.Index("quiet", findStr) >= 0 {
+	if self.flags.quiet && strings.Index("quiet", findStr) >= 0 {
 		return true
 	}
 	if self.ty == CmdTypePower && strings.Index("power", findStr) >= 0 {
 		return true
 	}
-	if self.priority && strings.Index("priority", findStr) >= 0 {
+	if self.flags.priority && strings.Index("priority", findStr) >= 0 {
 		return true
 	}
 	return false
@@ -384,22 +387,32 @@ func (self *Cmd) AddDepend(dep string, reason string) *Cmd {
 }
 
 func (self *Cmd) SetQuiet() *Cmd {
-	self.quiet = true
+	self.flags.quiet = true
 	return self
 }
 
 func (self *Cmd) SetAllowTailModeCall() *Cmd {
-	self.allowTailModeCall = true
+	self.flags.allowTailModeCall = true
 	return self
 }
 
+func (self *Cmd) SetIsBlenderCmd() *Cmd {
+	self.flags.blender = true
+	self.flags.unLog = true
+	return self
+}
+
+func (self *Cmd) IsBlenderCmd() bool {
+	return self.flags.blender
+}
+
 func (self *Cmd) SetUnLog() *Cmd {
-	self.unLog = true
+	self.flags.unLog = true
 	return self
 }
 
 func (self *Cmd) SetPriority() *Cmd {
-	self.priority = true
+	self.flags.priority = true
 	return self
 }
 
@@ -467,15 +480,15 @@ func (self *Cmd) IsPowerCmd() bool {
 }
 
 func (self *Cmd) AllowTailModeCall() bool {
-	return self.allowTailModeCall
+	return self.flags.allowTailModeCall
 }
 
 func (self *Cmd) IsQuiet() bool {
-	return self.quiet
+	return self.flags.quiet
 }
 
 func (self *Cmd) IsPriority() bool {
-	return self.priority
+	return self.flags.priority
 }
 
 func (self *Cmd) Type() CmdType {
@@ -538,7 +551,7 @@ func (self *Cmd) genLogFilePath(env *Env) string {
 }
 
 func (self *Cmd) shouldWriteLogFile() bool {
-	if self.unLog {
+	if self.flags.unLog {
 		return false
 	}
 	return self.ty == CmdTypeFile ||
@@ -573,7 +586,25 @@ func (self *Cmd) RenderedFlowStrs(
 		}
 		fullyRendered = fullyRendered && lineFullyRendered
 	}
+
+	if fullyRendered {
+		if masks != nil {
+			panic(fmt.Errorf("[Cmd.RenderedFlowStrs] can't use blender on a masked flow"))
+		}
+		flow = self.invokeBlender(cc, env, flow)
+	}
 	return
+}
+
+// TODO: extra parse/save for a flow, slow and ugly
+func (self *Cmd) invokeBlender(cc *Cli, env *Env, input []string) []string {
+	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
+	cc.Blender.Invoke(cc, env, flow)
+	trivialMark := env.GetRaw("strs.trivial-mark")
+	w := bytes.NewBuffer(nil)
+	SaveFlow(w, flow, cc.Cmds.Strs.PathSep, trivialMark, env)
+	flowStr := w.String()
+	return FlowStrToStrs(flowStr)
 }
 
 func StripFlowForExecute(flow []string, sequenceSep string) []string {

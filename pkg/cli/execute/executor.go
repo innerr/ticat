@@ -70,7 +70,8 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 }
 
 // Implement core.Executor
-func (self *Executor) Execute(caller string, innerCall bool, cc *core.Cli, env *core.Env, masks []*core.ExecuteMask, input ...string) bool {
+func (self *Executor) Execute(caller string, innerCall bool, cc *core.Cli, env *core.Env,
+	masks []*core.ExecuteMask, input ...string) bool {
 	return self.execute(caller, cc, env, masks, false, innerCall, input...)
 }
 
@@ -109,6 +110,10 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 		}
 	}
 	removeEmptyCmds(flow)
+
+	if !innerCall {
+		cc.Blender.Invoke(cc, env, flow)
+	}
 
 	if !allowParseError(flow) {
 		isSearch := isStartWithSearchCmd(flow)
@@ -168,7 +173,7 @@ func (self *Executor) executeFlow(
 			mask = masks[i]
 		}
 		cmdEnv := env
-		if cc.Blender.ForestMode.AtForestTopLvl(env) {
+		if cc.ForestMode.AtForestTopLvl(env) {
 			cmdEnv = env.Clone()
 		}
 		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, cmdEnv, mask, flow, i,
@@ -177,8 +182,8 @@ func (self *Executor) executeFlow(
 			return false
 		}
 	}
-	if cc.Blender.ForestMode.AtForestTopLvl(env) {
-		cc.Blender.ForestMode.Pop(env)
+	if cc.ForestMode.AtForestTopLvl(env) {
+		cc.ForestMode.Pop(env)
 	}
 	return true
 }

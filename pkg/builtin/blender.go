@@ -4,7 +4,7 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func BlenderForestMode(
+func SetForestMode(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -13,8 +13,25 @@ func BlenderForestMode(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	if !cc.Blender.ForestMode.AtForestTopLvl(env) {
-		cc.Blender.ForestMode.Push(core.GetLastStackFrame(env))
+	if !cc.ForestMode.AtForestTopLvl(env) {
+		cc.ForestMode.Push(core.GetLastStackFrame(env))
 	}
+	return currCmdIdx, true
+}
+
+func BlenderReplace(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src")
+	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest")
+	srcCmd, _ := cc.ParseCmd(src, true)
+	destCmd, _ := cc.ParseCmd(dest, true)
+	cc.Blender.AddReplace(srcCmd, destCmd, -1)
 	return currCmdIdx, true
 }

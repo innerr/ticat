@@ -227,8 +227,7 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 	}
 	ok = true
 	if len(result) != 1 && !parallel {
-		flow = append(flow, "blender.forest")
-		masks = append(masks, nil)
+		flow = append(flow, "flow.forest-mode")
 	}
 	trivialMark := env.GetRaw("strs.trivial-mark")
 	for _, it := range result {
@@ -237,11 +236,9 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 			cmd += " %delay=0"
 		}
 		flow = append(flow, cmd)
-		masks = append(masks, nil)
 	}
 	if parallel {
 		flow = append(flow, "background.wait")
-		masks = append(masks, nil)
 	}
 	return
 }

@@ -225,7 +225,7 @@ func SaveFlow(
 	trivialMark := env.GetRaw("strs.trivial-mark")
 
 	// TODO: wrap line if too long
-	core.SaveFlow(w, flow, currCmdIdx, cc.Cmds.Strs.PathSep, trivialMark, env)
+	core.SaveFlow(w, flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 	flowStr := w.String()
 
 	screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+"\n", cmdPath))

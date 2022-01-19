@@ -5,48 +5,97 @@ import (
 	"strings"
 )
 
-type ForestMode struct {
-	stack []string
+type BlenderInvoker interface {
+	Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int)
 }
 
-func (self ForestMode) AtForestTopLvl(env *Env) bool {
-	return len(self.stack) != 0 && self.stack[len(self.stack)-1] == GetLastStackFrame(env)
+type BlenderInvokerReplace struct {
+	cnt  int
+	src  ParsedCmd
+	dest ParsedCmd
 }
 
-func (self *ForestMode) Pop(env *Env) {
-	if len(self.stack) == 0 {
-		panic(fmt.Errorf("[BlenderForest] should never happen: pop on empty"))
+func (self BlenderInvokerReplace) Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int) {
+	if self.src.LastCmdNode() != cmd.LastCmdNode() {
+		return []ParsedCmd{cmd}, false, 0
 	}
-	last1 := GetLastStackFrame(env)
-	last2 := self.stack[len(self.stack)-1]
-	if last1 != last2 {
-		panic(fmt.Errorf("[BlenderForest] should never happen: pop on wrong frame: %s != %s", last1, last2))
-	}
-	self.stack = self.stack[0 : len(self.stack)-1]
-}
-
-func (self *ForestMode) Push(frame string) {
-	self.stack = append(self.stack, frame)
-}
-
-func (self *ForestMode) Clone() *ForestMode {
-	stack := []string{}
-	for _, it := range self.stack {
-		stack = append(stack, it)
-	}
-	return &ForestMode{stack}
+	return []ParsedCmd{self.dest}, true, -1
 }
 
 type Blender struct {
-	ForestMode *ForestMode
+	invokers []BlenderInvoker
 }
 
 func NewBlender() *Blender {
-	return &Blender{&ForestMode{[]string{}}}
+	return &Blender{
+		[]BlenderInvoker{},
+	}
 }
 
 func (self *Blender) Clone() *Blender {
-	return &Blender{self.ForestMode.Clone()}
+	invokers := []BlenderInvoker{}
+	for _, info := range self.invokers {
+		invokers = append(invokers, info)
+	}
+	return &Blender{
+		invokers,
+	}
+}
+
+func (self *Blender) AddReplace(src ParsedCmd, dest ParsedCmd, cnt int) {
+	invoker := &BlenderInvokerReplace{cnt, src, dest}
+	self.invokers = append(self.invokers, invoker)
+}
+
+func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) {
+	result := []ParsedCmd{}
+
+	for i := 0; i < len(flow.Cmds); i++ {
+		parsedCmd := flow.Cmds[i]
+		cmd := parsedCmd.LastCmdNode()
+		cic := parsedCmd.LastCmd()
+		if cmd != nil && cic != nil && cic.IsBlenderCmd() {
+			cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(
+				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+			_, ok := cic.Execute(argv, cc, cmdEnv, nil, flow, i)
+			if !ok {
+				panic(fmt.Errorf("[Blender.Invoke] blender '%s' invoke failed", cmd.DisplayPath()))
+			}
+			continue
+		}
+
+		if len(self.invokers) == 0 {
+			result = append(result, parsedCmd)
+			continue
+		}
+
+		originDeleted := false
+		originPosDelta := 0
+		for _, invoker := range self.invokers {
+			cmds, deleted, posDelta := invoker.Invoke(parsedCmd)
+			if len(cmds) > 0 {
+				result = append(result, cmds...)
+			}
+			if deleted {
+				originDeleted = true
+			} else {
+				originPosDelta += posDelta
+			}
+		}
+		if originDeleted || originPosDelta != 0 {
+			changed = true
+		}
+		if i == flow.GlobalCmdIdx {
+			if originDeleted {
+				flow.GlobalCmdIdx = -1
+			} else {
+				flow.GlobalCmdIdx += originPosDelta
+			}
+		}
+	}
+
+	flow.Cmds = result
+	return
 }
 
 // TODO: should not in core package

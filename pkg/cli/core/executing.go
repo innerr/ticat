@@ -35,7 +35,7 @@ func (self *ExecutingFlow) onFlowStart(flow *ParsedCmds, env *Env) {
 	trivialMark := env.GetRaw("strs.trivial-mark")
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
 	flowBuf := bytes.NewBuffer(nil)
-	SaveFlow(flowBuf, flow, 0, cmdPathSep, trivialMark, env)
+	SaveFlow(flowBuf, flow, cmdPathSep, trivialMark, env)
 	buf.Write([]byte(markedContent("flow", 0, flowBuf.String())))
 
 	now := time.Now().Format(SessionTimeFormat)

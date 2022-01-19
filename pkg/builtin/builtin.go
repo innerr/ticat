@@ -22,9 +22,10 @@ func RegisterCmds(cmds *core.CmdTree) {
 
 	RegisterSessionCmds(cmds)
 
-	RegisterBlenderCmds(cmds.AddSub(
-		"blender", "blend").RegEmptyCmd(
-		"a toolbox to modify flows during running").Owner())
+	//RegisterBlenderCmds(cmds.AddSub(
+	//	"blender", "blend").RegEmptyCmd(
+	//	"a toolbox to modify flows during running").Owner())
+	RegisterBlenderCmds(cmds.GetOrAddSub("flow"))
 
 	RegisterDbgCmds(cmds.AddSub(
 		"dbg").RegEmptyCmd(
@@ -548,11 +549,13 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 }
 
 func RegisterFlowManageCmds(cmds *core.CmdTree) {
-	flow := cmds.AddSub("flow", "f").
+	flow := cmds.AddSub("flow", "f")
+
+	list := flow.AddSub("list", "ls").
 		RegPowerCmd(ListFlows,
 			"list local saved but unlinked (to any repo) flows").
 		SetAllowTailModeCall()
-	addFindStrArgs(flow)
+	addFindStrArgs(list)
 
 	// TODO: check the new cmd is conflicted with other cmds
 	flow.AddSub("save", "s").
@@ -732,9 +735,17 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 
 func RegisterBlenderCmds(cmds *core.CmdTree) {
 	cmds.AddSub("forest-mode", "forest").
-		RegPowerCmd(BlenderForestMode,
+		RegPowerCmd(SetForestMode,
 			"run following commands in forest-mode: reset env on each command, but not reset on their subflows").
 		SetQuiet()
+
+	cmds.AddSub("replace", "repl").
+		RegPowerCmd(BlenderReplace,
+			"replace a command with another one").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("src", "", "source", "target").
+		AddArg("dest", "")
 }
 
 func RegisterCtrlCmds(cmds *core.CmdTree) {
