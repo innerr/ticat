@@ -1,12 +1,19 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/utils"
 )
+
+func SaveFlowToStr(flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) string {
+	w := bytes.NewBuffer(nil)
+	SaveFlow(w, flow, cmdPathSep, trivialMark, env)
+	return w.String()
+}
 
 func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) {
 	envPathSep := env.GetRaw("strs.env-path-sep")

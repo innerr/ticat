@@ -1,7 +1,6 @@
 package builtin
 
 import (
-	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
@@ -215,7 +214,6 @@ func SaveFlow(
 		}
 	}
 
-	w := bytes.NewBuffer(nil)
 	flow.RemoveLeadingCmds(1)
 
 	if !checkAndConfirmIfFlowHasParseError(cc.Screen, flow, env) {
@@ -225,8 +223,7 @@ func SaveFlow(
 	trivialMark := env.GetRaw("strs.trivial-mark")
 
 	// TODO: wrap line if too long
-	core.SaveFlow(w, flow, cc.Cmds.Strs.PathSep, trivialMark, env)
-	flowStr := w.String()
+	flowStr := core.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 
 	screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+"\n", cmdPath))
 	screen.Print("    " + display.ColorProp("- flow:", env) + "\n")

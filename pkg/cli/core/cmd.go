@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"fmt"
 	"math/rand"
 	"os/exec"
@@ -570,7 +569,12 @@ func (self *Cmd) RenderedFlowStrs(
 	argv ArgVals,
 	cc *Cli,
 	env *Env,
-	allowFlowTemplateRenderError bool) (flow []string, masks []*ExecuteMask, fullyRendered bool) {
+	allowFlowTemplateRenderError bool,
+	forChecking bool) (flow []string, masks []*ExecuteMask, fullyRendered bool) {
+
+	if forChecking {
+		cc = cc.CloneForChecking()
+	}
 
 	fullyRendered = true
 
@@ -598,13 +602,18 @@ func (self *Cmd) RenderedFlowStrs(
 
 // TODO: extra parse/save for a flow, slow and ugly
 func (self *Cmd) invokeBlender(cc *Cli, env *Env, input []string) []string {
+	input = normalizeInput(input, env.GetRaw("strs.seq-sep"))
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
 	cc.Blender.Invoke(cc, env, flow)
 	trivialMark := env.GetRaw("strs.trivial-mark")
-	w := bytes.NewBuffer(nil)
-	SaveFlow(w, flow, cc.Cmds.Strs.PathSep, trivialMark, env)
-	flowStr := w.String()
-	return FlowStrToStrs(flowStr)
+	flowStr := SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
+	return []string{flowStr}
+}
+
+// TODO: this is a bit confusing, when we need this and when we dont, fix it
+func normalizeInput(input []string, sequenceSep string) []string {
+	input = StripFlowForExecute(input, sequenceSep)
+	return FlowStrToStrs(FlowStrsToStr(input))
 }
 
 func StripFlowForExecute(flow []string, sequenceSep string) []string {
@@ -626,8 +635,10 @@ func StripFlowForExecute(flow []string, sequenceSep string) []string {
 	return output
 }
 
-func (self *Cmd) Flow(argv ArgVals, cc *Cli, env *Env, allowFlowTemplateRenderError bool) (flow []string, masks []*ExecuteMask, rendered bool) {
-	flow, masks, rendered = self.RenderedFlowStrs(argv, cc, env, allowFlowTemplateRenderError)
+func (self *Cmd) Flow(argv ArgVals, cc *Cli, env *Env,
+	allowFlowTemplateRenderError bool, forChecking bool) (flow []string, masks []*ExecuteMask, rendered bool) {
+
+	flow, masks, rendered = self.RenderedFlowStrs(argv, cc, env, allowFlowTemplateRenderError, forChecking)
 	if !rendered || len(flow) == 0 {
 		return
 	}
@@ -670,7 +681,7 @@ func (self *Cmd) executePowerCmd(
 
 // TODO: flow must not have argv, is it OK?
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask) (succeeded bool) {
-	flow, masks, _ := self.Flow(argv, cc, env, false)
+	flow, masks, _ := self.Flow(argv, cc, env, false, false)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	skipped := false
 

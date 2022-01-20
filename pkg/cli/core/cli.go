@@ -124,6 +124,25 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 	}
 }
 
+func (self *Cli) CloneForChecking() *Cli {
+	return &Cli{
+		self.Screen,
+		self.Cmds,
+		self.Parser,
+		self.EnvAbbrs,
+		self.TolerableErrs,
+		self.Executor,
+		self.Helps,
+		self.BgTasks,
+		self.CmdIO,
+		self.FlowStatus,
+		self.BreakPoints,
+		self.HandledErrors,
+		self.ForestMode,
+		NewBlender(),
+	}
+}
+
 func (self *Cli) ParseCmd(panicOnError bool, cmdAndArgs ...string) (parsedCmd ParsedCmd, ok bool) {
 	parsed := self.Parser.Parse(self.Cmds, self.EnvAbbrs, cmdAndArgs...)
 	err := parsed.FirstErr()

@@ -52,12 +52,20 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 
 	for i := 0; i < len(flow.Cmds); i++ {
 		parsedCmd := flow.Cmds[i]
+		if parsedCmd.ParseResult.Error != nil {
+			panic(parsedCmd.ParseResult.Error)
+		}
 		cmd := parsedCmd.LastCmdNode()
+		if cmd == nil {
+			result = append(result, parsedCmd)
+			continue
+		}
+
 		cic := parsedCmd.LastCmd()
 		if cmd != nil && cic != nil && cic.IsBlenderCmd() {
 			cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(
 				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-			_, ok := cic.Execute(argv, cc, cmdEnv, nil, flow, i)
+			_, ok := cic.executeByType(argv, cc, cmdEnv, nil, flow, i, "")
 			if !ok {
 				panic(fmt.Errorf("[Blender.Invoke] blender '%s' invoke failed", cmd.DisplayPath()))
 			}
