@@ -6,7 +6,7 @@ import (
 )
 
 type BlenderInvoker interface {
-	Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int)
+	Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int, finished bool)
 }
 
 type BlenderInvokerReplace struct {
@@ -15,11 +15,61 @@ type BlenderInvokerReplace struct {
 	dest ParsedCmd
 }
 
-func (self BlenderInvokerReplace) Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int) {
+func (self BlenderInvokerReplace) Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int, finished bool) {
 	if self.src.LastCmdNode() != cmd.LastCmdNode() {
-		return []ParsedCmd{cmd}, false, 0
+		return []ParsedCmd{cmd}, false, 0, false
 	}
-	return []ParsedCmd{self.dest}, true, -1
+	if self.cnt > 0 {
+		self.cnt -= 1
+	}
+	return []ParsedCmd{self.dest}, true, -1, self.cnt == 0
+}
+
+type BlenderInvokerRemove struct {
+	cnt    int
+	target ParsedCmd
+}
+
+func (self BlenderInvokerRemove) Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int, finished bool) {
+	if self.target.LastCmdNode() != cmd.LastCmdNode() {
+		return []ParsedCmd{cmd}, false, 0, false
+	}
+	if self.cnt > 0 {
+		self.cnt -= 1
+	}
+	return nil, true, -1, self.cnt == 0
+}
+
+type BlenderInvokerInsert struct {
+	cnt    int
+	target ParsedCmd
+	newCmd ParsedCmd
+}
+
+func (self BlenderInvokerInsert) Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int, finished bool) {
+	if self.target.LastCmdNode() != cmd.LastCmdNode() {
+		return []ParsedCmd{cmd}, false, 0, false
+	}
+	if self.cnt > 0 {
+		self.cnt -= 1
+	}
+	return []ParsedCmd{self.newCmd, cmd}, true, 1, self.cnt == 0
+}
+
+type BlenderInvokerInsertAfter struct {
+	cnt    int
+	target ParsedCmd
+	newCmd ParsedCmd
+}
+
+func (self BlenderInvokerInsertAfter) Invoke(cmd ParsedCmd) (cmds []ParsedCmd, originDeleted bool, originPosDelta int, finished bool) {
+	if self.target.LastCmdNode() != cmd.LastCmdNode() {
+		return []ParsedCmd{cmd}, false, 0, false
+	}
+	if self.cnt > 0 {
+		self.cnt -= 1
+	}
+	return []ParsedCmd{cmd, self.newCmd}, false, 0, self.cnt == 0
 }
 
 type Blender struct {
@@ -45,6 +95,25 @@ func (self *Blender) Clone() *Blender {
 func (self *Blender) AddReplace(src ParsedCmd, dest ParsedCmd, cnt int) {
 	invoker := &BlenderInvokerReplace{cnt, src, dest}
 	self.invokers = append(self.invokers, invoker)
+}
+
+func (self *Blender) AddRemove(target ParsedCmd, cnt int) {
+	invoker := &BlenderInvokerRemove{cnt, target}
+	self.invokers = append(self.invokers, invoker)
+}
+
+func (self *Blender) AddInsert(target ParsedCmd, newCmd ParsedCmd, cnt int) {
+	invoker := &BlenderInvokerInsert{cnt, target, newCmd}
+	self.invokers = append(self.invokers, invoker)
+}
+
+func (self *Blender) AddInsertAfter(target ParsedCmd, newCmd ParsedCmd, cnt int) {
+	invoker := &BlenderInvokerInsertAfter{cnt, target, newCmd}
+	self.invokers = append(self.invokers, invoker)
+}
+
+func (self *Blender) Clear() {
+	self.invokers = []BlenderInvoker{}
 }
 
 func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) {
@@ -79,17 +148,31 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 
 		originDeleted := false
 		originPosDelta := 0
-		for _, invoker := range self.invokers {
-			cmds, deleted, posDelta := invoker.Invoke(parsedCmd)
+		addedCmdCnt := 0
+		for j := 0; j < len(self.invokers); j++ {
+			invoker := self.invokers[j]
+			cmds, deleted, posDelta, finished := invoker.Invoke(parsedCmd)
+			if finished {
+				if j == len(self.invokers)-1 {
+					self.invokers = self.invokers[0:j]
+				} else {
+					self.invokers = append(self.invokers[0:j], self.invokers[j+1:]...)
+				}
+				j += 1
+			}
+
+			addedCmdCnt += len(cmds) - 1
 			if len(cmds) > 0 {
 				result = append(result, cmds...)
 			}
 			if deleted {
 				originDeleted = true
+				break
 			} else {
 				originPosDelta += posDelta
 			}
 		}
+
 		if originDeleted || originPosDelta != 0 {
 			changed = true
 		}
@@ -99,6 +182,8 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 			} else {
 				flow.GlobalCmdIdx += originPosDelta
 			}
+		} else if i < flow.GlobalCmdIdx {
+			flow.GlobalCmdIdx += addedCmdCnt
 		}
 	}
 

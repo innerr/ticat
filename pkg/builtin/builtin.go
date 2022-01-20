@@ -739,13 +739,73 @@ func RegisterBlenderCmds(cmds *core.CmdTree) {
 			"run following commands in forest-mode: reset env on each command, but not reset on their subflows").
 		SetQuiet()
 
-	cmds.AddSub("replace", "repl").
-		RegPowerCmd(BlenderReplace,
-			"replace a command with another one").
+	replace := cmds.AddSub("replace", "repl").
+		RegPowerCmd(BlenderReplaceOnce,
+			"during executing, replace a command with another one (only replace once)").
 		SetQuiet().
 		SetIsBlenderCmd().
 		AddArg("src", "", "source", "target").
 		AddArg("dest", "")
+
+	replace.AddSub("all").
+		RegPowerCmd(BlenderReplaceForAll,
+			"during executing, replace a command with another one (replace all)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("src", "", "source", "target").
+		AddArg("dest", "")
+
+	remove := cmds.AddSub("remove", "rm", "delete", "del").
+		RegPowerCmd(BlenderRemoveOnce,
+			"during executing, remove a command in flow (only remove once)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "")
+
+	remove.AddSub("all").
+		RegPowerCmd(BlenderRemoveForAll,
+			"during executing, remove a command in flow (remove all)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "")
+
+	insert := cmds.AddSub("insert", "ins").
+		RegPowerCmd(BlenderInsertOnce,
+			"during executing, insert a command before another matched one (insert once)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "").
+		AddArg("new", "")
+
+	insert.AddSub("all").
+		RegPowerCmd(BlenderInsertForAll,
+			"during executing, insert a command before another matched one (insert for all matched)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "").
+		AddArg("new", "")
+
+	after := insert.AddSub("after").
+		RegPowerCmd(BlenderInsertAfterOnce,
+			"during executing, insert a command after another matched one (insert once)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "").
+		AddArg("new", "")
+
+	after.AddSub("all").
+		RegPowerCmd(BlenderInsertAfterForAll,
+			"during executing, insert a command after another matched one (insert for all matched)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "").
+		AddArg("new", "")
+
+	cmds.AddSub("clear", "clean", "reset").
+		RegPowerCmd(BlenderClear,
+			"clear all flow modification schedulings").
+		SetQuiet().
+		SetIsBlenderCmd()
 }
 
 func RegisterCtrlCmds(cmds *core.CmdTree) {
