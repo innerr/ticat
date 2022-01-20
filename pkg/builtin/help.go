@@ -18,7 +18,7 @@ func GlobalHelp(
 
 	target := argv.GetRaw("target")
 	if len(target) != 0 {
-		cmdPath := cc.ParseCmd(target, false)
+		cmdPath := cc.NormalizeCmd(false, target)
 		if len(cmdPath) == 0 {
 			display.PrintErrTitle(cc.Screen, env, fmt.Sprintf("'%s' is not a valid command", target))
 		} else {

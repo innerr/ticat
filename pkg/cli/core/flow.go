@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
@@ -8,7 +9,13 @@ import (
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func SaveFlow(w io.Writer, flow *ParsedCmds, currCmdIdx int, cmdPathSep string, trivialMark string, env *Env) {
+func SaveFlowToStr(flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) string {
+	w := bytes.NewBuffer(nil)
+	SaveFlow(w, flow, cmdPathSep, trivialMark, env)
+	return w.String()
+}
+
+func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) {
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	bracketLeft := env.GetRaw("strs.env-bracket-left")
 	bracketRight := env.GetRaw("strs.env-bracket-right")
@@ -16,7 +23,7 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, currCmdIdx int, cmdPathSep string, 
 	seqSep := env.GetRaw("strs.seq-sep")
 	if len(envPathSep) == 0 || len(bracketLeft) == 0 || len(bracketRight) == 0 ||
 		len(envKeyValSep) == 0 || len(seqSep) == 0 {
-		panic(NewCmdError(flow.Cmds[currCmdIdx], "some predefined strs not found"))
+		panic(fmt.Errorf("some predefined strs not found"))
 	}
 
 	for i, cmd := range flow.Cmds {

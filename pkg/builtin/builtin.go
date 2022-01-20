@@ -22,9 +22,10 @@ func RegisterCmds(cmds *core.CmdTree) {
 
 	RegisterSessionCmds(cmds)
 
-	RegisterBlenderCmds(cmds.AddSub(
-		"blender", "blend").RegEmptyCmd(
-		"a toolbox to modify flows during running").Owner())
+	//RegisterBlenderCmds(cmds.AddSub(
+	//	"blender", "blend").RegEmptyCmd(
+	//	"a toolbox to modify flows during running").Owner())
+	RegisterBlenderCmds(cmds.GetOrAddSub("flow"))
 
 	RegisterDbgCmds(cmds.AddSub(
 		"dbg").RegEmptyCmd(
@@ -548,11 +549,13 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 }
 
 func RegisterFlowManageCmds(cmds *core.CmdTree) {
-	flow := cmds.AddSub("flow", "f").
+	flow := cmds.AddSub("flow", "f")
+
+	list := flow.AddSub("list", "ls").
 		RegPowerCmd(ListFlows,
 			"list local saved but unlinked (to any repo) flows").
 		SetAllowTailModeCall()
-	addFindStrArgs(flow)
+	addFindStrArgs(list)
 
 	// TODO: check the new cmd is conflicted with other cmds
 	flow.AddSub("save", "s").
@@ -732,9 +735,77 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 
 func RegisterBlenderCmds(cmds *core.CmdTree) {
 	cmds.AddSub("forest-mode", "forest").
-		RegPowerCmd(BlenderForestMode,
+		RegPowerCmd(SetForestMode,
 			"run following commands in forest-mode: reset env on each command, but not reset on their subflows").
 		SetQuiet()
+
+	replace := cmds.AddSub("replace", "repl").
+		RegPowerCmd(BlenderReplaceOnce,
+			"during executing, replace a command with another one (only replace once)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("src", "", "source", "target").
+		AddArg("dest", "")
+
+	replace.AddSub("all").
+		RegPowerCmd(BlenderReplaceForAll,
+			"during executing, replace a command with another one (replace all)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("src", "", "source", "target").
+		AddArg("dest", "")
+
+	remove := cmds.AddSub("remove", "rm", "delete", "del").
+		RegPowerCmd(BlenderRemoveOnce,
+			"during executing, remove a command in flow (only remove once)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "")
+
+	remove.AddSub("all").
+		RegPowerCmd(BlenderRemoveForAll,
+			"during executing, remove a command in flow (remove all)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "")
+
+	insert := cmds.AddSub("insert", "ins").
+		RegPowerCmd(BlenderInsertOnce,
+			"during executing, insert a command before another matched one (insert once)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "").
+		AddArg("new", "")
+
+	insert.AddSub("all").
+		RegPowerCmd(BlenderInsertForAll,
+			"during executing, insert a command before another matched one (insert for all matched)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "").
+		AddArg("new", "")
+
+	after := insert.AddSub("after").
+		RegPowerCmd(BlenderInsertAfterOnce,
+			"during executing, insert a command after another matched one (insert once)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "").
+		AddArg("new", "")
+
+	after.AddSub("all").
+		RegPowerCmd(BlenderInsertAfterForAll,
+			"during executing, insert a command after another matched one (insert for all matched)").
+		SetQuiet().
+		SetIsBlenderCmd().
+		AddArg("target", "").
+		AddArg("new", "")
+
+	cmds.AddSub("clear", "clean", "reset").
+		RegPowerCmd(BlenderClear,
+			"clear all flow modification schedulings").
+		SetQuiet().
+		SetIsBlenderCmd()
 }
 
 func RegisterCtrlCmds(cmds *core.CmdTree) {

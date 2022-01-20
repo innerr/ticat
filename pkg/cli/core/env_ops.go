@@ -290,7 +290,7 @@ func TryExeEnvOpCmds(
 
 // TODO: a bit meeessy
 func renderSubFlowOnChecking(last *Cmd, cc *Cli, argv ArgVals, cmdEnv *Env) (parsedFlow *ParsedCmds, flowEnv *Env) {
-	subFlow, _, _ := last.Flow(argv, cc, cmdEnv, false)
+	subFlow, _, _ := last.Flow(argv, cc, cmdEnv, false, true)
 	parsedFlow = cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 	err := parsedFlow.FirstErr()
 	if err != nil {

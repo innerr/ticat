@@ -206,7 +206,7 @@ func dumpFlowCmd(
 			"failed to execute env-op cmd in flow desc")
 
 		// This is for render checking, even it's folded
-		subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true)
+		subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true, true)
 		if rendered {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 			err := parsedFlow.FirstErr()
@@ -261,7 +261,7 @@ func dumpFlowCmd(
 	if !foldSubFlow() && !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow()) {
 		metFlow := false
 		if cic.HasSubFlow() {
-			flowStrs, _, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true)
+			flowStrs, _, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
 			if !cmdFailed() && metFlow {
@@ -294,7 +294,7 @@ func dumpFlowCmd(
 		}
 
 		if cic.HasSubFlow() && !cmdSkipped() && (executedCmd == nil || executedCmd.Result != core.ExecutedResultUnRun) {
-			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true)
+			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || cmdFailed() {
 					depthMark := ""

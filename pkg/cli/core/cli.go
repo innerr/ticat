@@ -52,6 +52,7 @@ type Cli struct {
 	FlowStatus    *ExecutingFlow
 	BreakPoints   *BreakPoints
 	HandledErrors HandledErrors
+	ForestMode    *ForestMode
 	Blender       *Blender
 }
 
@@ -69,6 +70,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		nil,
 		NewBreakPoints(),
 		HandledErrors{},
+		NewForestMode(),
 		NewBlender(),
 	}
 }
@@ -95,6 +97,7 @@ func (self *Cli) CopyForInteract() *Cli {
 		nil,
 		self.BreakPoints,
 		HandledErrors{},
+		self.ForestMode,
 		self.Blender,
 	}
 }
@@ -116,18 +119,56 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		nil,
 		NewBreakPoints(),
 		HandledErrors{},
-		self.Blender.Clone(),
+		self.ForestMode.Clone(),
+		NewBlender(),
 	}
 }
 
-func (self *Cli) ParseCmd(cmd string, panicOnError bool) (verifiedCmdPath string) {
-	parsed := self.Parser.Parse(self.Cmds, self.EnvAbbrs, cmd)
-	if len(parsed.Cmds) != 1 || parsed.FirstErr() != nil {
+func (self *Cli) CloneForChecking() *Cli {
+	return &Cli{
+		self.Screen,
+		self.Cmds,
+		self.Parser,
+		self.EnvAbbrs,
+		self.TolerableErrs,
+		self.Executor,
+		self.Helps,
+		self.BgTasks,
+		self.CmdIO,
+		self.FlowStatus,
+		self.BreakPoints,
+		self.HandledErrors,
+		self.ForestMode,
+		NewBlender(),
+	}
+}
+
+func (self *Cli) ParseCmd(panicOnError bool, cmdAndArgs ...string) (parsedCmd ParsedCmd, ok bool) {
+	parsed := self.Parser.Parse(self.Cmds, self.EnvAbbrs, cmdAndArgs...)
+	err := parsed.FirstErr()
+	if len(parsed.Cmds) != 1 || err != nil {
 		if panicOnError {
-			panic(fmt.Errorf("[Cli.ParseCmd] invalid cmd name '%s'", cmd))
+			cmdStr := strings.Join(cmdAndArgs, " ")
+			if err != nil {
+				panic(fmt.Errorf("[Cli.ParseCmd] %v", err))
+			}
+			if len(parsed.Cmds) > 1 {
+				panic(fmt.Errorf("[Cli.ParseCmd] too many result commands by parsing '%s': %d",
+					cmdStr, len(parsed.Cmds)))
+			} else {
+				panic(fmt.Errorf("[Cli.ParseCmd] no result command by parsing '%s'", cmdStr))
+			}
 		} else {
 			return
 		}
 	}
-	return strings.Join(parsed.Cmds[0].Path(), self.Cmds.Strs.PathSep)
+	return parsed.Cmds[0], true
+}
+
+func (self *Cli) NormalizeCmd(panicOnError bool, cmd string) (verifiedCmdPath string) {
+	parsed, ok := self.ParseCmd(panicOnError, cmd)
+	if ok {
+		verifiedCmdPath = strings.Join(parsed.Path(), self.Cmds.Strs.PathSep)
+	}
+	return
 }
