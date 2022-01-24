@@ -48,6 +48,7 @@ func RegMod(
 
 	regTrivial(meta, mod)
 	regUnLog(meta, cmd)
+	regQuietError(meta, cmd)
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
 	regArgs(meta, cmd, abbrsSep)
@@ -113,6 +114,23 @@ func regUnLog(meta *meta_file.MetaFile, cmd *core.Cmd) {
 		}
 		if unLog {
 			cmd.SetUnLog()
+		}
+		return
+	}
+}
+
+func regQuietError(meta *meta_file.MetaFile, cmd *core.Cmd) {
+	for _, key := range []string{"quiet-error", "quiet-err", "silent-error", "silent-err"} {
+		val := meta.Get(key)
+		if len(val) == 0 {
+			continue
+		}
+		quiet, err := strconv.ParseBool(val)
+		if err != nil {
+			panic(fmt.Errorf("[regQuietError] quiet-error value string '%s' is not bool: '%v'", val, err))
+		}
+		if quiet {
+			cmd.SetQuietError()
 		}
 		return
 	}

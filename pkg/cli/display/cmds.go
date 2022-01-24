@@ -338,6 +338,9 @@ func dumpCmd(
 				if cic.IsPriority() {
 					line += " (priority)"
 				}
+				if cic.AllowTailModeCall() {
+					line += " (tail-mode)"
+				}
 				prt(1, ColorProp("- cmd-type:", env))
 				prt(2, line)
 			}
