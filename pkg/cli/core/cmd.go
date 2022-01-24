@@ -51,6 +51,7 @@ type CmdFlags struct {
 	allowTailModeCall bool
 	unLog             bool
 	blender           bool
+	quietError        bool
 }
 
 type Cmd struct {
@@ -224,7 +225,7 @@ func (self *Cmd) execute(
 				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
 				cc.HandledErrors[r] = true
 			}
-			if r != nil {
+			if r != nil && !self.flags.quietError {
 				panic(r)
 			}
 		}()
@@ -248,6 +249,10 @@ func (self *Cmd) executeByType(
 	flow *ParsedCmds,
 	currCmdIdx int,
 	logFilePath string) (int, bool) {
+
+	if flow.HasTailMode && !flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode && len(flow.Cmds) > 1 {
+		panic(NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support"))
+	}
 
 	switch self.ty {
 	case CmdTypePower:
@@ -407,6 +412,11 @@ func (self *Cmd) IsBlenderCmd() bool {
 
 func (self *Cmd) SetUnLog() *Cmd {
 	self.flags.unLog = true
+	return self
+}
+
+func (self *Cmd) SetQuietError() *Cmd {
+	self.flags.quietError = true
 	return self
 }
 
