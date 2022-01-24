@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"os"
 	"os/exec"
 	"runtime"
@@ -209,7 +210,49 @@ func FindPython() (path string) {
 	return
 }
 
+func IpId() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return IpIdOnError
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 {
+			// interface down
+			continue
+		}
+		if iface.Flags&net.FlagLoopback != 0 {
+			// loopback interface
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return IpIdOnError
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+			ip = ip.To4()
+			if ip == nil {
+				// not an ipv4 address
+				continue
+			}
+			return ip.String()
+		}
+	}
+	return IpIdOnNoNetwork
+}
+
 const (
 	GoRoutineIdStrMain = "main"
 	Chars              = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	IpIdOnError        = "unknown-ip-fail-to-get"
+	IpIdOnNoNetwork    = "unknown-ip-no-network"
 )

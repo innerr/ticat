@@ -19,7 +19,7 @@ func SetSessionsKeepDur(
 	assertNotTailMode(flow, currCmdIdx)
 
 	env = env.GetLayer(core.EnvLayerSession)
-	key := "sys.session.keep-status-duration"
+	key := "sys.sessions.keep-status-duration"
 	env.SetDur(key, argv.GetRaw("duration"))
 	display.PrintTipTitle(cc.Screen, env, "each session status will be kept for '"+env.GetRaw(key)+"'")
 	return currCmdIdx, true

@@ -481,7 +481,11 @@ func dumpCmdDisplayName(
 	}
 
 	if sysArgv.IsDelay() {
+		//if sysArgv.GetDelayDuration().Nanoseconds() == 0 {
+		//	name += ColorCmdDelay(" (background)", env)
+		//} else {
 		name += ColorCmdDelay(" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
+		//}
 	}
 
 	if executedCmd != nil {

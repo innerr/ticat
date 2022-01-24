@@ -132,6 +132,8 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 				return false
 			}
 			cc.SetFlowStatusWriter(statusWriter)
+		} else {
+			core.SessionSetId(env)
 		}
 	}
 
