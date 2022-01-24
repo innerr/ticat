@@ -39,7 +39,7 @@ func ListSessions(env *Env, findStrs []string, mustMatchDirName string) (session
 	}
 	sort.Strings(dirs)
 
-	keepDur := env.GetDur("sys.session.keep-status-duration")
+	keepDur := env.GetDur("sys.sessions.keep-status-duration")
 	statusFileName := env.GetRaw("strs.session-status-file")
 
 	now := time.Now()
@@ -119,6 +119,13 @@ func CleanSession(session SessionStatus, env *Env, force bool) (cleaned bool, ru
 	return true, running
 }
 
+func SessionSetId(env *Env) {
+	_, _, id := GenSessionId()
+	env = env.GetLayer(EnvLayerSession)
+	env.Set("sys.session.id", id)
+	env.Set("sys.session.id.full", id+"@"+env.GetRaw("sys.session.id.ip"))
+}
+
 func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 	statusFileName string) (flowStatus *ExecutingFlow, ok bool) {
 
@@ -139,7 +146,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 		return nil, true
 	}
 
-	keepDur := env.GetDur("sys.session.keep-status-duration")
+	keepDur := env.GetDur("sys.sessions.keep-status-duration")
 
 	os.MkdirAll(sessionsRoot, os.ModePerm)
 	dirs, err := os.ReadDir(sessionsRoot)
@@ -149,7 +156,8 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 		return nil, false
 	}
 
-	_, now, dirName := genSessionDirName()
+	_, now, id := GenSessionId()
+	dirName := id
 
 	// TODO: move this cleaning code to another function
 	for _, dir := range dirs {
@@ -176,7 +184,10 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 		return nil, false
 	}
 
-	env.GetLayer(EnvLayerSession).Set("session", sessionDir)
+	sessionEnv := env.GetLayer(EnvLayerSession)
+	sessionEnv.Set("session", sessionDir)
+	sessionEnv.Set("sys.session.id", id)
+	sessionEnv.Set("sys.session.id.full", id+"@"+env.GetRaw("sys.session.id.ip"))
 
 	statusPath := filepath.Join(sessionDir, statusFileName)
 	return NewExecutingFlow(statusPath, flow, env), true
@@ -209,7 +220,7 @@ func isNoSessionCmd(flow *ParsedCmds, noSessionCmds []interface{}) bool {
 }
 */
 
-func genSessionDirName() (pid int, now time.Time, dirName string) {
+func GenSessionId() (pid int, now time.Time, dirName string) {
 	pid = os.Getpid()
 	now = time.Now()
 	return pid, now, fmt.Sprintf("%s.%d", now.Format(SessionDirTimeFormat), os.Getpid())

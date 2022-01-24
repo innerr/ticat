@@ -50,6 +50,10 @@ func RegisterCmds(cmds *core.CmdTree) {
 		AddArg("filter-source", "", "filter").
 		AddArg("tag", "selftest").
 		AddArg("parallel", "false", "parall", "paral", "para")
+
+	RegisterApiCmds(cmds.AddSub(
+		"api").RegEmptyCmd(
+		"api toolbox").Owner())
 }
 
 func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
@@ -1144,6 +1148,30 @@ func RegisterNoopCmds(cmds *core.CmdTree) {
 	cmds.AddSub("dummy", "dm").
 		RegPowerCmd(Dummy,
 			"dummy command for testing")
+}
+
+func RegisterApiCmds(cmds *core.CmdTree) {
+	cmd := cmds.AddSub("cmd")
+
+	cmd.AddSub("type").
+		RegPowerCmd(ApiCmdType,
+			"get command type").
+		AddArg("cmd", "")
+
+	cmd.AddSub("meta").
+		RegPowerCmd(ApiCmdMeta,
+			"get command meta file path").
+		AddArg("cmd", "")
+
+	cmd.AddSub("dir").
+		RegPowerCmd(ApiCmdDir,
+			"get command dir path").
+		AddArg("cmd", "")
+
+	cmd.AddSub("path").
+		RegPowerCmd(ApiCmdPath,
+			"get command executable file path").
+		AddArg("cmd", "")
 }
 
 func registerSimpleSwitch(

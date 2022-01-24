@@ -27,7 +27,7 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
-	env.SetDur("sys.session.keep-status-duration", "72h")
+	env.SetDur("sys.sessions.keep-status-duration", "72h")
 
 	env.Set("sys.hub.init-repo", "innerr/marsh.ticat")
 
@@ -119,6 +119,9 @@ func LoadRuntimeEnv(
 
 	env.Set("sys.paths.sessions", filepath.Join(data, "sessions"))
 	paths.GetOrAddSub("sessions").AddAbbrs("session", "s", "S")
+
+	ip := utils.IpId()
+	env.Set("sys.session.id.ip", ip)
 
 	return currCmdIdx, true
 }
