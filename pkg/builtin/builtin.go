@@ -42,6 +42,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterCtrlCmds(cmds)
 	RegisterTimerCmds(cmds)
 	RegisterOsCmds(cmds)
+	RegisterJoinCmds(cmds)
 	RegisterNoopCmds(cmds)
 
 	cmds.AddSub("selftest").RegAdHotFlowCmd(Selftest,
@@ -1138,6 +1139,19 @@ func RegisterOsCmds(cmds *core.CmdTree) {
 			"set ext-executor for modules").
 		AddArg("ext", "").
 		AddArg("executor", "", "exec", "exe")
+}
+
+func RegisterJoinCmds(cmds *core.CmdTree) {
+	join := cmds.AddSub("join")
+	join.AddSub("new", "add", "arg", "new_arg").
+		RegPowerCmd(JoinNew,
+			"add new argument").
+		AddArg("key", "").
+		AddArg("value", "", "val")
+	join.AddSub("run").
+		RegPowerCmd(JoinRun,
+			"run with arguments").
+		AddArg("cmd", "")
 }
 
 func RegisterNoopCmds(cmds *core.CmdTree) {
