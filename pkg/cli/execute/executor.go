@@ -109,7 +109,12 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 			flow.GlobalCmdIdx = 1
 		}
 	}
+
 	removeEmptyCmds(flow)
+
+	if !innerCall && !bootstrap {
+		checkTailModeCalls(flow)
+	}
 
 	if !innerCall {
 		cc.Blender.Invoke(cc, env, flow)
@@ -301,6 +306,13 @@ func removeEmptyCmds(flow *core.ParsedCmds) {
 		}
 	}
 	flow.Cmds = cmds
+}
+
+func checkTailModeCalls(flow *core.ParsedCmds) {
+	if !flow.TailModeCall && flow.AttempTailModeCall {
+		last := flow.Cmds.LastCmd()
+		panic(core.NewCmdError(last, "tail-mode call not support"))
+	}
 }
 
 // TODO: trim the empty cmds at tail, like: '<cmd> : <cmd> ::'

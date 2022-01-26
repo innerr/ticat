@@ -21,9 +21,20 @@ type CliParser interface {
 type ParsedCmds struct {
 	GlobalEnv          ParsedEnv
 	Cmds               ParsedCmdSeq
+
+	// Point to the global (normally is the first if not tail-mode call) cmd
+	// this cmd originally included global env values, but move to GlobalEnv
+	// keeping this pointer is for save this flow to string
 	GlobalCmdIdx       int
+
+	// Has tail mode call or priority commands
 	HasTailMode        bool
+
+	// The specific call form of:
+	//   ticat <arg> <arg> ... ::<cmd>
 	TailModeCall       bool
+
+	// Use to give a friendly message when user use tail mode but the command not support
 	AttempTailModeCall bool
 }
 

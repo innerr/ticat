@@ -250,10 +250,6 @@ func (self *Cmd) executeByType(
 	currCmdIdx int,
 	logFilePath string) (int, bool) {
 
-	if flow.HasTailMode && !flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode && len(flow.Cmds) > 1 {
-		panic(NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support"))
-	}
-
 	switch self.ty {
 	case CmdTypePower:
 		return self.executePowerCmd(argv, cc, env, flow, currCmdIdx)

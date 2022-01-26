@@ -283,6 +283,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 	cmds.AddSub("=").
 		RegPowerCmd(DumpTailCmdWithUsage,
 			"shortcut of [cmd], if at the end of a flow:\n   * display usage of the last command\n   * flow will not execute").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p")
@@ -290,6 +291,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 	cmds.AddSub("==", "===").
 		RegPowerCmd(DumpTailCmdWithDetails,
 			"shortcut of [cmd], if at the end of a flow:\n   * display full info of the last command\n   * flow will not execute").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p")
@@ -299,6 +301,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	desc := cmds.AddSub("desc").
 		RegPowerCmd(DumpFlowSkeleton,
 			"desc the flow execution in skeleton style").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -306,6 +309,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	cmds.AddSub("-").
 		RegPowerCmd(DumpFlowSkeleton,
 			"shortcut of [desc]").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -313,6 +317,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	cmds.AddSub("--").
 		RegPowerCmd(DumpFlowSkeleton,
 			"shortcut of [desc], unfold more(2L) trivial subflows").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "2", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -320,6 +325,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	cmds.AddSub("---").
 		RegPowerCmd(DumpFlowSkeleton,
 			"shortcut of [desc], unfold more(3L) trivial subflows").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "3", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -328,6 +334,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	desc.AddSub("more", "m").
 		RegPowerCmd(DumpFlowAllSimple,
 			"desc the flow about to execute in lite style").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -335,6 +342,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	cmds.AddSub("+").
 		RegPowerCmd(DumpFlowAllSimple,
 			"shortcut of [desc.more]").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -342,6 +350,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	cmds.AddSub("++").
 		RegPowerCmd(DumpFlowAllSimple,
 			"shortcut of [desc.more], unfold more(2L) trivial subflows").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "2", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -349,6 +358,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	cmds.AddSub("+++").
 		RegPowerCmd(DumpFlowAllSimple,
 			"shortcut of [desc.more], unfold more(3L) trivial subflows").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "3", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -357,6 +367,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	desc.AddSub("full", "f", "F").
 		RegPowerCmd(DumpFlowAll,
 			"desc the flow about to execute with details").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -365,17 +376,20 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	desc.AddSub("dependencies", "depends", "depend", "dep", "os-cmd", "os").
 		RegPowerCmd(DumpFlowDepends,
 			"list the depended os-commands of the flow").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	desc.AddSub("env-ops-check", "env-ops", "env-op", "env", "ops", "op", "e").
 		RegPowerCmd(DumpFlowEnvOpsCheckResult,
 			"desc the env-ops check result of the flow").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 
 	descFlow := desc.AddSub("flow").
 		RegPowerCmd(DumpFlowSkeleton,
 			"desc the flow execution in skeleton style").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -383,6 +397,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	descFlow.AddSub("more", "m").
 		RegPowerCmd(DumpFlowSimple,
 			"desc the flow execution in lite style").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -390,6 +405,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 	descFlow.AddSub("full", "f").
 		RegPowerCmd(DumpFlow,
 			"desc the flow execution with details").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
@@ -565,6 +581,7 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 	flow.AddSub("save", "s").
 		RegPowerCmd(SaveFlow,
 			"save current commands as a flow").
+		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
 		AddArg("to-cmd-path", "", "path", "p")
@@ -917,7 +934,7 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 
 	completion := cmds.AddSub("completion")
 	registerSimpleSwitch(completion,
-		"hidden style completion",
+		"hidden-style completion",
 		"display.completion.hidden",
 		"hidden")
 
