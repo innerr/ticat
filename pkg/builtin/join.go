@@ -33,7 +33,7 @@ func JoinNew(
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 			"need key or values"))
 	}
-	vals := strings.Split(val, ",")
+	vals := strings.Split(val, env.GetRaw("strs.list-sep"))
 	kv := joinKv{
 		Key:  key,
 		Vals: vals,
@@ -83,7 +83,8 @@ func JoinRun(
 		for i, key := range keys {
 			args = append(args, key+"="+vals[i])
 		}
-		cc.Executor.Execute("join", true, cc, env, nil, args...)
+		cc.Executor.Execute(flow.Cmds[currCmdIdx].DisplayPath(cc.Cmds.Strs.PathSep, false),
+			true, cc, env, nil, args...)
 		if !iter.next() {
 			break
 		}
@@ -114,7 +115,7 @@ func (iter *joinKvsIter) next() (ok bool) {
 	}
 	if ok {
 		for i := l - 1; i >= 0; i-- {
-			if iter.ids[i] < len(iter.kvs[i].Vals) - 1 {
+			if iter.ids[i] < len(iter.kvs[i].Vals)-1 {
 				iter.ids[i]++
 				break
 			} else {
