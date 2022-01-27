@@ -83,7 +83,7 @@ func JoinRun(
 		for i, key := range keys {
 			args = append(args, key+"="+vals[i])
 		}
-		executorSafeExecute("join", cc, env, nil, args...)
+		cc.Executor.Execute("join", true, cc, env, nil, args...)
 		if !iter.next() {
 			break
 		}
@@ -104,15 +104,25 @@ func newJoinKvsIter(kvs []joinKv) *joinKvsIter {
 	return iter
 }
 
-func (iter *joinKvsIter) next() bool {
+func (iter *joinKvsIter) next() (ok bool) {
 	l := len(iter.ids)
 	for i := l - 1; i >= 0; i-- {
 		if iter.ids[i] < len(iter.kvs[i].Vals)-1 {
-			iter.ids[i]++
-			return true
+			ok = true
+			break
 		}
 	}
-	return false
+	if ok {
+		for i := l - 1; i >= 0; i-- {
+			if iter.ids[i] < len(iter.kvs[i].Vals) - 1 {
+				iter.ids[i]++
+				break
+			} else {
+				iter.ids[i] = 0
+			}
+		}
+	}
+	return
 }
 
 func (iter *joinKvsIter) get() (keys, vals []string) {
