@@ -12,7 +12,7 @@ import (
 
 func assertNotTailMode(flow *core.ParsedCmds, currCmdIdx int) {
 	if flow.HasTailMode && !flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode && len(flow.Cmds) > 1 {
-		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support (this is for double checking, should never show)"))
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support"))
 	}
 }
 

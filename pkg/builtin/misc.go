@@ -17,8 +17,6 @@ func Sleep(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx)
-
 	durStr := utils.NormalizeDurStr(argv.GetRaw("duration"))
 	dur, err := time.ParseDuration(durStr)
 	if err != nil {
@@ -137,7 +135,6 @@ func Noop(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx)
 	return currCmdIdx, true
 }
 
@@ -148,7 +145,6 @@ func Dummy(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	assertNotTailMode(flow, currCmdIdx)
 	cc.Screen.Print("dummy command here\n")
 	return currCmdIdx, true
 }

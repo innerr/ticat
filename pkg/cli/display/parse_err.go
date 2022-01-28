@@ -158,16 +158,18 @@ func PrintFreeSearchResultByParseError(
 		return false
 	}
 
-	helpStr := []string{
-		"search but no commands matched '" + inputStr + "'.",
-		"",
-		"try to change keywords on the leftside, ",
-		selfName + " will filter results by kewords from left to right.",
-	}
 	if isSearch {
+		helpStr := []string{
+			"search but no commands matched '" + inputStr + "'.",
+			"",
+			"try to change keywords on the leftside, ",
+			selfName + " will filter results by kewords from left to right.",
+		}
 		helpStr = append([]string{notValidStr, ""}, helpStr...)
+		PrintErrTitle(cc.Screen, env, notValidStr)
+	} else {
+		PrintErrTitle(cc.Screen, env, notValidStr)
 	}
-	PrintErrTitle(cc.Screen, env, helpStr)
 	return false
 }
 

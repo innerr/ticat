@@ -121,9 +121,10 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 
 	for i := 0; i < len(flow.Cmds); i++ {
 		parsedCmd := flow.Cmds[i]
-		if parsedCmd.ParseResult.Error != nil {
-			panic(parsedCmd.ParseResult.Error)
-		}
+		// Parsing error will be checked after blender invoked in executor
+		//if parsedCmd.ParseResult.Error != nil {
+		//	panic(parsedCmd.ParseResult.Error)
+		//}
 		cmd := parsedCmd.LastCmdNode()
 		if cmd == nil {
 			result = append(result, parsedCmd)
