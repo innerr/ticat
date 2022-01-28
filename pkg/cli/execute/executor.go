@@ -109,7 +109,12 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 			flow.GlobalCmdIdx = 1
 		}
 	}
+
 	removeEmptyCmds(flow)
+
+	if !innerCall && !bootstrap {
+		checkTailModeCalls(flow)
+	}
 
 	if !innerCall {
 		cc.Blender.Invoke(cc, env, flow)
@@ -138,10 +143,10 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 	}
 
 	if !innerCall && !bootstrap {
-		if !flow.HasTailMode && !verifyEnvOps(cc, flow, env) {
+		if !flow.TailModeCall && !verifyEnvOps(cc, flow, env) {
 			return false
 		}
-		if !flow.HasTailMode && !verifyOsDepCmds(cc, flow, env) {
+		if !verifyOsDepCmds(cc, flow, env) {
 			return false
 		}
 	}
@@ -303,6 +308,12 @@ func removeEmptyCmds(flow *core.ParsedCmds) {
 	flow.Cmds = cmds
 }
 
+func checkTailModeCalls(flow *core.ParsedCmds) {
+	if !flow.TailModeCall && flow.AttempTailModeCall && len(flow.Cmds) > 0 {
+		panic(core.NewCmdError(flow.Cmds[0], "tail-mode call not support"))
+	}
+}
+
 // TODO: trim the empty cmds at tail, like: '<cmd> : <cmd> ::'
 func moveLastPriorityCmdToFront(
 	flow []core.ParsedCmd) (reordered []core.ParsedCmd, doMove bool, tailModeCall bool, attempTailModeCall bool) {
@@ -338,9 +349,11 @@ func moveLastPriorityCmdToFront(
 	flow, _, _, _ = moveLastPriorityCmdToFront(flow)
 
 	last.TailMode = true
-	flow = append([]core.ParsedCmd{last}, flow...)
-	attempTailModeCall = !last.IsPriority() && !last.AllowTailModeCall() && len(flow) == 2
-	return flow, true, last.AllowTailModeCall() && len(flow) <= 2, attempTailModeCall
+	reordered = append([]core.ParsedCmd{last}, flow...)
+	attempTailModeCall = !last.IsPriority() && !last.AllowTailModeCall() && len(reordered) == 2
+	tailModeCall = last.AllowTailModeCall() && len(reordered) <= 2
+	doMove = true
+	return
 }
 
 func verifyEnvOps(cc *core.Cli, flow *core.ParsedCmds, env *core.Env) bool {

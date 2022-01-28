@@ -38,6 +38,7 @@ func allowCheckEnvOpsFail(flow *core.ParsedCmds) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

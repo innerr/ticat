@@ -81,7 +81,7 @@ func GlobalSuggestHubAdd(env *core.Env) []string {
 	return []string{
 		padCmdR(selfName+" hub.init", indent, env) + sep +
 			" get more commands by adding a default git repo",
-		padCmdR(selfName+" hub.add innerr/tidb."+selfName, indent, env) + sep +
+		padCmdR(selfName+" hub.add ticat-mods/tidb.cluster", indent, env) + sep +
 			" get more commands by adding a git repo,",
 		padCmdR("", indent, env) + "  could be a full git address",
 	}
@@ -233,7 +233,7 @@ func SuggestHubAddShort(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" hub.init", indent) + "- add the default git repo.",
-		padR(selfName+" hub.add innerr/tidb."+selfName, indent) + "- add a git repo,",
+		padR(selfName+" hub.add ticat-mods/tidb.cluster", indent) + "- add a git repo,",
 		padR("", indent+2) + "use https by default.",
 	}
 }
