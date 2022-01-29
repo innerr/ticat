@@ -647,7 +647,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 	addFindStrArgs(sessionsList)
 	sessionsList.AddArg("session-id", "", "session", "id")
 
-	sessionsErr := sessions.AddSub("error", "err", "e").
+	sessionsErr := sessions.AddSub("error", "failed", "fail", "err", "e").
 		RegPowerCmd(ListSessionsError,
 			"list executed error sessions").
 		SetAllowTailModeCall().
@@ -1004,7 +1004,7 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		"display.meow",
 		"meow")
 
-	mod := cmds.AddSub("mod")
+	mod := cmds.AddSub("command", "cmd")
 
 	registerSimpleSwitch(mod,
 		"quiet module display in executing",
@@ -1012,9 +1012,17 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		"quiet")
 
 	registerSimpleSwitch(mod,
-		"display realname of module in executing",
-		"display.mod.realname",
-		"realname")
+		"display user input command name in executing",
+		"display.mod.input-name",
+		"input-name", "input")
+
+	registerSimpleSwitchEx(mod.GetOrAddSub("input-name"),
+		"display user input command name with realname as comment in executing",
+		[]string{
+			"display.mod.input-name",
+			"display.mod.input-name.with-realname",
+		},
+		"with-realname", "realname", "real", "r")
 
 	registerSimpleSwitch(cmds,
 		"executor display",

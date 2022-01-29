@@ -598,7 +598,7 @@ func (self *Cmd) RenderedFlowStrs(
 	}
 
 	if fullyRendered {
-		if masks != nil {
+		if masks != nil && !cc.Blender.IsEmpty() {
 			panic(fmt.Errorf("[Cmd.RenderedFlowStrs] can't use blender on a masked flow"))
 		}
 		flow = self.invokeBlender(cc, env, flow)
