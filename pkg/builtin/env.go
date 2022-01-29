@@ -55,7 +55,7 @@ func LoadDefaultEnv(env *core.Env) {
 func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	sys := abbrs.GetOrAddSub("sys")
 	sys.GetOrAddSub("bootstrap").AddAbbrs("boot")
-	sys.GetOrAddSub("interact").AddAbbrs("ir", "i", "I")
+	sys.GetOrAddSub("interact").AddAbbrs("ir", "i")
 	sys.GetOrAddSub("step-by-step").AddAbbrs("step")
 	sys.GetOrAddSub("delay-execute").AddAbbrs("delay")
 	sys.GetOrAddSub("version").AddAbbrs("ver")
@@ -64,17 +64,17 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	hub.GetOrAddSub("init-repo").AddAbbrs("repo")
 
 	disp := abbrs.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
-	disp.GetOrAddSub("width").AddAbbrs("wid", "w", "W")
-	disp.GetOrAddSub("style").AddAbbrs("sty", "s", "S")
+	disp.GetOrAddSub("width").AddAbbrs("wid", "w")
+	disp.GetOrAddSub("style").AddAbbrs("sty", "s")
 	disp.GetOrAddSub("color").AddAbbrs("colour", "clr")
 	utf8 := disp.GetOrAddSub("utf8")
-	utf8.AddAbbrs("utf", "u", "U")
-	utf8.GetOrAddSub("symbols").AddAbbrs("symbol", "sym", "s", "S")
+	utf8.AddAbbrs("utf", "u")
+	utf8.GetOrAddSub("symbols").AddAbbrs("symbol", "sym", "s")
 	disp.GetOrAddSub("executor").AddAbbrs("exe", "exec")
 	disp.GetOrAddSub("bootstrap").AddAbbrs("boot")
 	disp.GetOrAddSub("one-cmd").AddAbbrs("one", "1")
 	disp.GetOrAddSub("max-cmd-cnt").AddAbbrs("cmds")
-	disp.GetOrAddSub("env").AddAbbrs("e", "E")
+	disp.GetOrAddSub("env").AddAbbrs("e")
 
 	env := disp.GetOrAddSub("env")
 	env.GetOrAddSub("sys").GetOrAddSub("paths").AddAbbrs("path")
@@ -82,8 +82,9 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	env.GetOrAddSub("display").AddAbbrs("disp", "dis", "di")
 
 	mod := disp.GetOrAddSub("mod")
-	mod.GetOrAddSub("quiet").AddAbbrs("q", "Q")
-	mod.GetOrAddSub("realname").AddAbbrs("real", "r", "R")
+	mod.GetOrAddSub("quiet").AddAbbrs("q")
+	input := mod.GetOrAddSub("input-name").AddAbbrs("input")
+	input.GetOrAddSub("with-realname").AddAbbrs("realname", "real", "r")
 }
 
 func LoadRuntimeEnv(
@@ -401,7 +402,6 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.env.layer", false)
 	env.SetBool("display.env.default", false)
 	env.SetBool("display.mod.quiet", false)
-	env.SetBool("display.mod.realname", false)
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 14)
 }

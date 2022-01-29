@@ -116,6 +116,10 @@ func (self *Blender) Clear() {
 	self.invokers = []BlenderInvoker{}
 }
 
+func (self *Blender) IsEmpty() bool {
+	return len(self.invokers) == 0
+}
+
 func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) {
 	result := []ParsedCmd{}
 
