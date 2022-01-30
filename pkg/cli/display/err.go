@@ -84,18 +84,24 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		cmdName := strings.Join(e.Cmd.MatchedPath(), sep)
 		printer := NewTipBoxPrinter(cc.Screen, env, true)
 		printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
-		printer.Prints(
+		text := []string{
 			"",
 			"execute-bin:",
-			"    - '"+e.Bin+"'",
+			"    - '" + e.Bin + "'",
 			"cmd-line:",
-			"    - '"+cic.CmdLine()+"'",
+			"    - '" + cic.CmdLine() + "'",
 			"session-path:",
-			"    - '"+e.SessionPath+"'",
-			"log-file:",
-			"    - '"+e.LogFilePath+"'",
+			"    - '" + e.SessionPath + "'",
+		}
+		if len(e.LogFilePath) != 0 {
+			text = append(text,
+				"log-file:",
+				"    - '"+e.LogFilePath+"'")
+		}
+		text = append(text,
 			"",
 			"command detail:")
+		printer.Prints(text...)
 		printer.Finish()
 		dumpCmdWithArgv(cc, env, e.Cmd)
 

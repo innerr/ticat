@@ -638,7 +638,12 @@ func dumpCmdArgv(
 	writtenKeys FlowWrittenKeys) {
 
 	if args.Skeleton {
-		for name, val := range argv {
+		args := cic.Args()
+		for _, name := range args.Names() {
+			if _, ok := argv[name]; !ok {
+				continue
+			}
+			val := argv[name]
 			if !val.Provided {
 				continue
 			}
