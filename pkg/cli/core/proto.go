@@ -10,16 +10,7 @@ import (
 	"strings"
 )
 
-func EnvOutput(env *Env, writer io.Writer, sep string, skipDefault bool) error {
-	// TODO: move to default config
-	filtered := []string{
-		"session",
-		"strs.",
-		"display.height",
-		"sys.stack",
-		"sys.stack-depth",
-	}
-
+func EnvOutput(env *Env, writer io.Writer, sep string, filtered []string, skipDefault bool) error {
 	defEnv := env.GetLayer(EnvLayerDefault)
 
 	flatten := env.Flatten(true, filtered, false)
@@ -67,7 +58,7 @@ func EnvInput(env *Env, reader io.Reader, sep string, delMark string) error {
 	return nil
 }
 
-func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
+func saveEnvToFile(env *Env, path string, sep string, filtered []string, skipDefault bool) {
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -75,7 +66,7 @@ func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
 	}
 	defer file.Close()
 
-	err = EnvOutput(env, file, sep, skipDefault)
+	err = EnvOutput(env, file, sep, filtered, skipDefault)
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToFile] write env file '%s' failed: %v", tmp, err))
 	}
@@ -86,6 +77,20 @@ func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
 		panic(fmt.Errorf("[SaveEnvToFile] rename env file '%s' to '%s' failed: %v",
 			tmp, path, err))
 	}
+}
+
+func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
+	// TODO: move to default config
+	filtered := []string{
+		"session",
+		"strs.",
+		"display.height",
+		"sys.stack",
+		"sys.stack-depth",
+		"sys.session.",
+		"sys.interact",
+	}
+	saveEnvToFile(env, path, sep, filtered, skipDefault)
 }
 
 func LoadEnvFromFile(env *Env, path string, sep string, delMark string) {
@@ -118,6 +123,14 @@ func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd, skipDefault bo
 		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session env file name not found in env"))
 	}
 	sessionPath = filepath.Join(sessionDir, sessionFileName)
-	SaveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep, skipDefault)
+
+	filtered := []string{
+		//"display.height",
+		//"sys.stack",
+		//"sys.stack-depth",
+		//"sys.session.",
+		//"sys.interact",
+	}
+	saveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep, filtered, skipDefault)
 	return
 }

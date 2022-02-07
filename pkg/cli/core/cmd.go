@@ -231,6 +231,17 @@ func (self *Cmd) execute(
 		}()
 	}
 
+	if mask != nil && mask.OverWriteFinishEnv != nil {
+		p := env
+		for p != nil && p.LayerType() != EnvLayerSession {
+			p.CleanCurrLayer()
+			p = p.Parent()
+		}
+		if p != nil {
+			mask.OverWriteFinishEnv.WriteCurrLayerTo(p)
+		}
+	}
+
 	if !shouldExecByMask(mask) {
 		// TODO: print this outside core pkg, so it can be colorize
 		cc.Screen.Print("(skipped)\n")

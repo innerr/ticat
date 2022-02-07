@@ -193,6 +193,40 @@ func EnvOpCmds() []core.EnvOpCmd {
 				env.GetLayer(core.EnvLayerSession).
 					Set(key, "<dummy-fake-key-for-env-op-check-only-from-MapEnvKeyValueToAnotherKey>")
 			}},
+		core.EnvOpCmd{SetEnvKeyValue,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				key := argv.GetRaw("key")
+				if checker != nil {
+					checker.SetKeyWritten(key)
+				}
+				env.GetLayer(core.EnvLayerSession).
+					Set(key, "<dummy-fake-key-for-env-op-check-only-from-SetEnvKeyValue>")
+			}},
+		core.EnvOpCmd{AddEnvKeyValue,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				key := argv.GetRaw("key")
+				if checker != nil {
+					checker.SetKeyWritten(key)
+				}
+				env.GetLayer(core.EnvLayerSession).
+					Set(key, "<dummy-fake-key-for-env-op-check-only-from-AddEnvKeyValue>")
+			}},
+		core.EnvOpCmd{RemoveEnvValNotSave,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				key := argv.GetRaw("key")
+				if checker != nil {
+					checker.RemoveKeyStat(key)
+				}
+				env.GetLayer(core.EnvLayerSession).Delete(key)
+			}},
+		core.EnvOpCmd{RemoveEnvValAndSaveToLocal,
+			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+				key := argv.GetRaw("key")
+				if checker != nil {
+					checker.RemoveKeyStat(key)
+				}
+				env.GetLayer(core.EnvLayerSession).Delete(key)
+			}},
 	}
 }
 
