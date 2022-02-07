@@ -127,6 +127,13 @@ func (self ParsedCmd) IsEmpty() bool {
 	return len(self.Segments) == 0
 }
 
+func (self ParsedCmd) IsApi() bool {
+	if self.IsEmpty() {
+		return false
+	}
+	return self.Segments[0].IsApi()
+}
+
 func (self ParsedCmd) Last() (seg ParsedCmdSeg) {
 	if self.IsEmpty() {
 		return
@@ -330,6 +337,10 @@ func (self ParsedCmdSeg) Help() (help string) {
 
 func (self *ParsedCmdSeg) IsEmpty() bool {
 	return self.Env == nil && self.Matched.IsEmpty()
+}
+
+func (self *ParsedCmdSeg) IsApi() bool {
+	return self.Matched.Cmd != nil && self.Matched.Cmd.IsApi()
 }
 
 type MatchedCmd struct {

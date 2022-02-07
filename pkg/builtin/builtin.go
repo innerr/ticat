@@ -52,9 +52,10 @@ func RegisterCmds(cmds *core.CmdTree) {
 		AddArg("tag", "selftest").
 		AddArg("parallel", "false", "parall", "paral", "para")
 
-	RegisterApiCmds(cmds.AddSub(
-		"api").RegEmptyCmd(
-		"api toolbox").Owner())
+	api := cmds.AddSub("api")
+	api.RegEmptyCmd("api toolbox")
+	api.SetIsApi()
+	RegisterApiCmds(api)
 }
 
 func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
@@ -506,9 +507,9 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 			"save session env changes to local").
 		SetQuiet()
 
-	env.AddSub("remove-and-save", "remove", "rm", "delete", "del").
-		RegPowerCmd(RemoveEnvValAndSaveToLocal,
-			"remove specified env value and save changes to local").
+	env.AddSub("remove", "rm", "delete", "del").
+		RegPowerCmd(RemoveEnvValNotSave,
+			"remove specified env value in current session").
 		SetAllowTailModeCall().
 		AddArg("key", "", "k", "K")
 
@@ -549,13 +550,15 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 		RegPowerCmd(SetEnvKeyValue,
 			"set key-value to env in current session").
 		AddArg("key", "", "k").
-		AddArg("value", "", "val", "v")
+		AddArg("value", "", "val", "v").
+		AddEnvOp("[[key]]", core.EnvOpTypeWrite)
 
 	env.AddSub("add").
 		RegPowerCmd(AddEnvKeyValue,
 			"add key-value to env in current session, throws error if old value exists").
 		AddArg("key", "", "k").
-		AddArg("value", "", "val", "v")
+		AddArg("value", "", "val", "v").
+		AddEnvOp("[[key]]", core.EnvOpTypeWrite)
 
 	env.AddSub("update").
 		RegPowerCmd(UpdateEnvKeyValue,

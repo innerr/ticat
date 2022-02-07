@@ -170,13 +170,34 @@ func SaveEnvToLocal(
 	return currCmdIdx, true
 }
 
-// TODO: support abbrs for arg 'key'
+func RemoveEnvValNotSave(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return removeEnvVal(argv, cc, env, flow, currCmdIdx, false)
+}
+
 func RemoveEnvValAndSaveToLocal(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	return removeEnvVal(argv, cc, env, flow, currCmdIdx, true)
+}
+
+// TODO: support abbrs for arg 'key'
+func removeEnvVal(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	saveToLocal bool) (int, bool) {
 
 	tailMode := flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode
 
@@ -206,7 +227,7 @@ func RemoveEnvValAndSaveToLocal(
 		}
 	}
 
-	if deleted != 0 {
+	if deleted != 0 && saveToLocal {
 		kvSep := env.GetRaw("strs.env-kv-sep")
 		path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
 		core.SaveEnvToFile(env.GetLayer(core.EnvLayerSession), path, kvSep, true)

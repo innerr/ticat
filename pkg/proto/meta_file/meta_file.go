@@ -162,7 +162,7 @@ func (self *MetaFile) parse(data []byte) {
 						}
 						continue
 					}
-					if line[0] == SectionBracketLeft && line[size-1] == SectionBracketRight &&
+					if line[0] == SectionBracketLeft && line[len(line)-1] == SectionBracketRight &&
 						len(line) > 2 && line[1] == '/' {
 						break
 					}

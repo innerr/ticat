@@ -45,6 +45,7 @@ type CmdTree struct {
 	source          string
 	tags            []string
 	trivial         int
+	isApi           bool
 }
 
 func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
@@ -61,6 +62,7 @@ func NewCmdTree(strs *CmdTreeStrs) *CmdTree {
 		"",
 		nil,
 		0,
+		false,
 	}
 }
 
@@ -110,6 +112,14 @@ func (self *CmdTree) SetTrivial(val int) *CmdTree {
 
 func (self *CmdTree) IsHidden() bool {
 	return self.hidden
+}
+
+func (self *CmdTree) IsApi() bool {
+	return self.isApi
+}
+
+func (self *CmdTree) SetIsApi() {
+	self.isApi = true
 }
 
 func (self *CmdTree) AddTags(tags ...string) {

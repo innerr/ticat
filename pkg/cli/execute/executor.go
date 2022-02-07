@@ -211,11 +211,6 @@ func (self *Executor) executeCmd(
 		env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
 	sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
 
-	// TODO: clean this
-	// The env modifications from input will be popped out after a command is executed
-	// But if a mod modified the env, the modifications stay in session level
-	//cmdEnv := cmd.GenCmdEnv(env, cc.Cmds.Strs.EnvValDelAllMark)
-
 	ln := cc.Screen.OutputNum()
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,

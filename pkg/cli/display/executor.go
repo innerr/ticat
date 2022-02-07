@@ -35,6 +35,9 @@ func PrintCmdStack(
 	bgTasks *core.BgTasks,
 	tailModeCall bool) (lines CmdStackLines) {
 
+	if cmd.IsApi() {
+		return
+	}
 	if tailModeCall {
 		return
 	}
