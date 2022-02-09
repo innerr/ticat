@@ -85,6 +85,7 @@ func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
 		"session",
 		"strs.",
 		"display.height",
+		"display.width.max",
 		"sys.stack",
 		"sys.stack-depth",
 		"sys.session.",
