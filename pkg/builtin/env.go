@@ -34,6 +34,7 @@ func LoadDefaultEnv(env *core.Env) {
 	row, col := utils.GetTerminalWidth(50, 100)
 	col = adjustDisplayWidth(col)
 	env.SetInt("display.width", col)
+	env.SetInt("display.width.max", col)
 	env.SetInt("display.height", row)
 
 	env.SetBool("display.completion.hidden", false)
