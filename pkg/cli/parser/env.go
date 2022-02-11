@@ -229,11 +229,9 @@ func normalizeEnvRawStr(input []string, sep string, spaces string) (output norma
 	for i, it := range input {
 		k := strings.Index(it, sep)
 		if k < 0 {
-			if len(it) != 0 {
-				output.data = append(output.data, strings.Trim(it, spaces))
-				output.originIdx = append(output.originIdx, i)
-				output.originStrIdx = append(output.originStrIdx, 0)
-			}
+			output.data = append(output.data, strings.Trim(it, spaces))
+			output.originIdx = append(output.originIdx, i)
+			output.originStrIdx = append(output.originStrIdx, 0)
 			continue
 		}
 

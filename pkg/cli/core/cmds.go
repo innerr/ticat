@@ -266,7 +266,7 @@ func (self *CmdTree) GetSub(path ...string) *CmdTree {
 func (self *CmdTree) GetSubByPath(path string, panicOnNotFound bool) *CmdTree {
 	cmds := self.GetSub(strings.Split(path, self.Strs.PathSep)...)
 	if cmds == nil && panicOnNotFound {
-		panic(fmt.Errorf("can't find sub cmd tree by path '%s'", path))
+		panic(fmt.Errorf("can't find cmd by path '%s'", path))
 	}
 	return cmds
 }

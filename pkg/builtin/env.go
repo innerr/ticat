@@ -32,9 +32,9 @@ func LoadDefaultEnv(env *core.Env) {
 	env.Set("sys.hub.init-repo", "ticat-mods/marsh")
 
 	row, col := utils.GetTerminalWidth(50, 100)
+	env.SetInt("display.width.max", col)
 	col = adjustDisplayWidth(col)
 	env.SetInt("display.width", col)
-	env.SetInt("display.width.max", col)
 	env.SetInt("display.height", row)
 
 	env.SetBool("display.completion.hidden", false)
