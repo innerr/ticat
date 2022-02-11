@@ -26,6 +26,9 @@ func (self *SequenceParser) Normalize(argv []string) []string {
 	sepN := len(self.sep)
 	res := []string{}
 	for _, arg := range argv {
+		if len(arg) == 0 {
+			res = append(res, arg)
+		}
 		handledIdx := 0
 		searchIdx := 0
 		for ; handledIdx < len(arg); searchIdx += sepN {
@@ -36,7 +39,7 @@ func (self *SequenceParser) Normalize(argv []string) []string {
 			}
 			searchIdx += i
 			// TODO:
-			//  1. put '\' to class init args
+			//  1. put '\' to SequenceParser's init args
 			//  2. this is a workaround, we also need to handle '\\', '\\\', ... things like that
 			if searchIdx >= 1 && "\\" == arg[searchIdx-1:searchIdx] {
 				arg = arg[0:searchIdx-1] + arg[searchIdx:]
