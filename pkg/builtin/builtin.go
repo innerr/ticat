@@ -45,12 +45,19 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterJoinCmds(cmds)
 	RegisterNoopCmds(cmds)
 
-	cmds.AddSub("selftest").RegAdHotFlowCmd(Selftest,
-		"run all commands having selftest tag, run in forest-mode to keep env clean for each test").
+	cmds.AddSub("selftest").
+		RegAdHotFlowCmd(Selftest,
+			"run all commands having selftest tag, run in forest-mode to keep env clean for each test").
 		AddArg("match-source", "", "match-src", "match", "src").
 		AddArg("filter-source", "", "filter").
 		AddArg("tag", "selftest").
 		AddArg("parallel", "false", "parall", "paral", "para")
+
+	cmds.AddSub("repeat", "rpt").
+		RegAdHotFlowCmd(Repeat,
+			"run a no-args command many times").
+		AddArg("cmd", "").
+		AddArg("times", "1", "t")
 
 	api := cmds.AddSub("api")
 	api.RegEmptyCmd("api toolbox")

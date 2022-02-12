@@ -273,6 +273,23 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 	return
 }
 
+func Repeat(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
+	cmd := argv.GetRaw("cmd")
+	if len(cmd) == 0 {
+		panic(fmt.Errorf("arg 'cmd' is empty"))
+	}
+	times := argv.GetInt("times")
+	if times <= 0 {
+		panic(fmt.Errorf("arg 'times' is invalid value '%d'", times))
+	}
+
+	for i := 0; i < times; i++ {
+		flow = append(flow, cmd)
+	}
+	ok = true
+	return
+}
+
 func findAllCmdsByTag(tag string, src string, filter string, curr *core.CmdTree, output *[]*core.CmdTree) {
 	if curr.MatchTags(tag) &&
 		(len(src) == 0 || strings.Index(curr.Source(), src) >= 0) &&
