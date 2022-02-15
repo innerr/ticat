@@ -55,7 +55,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 
 	cmds.AddSub("repeat", "rpt").
 		RegAdHotFlowCmd(Repeat,
-			"run a no-args command many times").
+			"run a command many times").
 		AddArg("cmd", "").
 		AddArg("times", "1", "t")
 

@@ -116,6 +116,8 @@ func LoadRuntimeEnv(
 	env.Set("sys.paths.data", data)
 	paths.GetOrAddSub("data").AddAbbrs("dat")
 
+	env.Set("sys.paths.data.shared", filepath.Join(data, "shared"))
+
 	env.Set("sys.paths.flows", filepath.Join(data, "flows"))
 	paths.GetOrAddSub("flows").AddAbbrs("flow")
 

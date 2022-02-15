@@ -283,6 +283,8 @@ func Repeat(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, mask
 		panic(fmt.Errorf("arg 'times' is invalid value '%d'", times))
 	}
 
+	trivialMark := env.GetRaw("strs.trivial-mark")
+	cmd = trivialMark + cmd
 	for i := 0; i < times; i++ {
 		flow = append(flow, cmd)
 	}
