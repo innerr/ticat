@@ -34,6 +34,11 @@ func DumpFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
+
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
@@ -47,6 +52,11 @@ func DumpFlowSimple(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
+
 	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
@@ -59,6 +69,11 @@ func DumpFlowSkeleton(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
 
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
@@ -99,6 +114,11 @@ func DumpFlowDepends(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
+
 	env = env.Clone()
 	deps := core.Depends{}
 	core.CollectDepends(cc, env, flow, currCmdIdx+1, deps, false, EnvOpCmds())
@@ -117,6 +137,11 @@ func DumpFlowEnvOpsCheckResult(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
 
 	checker := &core.EnvOpsChecker{}
 	result := []core.EnvOpsCheckResult{}
@@ -140,6 +165,11 @@ func dumpFlowAll(
 	flow *core.ParsedCmds,
 	currCmdIdx int,
 	simple bool) (int, bool) {
+
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
 
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
