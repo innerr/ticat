@@ -41,7 +41,7 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetBool("display.completion.abbr", true)
 	env.SetBool("display.completion.shortcut", false)
 
-	env.Set("display.example-https-repo", "https://github.com/innerr/tidb.ticat")
+	env.Set("display.example-https-repo", "https://github.com/ticat-mods/tidb")
 
 	env.SetInt("display.hint.indent.2rd", 41)
 

@@ -108,7 +108,7 @@ func (self *Arg2Env) GetArgName(cmd *Cmd, envKey string, allowError bool) string
 	}
 	args := cmd.Args()
 	if !args.Has(argName) {
-		msg := fmt.Sprintf("module error: no arg %s for key %s", argName, envKey)
+		msg := fmt.Sprintf("module '%s' error: no arg %s for key %s", cmd.Owner().DisplayPath(), argName, envKey)
 		if allowError {
 			return "(" + msg + ")"
 		} else {
