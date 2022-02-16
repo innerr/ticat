@@ -123,6 +123,11 @@ func DumpCmdsTree(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
+
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().NoFlatten()
 
 	cmdPath := ""

@@ -38,6 +38,11 @@ func DumpTailCmdWithUsage(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
+
 	cmdPath := argv.GetRaw("cmd-path")
 	if len(cmdPath) == 0 {
 		cmdPath = flow.Last().DisplayPath(cc.Cmds.Strs.PathSep, false)
@@ -55,6 +60,11 @@ func DumpTailCmdWithDetails(
 	env *core.Env,
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
+
+	err := flow.FirstErr()
+	if err != nil {
+		panic(err.Error)
+	}
 
 	cmdPath := argv.GetRaw("cmd-path")
 	if len(cmdPath) == 0 {

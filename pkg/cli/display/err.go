@@ -106,7 +106,9 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 				"log-file:",
 				"    - '"+e.LogFilePath+"'")
 		}
-		dumpCmdWithArgv(printer, cc, env, e.Cmd)
+		printer.Prints("", "command detail:")
+		printer.Finish()
+		DumpCmds(e.Cmd.Last().Matched.Cmd, cc.Screen, env, NewDumpCmdArgs().NoRecursive())
 
 	default:
 		PrintErrTitle(cc.Screen, env, err.Error())
@@ -191,10 +193,4 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 			}
 		}
 	}
-}
-
-func dumpCmdWithArgv(printer *TipBoxPrinter, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) {
-	printer.Prints("", "command detail:")
-	printer.Finish()
-	DumpCmds(cmd.Last().Matched.Cmd, cc.Screen, env, NewDumpCmdArgs().NoRecursive())
 }
