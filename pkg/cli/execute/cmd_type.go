@@ -71,12 +71,12 @@ func allowParseError(flow *core.ParsedCmds) bool {
 	if len(flow.Cmds) == 0 {
 		return false
 	}
-	if flow.TailModeCall {
-		return flow.Cmds[0].ParseResult.Error == nil
-	}
 	last := flow.Cmds[0].LastCmd()
 	if last == nil {
 		return false
+	}
+	if flow.TailModeCall {
+		return flow.Cmds[0].ParseResult.Error == nil
 	}
 	funcs := []interface{}{
 		builtin.SaveFlow,
