@@ -72,10 +72,19 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		sep := cc.Cmds.Strs.PathSep
 		cmdName := strings.Join(e.Cmd.MatchedPath(), sep)
 		printer := NewTipBoxPrinter(cc.Screen, env, true)
-		printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
-		printer.Prints("", "command detail:")
-		printer.Finish()
-		dumpCmdWithArgv(cc, env, e.Cmd)
+		if len(cmdName) != 0 {
+			printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
+			printer.Prints("", "command detail:")
+			printer.Finish()
+			DumpCmds(e.Cmd.Last().Matched.Cmd, cc.Screen, env, NewDumpCmdArgs().NoRecursive())
+		} else if len(cmdName) == 0 {
+			if e.Cmd.ParseResult.Error != nil {
+				printer.PrintWrap(e.Cmd.ParseResult.Error.Error() + ".")
+			} else {
+				printer.PrintWrap(e.Error() + ".")
+			}
+			printer.Finish()
+		}
 
 	case *core.RunCmdFileFailed:
 		e := err.(*core.RunCmdFileFailed)
@@ -84,26 +93,20 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		cmdName := strings.Join(e.Cmd.MatchedPath(), sep)
 		printer := NewTipBoxPrinter(cc.Screen, env, true)
 		printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
-		text := []string{
+		printer.Prints(
 			"",
 			"execute-bin:",
-			"    - '" + e.Bin + "'",
+			"    - '"+e.Bin+"'",
 			"cmd-line:",
-			"    - '" + cic.CmdLine() + "'",
+			"    - '"+cic.CmdLine()+"'",
 			"session-path:",
-			"    - '" + e.SessionPath + "'",
-		}
+			"    - '"+e.SessionPath+"'")
 		if len(e.LogFilePath) != 0 {
-			text = append(text,
+			printer.Prints(
 				"log-file:",
 				"    - '"+e.LogFilePath+"'")
 		}
-		text = append(text,
-			"",
-			"command detail:")
-		printer.Prints(text...)
-		printer.Finish()
-		dumpCmdWithArgv(cc, env, e.Cmd)
+		dumpCmdWithArgv(printer, cc, env, e.Cmd)
 
 	default:
 		PrintErrTitle(cc.Screen, env, err.Error())
@@ -190,13 +193,8 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 	}
 }
 
-func dumpCmdWithArgv(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) {
-	/*
-		metFlows := map[string]bool{}
-		writtenKeys := FlowWrittenKeys{}
-		dumpArgs := NewDumpFlowArgs().SetSimple()
-		dumpFlowCmd(cc, cc.Screen, env.Clone(), core.ParsedEnv{}, cmd, dumpArgs, 0, 0, metFlows, writtenKeys)
-	*/
-	dumpArgs := NewDumpCmdArgs().NoRecursive()
-	DumpCmds(cmd.Last().Matched.Cmd, cc.Screen, env, dumpArgs)
+func dumpCmdWithArgv(printer *TipBoxPrinter, cc *core.Cli, env *core.Env, cmd core.ParsedCmd) {
+	printer.Prints("", "command detail:")
+	printer.Finish()
+	DumpCmds(cmd.Last().Matched.Cmd, cc.Screen, env, NewDumpCmdArgs().NoRecursive())
 }
