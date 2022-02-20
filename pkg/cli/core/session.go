@@ -22,8 +22,20 @@ type SessionStatus struct {
 	Status   *ExecutedFlow
 }
 
-// TODO: use iterator to avoid extra parsing
-func ListSessions(env *Env, findStrs []string, mustMatchDirName string) (sessions []SessionStatus) {
+func (self SessionStatus) SessionId() string {
+	return self.DirName
+}
+
+// TODO: use iterator to avoid extra parsing?
+func ListSessions(
+	env *Env,
+	findStrs []string,
+	mustMatchDirName string,
+	cntLimit int,
+	includeError bool,
+	includeDone bool,
+	includeRunning bool) (sessions []SessionStatus, total int) {
+
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
 		panic(fmt.Errorf("[ListSessions] can't get sessions' root path\n"))
@@ -37,12 +49,14 @@ func ListSessions(env *Env, findStrs []string, mustMatchDirName string) (session
 	for i, it := range entrys {
 		dirs[i] = it.Name()
 	}
-	sort.Strings(dirs)
+	total = len(dirs)
+	sort.Sort(sort.Reverse(sort.StringSlice(dirs)))
 
 	keepDur := env.GetDur("sys.sessions.keep-status-duration")
 	statusFileName := env.GetRaw("strs.session-status-file")
 
 	now := time.Now()
+	cnt := 0
 
 	for _, dir := range dirs {
 		oldSessionPid, oldSessionStartTs, ok := parseSessionDirName(dir)
@@ -59,12 +73,32 @@ func ListSessions(env *Env, findStrs []string, mustMatchDirName string) (session
 		if status == nil {
 			continue
 		}
+
 		if !status.MatchFind(findStrs) {
 			continue
 		}
+
 		running := utils.IsPidRunning(oldSessionPid)
+		if running && !includeRunning {
+			continue
+		}
+
+		if !running {
+			if status.Result == ExecutedResultSucceeded && !includeDone {
+				continue
+			}
+			if (status.Result == ExecutedResultIncompleted || status.Result == ExecutedResultError) && !includeError {
+				continue
+			}
+		}
+
 		cleaning := oldSessionStartTs.Add(keepDur).Before(now)
-		sessions = append(sessions, SessionStatus{dir, oldSessionPid, oldSessionStartTs, running, cleaning, status})
+		session := SessionStatus{dir, oldSessionPid, oldSessionStartTs, running, cleaning, status}
+		sessions = append([]SessionStatus{session}, sessions...)
+		cnt += 1
+		if cntLimit > 0 && cnt >= cntLimit {
+			break
+		}
 	}
 
 	return

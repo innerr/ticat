@@ -649,70 +649,146 @@ func RegisterBgManageCmds(cmds *core.CmdTree) {
 
 func RegisterSessionCmds(cmds *core.CmdTree) {
 	sessions := cmds.AddSub("sessions", "session", "s")
-	sessionsList := sessions.RegPowerCmd(ListSessions,
+
+	sessions.AddSub("status").
+		RegPowerCmd(SessionStatus,
+			"show an executed or executing session by id").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority().
+		AddArg("session-id", "", "session", "id")
+
+	sessionsList := sessions.RegPowerCmd(
+		ListSessions,
 		"list or find executed and executing sessions").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(sessionsList)
-	sessionsList.AddArg("session-id", "", "session", "id")
+	sessionsList.AddArg("max-count", "32", "limit", "max-cnt", "max")
 
-	sessionsErr := sessions.AddSub("error", "failed", "fail", "err", "e").
+	sessionsErr := sessions.AddSub("error", "failed", "fail", "err", "e", "f").
 		RegPowerCmd(ListSessionsError,
 			"list executed error sessions").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(sessionsErr)
+	sessionsErr.AddArg("max-count", "32", "limit", "max-cnt", "max")
 
-	sessionsDone := sessions.AddSub("done").
+	sessionsDone := sessions.AddSub("done", "ok", "o").
 		RegPowerCmd(ListSessionsDone,
 			"list success executed sessions").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(sessionsDone)
+	sessionsDone.AddArg("max-count", "32", "limit", "max-cnt", "max")
 
-	sessionsRunning := sessions.AddSub("running", "run").
+	sessionsRunning := sessions.AddSub("running", "run", "ing", "i").
 		RegPowerCmd(ListSessionsRunning,
 			"list executing sessions").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
 	addFindStrArgs(sessionsRunning)
+	sessionsRunning.AddArg("max-count", "32", "limit", "max-cnt", "max")
 
-	sessions.AddSub("retry", "r").
-		RegAdHotFlowCmd(SessionRetry,
-			//"find a session by keywords and id, if it's failed, retry running from the error point").
-			"find a session by id, if it's failed, retry running from the error point").
-		AddArg("session-id", "", "session", "id")
+	errDesc := sessionsErr.AddSub("desc", "d", "-").
+		RegPowerCmd(ErrorSessionDescLess,
+			"desc the last failed session").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	errDesc.AddSub("more", "m").
+		RegPowerCmd(ErrorSessionDescMore,
+			"desc the last failed session with more details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	errDesc.AddSub("full", "f").
+		RegPowerCmd(ErrorSessionDescFull,
+			"desc the last failed session with full details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	doneDesc := sessionsDone.AddSub("desc", "d", "-").
+		RegPowerCmd(DoneSessionDescLess,
+			"desc the last succeeded session").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	doneDesc.AddSub("more", "m").
+		RegPowerCmd(DoneSessionDescMore,
+			"desc the last succeeded session with more details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	doneDesc.AddSub("full", "f").
+		RegPowerCmd(DoneSessionDescFull,
+			"desc the last succeeded session with full details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	runningDesc := sessionsRunning.AddSub("desc", "d", "-").
+		RegPowerCmd(RunningSessionDescLess,
+			"desc the last executing session").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	runningDesc.AddSub("more", "m").
+		RegPowerCmd(RunningSessionDescMore,
+			"desc the last executing session with more details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
+
+	runningDesc.AddSub("full", "f").
+		RegPowerCmd(RunningSessionDescFull,
+			"desc the last executing session with full details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("depth", "32", "d", "D")
 
 	desc := sessions.AddSub("desc", "d", "-").
-		RegPowerCmd(ListedSessionDescLess,
+		RegPowerCmd(SessionDescLess,
 			"desc executed/ing session").
 		SetAllowTailModeCall()
-	addFindStrArgs(desc)
+	desc.AddArg("session-id", "", "session", "id")
 	desc.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
 	desc.AddArg("depth", "32", "d", "D")
-	desc.AddArg("session-id", "", "session", "id")
 
 	descMore := desc.AddSub("more", "m").
-		RegPowerCmd(ListedSessionDescMore,
+		RegPowerCmd(SessionDescMore,
 			"desc executed/ing session with more details").
 		SetAllowTailModeCall()
-	addFindStrArgs(descMore)
+	descMore.AddArg("session-id", "", "session", "id")
 	descMore.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
 	descMore.AddArg("depth", "32", "d")
-	descMore.AddArg("session-id", "", "session", "id")
 
 	descFull := desc.AddSub("full", "f").
-		RegPowerCmd(ListedSessionDescFull,
+		RegPowerCmd(SessionDescFull,
 			"desc executed/ing session with full details").
 		SetAllowTailModeCall()
-	addFindStrArgs(descFull)
+	descFull.AddArg("session-id", "", "session", "id")
 	descFull.AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t")
 	descFull.AddArg("depth", "32", "d")
-	descFull.AddArg("session-id", "", "session", "id")
 
 	last := sessions.AddSub("last", "l")
 	last.RegPowerCmd(LastSession,
@@ -736,26 +812,38 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
 
-	/*
-		last.AddSub("retry", "r", "R").
-			RegAdHotFlowCmd(LastSessionRetry,
-				"if the last session failed, retry running from the error point")
-	*/
+	sessions.AddSub("retry", "r").
+		RegAdHotFlowCmd(SessionRetry,
+			"find a session by id, retry running it, executed commands will be skipped").
+		AddArg("session-id", "", "session", "id")
 
-	remove := sessions.AddSub("remove", "delete", "rm").
+	last.AddSub("retry", "r", "R").
+		RegAdHotFlowCmd(LastSessionRetry,
+			"retry running the last session, executed commands will be skipped")
+
+	sessionsErr.AddSub("retry", "r", "R").
+		RegAdHotFlowCmd(LastErrorSessionRetry,
+			"find the last failed session, retry running it, executed commands will be skipped")
+
+	remove := sessions.AddSub("remove", "delete", "rm")
+	remove.RegPowerCmd(RemoveSession,
+		"remove an executed or (wrongly classify as)executing session by id").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetPriority().
+		AddArg("session-id", "", "session", "id").
+		AddArg("remove-running", "false", "force")
+
+	removeByFind := remove.AddSub("by-search", "by-find", "search", "find", "batch").
 		RegPowerCmd(FindAndRemoveSessions,
 			"clear executed sessions by keywords").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority()
-	addFindStrArgs(remove)
-	remove.AddArg("session-id", "", "session", "id")
-	remove.AddArg("remove-running", "false", "force")
+	addFindStrArgs(removeByFind)
+	removeByFind.AddArg("remove-running", "false", "force")
 
 	remove.AddSub("all", "a").
-		RegPowerCmd(RemoveAllSessions,
-			"clear all executed sessions")
-	sessions.AddSub("clear", "clean").
 		RegPowerCmd(RemoveAllSessions,
 			"clear all executed sessions")
 
