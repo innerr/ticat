@@ -151,7 +151,7 @@ func (self *Cli) ParseCmd(panicOnError bool, cmdAndArgs ...string) (parsedCmd Pa
 		if panicOnError {
 			cmdStr := strings.Join(cmdAndArgs, " ")
 			if err != nil {
-				panic(fmt.Errorf("[Cli.ParseCmd] %v", err))
+				panic(err.Error)
 			}
 			if len(parsed.Cmds) > 1 {
 				panic(fmt.Errorf("[Cli.ParseCmd] too many result commands by parsing '%s': %d",

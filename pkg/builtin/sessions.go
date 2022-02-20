@@ -48,6 +48,24 @@ func RemoveAllSessions(
 	return currCmdIdx, true
 }
 
+func SessionStatus(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
+	if len(sessions) == 0 {
+		return currCmdIdx, true
+	}
+	dumpSession(sessions[0], env, cc.Screen, "")
+	return currCmdIdx, true
+}
+
 func ListSessions(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -98,25 +116,13 @@ func listSessions(
 	includeDone bool,
 	includeRunning bool) (int, bool) {
 
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, false)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	cntLimit := argv.GetInt("max-count")
+	sessions, total := findSessions(findStrs, "", cc, env, cntLimit, includeError, includeDone, includeRunning)
 
 	screen := display.NewCacheScreen()
 	cnt := 0
 	for _, it := range sessions {
-		if it.Running {
-			if !includeRunning {
-				continue
-			}
-		} else {
-			if it.Status != nil {
-				if it.Status.Result == core.ExecutedResultSucceeded && !includeDone {
-					continue
-				}
-				if (it.Status.Result == core.ExecutedResultIncompleted || it.Status.Result == core.ExecutedResultError) && !includeError {
-					continue
-				}
-			}
-		}
 		if it.Cleaning {
 			dumpSession(it, env, screen, "expired")
 		} else {
@@ -125,21 +131,180 @@ func listSessions(
 		cnt += 1
 	}
 
-	if cnt == 0 {
+	if cnt <= 0 {
 		return clearFlow(flow)
-	} else if cnt == 1 {
-		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("1 session matched:"))
 	} else {
-		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%d sessions matched:", cnt))
+		cntStr := "1 session"
+		if cnt > 1 {
+			cntStr = fmt.Sprintf("%d sessions", cnt)
+		}
+		if cntLimit <= 0 {
+			display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%s matched:", cntStr))
+		} else {
+			display.PrintTipTitle(cc.Screen, env, fmt.Sprintf("%s matched: (%d total, %d showed)", cntStr, total, cnt))
+		}
 	}
 
 	screen.WriteTo(cc.Screen)
 	if display.TooMuchOutput(env, screen) {
+		limitStr := "use arg 'max-count'"
 		display.PrintTipTitle(cc.Screen, env,
-			fmt.Sprintf("too many sessions(%d), add more keywords to filter them", cnt))
+			fmt.Sprintf("too many sessions(%d total, %d showed), %s, or add more filter keywords", total, cnt, limitStr))
 	}
 
 	return clearFlow(flow)
+}
+
+func ErrorSessionDescLess(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, true, false, false)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, false)
+	return currCmdIdx, true
+}
+
+func ErrorSessionDescMore(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, true, false, false)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, true)
+	return currCmdIdx, true
+}
+
+func ErrorSessionDescFull(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, true, false, false)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, false, true, true)
+	return currCmdIdx, true
+}
+
+func RunningSessionDescLess(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, false, false, true)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, false)
+	return currCmdIdx, true
+}
+
+func DoneSessionDescLess(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, false, true, false)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, false)
+	return currCmdIdx, true
+}
+
+func DoneSessionDescMore(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, false, true, false)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, true)
+	return currCmdIdx, true
+}
+
+func DoneSessionDescFull(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, false, true, false)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, false, true, true)
+	return currCmdIdx, true
+}
+
+func RunningSessionDescMore(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, false, false, true)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, true)
+	return currCmdIdx, true
+}
+
+func RunningSessionDescFull(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, false, false, true)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, false, true, true)
+	return currCmdIdx, true
+}
+
+func RemoveSession(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	force := argv.GetBool("remove-running")
+	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
+	if len(sessions) == 0 {
+		return currCmdIdx, true
+	}
+	removeAndDumpSession(sessions[0], cc.Screen, env, force)
+	return currCmdIdx, true
 }
 
 func FindAndRemoveSessions(
@@ -151,24 +316,18 @@ func FindAndRemoveSessions(
 
 	force := argv.GetBool("remove-running")
 
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, true)
+	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
+	sessions, _ := findSessions(findStrs, "", cc, env, 1, true, true, true)
+	if len(sessions) == 0 {
+		return currCmdIdx, true
+	}
+
 	cleaneds := 0
 	for _, it := range sessions {
-		status := "removed"
-		cleaned, running := core.CleanSession(it, env, force)
-		if running {
-			if cleaned {
-				status = display.ColorWarn("running, force removed", env)
-			} else {
-				status = display.ColorWarn("running, untouched", env)
-			}
-		} else if !cleaned {
-			status = display.ColorError("remove failed", env)
-		}
+		cleaned := removeAndDumpSession(it, cc.Screen, env, force)
 		if cleaned {
 			cleaneds += 1
 		}
-		dumpSession(it, env, cc.Screen, status)
 	}
 
 	if len(sessions) > 1 {
@@ -178,67 +337,67 @@ func FindAndRemoveSessions(
 	return clearFlow(flow)
 }
 
-func ListedSessionDescLess(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	return listedSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, false)
-}
-
-func ListedSessionDescMore(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	return listedSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, true)
-}
-
-func ListedSessionDescFull(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int) (int, bool) {
-
-	return listedSessionDesc(argv, cc, env, flow, currCmdIdx, false, true, true)
-}
-
-func listedSessionDesc(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int,
-	skeleton bool,
-	showEnvFull bool,
-	showModifiedEnv bool) (int, bool) {
-
-	sessions := findSessionsByStrsAndId(argv, cc, env, flow, currCmdIdx, false)
-
-	handleTooMany := func() {
-		descSession(sessions[0], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
-		prefix := fmt.Sprintf("more than one sessions(%v) matched, only display the first one, ", len(sessions))
-		findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
-		if len(findStrs) > 0 {
-			display.PrintErrTitle(cc.Screen, env, prefix+"add more keywords to filter, or specify arg 'id'")
+func removeAndDumpSession(session core.SessionStatus, screen core.Screen, env *core.Env, force bool) bool {
+	status := "removed"
+	cleaned, running := core.CleanSession(session, env, force)
+	if running {
+		if cleaned {
+			status = display.ColorWarn("running, force removed", env)
 		} else {
-			display.PrintErrTitle(cc.Screen, env, prefix+"use keywords to filter, or specify arg 'id'")
+			status = display.ColorWarn("running, untouched", env)
 		}
+	} else if !cleaned {
+		status = display.ColorError("remove failed", env)
 	}
+	dumpSession(session, env, screen, status)
+	return cleaned
+}
 
-	allSessions := sessions
-	if len(sessions) > 1 {
-		handleTooMany()
-	} else if len(sessions) != 0 {
-		descSession(sessions[0], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
-	} else if len(allSessions) != len(sessions) {
-		handleTooMany()
+func SessionDescLess(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
+	if len(sessions) == 0 {
+		return currCmdIdx, true
 	}
+	descSession(sessions[0], argv, cc, env, true, false, false)
+	return currCmdIdx, true
+}
+
+func SessionDescMore(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
+	if len(sessions) == 0 {
+		return currCmdIdx, true
+	}
+	descSession(sessions[0], argv, cc, env, true, false, true)
+	return currCmdIdx, true
+}
+
+func SessionDescFull(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
+	if len(sessions) == 0 {
+		return currCmdIdx, true
+	}
+	descSession(sessions[0], argv, cc, env, false, true, true)
 	return currCmdIdx, true
 }
 
@@ -250,13 +409,11 @@ func LastSession(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-
-	sessions := core.ListSessions(env, nil, "")
-	if len(sessions) == 0 {
-		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
-		return currCmdIdx, true
+	session, ok := getLastSession(env, true, true, true)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
 	}
-	dumpSession(sessions[len(sessions)-1], env, cc.Screen, "")
+	dumpSession(session, env, cc.Screen, "")
 	return currCmdIdx, true
 }
 
@@ -268,7 +425,12 @@ func LastSessionDescLess(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, false)
+	session, ok := getLastSession(env, true, true, true)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, false)
+	return currCmdIdx, true
 }
 
 func LastSessionDescMore(
@@ -279,7 +441,12 @@ func LastSessionDescMore(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, true, false, true)
+	session, ok := getLastSession(env, true, true, true)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, true)
+	return currCmdIdx, true
 }
 
 func LastSessionDescFull(
@@ -290,25 +457,11 @@ func LastSessionDescFull(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	return lastSessionDesc(argv, cc, env, flow, currCmdIdx, false, true, true)
-}
-
-func lastSessionDesc(
-	argv core.ArgVals,
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int,
-	skeleton bool,
-	showEnvFull bool,
-	showModifiedEnv bool) (int, bool) {
-
-	sessions := core.ListSessions(env, nil, "")
-	if len(sessions) == 0 {
-		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
-		return currCmdIdx, true
+	session, ok := getLastSession(env, true, true, true)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(sessions[len(sessions)-1], argv, cc, env, skeleton, showEnvFull, showModifiedEnv)
+	descSession(session, argv, cc, env, false, true, true)
 	return currCmdIdx, true
 }
 
@@ -317,69 +470,45 @@ func SessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string
 	if len(id) == 0 {
 		panic(fmt.Errorf("[SessionRetry] arg 'session-id' is empty"))
 	}
-
-	sessions := findSessions(nil, id, cc, env)
+	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
 		return
 	}
 	if len(sessions) > 1 {
 		panic(fmt.Errorf("[SessionRetry] should never happen"))
 	}
-
-	return retrySession(sessions[0])
+	return retrySession(sessions[0], false)
 }
 
-/*
 func LastSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
-	sessions := core.ListSessions(env, nil, "")
-	// if there is one, it's this session itself
-	if len(sessions) <= 1 {
+	session, ok := getLastSession(env, true, true, true)
+	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-
-	sessions = filterRetryLastSessions(sessions)
-	if len(sessions) == 0 {
-		panic(fmt.Errorf("all sessions are all retry-session, can't re-retry, use 'sessions.list.retry' to force retry"))
-	}
-
-	return retrySession(sessions[len(sessions)-1])
+	return retrySession(session, false)
 }
 
-func filterRetryLastSessions(sessions []core.SessionStatus) (res []core.SessionStatus) {
-	// TODO: this is bad, this function should not know what it's registered cmd-path
-	retryLast := "sessions.last.retry"
-	retrySession := "sessions.list.retry"
-	for _, session := range sessions {
-		if !session.Status.IsOneCmdSession(retryLast) &&
-			!session.Status.IsOneCmdSession(retrySession) {
-			res = append(res, session)
-		}
+func LastErrorSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
+	session, ok := getLastSession(env, true, false, false)
+	if !ok {
+		panic(fmt.Errorf("no executed sessions"))
 	}
-	return
+	return retrySession(session, false)
 }
-*/
 
-func findSessionsByStrsAndId(
-	argv core.ArgVals,
+func findSessions(
+	findStrs []string,
+	id string,
 	cc *core.Cli,
 	env *core.Env,
-	flow *core.ParsedCmds,
-	currCmdIdx int,
-	mustHaveFilter bool) (sessions []core.SessionStatus) {
+	cntLimit int,
+	includeError bool,
+	includeDone bool,
+	includeRunning bool) (sessions []core.SessionStatus, total int) {
 
-	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
-	id := argv.GetRaw("session-id")
-	if mustHaveFilter && len(findStrs) == 0 && len(id) == 0 {
-		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "all args 'session-id' and keywords are empty"))
-	}
-	return findSessions(findStrs, id, cc, env)
-}
+	id = normalizeSid(id)
 
-func findSessions(findStrs []string, id string, cc *core.Cli, env *core.Env) (sessions []core.SessionStatus) {
-	// TODO: put brackets to env?
-	id = strings.TrimRight(strings.TrimLeft(id, "["), "]")
-
-	sessions = core.ListSessions(env, findStrs, id)
+	sessions, total = core.ListSessions(env, findStrs, id, cntLimit, includeError, includeDone, includeRunning)
 	if len(sessions) == 0 {
 		if len(id) == 0 {
 			if len(findStrs) > 0 {
@@ -458,11 +587,31 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, session.Running, EnvOpCmds())
 }
 
-func retrySession(session core.SessionStatus) (flow []string, masks []*core.ExecuteMask, ok bool) {
-	/*
-		if session.Status.Executed {
-			panic(fmt.Errorf("session [%s] had succeeded, nothing to retry", session.DirName))
+func getLastSession(env *core.Env, includeError bool, includeDone bool, includeRunning bool) (session core.SessionStatus, ok bool) {
+	var sessions []core.SessionStatus
+	currSession := env.GetRaw("sys.session.id")
+	cntLimit := 2
+	if len(currSession) == 0 {
+		cntLimit = 1
+	}
+	sessions, _ = core.ListSessions(env, nil, "", cntLimit, includeError, includeDone, includeRunning)
+	for i := len(sessions) - 1; i >= 0; i-- {
+		session := sessions[i]
+		if session.SessionId() != currSession {
+			return session, true
 		}
-	*/
+	}
+	return
+}
+
+func retrySession(session core.SessionStatus, errSessionOnly bool) (flow []string, masks []*core.ExecuteMask, ok bool) {
+	if errSessionOnly && session.Status != nil && session.Status.Result == core.ExecutedResultSucceeded {
+		panic(fmt.Errorf("session [%s] had succeeded, nothing to retry", session.DirName))
+	}
 	return []string{session.Status.Flow}, session.Status.GenExecMasks(), true
+}
+
+func normalizeSid(id string) string {
+	// TODO: put brackets to env?
+	return strings.TrimRight(strings.TrimLeft(id, "["), "]")
 }

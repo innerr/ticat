@@ -125,7 +125,8 @@ func noSessionCmds(flow *core.ParsedCmds) bool {
 		builtin.SessionRetry,
 		builtin.Selftest,
 		builtin.Repeat,
-		//builtin.LastSessionRetry,
+		builtin.LastSessionRetry,
+		builtin.LastErrorSessionRetry,
 	}
 	for _, it := range funcs {
 		if cmd.Cmd() != nil && cmd.Cmd().IsTheSameFunc(it) {
