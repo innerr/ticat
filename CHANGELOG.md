@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.2.1] - 2022-04-01
++ New Features
+  + Run command selftests in parallel mode (#125)
+  + Add command branch `api`; add session id and host ip to env (#128)
+  + support quiet-error flag in meta (#129)
+  + Command `repeat`: run a command many times (#139)
+  + (Disabled, too many bugs) A command set for dynamic changing flow during executing (#127)
++ Usability
+  + not display sensitive(eg: password) key-value or args (#115)
+  + add blender.forest-mode: reset env on each command, but not reset on their subflows (#118)
+  + move command to global: `dbg.break.*`, `dbg.step`, `dbg.delay` (#126)
+  + add commands: list sessions by type (#120)
+  + Display enhance and bug fixes
++ Compatibility Changes
+  + Change init repo from innerr/marsh.ticat to ticat-mods/marsh (#132)
++ Bug Fixs
+  + Fix some bugs with tail-mode
+
 ## [1.2.0] - 2021-12-29
 
 + New Features

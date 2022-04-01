@@ -859,6 +859,9 @@ func RegisterBlenderCmds(cmds *core.CmdTree) {
 			"run following commands in forest-mode: reset env on each command, but not reset on their subflows").
 		SetQuiet()
 
+	// TODO: disable blenders now, too many bugs
+	return
+
 	replace := cmds.AddSub("replace", "repl").
 		RegPowerCmd(BlenderReplaceOnce,
 			"during executing, replace a command with another one (only replace once)").
