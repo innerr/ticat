@@ -3,6 +3,7 @@ package builtin
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -33,7 +34,40 @@ func JoinNew(
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 			"need key or values"))
 	}
-	vals := strings.Split(val, env.GetRaw("strs.list-sep"))
+
+	vals := []string{}
+	if strings.HasPrefix(val, "[") && strings.HasSuffix(val, "]") && strings.Count(val, ",") <= 2 && strings.Count(val, ",") >= 1 {
+		i := strings.Index(val, ",")
+		j := strings.LastIndex(val, ",")
+		var startStr, endStr, stepStr string
+		if i != j {
+			startStr = val[1:i]
+			endStr = val[i+1 : j]
+			stepStr = val[j+1 : len(val)-1]
+		} else {
+			startStr = val[1:j]
+			endStr = val[j+1 : len(val)-1]
+			stepStr = "1"
+		}
+		if strings.Contains(val, ".") {
+			start, _ := strconv.ParseFloat(startStr, 64)
+			end, _ := strconv.ParseFloat(endStr, 64)
+			step, _ := strconv.ParseFloat(stepStr, 64)
+			for ; start <= end; start += step {
+				vals = append(vals, fmt.Sprintf("%f", start))
+			}
+		} else {
+			start, _ := strconv.Atoi(startStr)
+			end, _ := strconv.Atoi(endStr)
+			step, _ := strconv.Atoi(stepStr)
+			for ; start <= end; start += step {
+				vals = append(vals, strconv.Itoa(start))
+			}
+		}
+	} else {
+		vals = strings.Split(val, env.GetRaw("strs.list-sep"))
+	}
+
 	kv := joinKv{
 		Key:  key,
 		Vals: vals,
