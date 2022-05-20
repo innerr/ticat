@@ -59,7 +59,7 @@ func rpt(char string, count int) string {
 }
 
 func mayMaskSensitiveVal(key string, val string) string {
-	if core.IsSensitiveKeyVal(key, val) {
+	if core.IsSensitiveKeyVal(key, val) && len(val) != 0 {
 		val = "***"
 	}
 	return val

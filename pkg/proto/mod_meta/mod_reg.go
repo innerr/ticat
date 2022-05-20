@@ -163,10 +163,10 @@ func regMod(
 
 	help := meta.Get("help")
 	// If has executable file, it need to have help string, a flow can have not
-	if len(help) == 0 && (!isDir && len(flow) == 0 || len(cmdLine) != 0) {
-		panic(fmt.Errorf("[regMod] cmd '%s' has no help string in '%s'",
-			cmdPath, meta.Path()))
-	}
+	// if len(help) == 0 && (!isDir && len(flow) == 0 || len(cmdLine) != 0) {
+	// 	panic(fmt.Errorf("[regMod] cmd '%s' has no help string in '%s'",
+	//		cmdPath, meta.Path()))
+	//}
 
 	// Even if 'isFlow' is true, if it does not have 'flow' content, it can't reg as flow
 	if len(flow) != 0 && len(cmdLine) == 0 && len(executablePath) == 0 {

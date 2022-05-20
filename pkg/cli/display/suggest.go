@@ -141,7 +141,7 @@ func GlobalSuggestShortcut(env *core.Env) []string {
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
 	return []string{
-		padCmdR(selfName+" find shortcut", indent, env) + sep + " show shortcut commands",
+		padCmdR(selfName+" find shortcut", indent, env) + sep + " show(find) shortcut commands",
 	}
 }
 
@@ -150,7 +150,7 @@ func GlobalSuggestInteract(env *core.Env) []string {
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
 	return []string{
-		padCmdR(selfName+" dbg.interact", indent, env) + sep + " entry interact-mode",
+		padCmdR(selfName+" dbg.interact", indent, env) + sep + " enter interact-mode",
 	}
 }
 
