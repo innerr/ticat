@@ -197,20 +197,26 @@ func SaveFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	quietOverwrite := argv.GetBool("quiet-overwrite")
+
 	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, false, argv, cc, env, false, "to-cmd-path")
 	screen := display.NewCacheScreen()
 
 	_, err := os.Stat(filePath)
 	if !os.IsNotExist(err) {
-		if !env.GetBool("sys.interact") {
-			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("path '%s' exists", filePath)))
+		if quietOverwrite {
+			// do nothing
 		} else {
-			cc.Screen.Print(fmt.Sprintf(display.ColorTip("[confirm]", env)+
-				" flow file of '%s' exists, "+
-				"type "+display.ColorWarn("'y'", env)+" and press enter to "+
-				display.ColorWarn("overwrite:", env)+"\n", cmdPath))
-			utils.UserConfirm()
+			if !env.GetBool("sys.interact") {
+				panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+					fmt.Sprintf("path '%s' exists", filePath)))
+			} else {
+				cc.Screen.Print(fmt.Sprintf(display.ColorTip("[confirm]", env)+
+					" flow file of '%s' exists, "+
+					"type "+display.ColorWarn("'y'", env)+" and press enter to "+
+					display.ColorWarn("overwrite:", env)+"\n", cmdPath))
+				utils.UserConfirm()
+			}
 		}
 	}
 

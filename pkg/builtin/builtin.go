@@ -595,7 +595,8 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
-		AddArg("to-cmd-path", "", "path", "p")
+		AddArg("to-cmd-path", "", "path", "p").
+		AddArg("quiet-overwrite", "false", "overwrite", "quiet")
 
 	flow.AddSub("set-help-str", "help", "h").
 		RegPowerCmd(SetFlowHelpStr,
