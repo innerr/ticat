@@ -113,6 +113,8 @@ func LoadRuntimeEnv(
 	env.Set("sys.paths.ticat", path)
 	paths.GetOrAddSub("ticat").AddAbbrs("cat")
 
+	env.Set("sys.paths.cache", filepath.Join(data, "cache"))
+
 	env.Set("sys.paths.data", data)
 	paths.GetOrAddSub("data").AddAbbrs("dat")
 
