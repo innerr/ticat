@@ -9,6 +9,11 @@ let's run a demo to see how **ticat** works.
 
 Recommend to type and execute the commands during reading.
 
+### Download and install
+```
+$> curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ticat-mods/tidb/main/install.sh | sh
+```
+
 ### Build
 `golang` is needed:
 ```
