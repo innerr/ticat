@@ -536,6 +536,14 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 	screen.Print(display.ColorProp("    cmd:\n", env))
 	screen.Print(display.ColorFlow(fmt.Sprintf("        %s %s\n", selfName, session.Status.Flow), env))
 
+	if len(session.Status.Corrupted) != 0 {
+		screen.Print(display.ColorProp("    corrupted-status:\n", env))
+		screen.Print(display.ColorError("        [FOR DEBUG]\n", env))
+		for _, line := range session.Status.Corrupted {
+			screen.Print("        " + display.ColorExplain(line, env) + "\n")
+		}
+	}
+
 	screen.Print(display.ColorProp("    start-at:\n", env))
 	screen.Print(fmt.Sprintf("        %s\n", session.StartTs.Format(core.SessionTimeFormat)))
 	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago", env)+"\n",

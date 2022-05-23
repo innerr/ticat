@@ -59,8 +59,11 @@ type ExecutedFlow struct {
 	Cmds     []*ExecutedCmd
 	StartTs  time.Time
 	FinishTs time.Time
+
 	// Result should never be skipped here
 	Result ExecutedResult
+
+	Corrupted []string
 }
 
 func NewExecutedFlow(dirName string) *ExecutedFlow {
@@ -104,9 +107,11 @@ func ParseExecutedFlow(path ExecutedStatusFilePath) *ExecutedFlow {
 	// Consider it's normal if ok=false but all lines are parsed
 	executed, lines, ok := parseExecutedFlow(path, lines, 0)
 	if !ok && len(lines) != 0 {
+		// Tolerent the corrupted (by bug) status file
 		sample := getSampleLines(lines)
-		panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has %v lines unparsed: %s",
-			path.Short(), len(lines), sample))
+		//panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has %v lines unparsed: %s",
+		//	path.Short(), len(lines), sample))
+		executed.Corrupted = sample
 	}
 	return executed
 }
@@ -264,9 +269,12 @@ func parseExecutedCmd(path ExecutedStatusFilePath, lines []string, level int) (c
 		cmd.SubFlow, subflowLines, ok = parseExecutedFlow(path, subflowLines, level+1)
 		if !ok {
 			if len(subflowLines) != 0 {
-				sample := getSampleLines(subflowLines)
-				panic(fmt.Errorf("[ParseExecutedFlow] bad subflow lines in status file '%s', has %v lines unparsed: %s",
-					path.Short(), len(subflowLines), sample))
+				// Tolerent the corrupted (by bug) status file
+				return cmd, subflowLines, false
+				//sample := getSampleLines(subflowLines)
+				//cmd.SubFlow.Corrupted = sample
+				//panic(fmt.Errorf("[ParseExecutedFlow] bad subflow lines in status file '%s', has %v lines unparsed: %s",
+				//	path.Short(), len(subflowLines), sample))
 			}
 			return cmd, lines, false
 		}
@@ -413,7 +421,7 @@ func parseMarkedContent(path ExecutedStatusFilePath, lines []string,
 	return lines, nil, false
 }
 
-func getSampleLines(lines []string) string {
+func getSampleLines(lines []string) []string {
 	sample := []string{}
 	for i, line := range lines {
 		if i > 3 {
@@ -421,5 +429,5 @@ func getSampleLines(lines []string) string {
 		}
 		sample = append(sample, strings.TrimSpace(line))
 	}
-	return strings.Join(sample, " ")
+	return sample
 }
