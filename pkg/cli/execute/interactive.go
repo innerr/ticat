@@ -30,7 +30,8 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 	if env.GetBool("sys.interact.inside") {
 		return BPAContinue
 	}
-	if cmd.IsQuiet() {
+
+	if cmd.IsQuiet() && !env.GetBool("sys.breakpoint.here.now") {
 		return BPAContinue
 	}
 
@@ -56,7 +57,10 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	stepIn := env.GetBool("sys.breakpoint.status.step-in")
 	stepOut := env.GetBool("sys.breakpoint.status.step-out")
 	name := strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep)
-	breakBefore := cc.BreakPoints.BreakBefore(name)
+
+	breakHereKey := "sys.breakpoint.here.now"
+	breakBefore := cc.BreakPoints.BreakBefore(name) || env.GetBool(breakHereKey)
+	env.GetLayer(core.EnvLayerSession).Delete(breakHereKey)
 
 	if !atBegin && !breakBefore && !stepByStep && !stepIn && !stepOut && !breakByPrev {
 		return BPAContinue
@@ -132,9 +136,13 @@ func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAc
 }
 
 func tryBreakAtEnd(cc *core.Cli, env *core.Env) {
-	if !cc.BreakPoints.BreakAtEnd() {
+	breakHereKey := "sys.breakpoint.here.now"
+	breakHere := env.GetBool(breakHereKey)
+	if !cc.BreakPoints.BreakAtEnd() && !breakHere {
 		return
 	}
+	env.GetLayer(core.EnvLayerSession).Delete(breakHereKey)
+
 	reason := display.ColorTip("break-point: at main-thread end", env)
 	bpa := readUserBPAChoice(
 		reason,

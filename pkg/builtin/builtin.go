@@ -965,6 +965,11 @@ func RegisterCtrlCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
+	breaks.AddSub("here").
+		RegEmptyCmd("set break point at the position of this command").
+		SetQuiet().
+		AddVal2Env("sys.breakpoint.here.now", "true")
+
 	registerSimpleSwitch(cmds,
 		"step by step on executing",
 		"sys.step-by-step",
