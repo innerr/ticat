@@ -205,6 +205,14 @@ func SuggestFindEnv(env *core.Env, subCmd string) []string {
 	}
 }
 
+func SuggestLoadEnvSnapshot(env *core.Env) []string {
+	selfName, indent := getSuggestArgs(env)
+	return []string{
+		padR(selfName+" env.snapshot.load name", indent) + "- load key-values from snapshot",
+		padR(selfName+" env.snapshot.load.non-exist name", indent) + "- same as above, but only load the key-values not in current session",
+	}
+}
+
 func SuggestFindCmdsLess(env *core.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{

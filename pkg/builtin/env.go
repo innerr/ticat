@@ -116,6 +116,8 @@ func LoadRuntimeEnv(
 
 	env.Set("sys.paths.cache", filepath.Join(data, "cache"))
 
+	env.Set("sys.paths.env.snapshot", filepath.Join(data, "env"))
+
 	env.Set("sys.paths.data", data)
 	paths.GetOrAddSub("data").AddAbbrs("dat")
 
