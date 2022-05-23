@@ -16,7 +16,10 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterFlowDescCmds(cmds)
 
 	RegisterHubManageCmds(cmds)
-	RegisterEnvManageCmds(cmds)
+
+	env := RegisterEnvManageCmds(cmds)
+	RegisterEnvSnapshotManageCmds(env)
+
 	RegisterFlowManageCmds(cmds)
 	RegisterBgManageCmds(cmds)
 
@@ -291,7 +294,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 
 	cmds.AddSub("=").
 		RegPowerCmd(DumpTailCmdWithUsage,
-			"shortcut of [cmd], if at the end of a flow:\n   * display usage of the last command\n   * flow will not execute").
+			"shortcut of [cmd], if this is at the end of a flow:\n   * display usage of the last command\n   * flow will not execute").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
@@ -299,7 +302,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 
 	cmds.AddSub("==", "===").
 		RegPowerCmd(DumpTailCmdWithDetails,
-			"shortcut of [cmd], if at the end of a flow:\n   * display full info of the last command\n   * flow will not execute").
+			"shortcut of [cmd], if this is at the end of a flow:\n   * display full info of the last command\n   * flow will not execute").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
@@ -487,7 +490,7 @@ func RegisterHubManageCmds(cmds *core.CmdTree) {
 		AddArg("path", "", "p")
 }
 
-func RegisterEnvManageCmds(cmds *core.CmdTree) {
+func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
 	env := cmds.AddSub("env", "e").
 		RegPowerCmd(DumpEssentialEnvFlattenVals,
 			"list essential env values in flatten format").
@@ -523,7 +526,7 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 	// '--' is for compatible only, will remove late
 	env.AddSub("reset-session", "reset", "--").
 		RegPowerCmd(ResetSessionEnv,
-			"clear all env values in current session")
+			"clear all env values in current session, will not remove persisted values")
 
 	env.AddSub("clear-and-save", "clean-and-save", "clear", "clean").
 		RegPowerCmd(ResetLocalEnv,
@@ -577,6 +580,43 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) {
 		"borrowing commands' abbrs when setting env key-values",
 		"sys.env.use-cmd-abbrs",
 		"cmd")
+
+	return env.Owner()
+}
+
+func RegisterEnvSnapshotManageCmds(cmds *core.CmdTree) {
+	env := cmds.AddSub("snapshot", "snap", "ss").
+		RegEmptyCmd(
+			"env snapshot management")
+
+	env.AddSub("list", "ls").
+		RegPowerCmd(EnvListSnapshots,
+			"list all saved snapshots")
+
+	env.AddSub("remove", "rm", "delete", "del").
+		RegPowerCmd(EnvRemoveSnapshot,
+			"remove a saved snapshot").
+		SetQuiet().
+		AddArg("snapshot-name", "", "snapshot", "name", "sn")
+
+	env.AddSub("save", "s").
+		RegPowerCmd(EnvSaveToSnapshot,
+			"save session env to a named snapshot").
+		SetQuiet().
+		AddArg("snapshot-name", "", "snapshot", "name", "sn").
+		AddArg("overwrite", "true", "ow")
+
+	load := env.AddSub("load", "l").
+		RegPowerCmd(EnvLoadFromSnapshot,
+			"load key-values from a saved snapshot").
+		SetQuiet().
+		AddArg("snapshot-name", "", "snapshot", "name", "sn")
+
+	load.AddSub("non-exist", "non-exists", "non", "n").
+		RegPowerCmd(EnvLoadNonExistFromSnapshot,
+			"load key-values from a saved snapshot if the keys are not in current session").
+		SetQuiet().
+		AddArg("snapshot-name", "", "snapshot", "name", "sn")
 }
 
 func RegisterFlowManageCmds(cmds *core.CmdTree) {
