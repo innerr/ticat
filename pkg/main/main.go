@@ -54,6 +54,7 @@ func main() {
 	defEnv.Set("strs.trivial-mark", TrivialMark)
 	defEnv.Set("strs.sys-arg-prefix", SysArgPrefix)
 	defEnv.Set("strs.env-snapshot-ext", EnvSnapshotExt)
+	defEnv.Set("strs.env-del-all-mark", EnvValDelAllMark)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{

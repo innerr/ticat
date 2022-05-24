@@ -23,7 +23,7 @@ func EnvSaveToSnapshot(
 
 	cmd := flow.Cmds[currCmdIdx]
 	name := getAndCheckArg(argv, cmd, "snapshot-name")
-	path := getEnvSnapshotPath(env, cmd, name)
+	path := getEnvSnapshotPath(env, name)
 
 	overwrite := argv.GetBool("overwrite")
 	if !overwrite && fileExists(path) {
@@ -50,7 +50,7 @@ func EnvRemoveSnapshot(
 
 	cmd := flow.Cmds[currCmdIdx]
 	name := getAndCheckArg(argv, cmd, "snapshot-name")
-	path := getEnvSnapshotPath(env, cmd, name)
+	path := getEnvSnapshotPath(env, name)
 
 	err := os.Remove(path)
 	if err != nil {
@@ -84,7 +84,7 @@ func EnvListSnapshots(
 		panic(core.NewCmdError(cmd, "env value 'strs.env-snapshot-ext' is empty"))
 	}
 
-	root := getEnvSnapshotDir(env, cmd)
+	root := getEnvSnapshotDir(env)
 	var names []string
 
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
@@ -132,7 +132,7 @@ func EnvLoadFromSnapshot(
 
 	cmd := flow.Cmds[currCmdIdx]
 	name := getAndCheckArg(argv, cmd, "snapshot-name")
-	path := getEnvSnapshotPath(env, cmd, name)
+	path := getEnvSnapshotPath(env, name)
 
 	sep := cc.Cmds.Strs.EnvKeyValSep
 	delMark := cc.Cmds.Strs.EnvValDelAllMark
@@ -155,7 +155,7 @@ func EnvLoadNonExistFromSnapshot(
 
 	cmd := flow.Cmds[currCmdIdx]
 	name := getAndCheckArg(argv, cmd, "snapshot-name")
-	path := getEnvSnapshotPath(env, cmd, name)
+	path := getEnvSnapshotPath(env, name)
 
 	sep := cc.Cmds.Strs.EnvKeyValSep
 	delMark := cc.Cmds.Strs.EnvValDelAllMark
@@ -173,20 +173,20 @@ func EnvLoadNonExistFromSnapshot(
 	return currCmdIdx, true
 }
 
-func getEnvSnapshotDir(env *core.Env, cmd core.ParsedCmd) string {
+func getEnvSnapshotDir(env *core.Env) string {
 	dir := env.GetRaw("sys.paths.env.snapshot")
 	if len(dir) == 0 {
-		panic(core.NewCmdError(cmd, "env value 'sys.paths.env.snapshot' is empty"))
+		panic(fmt.Errorf("env value 'sys.paths.env.snapshot' is empty"))
 	}
 	os.MkdirAll(dir, os.ModePerm)
 	return dir
 }
 
-func getEnvSnapshotPath(env *core.Env, cmd core.ParsedCmd, name string) string {
+func getEnvSnapshotPath(env *core.Env, name string) string {
 	ext := env.GetRaw("strs.env-snapshot-ext")
 	if len(ext) == 0 {
-		panic(core.NewCmdError(cmd, "env value 'strs.env-snapshot-ext' is empty"))
+		panic(fmt.Errorf("env value 'strs.env-snapshot-ext' is empty"))
 	}
-	dir := getEnvSnapshotDir(env, cmd)
+	dir := getEnvSnapshotDir(env)
 	return filepath.Join(dir, name) + ext
 }

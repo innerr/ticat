@@ -227,6 +227,33 @@ func EnvOpCmds() []core.EnvOpCmd {
 				}
 				env.GetLayer(core.EnvLayerSession).Delete(key)
 			}},
+		core.EnvOpCmd{EnvLoadFromSnapshot,
+			opCheckEnvLoadFromSnapshot},
+		core.EnvOpCmd{EnvLoadNonExistFromSnapshot,
+			opCheckEnvLoadFromSnapshot},
+	}
+}
+
+func opCheckEnvLoadFromSnapshot(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
+	name := argv.GetRaw("snapshot-name")
+	if len(name) == 0 {
+		return
+	}
+
+	path := getEnvSnapshotPath(env, name)
+
+	sep := env.GetRaw("strs.env-kv-sep")
+	delMark := env.GetRaw("strs.env-del-all-mark")
+
+	loaded := core.NewEnv()
+	core.LoadEnvFromFile(loaded, path, sep, delMark)
+
+	env = env.GetLayer(core.EnvLayerSession)
+	for key, _ := range loaded.FlattenAll() {
+		if checker != nil {
+			checker.SetKeyWritten(key)
+		}
+		env.Set(key, "<dummy-fake-key-for-env-op-check-only-from-EnvLoadFromSnapshot>")
 	}
 }
 
