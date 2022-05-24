@@ -61,7 +61,7 @@ func collectDepends(
 		TryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, nil,
 			"failed to execute env op-cmd in depends collecting")
 
-		if cic.Type() != CmdTypeFlow {
+		if !cic.HasSubFlow() {
 			continue
 		}
 
