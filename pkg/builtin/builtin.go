@@ -525,7 +525,8 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
 	// '--' is for compatible only, will remove late
 	env.AddSub("reset-session", "reset", "--").
 		RegPowerCmd(ResetSessionEnv,
-			"clear all env values in current session, will not remove persisted values")
+			"clear all env values in current session, will not remove persisted values").
+		AddArg("exclude-keys", "", "excludes", "exclude", "excl", "exc")
 
 	env.AddSub("clear-and-save", "clean-and-save", "clear", "clean").
 		RegPowerCmd(ResetLocalEnv,

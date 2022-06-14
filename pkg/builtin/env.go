@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
 	"github.com/pingcap/ticat/pkg/cli/display"
@@ -277,8 +278,30 @@ func ResetSessionEnv(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	env.GetLayer(core.EnvLayerSession).Clear(false)
-	display.PrintTipTitle(cc.Screen, env, "all session env values are removed")
+	excludes := map[string]string{}
+	excludeStr := argv.GetRaw("exclude-keys")
+	if len(excludeStr) != 0 {
+		listSep := env.GetRaw("strs.list-sep")
+		for _, key := range strings.Split(excludeStr, listSep) {
+			excludes[key] = env.GetRaw(key)
+		}
+	}
+
+	sessionEnv := env.GetLayer(core.EnvLayerSession)
+	sessionEnv.Clear(false)
+	for key, val := range excludes {
+		sessionEnv.Set(key, val)
+	}
+
+	title := "all session env values are removed"
+	if len(excludes) != 0 {
+		plural := ""
+		if len(excludes) > 1 {
+			plural = "s"
+		}
+		title += fmt.Sprintf(", exclude %d key%s by demand", len(excludes), plural)
+	}
+	display.PrintTipTitle(cc.Screen, env, title)
 	return currCmdIdx, true
 }
 
