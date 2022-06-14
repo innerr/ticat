@@ -62,7 +62,7 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			"missed-arg-name:",
 			"    - "+e.MissedArg)
 
-		cc.Screen.Print("pass the proper arg to " + ColorCmd("["+e.CmdPath+"]", env) +
+		cc.Screen.Print("pass the proper value to arg " + ColorCmd("["+e.CmdPath+"]", env) +
 			" can solve the error:\n")
 		argInfo := getArgInfoLine(env, e.Cmd, e.MissedArg)
 		cc.Screen.Print(rpt(" ", 4) + argInfo + "\n")

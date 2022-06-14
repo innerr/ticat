@@ -514,8 +514,7 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
 
 	env.AddSub("save", "s", "S").
 		RegPowerCmd(SaveEnvToLocal,
-			"save session env changes to local").
-		SetQuiet()
+			"save session env changes to local")
 
 	env.AddSub("remove", "rm", "delete", "del").
 		RegPowerCmd(RemoveEnvValNotSave,
@@ -596,26 +595,22 @@ func RegisterEnvSnapshotManageCmds(cmds *core.CmdTree) {
 	env.AddSub("remove", "rm", "delete", "del").
 		RegPowerCmd(EnvRemoveSnapshot,
 			"remove a saved snapshot").
-		SetQuiet().
 		AddArg("snapshot-name", "", "snapshot", "name", "sn")
 
 	env.AddSub("save", "s").
 		RegPowerCmd(EnvSaveToSnapshot,
 			"save session env to a named snapshot").
-		SetQuiet().
 		AddArg("snapshot-name", "", "snapshot", "name", "sn").
 		AddArg("overwrite", "true", "ow")
 
 	load := env.AddSub("load", "l").
 		RegPowerCmd(EnvLoadFromSnapshot,
 			"load key-values from a saved snapshot").
-		SetQuiet().
 		AddArg("snapshot-name", "", "snapshot", "name", "sn")
 
 	load.AddSub("non-exist", "non-exists", "non", "n").
 		RegPowerCmd(EnvLoadNonExistFromSnapshot,
 			"load key-values from a saved snapshot if the keys are not in current session").
-		SetQuiet().
 		AddArg("snapshot-name", "", "snapshot", "name", "sn")
 }
 

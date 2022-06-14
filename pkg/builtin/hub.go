@@ -299,7 +299,7 @@ func UpdateHub(
 
 	if argv.GetBool("show-tip") {
 		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf(
-			"local dir could also add to %s, use command 'h.add.local'",
+			"local dir could also add to %s, use command 'hub.add.local'",
 			env.GetRaw("strs.self-name")))
 	}
 	return currCmdIdx, true
