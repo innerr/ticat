@@ -66,7 +66,7 @@ func loadLocalMods(
 			cmdPath := filepath.Base(metaPath[0 : len(metaPath)-len(flowExt)])
 			cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
 			mod_meta.RegMod(cc, metaPath, "", false, true, cmdPaths,
-				abbrsSep, envPathSep, source, panicRecover)
+				flowExt, abbrsSep, envPathSep, source, panicRecover)
 			return nil
 		}
 
@@ -97,7 +97,7 @@ func loadLocalMods(
 
 		cmdPaths := strings.Split(cmdPath, string(filepath.Separator))
 		mod_meta.RegMod(cc, metaPath, targetPath, isDir, false, cmdPaths,
-			abbrsSep, envPathSep, source, panicRecover)
+			flowExt, abbrsSep, envPathSep, source, panicRecover)
 		return nil
 	})
 }

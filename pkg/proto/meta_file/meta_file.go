@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+type VirtualMetaFile struct {
+	Meta        *MetaFile
+	VirtualPath string
+}
+
 type MetaFile struct {
 	sections    SectionMap
 	orderedKeys []string
@@ -17,21 +22,53 @@ type MetaFile struct {
 	kvSep       string
 }
 
-func NewMetaFile(path string) *MetaFile {
-	meta, err := NewMetaFileEx(path)
+func NewMetaFile(path string) []VirtualMetaFile {
+	metas, err := NewMetaFileEx(path)
 	if err != nil {
 		panic(fmt.Errorf("[NewMetaFile] open mod meta file '%s' failed: %v", path, err))
 	}
-	return meta
+	return metas
 }
 
-func NewMetaFileEx(path string) (meta *MetaFile, err error) {
-	meta = CreateMetaFile(path)
-	var contents []byte
-	contents, err = ioutil.ReadFile(path)
-	if err == nil {
-		meta.parse(contents)
+func NewMetaFileEx(path string) (metas []VirtualMetaFile, err error) {
+	var content []byte
+	content, err = ioutil.ReadFile(path)
+	if err != nil {
+		return
 	}
+	paths, contents := parseCombinedFile(path, content, LineSep)
+	for i, it := range contents {
+		meta := CreateMetaFile(paths[i])
+		meta.parse(it)
+		metas = append(metas, VirtualMetaFile{meta, paths[i]})
+	}
+	return
+}
+
+func parseCombinedFile(path string, data []byte, lineSep string) (paths []string, contents [][]string) {
+	currPath := path
+	currLines := []string{}
+	raw := bytes.Split(data, []byte(lineSep))
+	for _, lineBytes := range raw {
+		line := string(bytes.TrimSpace(lineBytes))
+		if strings.HasPrefix(line, CombinedFileHint) {
+			cand := strings.TrimSpace(line[len(CombinedFileHint):])
+			if strings.HasPrefix(cand, CombinedFilePrefix1) {
+				cand = strings.TrimSpace(cand[len(CombinedFilePrefix1):])
+				if strings.HasPrefix(cand, CombinedFilePrefix2) {
+					if !(currPath == path && len(currLines) == 0) {
+						paths = append(paths, currPath)
+						contents = append(contents, currLines)
+					}
+					currPath = strings.TrimSpace(cand[len(CombinedFilePrefix2):])
+					currLines = []string{}
+				}
+			}
+		}
+		currLines = append(currLines, line)
+	}
+	paths = append(paths, currPath)
+	contents = append(contents, currLines)
 	return
 }
 
@@ -94,7 +131,7 @@ func (self *MetaFile) GetAll() SectionMap {
 	return self.sections
 }
 
-func (self *MetaFile) parse(data []byte) {
+func (self *MetaFile) parse(lines []string) {
 	var sectionName string
 	section := NewSection()
 	global := section
@@ -137,16 +174,14 @@ func (self *MetaFile) parse(data []byte) {
 		return true
 	}
 
-	// TODO: convert to string too many times
-	lines := bytes.Split(data, []byte(self.lineSep))
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-		line = bytes.TrimSpace(line)
+		line = strings.TrimSpace(line)
 		size := len(line)
 		if size == 0 {
 			continue
 		}
-		if tryAppendMultiLine(string(line)) {
+		if tryAppendMultiLine(line) {
 			continue
 		}
 		if line[0] == CommentPrefix {
@@ -158,11 +193,11 @@ func (self *MetaFile) parse(data []byte) {
 			!(len(line) >= 4 && line[1] == SectionBracketLeft && line[size-2] == SectionBracketRight) {
 
 			if len(line) > 2 && line[size-2] == '/' {
-				k := string(line[1 : size-2])
+				k := line[1 : size-2]
 				v := []string{}
 				for i += 1; i < len(lines); i++ {
 					line := lines[i]
-					line = bytes.TrimSpace(line)
+					line = strings.TrimSpace(line)
 					// Keep the comments and blank lines in this format
 					//if line[0] == CommentPrefix {
 					//	continue
@@ -177,7 +212,7 @@ func (self *MetaFile) parse(data []byte) {
 						len(line) > 2 && line[1] == '/' {
 						break
 					}
-					l := string(bytes.TrimSpace(line))
+					l := strings.TrimSpace(line)
 					v = append(v, l)
 				}
 				if len(v) > 0 && len(v[len(v)-1]) == 0 {
@@ -185,24 +220,24 @@ func (self *MetaFile) parse(data []byte) {
 				}
 				global.SetMultiLineVal(k, v)
 			} else {
-				sectionName = string(line[1 : size-1])
+				sectionName = line[1 : size-1]
 				section = NewSection()
 				self.sections[sectionName] = section
 			}
 			continue
 		}
 
-		pos := bytes.Index(line, []byte(self.kvSep))
+		pos := strings.Index(line, self.kvSep)
 		if pos < 0 {
 			panic(fmt.Errorf("[MetaFile.parse] bad kv format: %s", line))
 		}
 
-		k := bytes.TrimSpace(line[0:pos])
-		v := bytes.TrimSpace(line[pos+len(self.kvSep):])
-		if checkMultiLineStart(string(k), string(v)) {
+		k := strings.TrimSpace(line[0:pos])
+		v := strings.TrimSpace(line[pos+len(self.kvSep):])
+		if checkMultiLineStart(k, v) {
 			continue
 		}
-		section.Set(string(k), string(v))
+		section.Set(k, v)
 	}
 }
 
@@ -325,4 +360,8 @@ const (
 	CommentPrefix       = '#'
 	SectionBracketLeft  = '['
 	SectionBracketRight = ']'
+
+	CombinedFileHint    = "###"
+	CombinedFilePrefix1 = "file"
+	CombinedFilePrefix2 = ":"
 )
