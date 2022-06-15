@@ -6,6 +6,25 @@ import (
 
 // TODO: It's slow and ugly, but it should works fine
 
+func renderTemplateStrLines(
+	in []string,
+	targetName string,
+	cmd *Cmd,
+	argv ArgVals,
+	env *Env,
+	allowError bool) (out []string, fullyRendered bool) {
+
+	fullyRendered = true
+	for _, line := range in {
+		rendereds, lineFullyRendered := renderTemplateStr(line, targetName, cmd, argv, env, allowError)
+		for _, rendered := range rendereds {
+			out = append(out, rendered)
+		}
+		fullyRendered = fullyRendered && lineFullyRendered
+	}
+	return
+}
+
 func renderTemplateStr(
 	in string,
 	targetName string,

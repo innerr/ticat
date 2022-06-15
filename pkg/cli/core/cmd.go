@@ -71,25 +71,29 @@ type Cmd struct {
 	val2env       *Val2Env
 	arg2env       *Arg2Env
 	autoTimerKeys AutoTimerKeys
+	orderedMacros []string
+	macros        map[string][]string
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
 	return &Cmd{
-		owner:        owner,
-		help:         help,
-		ty:           CmdTypeUninited,
-		flags:        &CmdFlags{},
-		args:         newArgs(),
-		normal:       nil,
-		power:        nil,
-		adhotFlow:    nil,
-		cmdLine:      "",
-		flow:         nil,
-		envOps:       newEnvOps(),
-		depends:      nil,
-		metaFilePath: "",
-		val2env:      newVal2Env(),
-		arg2env:      newArg2Env(),
+		owner:         owner,
+		help:          help,
+		ty:            CmdTypeUninited,
+		flags:         &CmdFlags{},
+		args:          newArgs(),
+		normal:        nil,
+		power:         nil,
+		adhotFlow:     nil,
+		cmdLine:       "",
+		flow:          nil,
+		envOps:        newEnvOps(),
+		depends:       nil,
+		metaFilePath:  "",
+		val2env:       newVal2Env(),
+		arg2env:       newArg2Env(),
+		orderedMacros: []string{},
+		macros:        map[string][]string{},
 	}
 }
 
@@ -384,6 +388,11 @@ func (self *Cmd) RegAutoTimerDurKey(key string) {
 	self.AddEnvOp(key, EnvOpTypeWrite)
 }
 
+func (self *Cmd) AddMacro(name string, flow []string) {
+	self.orderedMacros = append(self.orderedMacros, name)
+	self.macros[name] = flow
+}
+
 func (self *Cmd) GetAutoTimerKeys() AutoTimerKeys {
 	return self.autoTimerKeys
 }
@@ -581,6 +590,24 @@ func (self *Cmd) genLogFileName() string {
 	return fmt.Sprintf("%s_%s_%v", time.Now().Format("20060102-150405"), name, rand.Uint32())
 }
 
+func (self *Cmd) renderMacros(
+	argv ArgVals,
+	env *Env,
+	allowFlowTemplateRenderError bool) (envWithMacros *Env, fullyRendered bool) {
+
+	env = env.NewLayer(EnvLayerTmp)
+	fullyRendered = true
+	sep := env.GetRaw("strs.seq-sep")
+	for _, macro := range self.orderedMacros {
+		macroStrs := self.macros[macro]
+		macroFlow, macroFullyRendered := renderTemplateStrLines(macroStrs, "macro", self, argv, env, allowFlowTemplateRenderError)
+		macroFlow = StripFlowForExecute(macroFlow, sep)
+		env.Set(macro, FlowStrsToStr(macroFlow))
+		fullyRendered = fullyRendered && macroFullyRendered
+	}
+	return env, fullyRendered
+}
+
 // TODO: move to parser ?
 // TODO: read and parse session file too many times for CmdTypeAdHotFlow, cache it
 func (self *Cmd) RenderedFlowStrs(
@@ -594,21 +621,19 @@ func (self *Cmd) RenderedFlowStrs(
 		cc = cc.CloneForChecking()
 	}
 
-	fullyRendered = true
+	// Render macros into tmp env
+	env, macrosFullyRendered := self.renderMacros(argv, env, allowFlowTemplateRenderError)
 
 	flowStrs := self.flow
 	if self.ty == CmdTypeAdHotFlow {
+		if len(flowStrs) != 0 {
+			panic(fmt.Errorf("[Cmd.RenderedFlowStrs] should never happend: ad-hot flow has fixed flow-strings"))
+		}
 		flowStrs, masks, _ = self.adhotFlow(argv, cc, env)
 	}
 
-	for _, line := range flowStrs {
-		rendereds, lineFullyRendered := renderTemplateStr(line, "flow", self, argv, env, allowFlowTemplateRenderError)
-		for _, rendered := range rendereds {
-			flow = append(flow, rendered)
-		}
-		fullyRendered = fullyRendered && lineFullyRendered
-	}
-
+	flow, flowFullyRendered := renderTemplateStrLines(flowStrs, "flow", self, argv, env, allowFlowTemplateRenderError)
+	fullyRendered = macrosFullyRendered && flowFullyRendered
 	if fullyRendered {
 		if masks != nil && !cc.Blender.IsEmpty() {
 			panic(fmt.Errorf("[Cmd.RenderedFlowStrs] can't use blender on a masked flow"))

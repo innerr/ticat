@@ -46,6 +46,7 @@ func RegMod(
 		regModAbbrs(meta, mod)
 	}
 
+	regMacro(meta, cmd)
 	regTrivial(meta, mod)
 	regUnLog(meta, cmd)
 	regQuietError(meta, cmd)
@@ -86,6 +87,33 @@ func regAutoTimer(meta *meta_file.MetaFile, cmd *core.Cmd) {
 		key = meta.Get("dur-key")
 		if len(key) != 0 {
 			cmd.RegAutoTimerDurKey(key)
+		}
+	}
+}
+
+func regMacro(meta *meta_file.MetaFile, cmd *core.Cmd) {
+	candidates := meta.KeysWithPrefix("[[")
+	origins := map[string]string{}
+	var macros []string
+	for _, origin := range candidates {
+		candidate := origin[2:]
+		if !strings.HasSuffix(candidate, "]]") {
+			continue
+		}
+		candidate = candidate[:len(candidate)-2]
+		if len(candidate) == 0 {
+			continue
+		}
+		macro := strings.TrimSpace(candidate)
+		macros = append(macros, macro)
+		origins[macro] = origin
+	}
+
+	globalSection := meta.GetGlobalSection()
+	for _, macro := range macros {
+		macroContent := globalSection.GetMultiLineVal(origins[macro], false)
+		if len(macroContent) != 0 {
+			cmd.AddMacro(macro, macroContent)
 		}
 	}
 }
