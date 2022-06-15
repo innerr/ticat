@@ -661,6 +661,16 @@ func normalizeInput(input []string, sequenceSep string) []string {
 
 func StripFlowForExecute(flow []string, sequenceSep string) []string {
 	var output []string
+	for _, line := range flow {
+		strings.TrimSpace(line)
+		if len(line) <= 0 {
+			continue
+		}
+		output = append(output, line)
+	}
+
+	flow = output
+	output = []string{}
 	for i, line := range flow {
 		strings.TrimSpace(line)
 		if len(line) <= 0 {
@@ -675,6 +685,7 @@ func StripFlowForExecute(flow []string, sequenceSep string) []string {
 		}
 		output = append(output, line)
 	}
+
 	return output
 }
 
