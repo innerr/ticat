@@ -347,7 +347,7 @@ func loadFlowsFromDir(
 		}
 		cmdPath := filepath.Base(path[0 : len(path)-len(flowExt)])
 		cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
-		mod_meta.RegMod(cc, path, "", false, true, cmdPaths, cc.Cmds.Strs.AbbrsSep, envPathSep, source, panicRecover)
+		mod_meta.RegMod(cc, path, "", false, true, cmdPaths, flowExt, cc.Cmds.Strs.AbbrsSep, envPathSep, source, panicRecover)
 		return nil
 	})
 	return true

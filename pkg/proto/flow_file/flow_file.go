@@ -1,11 +1,18 @@
 package flow_file
 
 import (
+	"fmt"
+
 	"github.com/pingcap/ticat/pkg/proto/meta_file"
 )
 
 func LoadFlowFile(path string) (flow []string, help string, abbrs string) {
-	meta := meta_file.NewMetaFile(path)
+	metas := meta_file.NewMetaFile(path)
+	if len(metas) != 1 {
+		panic(fmt.Errorf("can't load content for edit from a combined flow file"))
+	}
+	meta := metas[0].Meta
+
 	section := meta.GetGlobalSection()
 	help = section.Get("help")
 	abbrs = section.Get("abbrs")

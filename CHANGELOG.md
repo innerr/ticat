@@ -2,8 +2,9 @@
 
 All notable changes to this project are documented in this file.
 
-## [1.3.0] - 2022-06-15
+## [1.3.1] - 2022-06-15
 + New Features
+  + Support combined meta file (#178)
   + Support macro definition in meta file (#176)
   + Env snapshot manage toolbox `env.snapshot.*` (#171)
   + Add break-point command: `break.here`

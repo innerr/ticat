@@ -13,11 +13,16 @@ import (
 
 func RegMod(
 	cc *core.Cli,
+	// Meta file full path
 	metaPath string,
+	// Related executable file full path
 	executablePath string,
 	isDir bool,
+	// Has flow ext
 	isFlow bool,
+	// Cmd path defined by meta file base name
 	cmdPath []string,
+	flowExt string,
 	abbrsSep string,
 	envPathSep string,
 	source string,
@@ -32,9 +37,50 @@ func RegMod(
 		}
 	}()
 
-	mod := cc.Cmds.GetOrAddSubEx(source, cmdPath...)
-	meta := meta_file.NewMetaFile(metaPath)
+	metas := meta_file.NewMetaFile(metaPath)
+	if len(metas) == 0 {
+		panic(fmt.Errorf("[RegMod] should never happen: NewMetaFile return no meta"))
+	}
 
+	if len(metas) == 1 {
+		regModFile(metas[0].Meta, cc, metaPath, executablePath, isDir, isFlow, cmdPath, abbrsSep, envPathSep, source, panicRecover)
+		return
+	}
+
+	if len(executablePath) != 0 || isDir || !isFlow {
+		panic(fmt.Errorf("[RegMod] should never happen: a combined flow file not meet the expection"))
+	}
+
+	// Discard the cmdPath from real file name
+	for _, meta := range metas {
+		path := getVirtualFileCmdPath(meta.VirtualPath, flowExt, cc.Cmds.Strs.PathSep)
+		regModFile(meta.Meta, cc, metaPath, "", false, true, path, abbrsSep, envPathSep, source, panicRecover)
+	}
+}
+
+func getVirtualFileCmdPath(path string, flowExt string, pathSep string) []string {
+	base := filepath.Base(path)
+	if !strings.HasSuffix(base, flowExt) {
+		panic(fmt.Errorf("virtual flow file '%s' ext not match '%s'", path, flowExt))
+	}
+	raw := base[:len(base)-len(flowExt)]
+	return strings.Split(raw, pathSep)
+}
+
+func regModFile(
+	meta *meta_file.MetaFile,
+	cc *core.Cli,
+	metaPath string,
+	executablePath string,
+	isDir bool,
+	isFlow bool,
+	cmdPath []string,
+	abbrsSep string,
+	envPathSep string,
+	source string,
+	panicRecover bool) {
+
+	mod := cc.Cmds.GetOrAddSubEx(source, cmdPath...)
 	mod.SetSource(source)
 	cmd := regMod(meta, mod, executablePath, isDir)
 	cmd.SetMetaFile(metaPath)
