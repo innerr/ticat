@@ -209,7 +209,7 @@ func RunningSessionDescLess(
 
 	session, ok := getLastSession(env, false, false, true)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		panic(fmt.Errorf("no executing sessions"))
 	}
 	descSession(session, argv, cc, env, true, false, false)
 	return currCmdIdx, true
@@ -269,7 +269,7 @@ func RunningSessionDescMore(
 
 	session, ok := getLastSession(env, false, false, true)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		panic(fmt.Errorf("no executing sessions"))
 	}
 	descSession(session, argv, cc, env, true, false, true)
 	return currCmdIdx, true
@@ -284,7 +284,7 @@ func RunningSessionDescFull(
 
 	session, ok := getLastSession(env, false, false, true)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		panic(fmt.Errorf("no executing sessions"))
 	}
 	descSession(session, argv, cc, env, false, true, true)
 	return currCmdIdx, true

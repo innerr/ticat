@@ -54,6 +54,14 @@ func (self *MetaFile) Get(key string) string {
 	return self.SectionGet(GlobalSectionName, key)
 }
 
+func (self *MetaFile) KeysWithPrefix(keyPrefix string) (keys []string) {
+	section := self.sections[GlobalSectionName]
+	if section != nil {
+		return section.KeysWithPrefix(keyPrefix)
+	}
+	return
+}
+
 func (self *MetaFile) SectionGet(sectionName string, key string) (val string) {
 	section := self.sections[sectionName]
 	if section != nil {
@@ -145,7 +153,10 @@ func (self *MetaFile) parse(data []byte) {
 			continue
 		}
 
-		if line[0] == SectionBracketLeft && line[size-1] == SectionBracketRight {
+		if line[0] == SectionBracketLeft && line[size-1] == SectionBracketRight &&
+			// Ignore [[...]]
+			!(len(line) >= 4 && line[1] == SectionBracketLeft && line[size-2] == SectionBracketRight) {
+
 			if len(line) > 2 && line[size-2] == '/' {
 				k := string(line[1 : size-2])
 				v := []string{}
@@ -260,6 +271,15 @@ func NewSection() *Section {
 func (self *Section) Get(key string) string {
 	val, _ := self.pairs[key]
 	return strings.Trim(val, ValTrimChars)
+}
+
+func (self *Section) KeysWithPrefix(keyPrefix string) (keys []string) {
+	for _, k := range self.orderedKeys {
+		if strings.HasPrefix(k, keyPrefix) {
+			keys = append(keys, k)
+		}
+	}
+	return
 }
 
 func (self *Section) GetUnTrim(key string) string {
