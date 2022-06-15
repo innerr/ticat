@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/pingcap/ticat/pkg/utils"
@@ -89,17 +90,20 @@ func SaveFlowEnv(
 	}
 
 	isAllArgs := true
-	for _, v := range env {
+	var keys []string
+	for k, v := range env {
 		if !v.IsArg {
 			isAllArgs = false
-			break
 		}
+		keys = append(keys, k)
 	}
+	sort.Strings(keys)
 
 	prefix := strings.Join(prefixPath, pathSep) + pathSep
 
 	var kvs []string
-	for k, v := range env {
+	for _, k := range keys {
+		v := env[k]
 		if strings.HasPrefix(k, prefix) && len(k) != len(prefix) {
 			k = strings.Join(v.MatchedPath[len(prefixPath):], pathSep)
 		}
