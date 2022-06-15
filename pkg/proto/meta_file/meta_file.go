@@ -12,6 +12,7 @@ import (
 type VirtualMetaFile struct {
 	Meta        *MetaFile
 	VirtualPath string
+	NotVirtual  bool
 }
 
 type MetaFile struct {
@@ -36,16 +37,17 @@ func NewMetaFileEx(path string) (metas []VirtualMetaFile, err error) {
 	if err != nil {
 		return
 	}
-	paths, contents := parseCombinedFile(path, content, LineSep)
+	paths, contents, notVirtuals := parseCombinedFile(path, content, LineSep)
 	for i, it := range contents {
 		meta := CreateMetaFile(paths[i])
 		meta.parse(it)
-		metas = append(metas, VirtualMetaFile{meta, paths[i]})
+		metas = append(metas, VirtualMetaFile{meta, paths[i], notVirtuals[i]})
 	}
 	return
 }
 
-func parseCombinedFile(path string, data []byte, lineSep string) (paths []string, contents [][]string) {
+func parseCombinedFile(path string, data []byte, lineSep string) (paths []string, contents [][]string, notVirtuals []bool) {
+	notVirtual := true
 	currPath := path
 	currLines := []string{}
 	raw := bytes.Split(data, []byte(lineSep))
@@ -59,9 +61,11 @@ func parseCombinedFile(path string, data []byte, lineSep string) (paths []string
 					if !(currPath == path && len(currLines) == 0) {
 						paths = append(paths, currPath)
 						contents = append(contents, currLines)
+						notVirtuals = append(notVirtuals, notVirtual)
 					}
 					currPath = strings.TrimSpace(cand[len(CombinedFilePrefix2):])
 					currLines = []string{}
+					notVirtual = false
 				}
 			}
 		}
@@ -69,6 +73,7 @@ func parseCombinedFile(path string, data []byte, lineSep string) (paths []string
 	}
 	paths = append(paths, currPath)
 	contents = append(contents, currLines)
+	notVirtuals = append(notVirtuals, notVirtual)
 	return
 }
 

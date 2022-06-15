@@ -42,7 +42,7 @@ func RegMod(
 		panic(fmt.Errorf("[RegMod] should never happen: NewMetaFile return no meta"))
 	}
 
-	if len(metas) == 1 {
+	if len(metas) == 1 && metas[0].NotVirtual {
 		regModFile(metas[0].Meta, cc, metaPath, executablePath, isDir, isFlow, cmdPath, abbrsSep, envPathSep, source, panicRecover)
 		return
 	}
