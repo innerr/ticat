@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.3.0] - 2022-06-15
++ New Features
+  + Support macro definition in meta file (#176)
+  + Env snapshot manage toolbox `env.snapshot.*` (#171)
+  + Add break-point command: `break.here`
++ Default env key-values
+  + New: `sys.paths.cache` for cache path (eg: download files)
+  + New: `sys.paths.data.shared` for shared data (eg: repos could be used by more than one commands)
+
 ## [1.2.1] - 2022-04-01
 + New Features
   + Run command selftests in parallel mode (#125)
