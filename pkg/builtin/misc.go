@@ -182,7 +182,7 @@ func EnvOpCmds() []core.EnvOpCmd {
 					checker.SetKeyWritten(key)
 				}
 				env.GetLayer(core.EnvLayerSession).
-					Set(key, "<dummy-fake-key-for-env-op-check-only-from-MarkTime>")
+					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-MarkTime>")
 			}},
 		core.EnvOpCmd{MapEnvKeyValueToAnotherKey,
 			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
@@ -191,7 +191,7 @@ func EnvOpCmds() []core.EnvOpCmd {
 					checker.SetKeyWritten(key)
 				}
 				env.GetLayer(core.EnvLayerSession).
-					Set(key, "<dummy-fake-key-for-env-op-check-only-from-MapEnvKeyValueToAnotherKey>")
+					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-MapEnvKeyValueToAnotherKey>")
 			}},
 		core.EnvOpCmd{SetEnvKeyValue,
 			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
@@ -200,7 +200,7 @@ func EnvOpCmds() []core.EnvOpCmd {
 					checker.SetKeyWritten(key)
 				}
 				env.GetLayer(core.EnvLayerSession).
-					Set(key, "<dummy-fake-key-for-env-op-check-only-from-SetEnvKeyValue>")
+					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-SetEnvKeyValue>")
 			}},
 		core.EnvOpCmd{AddEnvKeyValue,
 			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
@@ -209,7 +209,7 @@ func EnvOpCmds() []core.EnvOpCmd {
 					checker.SetKeyWritten(key)
 				}
 				env.GetLayer(core.EnvLayerSession).
-					Set(key, "<dummy-fake-key-for-env-op-check-only-from-AddEnvKeyValue>")
+					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-AddEnvKeyValue>")
 			}},
 		core.EnvOpCmd{RemoveEnvValNotSave,
 			func(checker *core.EnvOpsChecker, argv core.ArgVals, env *core.Env) {
@@ -253,7 +253,7 @@ func opCheckEnvLoadFromSnapshot(checker *core.EnvOpsChecker, argv core.ArgVals, 
 		if checker != nil {
 			checker.SetKeyWritten(key)
 		}
-		env.Set(key, "<dummy-fake-key-for-env-op-check-only-from-EnvLoadFromSnapshot>")
+		env.SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-EnvLoadFromSnapshot>")
 	}
 }
 
