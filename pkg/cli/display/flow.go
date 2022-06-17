@@ -73,12 +73,10 @@ func DumpFlowEx(
 
 	// TODO: show executed status and duration here
 
-	if !args.MonitorMode {
-		cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
-	}
+	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
 	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, running,
 		false, writtenKeys, args.MaxDepth, args.MaxTrivial, 0, false)
-	if ok && !args.MonitorMode {
+	if ok {
 		cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
 	}
 }
