@@ -803,6 +803,12 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
+	runningDesc.AddSub("monitor", "mon").
+		RegPowerCmd(RunningSessionDescMonitor,
+			"desc the last executing session in monitor (compact) mode").
+		SetAllowTailModeCall().
+		SetQuiet()
+
 	desc := sessions.AddSub("desc", "d", "-").
 		RegPowerCmd(SessionDescLess,
 			"desc executed/ing session").

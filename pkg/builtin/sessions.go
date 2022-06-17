@@ -166,7 +166,7 @@ func ErrorSessionDescLess(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, true, false, false)
+	descSession(session, argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
 }
 
@@ -181,7 +181,7 @@ func ErrorSessionDescMore(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, true, false, true)
+	descSession(session, argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
 }
 
@@ -196,7 +196,7 @@ func ErrorSessionDescFull(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, false, true, true)
+	descSession(session, argv, cc, env, false, true, true, false)
 	return currCmdIdx, true
 }
 
@@ -211,7 +211,7 @@ func RunningSessionDescLess(
 	if !ok {
 		panic(fmt.Errorf("no executing sessions"))
 	}
-	descSession(session, argv, cc, env, true, false, false)
+	descSession(session, argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
 }
 
@@ -226,7 +226,7 @@ func DoneSessionDescLess(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, true, false, false)
+	descSession(session, argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
 }
 
@@ -241,7 +241,7 @@ func DoneSessionDescMore(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, true, false, true)
+	descSession(session, argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
 }
 
@@ -256,7 +256,7 @@ func DoneSessionDescFull(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, false, true, true)
+	descSession(session, argv, cc, env, false, true, true, false)
 	return currCmdIdx, true
 }
 
@@ -271,7 +271,7 @@ func RunningSessionDescMore(
 	if !ok {
 		panic(fmt.Errorf("no executing sessions"))
 	}
-	descSession(session, argv, cc, env, true, false, true)
+	descSession(session, argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
 }
 
@@ -286,7 +286,22 @@ func RunningSessionDescFull(
 	if !ok {
 		panic(fmt.Errorf("no executing sessions"))
 	}
-	descSession(session, argv, cc, env, false, true, true)
+	descSession(session, argv, cc, env, false, true, true, false)
+	return currCmdIdx, true
+}
+
+func RunningSessionDescMonitor(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	session, ok := getLastSession(env, false, false, true)
+	if !ok {
+		panic(fmt.Errorf("no executing sessions"))
+	}
+	descSession(session, argv, cc, env, true, false, false, true)
 	return currCmdIdx, true
 }
 
@@ -365,7 +380,7 @@ func SessionDescLess(
 	if len(sessions) == 0 {
 		return currCmdIdx, true
 	}
-	descSession(sessions[0], argv, cc, env, true, false, false)
+	descSession(sessions[0], argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
 }
 
@@ -381,7 +396,7 @@ func SessionDescMore(
 	if len(sessions) == 0 {
 		return currCmdIdx, true
 	}
-	descSession(sessions[0], argv, cc, env, true, false, true)
+	descSession(sessions[0], argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
 }
 
@@ -397,7 +412,7 @@ func SessionDescFull(
 	if len(sessions) == 0 {
 		return currCmdIdx, true
 	}
-	descSession(sessions[0], argv, cc, env, false, true, true)
+	descSession(sessions[0], argv, cc, env, false, true, true, false)
 	return currCmdIdx, true
 }
 
@@ -429,7 +444,7 @@ func LastSessionDescLess(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, true, false, false)
+	descSession(session, argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
 }
 
@@ -445,7 +460,7 @@ func LastSessionDescMore(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, true, false, true)
+	descSession(session, argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
 }
 
@@ -461,7 +476,7 @@ func LastSessionDescFull(
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
-	descSession(session, argv, cc, env, false, true, true)
+	descSession(session, argv, cc, env, false, true, true, false)
 	return currCmdIdx, true
 }
 
@@ -574,9 +589,9 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 }
 
 func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, env *core.Env,
-	skeleton, showEnvFull bool, showModifiedEnv bool) {
+	skeleton, showEnvFull bool, showModifiedEnv bool, monitorMode bool) {
 
-	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).SetMaxTrivial(argv.GetInt("unfold-trivial"))
+	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetIntEx("depth", 32)).SetMaxTrivial(argv.GetIntEx("unfold-trivial", 1))
 	if skeleton {
 		if !showEnvFull && !showModifiedEnv {
 			dumpArgs.SetSkeleton()
@@ -589,6 +604,9 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 	}
 	if showModifiedEnv {
 		dumpArgs.SetShowExecutedModifiedEnv()
+	}
+	if monitorMode {
+		dumpArgs.SetMonitorMode()
 	}
 
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, core.FlowStrToStrs(session.Status.Flow)...)
