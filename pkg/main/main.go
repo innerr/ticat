@@ -55,6 +55,7 @@ func main() {
 	defEnv.Set("strs.sys-arg-prefix", SysArgPrefix)
 	defEnv.Set("strs.env-snapshot-ext", EnvSnapshotExt)
 	defEnv.Set("strs.env-del-all-mark", EnvValDelAllMark)
+	defEnv.Set("strs.cmd-path-str-session", CmdPathSession)
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -184,4 +185,5 @@ const (
 	TagProvider              string = TagMark + "config"
 	TagSelfTest              string = TagMark + "selftest"
 	EnvSnapshotExt           string = ".env"
+	CmdPathSession           string = "sessions"
 )

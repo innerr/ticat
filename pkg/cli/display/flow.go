@@ -246,6 +246,9 @@ func dumpFlowCmd(
 
 	//lineLimit := env.GetInt("display.width")
 	_, lineLimit := utils.GetTerminalWidth(50, 120)
+	if args.MonitorMode {
+		lineLimit = 9999
+	}
 
 	var startEnv map[string]string
 	if !cmdSkipped() {
@@ -401,7 +404,11 @@ func dumpCmdExecutedLog(
 	}
 	prt(2, mayTrimStr(executedCmd.LogFilePath, env, limit))
 
-	lines := utils.ReadLogFileLastLines(executedCmd.LogFilePath, 1024*16, 8)
+	displayLogLines := 8
+	if args.MonitorMode {
+		displayLogLines = 3
+	}
+	lines := utils.ReadLogFileLastLines(executedCmd.LogFilePath, 1024*16, displayLogLines)
 	//if len(lines) != 0 {
 	//	prt(2, ColorExplain("...", env))
 	//}

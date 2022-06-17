@@ -95,6 +95,10 @@ func noSessionCmds(flow *core.ParsedCmds) bool {
 	}
 	cmd := flow.Cmds[0].LastCmdNode()
 
+	if cmd.Cmd() != nil && cmd.Cmd().IsNoSessionCmd() {
+		return true
+	}
+
 	if flow.HasTailMode {
 		funcs := []interface{}{
 			builtin.DbgBreakAtBegin,

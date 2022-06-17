@@ -616,13 +616,21 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 func getLastSession(env *core.Env, includeError bool, includeDone bool, includeRunning bool) (session core.SessionStatus, ok bool) {
 	var sessions []core.SessionStatus
 	currSession := env.GetRaw("sys.session.id")
-	cntLimit := 2
-	if len(currSession) == 0 {
-		cntLimit = 1
-	}
+	cntLimit := 64
+
+	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
+	sessionCmdPath := env.GetRaw("strs.cmd-path-str-session")
+
 	sessions, _ = core.ListSessions(env, nil, "", cntLimit, includeError, includeDone, includeRunning)
 	for i := len(sessions) - 1; i >= 0; i-- {
 		session := sessions[i]
+		if session.Status != nil && len(session.Status.Cmds) == 1 {
+			cmdStr := session.Status.Cmds[0].Cmd
+			cmdPath := strings.Split(cmdStr, cmdPathSep)
+			if cmdPath[0] == sessionCmdPath {
+				continue
+			}
+		}
 		if session.SessionId() != currSession {
 			return session, true
 		}

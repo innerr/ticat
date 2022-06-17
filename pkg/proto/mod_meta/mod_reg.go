@@ -96,6 +96,7 @@ func regModFile(
 	regTrivial(meta, mod)
 	regUnLog(meta, cmd)
 	regQuietError(meta, cmd)
+	regNoSession(meta, cmd)
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
 	regArgs(meta, cmd, abbrsSep)
@@ -205,6 +206,23 @@ func regQuietError(meta *meta_file.MetaFile, cmd *core.Cmd) {
 		}
 		if quiet {
 			cmd.SetQuietError()
+		}
+		return
+	}
+}
+
+func regNoSession(meta *meta_file.MetaFile, cmd *core.Cmd) {
+	for _, key := range []string{"no-session"} {
+		val := meta.Get(key)
+		if len(val) == 0 {
+			continue
+		}
+		quiet, err := strconv.ParseBool(val)
+		if err != nil {
+			panic(fmt.Errorf("[regNoSession] no-session value string '%s' is not bool: '%v'", val, err))
+		}
+		if quiet {
+			cmd.SetNoSession()
 		}
 		return
 	}

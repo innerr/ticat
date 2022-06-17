@@ -52,6 +52,7 @@ type CmdFlags struct {
 	unLog             bool
 	blender           bool
 	quietError        bool
+	noSession         bool
 }
 
 type Cmd struct {
@@ -412,6 +413,11 @@ func (self *Cmd) SetQuiet() *Cmd {
 	return self
 }
 
+func (self *Cmd) SetNoSession() *Cmd {
+	self.flags.noSession = true
+	return self
+}
+
 func (self *Cmd) SetAllowTailModeCall() *Cmd {
 	self.flags.allowTailModeCall = true
 	return self
@@ -511,6 +517,10 @@ func (self *Cmd) AllowTailModeCall() bool {
 
 func (self *Cmd) IsQuiet() bool {
 	return self.flags.quiet
+}
+
+func (self *Cmd) IsNoSessionCmd() bool {
+	return self.flags.noSession
 }
 
 func (self *Cmd) IsPriority() bool {
