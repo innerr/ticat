@@ -297,7 +297,7 @@ func RunningSessionDescMonitor(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, false, false, true)
+	session, ok := getLastRunningSession(env)
 	if !ok {
 		panic(fmt.Errorf("no executing sessions"))
 	}
@@ -397,6 +397,22 @@ func SessionDescMore(
 		return currCmdIdx, true
 	}
 	descSession(sessions[0], argv, cc, env, true, false, true, false)
+	return currCmdIdx, true
+}
+
+func SessionDescMonitor(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
+	if len(sessions) == 0 {
+		return currCmdIdx, true
+	}
+	descSession(sessions[0], argv, cc, env, true, false, false, true)
 	return currCmdIdx, true
 }
 
@@ -616,24 +632,44 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 func getLastSession(env *core.Env, includeError bool, includeDone bool, includeRunning bool) (session core.SessionStatus, ok bool) {
 	var sessions []core.SessionStatus
 	currSession := env.GetRaw("sys.session.id")
-	cntLimit := 64
+	cntLimit := 2
+	if len(currSession) == 0 {
+		cntLimit = 1
+	}
+	sessions, _ = core.ListSessions(env, nil, "", cntLimit, includeError, includeDone, includeRunning)
+	for i := len(sessions) - 1; i >= 0; i-- {
+		session := sessions[i]
+		if session.SessionId() != currSession {
+			return session, true
+		}
+	}
+	return
+}
+
+func getLastRunningSession(env *core.Env) (session core.SessionStatus, ok bool) {
+	var sessions []core.SessionStatus
+	currSession := env.GetRaw("sys.session.id")
 
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
 	sessionCmdPath := env.GetRaw("strs.cmd-path-str-session")
 
-	sessions, _ = core.ListSessions(env, nil, "", cntLimit, includeError, includeDone, includeRunning)
+	sessions, _ = core.ListSessions(env, nil, "", 64, false, false, true)
 	for i := len(sessions) - 1; i >= 0; i-- {
 		session := sessions[i]
-		if session.Status != nil && len(session.Status.Cmds) == 1 {
+		if session.Status == nil {
+			continue
+		}
+		if len(session.Status.Cmds) == 1 {
 			cmdStr := session.Status.Cmds[0].Cmd
 			cmdPath := strings.Split(cmdStr, cmdPathSep)
 			if cmdPath[0] == sessionCmdPath {
 				continue
 			}
 		}
-		if session.SessionId() != currSession {
-			return session, true
+		if session.SessionId() == currSession {
+			continue
 		}
+		return session, true
 	}
 	return
 }
