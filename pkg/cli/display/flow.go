@@ -62,17 +62,23 @@ func DumpFlowEx(
 	writtenKeys := FlowWrittenKeys{}
 
 	if executedFlow != nil {
-		PrintTipTitle(cc.Screen, env, "session-id ["+executedFlow.DirName+"], flow executed status:")
+		if args.MonitorMode {
+			cc.Screen.Print(ColorTip("["+executedFlow.DirName+"]", env) + "\n")
+		} else {
+			PrintTipTitle(cc.Screen, env, "session-id ["+executedFlow.DirName+"], flow executed status:")
+		}
 	} else {
 		PrintTipTitle(cc.Screen, env, "flow executing description:")
 	}
 
 	// TODO: show executed status and duration here
 
-	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
+	if !args.MonitorMode {
+		cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
+	}
 	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, running,
 		false, writtenKeys, args.MaxDepth, args.MaxTrivial, 0, false)
-	if ok {
+	if ok && !args.MonitorMode {
 		cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
 	}
 }
@@ -168,8 +174,11 @@ func dumpFlowCmd(
 	}
 
 	prt := func(indentLvl int, msg string) {
-		padding := rpt(" ", padLenCal(indentLvl))
-		msg = autoPadNewLine(padding, msg)
+		padding := ""
+		if !args.MonitorMode {
+			padding = rpt(" ", padLenCal(indentLvl))
+			msg = autoPadNewLine(padding, msg)
+		}
 		screen.Print(padding + msg + "\n")
 	}
 
@@ -226,7 +235,9 @@ func dumpFlowCmd(
 
 	showTrivialMark := foldSubFlowByTrivial() && trivialDelta > 0
 	name, ok := dumpCmdDisplayName(cmdEnv, parsedCmd, args, executedCmd, running, cmdInBg, showTrivialMark)
-	prt(0, name)
+	if len(name) != 0 {
+		prt(0, name)
+	}
 	if !ok {
 		return cmdInBg, false
 	}
@@ -301,7 +312,7 @@ func dumpFlowCmd(
 					if executedCmd != nil && !args.Skeleton {
 						depthMark = fmt.Sprintf(" L%v", depth+1)
 					}
-					if !foldSubFlow() {
+					if !foldSubFlow() && !args.MonitorMode {
 						prt(2, ColorFlowing("--->>>"+depthMark, env))
 					}
 					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
@@ -330,7 +341,7 @@ func dumpFlowCmd(
 					if cic.Type() == core.CmdTypeFileNFlow {
 						exeMark += ColorCmd(" +", env)
 					}
-					if !foldSubFlow() {
+					if !foldSubFlow() && !args.MonitorMode {
 						prt(2, ColorFlowing("<<<---"+depthMark, env)+exeMark)
 					}
 				}
@@ -349,6 +360,9 @@ func dumpFlowCmd(
 }
 
 func dumpCmdHelp(help string, env *core.Env, args *DumpFlowArgs, prt func(indentLvl int, msg string)) {
+	if args.MonitorMode {
+		return
+	}
 	if len(help) == 0 {
 		return
 	}
@@ -377,11 +391,13 @@ func dumpCmdExecutedLog(
 	padLen := padLenCal(2)
 	limit := lineLimit - padLen
 
-	if executedCmd.Result == core.ExecutedResultSucceeded {
-		prt(1, ColorProp("- execute-log:", env))
-	} else {
-		//prt(1, ColorHighLight("- execute-log:", env))
-		prt(1, ColorProp("- execute-log:", env))
+	if !args.MonitorMode {
+		if executedCmd.Result == core.ExecutedResultSucceeded {
+			prt(1, ColorProp("- execute-log:", env))
+		} else {
+			//prt(1, ColorHighLight("- execute-log:", env))
+			prt(1, ColorProp("- execute-log:", env))
+		}
 	}
 	prt(2, mayTrimStr(executedCmd.LogFilePath, env, limit))
 
@@ -450,6 +466,10 @@ func dumpCmdDisplayName(
 	running bool,
 	inBg bool,
 	showTrivialMark bool) (name string, ok bool) {
+
+	if args.MonitorMode && !(executedCmd.Result == core.ExecutedResultIncompleted && running) {
+		return "", true
+	}
 
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
@@ -636,6 +656,10 @@ func dumpCmdArgv(
 	args *DumpFlowArgs,
 	executedCmd *core.ExecutedCmd,
 	writtenKeys FlowWrittenKeys) {
+
+	if args.MonitorMode {
+		return
+	}
 
 	if args.Skeleton {
 		args := cic.Args()
@@ -936,10 +960,11 @@ type DumpFlowArgs struct {
 	MaxTrivial              int
 	ShowExecutedEnvFull     bool
 	ShowExecutedModifiedEnv bool
+	MonitorMode             bool
 }
 
 func NewDumpFlowArgs() *DumpFlowArgs {
-	return &DumpFlowArgs{false, false, 4, 32, 1, false, false}
+	return &DumpFlowArgs{false, false, 4, 32, 1, false, false, false}
 }
 
 func (self *DumpFlowArgs) SetSimple() *DumpFlowArgs {
@@ -970,6 +995,11 @@ func (self *DumpFlowArgs) SetShowExecutedEnvFull() *DumpFlowArgs {
 
 func (self *DumpFlowArgs) SetShowExecutedModifiedEnv() *DumpFlowArgs {
 	self.ShowExecutedModifiedEnv = true
+	return self
+}
+
+func (self *DumpFlowArgs) SetMonitorMode() *DumpFlowArgs {
+	self.MonitorMode = true
 	return self
 }
 

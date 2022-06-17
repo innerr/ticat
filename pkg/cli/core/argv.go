@@ -42,6 +42,14 @@ func (self ArgVals) GetInt(name string) int {
 	return int(intVal)
 }
 
+func (self ArgVals) GetIntEx(name string, defVal int) int {
+	_, ok := self[name]
+	if !ok {
+		return defVal
+	}
+	return self.GetInt(name)
+}
+
 func (self ArgVals) GetBool(name string) bool {
 	val, ok := self[name]
 	if !ok {
