@@ -164,7 +164,7 @@ func ErrorSessionDescLess(
 
 	session, ok := getLastSession(env, true, false, false)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		panic(fmt.Errorf("no executed error sessions"))
 	}
 	descSession(session, argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
@@ -179,7 +179,7 @@ func ErrorSessionDescMore(
 
 	session, ok := getLastSession(env, true, false, false)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		panic(fmt.Errorf("no executed error sessions"))
 	}
 	descSession(session, argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
@@ -194,7 +194,7 @@ func ErrorSessionDescFull(
 
 	session, ok := getLastSession(env, true, false, false)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		panic(fmt.Errorf("no executed error sessions"))
 	}
 	descSession(session, argv, cc, env, false, true, true, false)
 	return currCmdIdx, true
@@ -209,9 +209,10 @@ func RunningSessionDescLess(
 
 	session, ok := getLastSession(env, false, false, true)
 	if !ok {
-		panic(fmt.Errorf("no executing sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no running sessions")
+	} else {
+		descSession(session, argv, cc, env, true, false, false, false)
 	}
-	descSession(session, argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
 }
 
@@ -224,9 +225,10 @@ func DoneSessionDescLess(
 
 	session, ok := getLastSession(env, false, true, false)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
+	} else {
+		descSession(session, argv, cc, env, true, false, false, false)
 	}
-	descSession(session, argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
 }
 
@@ -239,9 +241,10 @@ func DoneSessionDescMore(
 
 	session, ok := getLastSession(env, false, true, false)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
+	} else {
+		descSession(session, argv, cc, env, true, false, true, false)
 	}
-	descSession(session, argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
 }
 
@@ -254,9 +257,10 @@ func DoneSessionDescFull(
 
 	session, ok := getLastSession(env, false, true, false)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
+	} else {
+		descSession(session, argv, cc, env, false, true, true, false)
 	}
-	descSession(session, argv, cc, env, false, true, true, false)
 	return currCmdIdx, true
 }
 
@@ -269,9 +273,10 @@ func RunningSessionDescMore(
 
 	session, ok := getLastSession(env, false, false, true)
 	if !ok {
-		panic(fmt.Errorf("no executing sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no running sessions")
+	} else {
+		descSession(session, argv, cc, env, true, false, true, false)
 	}
-	descSession(session, argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
 }
 
@@ -284,9 +289,10 @@ func RunningSessionDescFull(
 
 	session, ok := getLastSession(env, false, false, true)
 	if !ok {
-		panic(fmt.Errorf("no executing sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no running sessions")
+	} else {
+		descSession(session, argv, cc, env, false, true, true, false)
 	}
-	descSession(session, argv, cc, env, false, true, true, false)
 	return currCmdIdx, true
 }
 
@@ -299,9 +305,10 @@ func RunningSessionDescMonitor(
 
 	session, ok := getLastRunningSession(env)
 	if !ok {
-		panic(fmt.Errorf("no executing sessions"))
+		cc.Screen.Print(display.ColorTip("no running sessions", env) + "\n")
+	} else {
+		descSession(session, argv, cc, env, true, false, false, true)
 	}
-	descSession(session, argv, cc, env, true, false, false, true)
 	return currCmdIdx, true
 }
 
@@ -442,9 +449,10 @@ func LastSession(
 	assertNotTailMode(flow, currCmdIdx)
 	session, ok := getLastSession(env, true, true, true)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
+	} else {
+		dumpSession(session, env, cc.Screen, "")
 	}
-	dumpSession(session, env, cc.Screen, "")
 	return currCmdIdx, true
 }
 
@@ -458,9 +466,10 @@ func LastSessionDescLess(
 	assertNotTailMode(flow, currCmdIdx)
 	session, ok := getLastSession(env, true, true, true)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
+	} else {
+		descSession(session, argv, cc, env, true, false, false, false)
 	}
-	descSession(session, argv, cc, env, true, false, false, false)
 	return currCmdIdx, true
 }
 
@@ -474,9 +483,10 @@ func LastSessionDescMore(
 	assertNotTailMode(flow, currCmdIdx)
 	session, ok := getLastSession(env, true, true, true)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
+	} else {
+		descSession(session, argv, cc, env, true, false, true, false)
 	}
-	descSession(session, argv, cc, env, true, false, true, false)
 	return currCmdIdx, true
 }
 
@@ -490,9 +500,10 @@ func LastSessionDescFull(
 	assertNotTailMode(flow, currCmdIdx)
 	session, ok := getLastSession(env, true, true, true)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
+	} else {
+		descSession(session, argv, cc, env, false, true, true, false)
 	}
-	descSession(session, argv, cc, env, false, true, true, false)
 	return currCmdIdx, true
 }
 
@@ -659,12 +670,16 @@ func getLastRunningSession(env *core.Env) (session core.SessionStatus, ok bool) 
 		if session.Status == nil {
 			continue
 		}
-		if len(session.Status.Cmds) == 1 {
-			cmdStr := session.Status.Cmds[0].Cmd
-			cmdPath := strings.Split(cmdStr, cmdPathSep)
-			if cmdPath[0] == sessionCmdPath {
-				continue
-			}
+		if session.Status.Result == core.ExecutedResultSucceeded {
+			continue
+		}
+		if len(session.Status.Cmds) == 0 {
+			continue
+		}
+		cmdStr := session.Status.Cmds[len(session.Status.Cmds)-1].Cmd
+		cmdPath := strings.Split(cmdStr, cmdPathSep)
+		if cmdPath[0] == sessionCmdPath {
+			continue
 		}
 		if session.SessionId() == currSession {
 			continue

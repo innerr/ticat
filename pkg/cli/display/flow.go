@@ -447,14 +447,14 @@ func dumpCmdExecutedErr(
 	}
 
 	if !args.Skeleton {
-		if len(executedCmd.ErrStrs) != 0 {
+		if len(executedCmd.ErrStrs) != 0 && !args.MonitorMode {
 			prt(1, ColorError("- err-msg:", env))
 		}
 		for _, line := range executedCmd.ErrStrs {
 			prt(2, ColorError(strings.TrimSpace(line), env))
 		}
 	} else {
-		if len(executedCmd.ErrStrs) != 0 {
+		if len(executedCmd.ErrStrs) != 0 && !args.MonitorMode {
 			prt(0, "  "+ColorError(" - err-msg:", env))
 		}
 		for _, line := range executedCmd.ErrStrs {
@@ -472,7 +472,7 @@ func dumpCmdDisplayName(
 	inBg bool,
 	showTrivialMark bool) (name string, ok bool) {
 
-	if args.MonitorMode && !(executedCmd.Result == core.ExecutedResultIncompleted && running) {
+	if args.MonitorMode && !(executedCmd.Result == core.ExecutedResultError || executedCmd.Result == core.ExecutedResultIncompleted) {
 		return "", true
 	}
 
@@ -728,6 +728,10 @@ func dumpExecutedStartEnv(
 	executedCmd *core.ExecutedCmd,
 	lineLimit int) (startEnv map[string]string) {
 
+	if args.MonitorMode {
+		return
+	}
+
 	if executedCmd == nil {
 		return
 	}
@@ -777,6 +781,10 @@ func dumpExecutedModifiedEnv(
 	startEnv map[string]string,
 	executedCmd *core.ExecutedCmd,
 	lineLimit int) {
+
+	if args.MonitorMode {
+		return
+	}
 
 	if executedCmd == nil {
 		return

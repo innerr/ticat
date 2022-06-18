@@ -13,8 +13,6 @@ import (
 )
 
 func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
-	cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
-
 	cc = cc.CopyForInteract()
 	sessionEnv := env.GetLayer(core.EnvLayerSession)
 	sessionEnv.SetBool("sys.interact.inside", true)
@@ -143,6 +141,8 @@ func InteractiveMode(cc *core.Cli, env *core.Env, exitStr string) {
 	}
 
 	for {
+		cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
+
 		if env.GetBool("sys.interact.leaving") {
 			break
 		}
