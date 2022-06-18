@@ -215,6 +215,11 @@ func (self *Executor) executeCmd(
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, cc.BgTasks, flow.TailModeCall)
+
+	showStack := func() {
+		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
+	}
+
 	var width int
 	if stackLines.Display {
 		width = display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -223,7 +228,7 @@ func (self *Executor) executeCmd(
 	last := cmd.LastCmdNode()
 
 	if !sysArgv.IsDelay() {
-		bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow, bootstrap)
+		bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow, bootstrap, showStack)
 		if bpa == BPASkip {
 			mask = copyMask(last.DisplayPath(), mask)
 			mask.ExecPolicy = core.ExecPolicySkip
@@ -283,7 +288,7 @@ func (self *Executor) executeCmd(
 	}
 
 	if !sysArgv.IsDelay() {
-		bpa := tryDelayAndBreakAfter(cc, env, cmd, bootstrap, lastCmdInFlow)
+		bpa := tryDelayAndBreakAfter(cc, env, cmd, bootstrap, lastCmdInFlow, showStack)
 		if bpa == BPAStepOver {
 			breakAtNext = true
 		} else if bpa != BPAContinue {

@@ -25,7 +25,7 @@ const (
 )
 
 func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd,
-	breakByPrev bool, lastCmdInFlow bool, bootstrap bool) BreakPointAction {
+	breakByPrev bool, lastCmdInFlow bool, bootstrap bool, showStack func()) BreakPointAction {
 
 	if env.GetBool("sys.interact.inside") {
 		return BPAContinue
@@ -35,7 +35,7 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 		return BPAContinue
 	}
 
-	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev)
+	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, showStack)
 	if bpa == BPAContinue {
 		if !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {
 			tryDelay(cc, env, "sys.execute-delay-sec")
@@ -51,7 +51,7 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 	return bpa
 }
 
-func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, breakByPrev bool) BreakPointAction {
+func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, breakByPrev bool, showStack func()) BreakPointAction {
 	atBegin := cc.BreakPoints.BreakAtBegin()
 	stepByStep := env.GetBool("sys.step-by-step")
 	stepIn := env.GetBool("sys.breakpoint.status.step-in")
@@ -105,11 +105,11 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	for _, k := range choices {
 		bpas[k] = all[k]
 	}
-	return readUserBPAChoice(reason, choices, bpas, true, cc, env)
+	return readUserBPAChoice(reason, choices, bpas, true, cc, env, showStack)
 }
 
-func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool, lastCmdInFlow bool) BreakPointAction {
-	bpa := tryBreakAfter(cc, env, cmd)
+func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool, lastCmdInFlow bool, showStack func()) BreakPointAction {
+	bpa := tryBreakAfter(cc, env, cmd, showStack)
 	if bpa == BPAStepOver {
 		if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
 			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
@@ -120,7 +120,7 @@ func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, boot
 	return bpa
 }
 
-func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAction {
+func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, showStack func()) BreakPointAction {
 	name := strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep)
 	if !cc.BreakPoints.BreakAfter(name) {
 		return BPAContinue
@@ -128,7 +128,7 @@ func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd) BreakPointAc
 	reason := display.ColorTip("break-point: after command ", env) + display.ColorCmd("["+name+"]", env)
 	bpas := getAllBPAs()
 	bpas["d"] = BPAStepToNext
-	bpa := readUserBPAChoice(reason, []string{"d", "c", "i", "q"}, bpas, true, cc, env)
+	bpa := readUserBPAChoice(reason, []string{"d", "c", "i", "q"}, bpas, true, cc, env, showStack)
 	if bpa == BPAStepToNext {
 		bpa = BPAStepOver
 	}
@@ -143,6 +143,11 @@ func tryBreakAtEnd(cc *core.Cli, env *core.Env) {
 	}
 	env.GetLayer(core.EnvLayerSession).Delete(breakHereKey)
 
+	showEOF := func() {
+		cc.Screen.Print(display.ColorExplain("(end of flow)\n", env))
+	}
+	showEOF()
+
 	reason := display.ColorTip("break-point: at main-thread end", env)
 	bpa := readUserBPAChoice(
 		reason,
@@ -150,7 +155,8 @@ func tryBreakAtEnd(cc *core.Cli, env *core.Env) {
 		getAllBPAs(),
 		true,
 		cc,
-		env)
+		env,
+		showEOF)
 	if bpa != BPAContinue {
 		panic(fmt.Errorf("[tryBreakAtEnd] should never happen"))
 	}
@@ -175,7 +181,7 @@ func clearBreakPointStatusInEnv(env *core.Env) {
 }
 
 func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput bool,
-	cc *core.Cli, env *core.Env) BreakPointAction {
+	cc *core.Cli, env *core.Env, showStack func()) BreakPointAction {
 
 	showTitle := func() {
 		cc.Screen.Print(display.ColorTip("[actions]", env) + " paused by '" + reason +
@@ -212,6 +218,9 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 					return BPAContinue
 				}
 				cc.Screen.Print("\n")
+				if showStack != nil {
+					showStack()
+				}
 				showTitle()
 				continue
 			}
