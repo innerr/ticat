@@ -47,6 +47,7 @@ func RegisterCmds(cmds *core.CmdTree) {
 	RegisterOsCmds(cmds)
 	RegisterJoinCmds(cmds)
 	RegisterNoopCmds(cmds)
+	RegisterHookCmds(cmds)
 
 	cmds.AddSub("selftest").
 		RegAdHotFlowCmd(Selftest,
@@ -1342,6 +1343,29 @@ func RegisterNoopCmds(cmds *core.CmdTree) {
 	cmds.AddSub("dummy", "dm").
 		RegPowerCmd(Dummy,
 			"dummy command for testing")
+}
+
+func RegisterHookCmds(cmds *core.CmdTree) {
+	hook := cmds.AddSub("hook").
+		RegEmptyCmd("a toolbox for hooking flows to ticat system events")
+
+	hook.AddSub("exit").
+		RegEmptyCmd(
+			"execute flow when session exit: done or error").
+		AddArg("flow", "", "f").
+		AddArg2Env("sys.event.hook.exit", "flow")
+
+	hook.AddSub("error").
+		RegEmptyCmd(
+			"execute flow when session exit with error").
+		AddArg("flow", "", "f").
+		AddArg2Env("sys.event.hook.error", "flow")
+
+	hook.AddSub("done").
+		RegEmptyCmd(
+			"execute flow when session done without error").
+		AddArg("flow", "", "f").
+		AddArg2Env("sys.event.hook.done", "flow")
 }
 
 func RegisterApiCmds(cmds *core.CmdTree) {

@@ -123,13 +123,34 @@ func main() {
 		builtin.display.load.platform:
 	`
 
+	exitEventHook := func(hookKeyName string) {
+		hookStr := env.GetRaw(hookKeyName)
+		if len(hookStr) != 0 && cc.Executor != nil {
+			hookFlow := core.FlowStrToStrs(hookStr)
+			succeeded := cc.Executor.Execute(hookKeyName, true, cc, env, nil, hookFlow...)
+			if !succeeded {
+				os.Exit(-2)
+			}
+		}
+	}
+
 	// TODO: handle error by types
 	defer func() {
-		if !env.GetBool("sys.panic.recover") {
+		recovered := recover()
+		if recovered == nil {
+			// Exit point: succeed
+			exitEventHook("sys.event.hook.done")
+			exitEventHook("sys.event.hook.exit")
 			return
 		}
-		if r := recover(); r != nil {
-			display.PrintError(cc, env, r.(error))
+		if env.GetBool("sys.panic.recover") {
+			display.PrintError(cc, env, recovered.(error))
+		}
+		// Exit point: panic
+		exitEventHook("sys.event.hook.error")
+		exitEventHook("sys.event.hook.exit")
+		if env.GetBool("sys.panic.recover") {
+			display.PrintError(cc, env, recovered.(error))
 			os.Exit(-1)
 		}
 	}()
@@ -142,6 +163,9 @@ func main() {
 
 	// TODO: more exit codes
 	if !succeeded {
+		// Exit point: error
+		exitEventHook("sys.event.hook.error")
+		exitEventHook("sys.event.hook.exit")
 		os.Exit(1)
 	}
 }
