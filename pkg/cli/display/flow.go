@@ -276,7 +276,7 @@ func dumpFlowCmd(
 			flowStrs, _, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
-			if !cmdFailed() && metFlow {
+			if !cmdFailed() && metFlow && executedCmd == nil {
 				if !args.Skeleton {
 					prt(1, ColorProp("- flow (duplicated):", env))
 				} else {
