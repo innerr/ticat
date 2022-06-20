@@ -785,6 +785,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last executing session").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetHideInSessionsLast().
 		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
@@ -793,6 +794,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last executing session with more details").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetHideInSessionsLast().
 		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
@@ -801,6 +803,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last executing session with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetHideInSessionsLast().
 		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
 		AddArg("depth", "32", "d", "D")
 
@@ -808,7 +811,8 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		RegPowerCmd(RunningSessionDescMonitor,
 			"desc the last executing session in monitor (compact) mode").
 		SetAllowTailModeCall().
-		SetQuiet()
+		SetQuiet().
+		SetHideInSessionsLast()
 
 	desc := sessions.AddSub("desc", "d", "-").
 		RegPowerCmd(SessionDescLess,

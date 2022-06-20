@@ -46,13 +46,14 @@ type AutoTimerKeys struct {
 }
 
 type CmdFlags struct {
-	quiet             bool
-	priority          bool
-	allowTailModeCall bool
-	unLog             bool
-	blender           bool
-	quietError        bool
-	noSession         bool
+	quiet              bool
+	priority           bool
+	allowTailModeCall  bool
+	unLog              bool
+	blender            bool
+	quietError         bool
+	noSession          bool
+	hideInSessionsLast bool
 }
 
 type Cmd struct {
@@ -418,6 +419,11 @@ func (self *Cmd) SetNoSession() *Cmd {
 	return self
 }
 
+func (self *Cmd) SetHideInSessionsLast() *Cmd {
+	self.flags.hideInSessionsLast = true
+	return self
+}
+
 func (self *Cmd) SetAllowTailModeCall() *Cmd {
 	self.flags.allowTailModeCall = true
 	return self
@@ -521,6 +527,10 @@ func (self *Cmd) IsQuiet() bool {
 
 func (self *Cmd) IsNoSessionCmd() bool {
 	return self.flags.noSession
+}
+
+func (self *Cmd) IsHideInSessionsLast() bool {
+	return self.flags.hideInSessionsLast
 }
 
 func (self *Cmd) IsPriority() bool {
