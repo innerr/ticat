@@ -98,6 +98,7 @@ func regModFile(
 	regQuietError(meta, cmd)
 	regNoSession(meta, cmd)
 	regQuietCmd(meta, cmd)
+	regHideInSessionsLast(meta, cmd)
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
 	regArgs(meta, cmd, abbrsSep)
@@ -241,6 +242,23 @@ func regQuietCmd(meta *meta_file.MetaFile, cmd *core.Cmd) {
 		}
 		if quiet {
 			cmd.SetQuiet()
+		}
+		return
+	}
+}
+
+func regHideInSessionsLast(meta *meta_file.MetaFile, cmd *core.Cmd) {
+	for _, key := range []string{"hide-in-sessions-last", "hide-in-session-last", "hide-in-last"} {
+		val := meta.Get(key)
+		if len(val) == 0 {
+			continue
+		}
+		quiet, err := strconv.ParseBool(val)
+		if err != nil {
+			panic(fmt.Errorf("[regHideInSessionsLast] hide-in-last value string '%s' is not bool: '%v'", val, err))
+		}
+		if quiet {
+			cmd.SetHideInSessionsLast()
 		}
 		return
 	}

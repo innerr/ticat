@@ -303,7 +303,7 @@ func RunningSessionDescMonitor(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastRunningSession(env)
+	session, ok := getLastRunningSession(cc, env)
 	if !ok {
 		cc.Screen.Print(display.ColorTip("no running sessions", env) + "\n")
 	} else {
@@ -657,12 +657,9 @@ func getLastSession(env *core.Env, includeError bool, includeDone bool, includeR
 	return
 }
 
-func getLastRunningSession(env *core.Env) (session core.SessionStatus, ok bool) {
+func getLastRunningSession(cc *core.Cli, env *core.Env) (session core.SessionStatus, ok bool) {
 	var sessions []core.SessionStatus
 	currSession := env.GetRaw("sys.session.id")
-
-	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
-	sessionCmdPath := env.GetRaw("strs.cmd-path-str-session")
 
 	sessions, _ = core.ListSessions(env, nil, "", 64, false, false, true)
 	for i := len(sessions) - 1; i >= 0; i-- {
@@ -676,10 +673,11 @@ func getLastRunningSession(env *core.Env) (session core.SessionStatus, ok bool) 
 		if len(session.Status.Cmds) == 0 {
 			continue
 		}
-		cmdStr := session.Status.Cmds[len(session.Status.Cmds)-1].Cmd
-		cmdPath := strings.Split(cmdStr, cmdPathSep)
-		if cmdPath[0] == sessionCmdPath {
-			continue
+		lastCmdStr := session.Status.Cmds[len(session.Status.Cmds)-1].Cmd
+		if parsedCmd, ok := cc.ParseCmd(false, core.FlowStrToStrs(lastCmdStr)...); ok {
+			if parsedCmd.LastCmd() != nil && parsedCmd.LastCmd().IsHideInSessionsLast() {
+				continue
+			}
 		}
 		if session.SessionId() == currSession {
 			continue
