@@ -1,5 +1,9 @@
 package display
 
+import (
+	"fmt"
+)
+
 type FrameChars struct {
 	V string
 	H string
@@ -40,6 +44,19 @@ func FrameCharsUtf8() *FrameChars {
 		"┌", "┬", "┐",
 		"├", "┼", "┤",
 		"└", "┴", "┘",
+	}
+}
+
+func FrameCharsUtf8Colored(colorCode int) *FrameChars {
+	prefix := "\033[38;5;" + fmt.Sprintf("%d", colorCode) + "m"
+	darken := func(s string) string {
+		return prefix + s + "\033[0m"
+	}
+	return &FrameChars{
+		darken("│"), darken("─"),
+		darken("┌"), darken("┬"), darken("┐"),
+		darken("├"), darken("┼"), darken("┤"),
+		darken("└"), darken("┴"), darken("┘"),
 	}
 }
 

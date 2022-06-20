@@ -4,12 +4,14 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-func PrintFramedLines(screen core.Screen, env *core.Env, buf *CacheScreen) {
+func PrintFramedLines(screen core.Screen, env *core.Env, buf *CacheScreen, c *FrameChars) {
 	if buf.IsEmpty() {
 		return
 	}
 	width := env.GetInt("display.width") - 2
-	c := getFrameChars(env)
+	if c == nil {
+		c = getFrameChars(env)
+	}
 	screen.Print(c.P1 + rpt(c.H, width) + c.P3 + "\n")
 	buf.WriteToEx(screen, func(line string, isError bool, lineLen int) (string, bool) {
 		rightV := c.V
