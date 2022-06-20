@@ -124,27 +124,34 @@ func main() {
 	`
 
 	exitEventHook := func(hookKeyName string) {
+		if len(env.GetRaw("session")) == 0 {
+			return
+		}
 		hookStr := env.GetRaw(hookKeyName)
 		if len(hookStr) != 0 && cc.Executor != nil {
 			hookFlow := core.FlowStrToStrs(hookStr)
 
 			// TODO: not working, has bugs
 			//env = env.NewLayer(core.EnvLayerTmp)
-
 			env.SetBool("display.one-cmd", true)
+			env.SetBool("sys.unlog-status", true)
+
+			defer func() {
+				recovered := recover()
+				if recovered == nil {
+					return
+				}
+				if env.GetBool("sys.panic.recover") {
+					display.PrintError(cc, env, recovered.(error))
+					os.Exit(-2)
+				} else {
+					panic(recovered)
+				}
+			}()
+
 			succeeded := cc.Executor.Execute(hookKeyName, true, cc, env, nil, hookFlow...)
 			if !succeeded {
 				os.Exit(2)
-			}
-			recovered := recover()
-			if recovered == nil {
-				return
-			}
-			if env.GetBool("sys.panic.recover") {
-				display.PrintError(cc, env, recovered.(error))
-				os.Exit(-2)
-			} else {
-				panic(recovered)
 			}
 		}
 	}

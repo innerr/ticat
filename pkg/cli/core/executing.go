@@ -30,6 +30,10 @@ func NewExecutingFlow(path string, flow *ParsedCmds, env *Env) *ExecutingFlow {
 }
 
 func (self *ExecutingFlow) onFlowStart(flow *ParsedCmds, env *Env) {
+	if env.GetBool("sys.unlog-status") {
+		return
+	}
+
 	buf := bytes.NewBuffer(nil)
 
 	trivialMark := env.GetRaw("strs.trivial-mark")
@@ -44,6 +48,10 @@ func (self *ExecutingFlow) onFlowStart(flow *ParsedCmds, env *Env) {
 }
 
 func (self *ExecutingFlow) OnCmdStart(flow *ParsedCmds, index int, env *Env, logFilePath string) {
+	if env.GetBool("sys.unlog-status") {
+		return
+	}
+
 	buf := bytes.NewBuffer(nil)
 
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
@@ -63,6 +71,10 @@ func (self *ExecutingFlow) OnCmdStart(flow *ParsedCmds, index int, env *Env, log
 }
 
 func (self *ExecutingFlow) OnAsyncTaskSchedule(flow *ParsedCmds, index int, env *Env, tid string) {
+	if env.GetBool("sys.unlog-status") {
+		return
+	}
+
 	buf := bytes.NewBuffer(nil)
 
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
@@ -78,6 +90,10 @@ func (self *ExecutingFlow) OnAsyncTaskSchedule(flow *ParsedCmds, index int, env 
 }
 
 func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, succeeded bool, err error, skipped bool) {
+	if env.GetBool("sys.unlog-status") {
+		return
+	}
+
 	buf := bytes.NewBuffer(nil)
 
 	writeCmdEnv(buf, env, "env-finish", self.level)
@@ -103,7 +119,11 @@ func (self *ExecutingFlow) OnCmdFinish(flow *ParsedCmds, index int, env *Env, su
 	writeStatusContent(self.path, buf.String())
 }
 
-func (self *ExecutingFlow) OnSubFlowStart(flow string) {
+func (self *ExecutingFlow) OnSubFlowStart(env *Env, flow string) {
+	if env.GetBool("sys.unlog-status") {
+		return
+	}
+
 	content := markStartStr("subflow", self.level) + "\n"
 
 	self.level += 1
@@ -117,6 +137,10 @@ func (self *ExecutingFlow) OnSubFlowStart(flow string) {
 }
 
 func (self *ExecutingFlow) OnSubFlowFinish(env *Env, succeeded bool, skipped bool) {
+	if env.GetBool("sys.unlog-status") {
+		return
+	}
+
 	buf := bytes.NewBuffer(nil)
 
 	now := time.Now().Format(SessionTimeFormat)
@@ -139,7 +163,11 @@ func (self *ExecutingFlow) OnSubFlowFinish(env *Env, succeeded bool, skipped boo
 	writeStatusContent(self.path, buf.String())
 }
 
-func (self *ExecutingFlow) OnFlowFinish(succeeded bool) {
+func (self *ExecutingFlow) OnFlowFinish(env *Env, succeeded bool) {
+	if env.GetBool("sys.unlog-status") {
+		return
+	}
+
 	buf := bytes.NewBuffer(nil)
 
 	now := time.Now().Format(SessionTimeFormat)

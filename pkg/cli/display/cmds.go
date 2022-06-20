@@ -305,10 +305,9 @@ func dumpCmd(
 				prt(1, ColorProp("- env-from-argv:", env))
 			}
 			for _, k := range arg2env.EnvKeys() {
-				val := arg2env.GetArgName(cic, k, true)
-				val = mayMaskSensitiveVal(k, val)
+				argName := arg2env.GetArgName(cic, k, true)
 				prt(2, ColorKey(k, env)+ColorSymbol(" <- ", env)+
-					ColorArg(mayQuoteStr(val), env))
+					ColorArg(mayQuoteStr(argName), env))
 			}
 
 			envOps := cic.EnvOps()

@@ -69,8 +69,8 @@ func (self *TipBoxPrinter) Prints(msgs ...string) {
 	}
 }
 
-func (self *TipBoxPrinter) colorize(msg string) string {
-	return "\033[38;5;248m" + msg + "\033[0m"
+func (self *TipBoxPrinter) colorize(msg string) (string, int) {
+	return "\033[38;5;242m" + msg + "\033[0m", ColorExtraLen(self.env, "tip-dark")
 }
 
 func (self *TipBoxPrinter) Print(msg string) {
@@ -81,8 +81,7 @@ func (self *TipBoxPrinter) Print(msg string) {
 		return
 	}
 
-	msg = ColorTipDark(msg, self.env)
-	colorLen := ColorExtraLen(self.env, "tip-dark")
+	msg, colorLen := self.colorize(msg)
 
 	// TODO: put ERR TIP to env strs
 

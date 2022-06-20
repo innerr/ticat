@@ -750,7 +750,7 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 	skipped := false
 
 	if cc.FlowStatus != nil {
-		cc.FlowStatus.OnSubFlowStart(FlowStrsToStr(flow))
+		cc.FlowStatus.OnSubFlowStart(flowEnv, FlowStrsToStr(flow))
 		defer func() {
 			if succeeded {
 				cc.FlowStatus.OnSubFlowFinish(flowEnv, succeeded, skipped)

@@ -64,7 +64,7 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 	ok = ok && len(errs) == 0
 
 	if cc.FlowStatus != nil {
-		cc.FlowStatus.OnFlowFinish(ok)
+		cc.FlowStatus.OnFlowFinish(env, ok)
 	}
 	return ok
 }
@@ -130,7 +130,7 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
 	if !innerCall && !bootstrap && !env.GetBool("sys.interact.inside") {
-		noSession := noSessionCmds(flow)
+		noSession := env.GetBool("sys.session.disable") || noSessionCmds(flow)
 		if !noSession {
 			statusWriter, ok := core.SessionInit(cc, flow, env, self.sessionFileName, self.sessionStatusFileName)
 			if !ok {
@@ -283,7 +283,8 @@ func (self *Executor) executeCmd(
 	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
 		last := flow.Cmds[len(flow.Cmds)-1]
 		if last.LastCmd() != nil && !last.LastCmd().IsQuiet() {
-			cc.Screen.Print("\n")
+			// Not pretty, disable for now
+			//cc.Screen.Print("\n")
 		}
 	}
 
@@ -535,7 +536,7 @@ func asyncExecute(
 				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}
-		cc.FlowStatus.OnFlowFinish(ok)
+		cc.FlowStatus.OnFlowFinish(env, ok)
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
 

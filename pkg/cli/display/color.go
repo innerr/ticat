@@ -285,7 +285,7 @@ const (
 	colorBrightPurple = "\033[35;1m"
 	colorBrightCyan   = "\033[36;1m"
 
-	colorCodeTipDark = 248
+	colorCodeTipDark = 242
 	colorCodeError   = 124
 
 	colorExtraLenWithoutCode = len(colorReset) + len("\033[38;5;m")
