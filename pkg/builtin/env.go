@@ -456,6 +456,8 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.mod.quiet", false)
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 14)
+
+	env.SetBool("display.tip", true)
 }
 
 func adjustDisplayWidth(col int) int {

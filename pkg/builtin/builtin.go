@@ -1206,6 +1206,11 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		AddArg("width", "", "wid", "w")
 
+	registerSimpleSwitch(cmds,
+		"show tips box and tip messages",
+		"display.tip",
+		"tips")
+
 	RegisterVerbCmds(cmds)
 }
 
