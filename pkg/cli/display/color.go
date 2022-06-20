@@ -21,6 +21,7 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"warn":      3,
 		"error":     3,
 		"tip":       3,
+		"tip-dark":  3,
 		"symbol":    3,
 		"prop":      3,
 		"tag":       2,
@@ -89,6 +90,10 @@ func ColorInteract(origin string, env *core.Env) string {
 
 func ColorTip(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(214), env)
+}
+
+func ColorTipDark(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(colorCodeTipDark), env)
 }
 
 func ColorSymbol(origin string, env *core.Env) string {
@@ -279,6 +284,8 @@ const (
 	colorBrightBlue   = "\033[34;1m"
 	colorBrightPurple = "\033[35;1m"
 	colorBrightCyan   = "\033[36;1m"
+
+	colorCodeTipDark = 248
 
 	colorExtraLenWithoutCode = len(colorReset) + len("\033[38;5;m")
 )

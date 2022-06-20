@@ -69,6 +69,10 @@ func (self *TipBoxPrinter) Prints(msgs ...string) {
 	}
 }
 
+func (self *TipBoxPrinter) colorize(msg string) string {
+	return "\033[38;5;248m" + msg + "\033[0m"
+}
+
 func (self *TipBoxPrinter) Print(msg string) {
 	msg = strings.TrimRight(msg, "\n")
 	msgs := strings.Split(msg, "\n")
@@ -76,6 +80,9 @@ func (self *TipBoxPrinter) Print(msg string) {
 		self.Prints(msgs...)
 		return
 	}
+
+	msg = ColorTipDark(msg, self.env)
+	colorLen := ColorExtraLen(self.env, "tip-dark")
 
 	// TODO: put ERR TIP to env strs
 
@@ -100,10 +107,11 @@ func (self *TipBoxPrinter) Print(msg string) {
 			}
 			tip = ColorTip(tip, self.env)
 		}
-		self.buf.PrintEx(tip+msg, len(msg)+tipLen)
+		self.buf.PrintEx(tip+msg, len(msg)+tipLen-colorLen)
 		self.inited = true
 	} else {
-		self.buf.Print("   " + msg)
+		msg = "   " + msg
+		self.buf.PrintEx(msg, len(msg)-colorLen)
 	}
 }
 
@@ -116,5 +124,11 @@ func (self *TipBoxPrinter) OutputNum() int {
 }
 
 func (self *TipBoxPrinter) Finish() {
-	PrintFramedLines(self.screen, self.env, self.buf)
+	var frameChars *FrameChars
+	if self.env.GetBool("display.utf8") {
+		frameChars = FrameCharsUtf8Colored(colorCodeTipDark)
+	} else {
+		frameChars = FrameCharsAscii()
+	}
+	PrintFramedLines(self.screen, self.env, self.buf, frameChars)
 }
