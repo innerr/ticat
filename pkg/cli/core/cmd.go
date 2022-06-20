@@ -610,7 +610,7 @@ func (self *Cmd) renderMacros(
 	sep := env.GetRaw("strs.seq-sep")
 	for _, macro := range self.orderedMacros {
 		macroStrs := self.macros[macro]
-		macroFlow, macroFullyRendered := renderTemplateStrLines(macroStrs, "macro", self, argv, env, allowFlowTemplateRenderError)
+		macroFlow, macroFullyRendered := RenderTemplateStrLines(macroStrs, "macro", self, argv, env, allowFlowTemplateRenderError)
 		macroFlow = StripFlowForExecute(macroFlow, sep)
 		env.Set(macro, FlowStrsToStr(macroFlow))
 		fullyRendered = fullyRendered && macroFullyRendered
@@ -642,7 +642,7 @@ func (self *Cmd) RenderedFlowStrs(
 		flowStrs, masks, _ = self.adhotFlow(argv, cc, env)
 	}
 
-	flow, flowFullyRendered := renderTemplateStrLines(flowStrs, "flow", self, argv, env, allowFlowTemplateRenderError)
+	flow, flowFullyRendered := RenderTemplateStrLines(flowStrs, "flow", self, argv, env, allowFlowTemplateRenderError)
 	fullyRendered = macrosFullyRendered && flowFullyRendered
 	if fullyRendered {
 		if masks != nil && !cc.Blender.IsEmpty() {
