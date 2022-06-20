@@ -127,9 +127,24 @@ func main() {
 		hookStr := env.GetRaw(hookKeyName)
 		if len(hookStr) != 0 && cc.Executor != nil {
 			hookFlow := core.FlowStrToStrs(hookStr)
+
+			// TODO: not working, has bugs
+			//env = env.NewLayer(core.EnvLayerTmp)
+
+			env.SetBool("display.one-cmd", true)
 			succeeded := cc.Executor.Execute(hookKeyName, true, cc, env, nil, hookFlow...)
 			if !succeeded {
+				os.Exit(2)
+			}
+			recovered := recover()
+			if recovered == nil {
+				return
+			}
+			if env.GetBool("sys.panic.recover") {
+				display.PrintError(cc, env, recovered.(error))
 				os.Exit(-2)
+			} else {
+				panic(recovered)
 			}
 		}
 	}
@@ -150,8 +165,9 @@ func main() {
 		exitEventHook("sys.event.hook.error")
 		exitEventHook("sys.event.hook.exit")
 		if env.GetBool("sys.panic.recover") {
-			display.PrintError(cc, env, recovered.(error))
 			os.Exit(-1)
+		} else {
+			panic(recovered)
 		}
 	}()
 

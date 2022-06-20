@@ -124,9 +124,16 @@ func (self *TipBoxPrinter) OutputNum() int {
 }
 
 func (self *TipBoxPrinter) Finish() {
+	if !self.env.GetBool("display.tip") {
+		return
+	}
+	colorCode := colorCodeTipDark
+	if self.isErr {
+		colorCode = colorCodeError
+	}
 	var frameChars *FrameChars
 	if self.env.GetBool("display.utf8") {
-		frameChars = FrameCharsUtf8Colored(colorCodeTipDark)
+		frameChars = FrameCharsUtf8Colored(colorCode)
 	} else {
 		frameChars = FrameCharsAscii()
 	}

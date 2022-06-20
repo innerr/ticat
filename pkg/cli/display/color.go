@@ -76,7 +76,7 @@ func ColorWarn(origin string, env *core.Env) string {
 }
 
 func ColorError(origin string, env *core.Env) string {
-	return colorize(origin, fromColor256(124), env)
+	return colorize(origin, fromColor256(colorCodeError), env)
 }
 
 func ColorHighLight(origin string, env *core.Env) string {
@@ -286,6 +286,7 @@ const (
 	colorBrightCyan   = "\033[36;1m"
 
 	colorCodeTipDark = 248
+	colorCodeError   = 124
 
 	colorExtraLenWithoutCode = len(colorReset) + len("\033[38;5;m")
 )

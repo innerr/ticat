@@ -63,7 +63,12 @@ func DumpFlowEx(
 
 	if executedFlow != nil {
 		if args.MonitorMode {
-			cc.Screen.Print(ColorTip("["+executedFlow.DirName+"]", env) + "\n")
+			title := ColorTip("["+executedFlow.DirName+"]", env)
+			ip := env.GetRaw("sys.session.id.ip")
+			if len(ip) != 0 {
+				title += ColorExplain(" - "+ip, env)
+			}
+			cc.Screen.Print(title + "\n")
 		} else {
 			PrintTipTitle(cc.Screen, env, "session-id ["+executedFlow.DirName+"], flow executed status:")
 		}
