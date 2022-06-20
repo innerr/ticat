@@ -429,6 +429,18 @@ func AddEnvKeyValue(
 	return currCmdIdx, true
 }
 
+func DisplayEnvVal(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	cc.Screen.Print(env.GetRaw(key) + "\n")
+	return currCmdIdx, true
+}
+
 func getEnvLocalFilePath(env *core.Env, cmd core.ParsedCmd) string {
 	path := env.GetRaw("sys.paths.data")
 	file := env.GetRaw("strs.env-file-name")

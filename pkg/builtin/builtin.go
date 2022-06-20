@@ -521,7 +521,7 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
 		RegPowerCmd(RemoveEnvValNotSave,
 			"remove specified env value in current session").
 		SetAllowTailModeCall().
-		AddArg("key", "", "k", "K")
+		AddArg("key", "", "k")
 
 	// '--' is for compatible only, will remove late
 	env.AddSub("reset-session", "reset", "--").
@@ -1395,6 +1395,13 @@ func RegisterApiCmds(cmds *core.CmdTree) {
 		RegPowerCmd(ApiCmdPath,
 			"get command executable file path").
 		AddArg("cmd", "")
+
+	env := cmds.AddSub("env")
+
+	env.AddSub("value", "val", "v").
+		RegPowerCmd(DisplayEnvVal,
+			"show specified env value in current session").
+		AddArg("key", "", "k")
 }
 
 func registerSimpleSwitch(

@@ -6,7 +6,7 @@ import (
 
 // TODO: It's slow and ugly, but it should works fine
 
-func renderTemplateStrLines(
+func RenderTemplateStrLines(
 	in []string,
 	targetName string,
 	cmd *Cmd,

@@ -19,7 +19,8 @@ func DbgEcho(
 	assertNotTailMode(flow, currCmdIdx)
 
 	arg := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "message")
-	cc.Screen.Print(fmt.Sprintf("%v\n", arg))
+	rendered, _ := core.RenderTemplateStrLines([]string{arg}, "echo", flow.Cmds[currCmdIdx].LastCmd(), core.ArgVals{}, env, true)
+	cc.Screen.Print(fmt.Sprintf("%v\n", rendered[0]))
 	return currCmdIdx, true
 }
 
