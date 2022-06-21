@@ -23,14 +23,15 @@ type ExecuteMask struct {
 	OverWriteFinishEnv *Env
 	ExecPolicy         ExecPolicy
 	SubFlow            []*ExecuteMask
+	ResultIfExecuted   ExecutedResult
 }
 
 func NewExecuteMask(cmd string) *ExecuteMask {
-	return &ExecuteMask{cmd, nil, nil, ExecPolicyExec, nil}
+	return &ExecuteMask{cmd, nil, nil, ExecPolicyExec, nil, ExecutedResultUnRun}
 }
 
 func (self *ExecuteMask) Copy() *ExecuteMask {
-	return &ExecuteMask{self.Cmd, self.OverWriteStartEnv, self.OverWriteFinishEnv, self.ExecPolicy, self.SubFlow}
+	return &ExecuteMask{self.Cmd, self.OverWriteStartEnv, self.OverWriteFinishEnv, self.ExecPolicy, self.SubFlow, ExecutedResultUnRun}
 }
 
 type Executor interface {

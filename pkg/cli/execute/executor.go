@@ -213,7 +213,7 @@ func (self *Executor) executeCmd(
 
 	ln := cc.Screen.OutputNum()
 
-	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd,
+	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd, mask,
 		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, cc.BgTasks, flow.TailModeCall)
 
 	showStack := func() {
@@ -512,7 +512,7 @@ func asyncExecute(
 			task.OnFinish(err)
 		}()
 
-		stackLines := display.PrintCmdStack(false, cc.Screen, cmd,
+		stackLines := display.PrintCmdStack(false, cc.Screen, cmd, mask,
 			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, nil, false)
 		var width int
 		if stackLines.Display {
