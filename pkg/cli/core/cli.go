@@ -42,20 +42,21 @@ type Executor interface {
 type HandledErrors map[interface{}]bool
 
 type Cli struct {
-	Screen        Screen
-	Cmds          *CmdTree
-	Parser        CliParser
-	EnvAbbrs      *EnvAbbrs
-	TolerableErrs *TolerableErrs
-	Executor      Executor
-	Helps         *Helps
-	BgTasks       *BgTasks
-	CmdIO         *CmdIO
-	FlowStatus    *ExecutingFlow
-	BreakPoints   *BreakPoints
-	HandledErrors HandledErrors
-	ForestMode    *ForestMode
-	Blender       *Blender
+	Screen             Screen
+	Cmds               *CmdTree
+	Parser             CliParser
+	EnvAbbrs           *EnvAbbrs
+	TolerableErrs      *TolerableErrs
+	Executor           Executor
+	Helps              *Helps
+	BgTasks            *BgTasks
+	CmdIO              *CmdIO
+	FlowStatus         *ExecutingFlow
+	BreakPoints        *BreakPoints
+	HandledErrors      HandledErrors
+	ForestMode         *ForestMode
+	Blender            *Blender
+	Arg2EnvAutoMapCmds Arg2EnvAutoMapCmds
 }
 
 func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO) *Cli {
@@ -74,6 +75,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		HandledErrors{},
 		NewForestMode(),
 		NewBlender(),
+		Arg2EnvAutoMapCmds{},
 	}
 }
 
@@ -101,6 +103,7 @@ func (self *Cli) CopyForInteract() *Cli {
 		HandledErrors{},
 		self.ForestMode,
 		self.Blender,
+		Arg2EnvAutoMapCmds{},
 	}
 }
 
@@ -123,6 +126,7 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		HandledErrors{},
 		self.ForestMode.Clone(),
 		NewBlender(),
+		Arg2EnvAutoMapCmds{},
 	}
 }
 
@@ -142,6 +146,7 @@ func (self *Cli) CloneForChecking() *Cli {
 		self.HandledErrors,
 		self.ForestMode,
 		NewBlender(),
+		Arg2EnvAutoMapCmds{},
 	}
 }
 

@@ -149,6 +149,7 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 		if !verifyOsDepCmds(cc, flow, env) {
 			return false
 		}
+		cc.Arg2EnvAutoMapCmds.AutoMapArg2Env(cc, env, true, builtin.EnvOpCmds())
 	}
 
 	if !bootstrap {
@@ -277,7 +278,7 @@ func (self *Executor) executeCmd(
 	elapsed := time.Now().Sub(start)
 
 	if stackLines.Display {
-		resultLines := display.PrintCmdResult(bootstrap, cc.Screen, cmd,
+		resultLines := display.PrintCmdResult(cc, bootstrap, cc.Screen, cmd,
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen, width)
 	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
@@ -532,7 +533,7 @@ func asyncExecute(
 		}
 
 		if stackLines.Display {
-			resultLines := display.PrintCmdResult(false, cc.Screen, cmd,
+			resultLines := display.PrintCmdResult(cc, false, cc.Screen, cmd,
 				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}

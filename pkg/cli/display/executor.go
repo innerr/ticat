@@ -302,6 +302,7 @@ type CmdResultLines struct {
 }
 
 func PrintCmdResult(
+	cc *core.Cli,
 	isBootstrap bool,
 	screen core.Screen,
 	cmd core.ParsedCmd,
@@ -312,9 +313,13 @@ func PrintCmdResult(
 	currCmdIdx int,
 	strs *core.CmdTreeStrs) (lines CmdResultLines) {
 
-	if isBootstrap && !env.GetBool("display.bootstrap") ||
-		!env.GetBool("display.executor") || !env.GetBool("display.executor.end") {
+	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
 		return
+	}
+	if !env.GetBool("display.executor.end") {
+		if currCmdIdx != len(flow)-1 || !callerIsFileNFile(cc, env) {
+			return
+		}
 	}
 	if checkPrintFilter(cmd, env) {
 		return
@@ -342,13 +347,19 @@ func PrintCmdResult(
 		if succeeded {
 			lines.Res = "OK"
 		} else {
-			lines.Res = "EE"
+			lines.Res = " E"
 		}
 	}
-	lines.ResLen = 2
+	if succeeded {
+		lines.Res = ColorCmd(lines.Res, env)
+		lines.ResLen = len(lines.Res) - ColorExtraLen(env, "cmd")
+	} else {
+		lines.Res = ColorError(lines.Res, env)
+		lines.ResLen = len(lines.Res) - ColorExtraLen(env, "error")
+	}
 
-	lines.Cmd = cmd.DisplayPath(strs.PathSep, env.GetBool("display.mod.realname"))
-	lines.CmdLen = len(lines.Cmd)
+	lines.Cmd = ColorCmdDone(cmd.DisplayPath(strs.PathSep, env.GetBool("display.mod.realname")), env)
+	lines.CmdLen = len(lines.Cmd) - ColorExtraLen(env, "cmd-done")
 
 	if currCmdIdx >= len(flow)-1 || !succeeded {
 		lines.Footer = time.Now().Format("01-02 15:04:05")
@@ -394,4 +405,20 @@ func filterQuietCmds(env *core.Env, flow []core.ParsedCmd, currCmdIdx int) ([]co
 		newCmds = append(newCmds, cmd)
 	}
 	return newCmds, newIdx
+}
+
+func callerIsFileNFile(cc *core.Cli, env *core.Env) bool {
+	listSep := env.GetRaw("strs.list-sep")
+	stack := strings.Split(env.GetRaw("sys.stack"), listSep)
+	if len(stack) <= 1 {
+		return false
+	}
+	stack = stack[1:]
+	callerName := stack[len(stack)-1]
+	callerCmd, ok := cc.ParseCmd(false, callerName)
+	if !ok {
+		return false
+	}
+	last := callerCmd.LastCmd()
+	return last.Type() == core.CmdTypeFileNFlow
 }
