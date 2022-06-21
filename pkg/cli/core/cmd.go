@@ -442,6 +442,10 @@ func (self *Cmd) SetArg2EnvAutoMap(names []string) *Cmd {
 	return self
 }
 
+func (self *Cmd) GetArgsAutoMapStatus() *ArgsAutoMapStatus {
+	return self.argsAutoMap
+}
+
 func (self *Cmd) IsBlenderCmd() bool {
 	return self.flags.blender
 }
@@ -480,18 +484,34 @@ func (self *Cmd) AddArg2EnvFromAnotherCmd(src *Cmd) {
 
 	// TODO: EnvKeys => RenderedEnvKeys?
 	for _, key := range srcMapper.EnvKeys() {
-		argName := srcMapper.GetArgName(src, key, false)
+		srcArgName := srcMapper.GetArgName(src, key, false)
 		if self.arg2env.Has(key) {
 			continue
 		}
-		if !self.argsAutoMap.ShouldMap(argName) {
+		srcArgAbbrs := srcArgs.Abbrs(srcArgName)
+		var mapArgName string
+		for _, abbr := range srcArgAbbrs {
+			if self.argsAutoMap.ShouldMap(abbr) {
+				mapArgName = abbr
+				break
+			}
+		}
+		if len(mapArgName) == 0 {
 			continue
 		}
-		added := self.addArgFromAnotherArg(srcArgs, argName)
-		if !added {
-			continue
+
+		defVal, newAbbrs, ok := self.checkCanAddArgFromAnotherArg(srcArgs, mapArgName)
+		if ok {
+			self.argsAutoMap.MarkAndCacheMapping(key, mapArgName, defVal, newAbbrs)
 		}
-		self.arg2env.Add(key, argName)
+	}
+}
+
+func (self *Cmd) FinishArg2EnvAutoMap(cc *Cli) {
+	self.argsAutoMap.FlushCache(self)
+	if !self.argsAutoMap.FullyMappedOrMapAll() {
+		err := fmt.Errorf("args of cmd '%s' can't be fully mapped", self.owner.DisplayPath())
+		cc.TolerableErrs.OnErr(err, self.owner.Source(), self.metaFilePath, "arg2env auto mapping failed")
 	}
 }
 
@@ -884,18 +904,16 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	return true
 }
 
-func (self *Cmd) addArgFromAnotherArg(args Args, name string) bool {
-	if self.argsAutoMap == nil {
-		return false
-	}
+func (self *Cmd) checkCanAddArgFromAnotherArg(srcArgs Args, name string) (defVal string, abbrs []string, ok bool) {
 	if self.args.Has(name) {
-		return false
+		return
 	}
 	if len(self.args.Realname(name)) != 0 {
-		return false
+		return
 	}
 	var newAbbrs []string
-	for _, abbr := range args.Abbrs(name) {
+	realname := srcArgs.Realname(name)
+	for _, abbr := range srcArgs.Abbrs(realname) {
 		if abbr == name {
 			continue
 		}
@@ -908,8 +926,7 @@ func (self *Cmd) addArgFromAnotherArg(args Args, name string) bool {
 		}
 		newAbbrs = append(newAbbrs, abbr)
 	}
-	self.args.AddArg(self.owner, name, args.DefVal(name), newAbbrs...)
-	return true
+	return srcArgs.DefVal(name), newAbbrs, true
 }
 
 func shouldExecByMask(mask *ExecuteMask) bool {
