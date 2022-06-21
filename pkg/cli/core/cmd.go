@@ -75,6 +75,7 @@ type Cmd struct {
 	autoTimerKeys AutoTimerKeys
 	orderedMacros []string
 	macros        map[string][]string
+	argsAutoMap   []string
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
@@ -96,6 +97,7 @@ func defaultCmd(owner *CmdTree, help string) *Cmd {
 		arg2env:       newArg2Env(),
 		orderedMacros: []string{},
 		macros:        map[string][]string{},
+		argsAutoMap:   nil,
 	}
 }
 
@@ -435,6 +437,11 @@ func (self *Cmd) SetIsBlenderCmd() *Cmd {
 	return self
 }
 
+func (self *Cmd) SetArg2EnvAutoMap(names []string) *Cmd {
+	self.argsAutoMap = names
+	return self
+}
+
 func (self *Cmd) IsBlenderCmd() bool {
 	return self.flags.blender
 }
@@ -474,6 +481,10 @@ func (self *Cmd) GetArg2Env() *Arg2Env {
 
 func (self *Cmd) GetDepends() []Depend {
 	return self.depends
+}
+
+func (self *Cmd) GetArg2EnvAutoMap(names []string) []string {
+	return self.argsAutoMap
 }
 
 func (self *Cmd) MetaFile() string {
@@ -851,6 +862,12 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 
 	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep, delMark)
 	return true
+}
+
+func (self *Cmd) AutoMapArg2Env() {
+	if !self.HasSubFlow() {
+		return
+	}
 }
 
 func shouldExecByMask(mask *ExecuteMask) bool {

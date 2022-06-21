@@ -43,7 +43,8 @@ func RegMod(
 	}
 
 	if len(metas) == 1 && metas[0].NotVirtual {
-		regModFile(metas[0].Meta, cc, metaPath, executablePath, isDir, isFlow, cmdPath, abbrsSep, envPathSep, source, panicRecover)
+		regModFile(metas[0].Meta, cc, metaPath, executablePath, isDir, isFlow, cmdPath,
+			abbrsSep, envPathSep, source, panicRecover)
 		return
 	}
 
@@ -54,7 +55,8 @@ func RegMod(
 	// Discard the cmdPath from real file name
 	for _, meta := range metas {
 		path := getVirtualFileCmdPath(meta.VirtualPath, flowExt, cc.Cmds.Strs.PathSep)
-		regModFile(meta.Meta, cc, metaPath, "", false, true, path, abbrsSep, envPathSep, source, panicRecover)
+		regModFile(meta.Meta, cc, metaPath, "", false, true, path,
+			abbrsSep, envPathSep, source, panicRecover)
 	}
 }
 
@@ -99,6 +101,7 @@ func regModFile(
 	regNoSession(meta, cmd)
 	regQuietCmd(meta, cmd)
 	regHideInSessionsLast(meta, cmd)
+	regArg2EnvAutoMap(cc, meta, cmd)
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
 	regArgs(meta, cmd, abbrsSep)
@@ -219,11 +222,11 @@ func regNoSession(meta *meta_file.MetaFile, cmd *core.Cmd) {
 		if len(val) == 0 {
 			continue
 		}
-		quiet, err := strconv.ParseBool(val)
+		no, err := strconv.ParseBool(val)
 		if err != nil {
 			panic(fmt.Errorf("[regNoSession] no-session value string '%s' is not bool: '%v'", val, err))
 		}
-		if quiet {
+		if no {
 			cmd.SetNoSession()
 		}
 		return
@@ -253,14 +256,39 @@ func regHideInSessionsLast(meta *meta_file.MetaFile, cmd *core.Cmd) {
 		if len(val) == 0 {
 			continue
 		}
-		quiet, err := strconv.ParseBool(val)
+		hide, err := strconv.ParseBool(val)
 		if err != nil {
 			panic(fmt.Errorf("[regHideInSessionsLast] hide-in-last value string '%s' is not bool: '%v'", val, err))
 		}
-		if quiet {
+		if hide {
 			cmd.SetHideInSessionsLast()
 		}
 		return
+	}
+}
+
+func regArg2EnvAutoMap(cc *core.Cli, meta *meta_file.MetaFile, cmd *core.Cmd) {
+	globalSection := meta.GetGlobalSection()
+	var names []string
+	for _, key := range []string{"arg2env.auto-map", "arg2env.auto", "arg2env.map"} {
+		lines := globalSection.GetMultiLineVal(key, false)
+		if len(lines) == 0 {
+			continue
+		}
+		for _, line := range lines {
+			// TODO: get sep from env
+			for _, name := range strings.Split(line, ",") {
+				name = strings.TrimSpace(name)
+				if len(name) != 0 {
+					names = append(names, name)
+				}
+			}
+		}
+		break
+	}
+	if len(names) != 0 {
+		cmd.SetArg2EnvAutoMap(names)
+		cc.Arg2EnvAutoMapCmds.Add(cmd)
 	}
 }
 
