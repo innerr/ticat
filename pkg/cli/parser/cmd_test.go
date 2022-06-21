@@ -61,7 +61,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 	}
 
 	test := func(a []string, b []parsedSeg) {
-		parsed, _, _ := parser.parse(root, nil, a)
+		parsed, _, _, _ := parser.parse(root, nil, a)
 		assertEq(a, parsed, b)
 	}
 
@@ -144,7 +144,7 @@ func TestCmdParserParse(t *testing.T) {
 	}
 
 	cmd := func(segs ...core.ParsedCmdSeg) core.ParsedCmd {
-		return core.ParsedCmd{segs, core.ParseResult{nil, nil}, 0, false}
+		return core.ParsedCmd{segs, core.ParseResult{nil, nil, false}, 0, false}
 	}
 
 	test := func(a []string, b core.ParsedCmd) {

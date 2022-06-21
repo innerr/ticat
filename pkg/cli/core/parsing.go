@@ -87,8 +87,9 @@ func (self *ParsedCmds) RemoveLeadingCmds(count int) {
 }
 
 type ParseResult struct {
-	Input []string
-	Error error
+	Input      []string
+	Error      error
+	IsMinorErr bool
 }
 
 func (self ParseResult) Clone() ParseResult {
@@ -100,6 +101,7 @@ func (self ParseResult) Clone() ParseResult {
 		input,
 		// TODO: clone error?
 		self.Error,
+		self.IsMinorErr,
 	}
 }
 
@@ -265,19 +267,19 @@ func (self ParsedCmd) ApplyMappingGenEnvAndArgv(
 	}
 	sessionEnv := env.GetLayer(EnvLayerSession)
 	// These apply on the origin env
-	applyVal2Env(sessionEnv, last)
-	applyArg2Env(sessionEnv, last, argv)
+	ApplyVal2Env(sessionEnv, last)
+	ApplyArg2Env(sessionEnv, last, argv)
 	return
 }
 
-func applyVal2Env(env *Env, cmd *Cmd) {
+func ApplyVal2Env(env *Env, cmd *Cmd) {
 	val2env := cmd.GetVal2Env()
 	for _, key := range val2env.EnvKeys() {
 		env.Set(key, val2env.Val(key))
 	}
 }
 
-func applyArg2Env(env *Env, cmd *Cmd, argv ArgVals) {
+func ApplyArg2Env(env *Env, cmd *Cmd, argv ArgVals) {
 	arg2env := cmd.GetArg2Env()
 	for name, val := range argv {
 		if !val.Provided && len(val.Raw) == 0 {

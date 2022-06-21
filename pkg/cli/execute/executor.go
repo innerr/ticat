@@ -52,6 +52,10 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 	if !self.execute(self.callerNameBootstrap, cc, env, nil, true, false, bootstrap) {
 		return false
 	}
+
+	// Do arg2env auto mapping between bootstrap (commands are loaded after this point) and executing
+	cc.Arg2EnvAutoMapCmds.AutoMapArg2Env(cc, env, builtin.EnvOpCmds())
+
 	ok := self.execute(self.callerNameEntry, cc, env, nil, false, false, input...)
 
 	tryBreakAtEnd(cc, env)
@@ -149,7 +153,6 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 		if !verifyOsDepCmds(cc, flow, env) {
 			return false
 		}
-		cc.Arg2EnvAutoMapCmds.AutoMapArg2Env(cc, env, true, builtin.EnvOpCmds())
 	}
 
 	if !bootstrap {

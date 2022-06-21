@@ -335,7 +335,11 @@ func (self *Section) GetMultiLineVal(key string, trim bool) []string {
 	if trim {
 		val = strings.Trim(val, ValTrimChars)
 	}
-	return strings.Split(val, LineSep)
+	res := strings.Split(val, LineSep)
+	for len(res) > 0 && len(res[len(res)-1]) == 0 {
+		res = res[:len(res)-1]
+	}
+	return res
 }
 
 func (self *Section) Keys() []string {

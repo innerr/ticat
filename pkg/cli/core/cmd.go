@@ -75,7 +75,7 @@ type Cmd struct {
 	autoTimerKeys AutoTimerKeys
 	orderedMacros []string
 	macros        map[string][]string
-	argsAutoMap   []string
+	argsAutoMap   *ArgsAutoMapStatus
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
@@ -97,7 +97,7 @@ func defaultCmd(owner *CmdTree, help string) *Cmd {
 		arg2env:       newArg2Env(),
 		orderedMacros: []string{},
 		macros:        map[string][]string{},
-		argsAutoMap:   nil,
+		argsAutoMap:   NewArgsAutoMapStatus(),
 	}
 }
 
@@ -438,7 +438,7 @@ func (self *Cmd) SetIsBlenderCmd() *Cmd {
 }
 
 func (self *Cmd) SetArg2EnvAutoMap(names []string) *Cmd {
-	self.argsAutoMap = names
+	self.argsAutoMap.Add(names...)
 	return self
 }
 
@@ -471,6 +471,30 @@ func (self *Cmd) AddArg2Env(envKey string, argName string) *Cmd {
 	return self
 }
 
+func (self *Cmd) AddArg2EnvFromAnotherCmd(src *Cmd) {
+	if self.argsAutoMap.IsEmpty() {
+		return
+	}
+	srcMapper := src.GetArg2Env()
+	srcArgs := src.Args()
+
+	// TODO: EnvKeys => RenderedEnvKeys?
+	for _, key := range srcMapper.EnvKeys() {
+		argName := srcMapper.GetArgName(src, key, false)
+		if self.arg2env.Has(key) {
+			continue
+		}
+		if !self.argsAutoMap.ShouldMap(argName) {
+			continue
+		}
+		added := self.addArgFromAnotherArg(srcArgs, argName)
+		if !added {
+			continue
+		}
+		self.arg2env.Add(key, argName)
+	}
+}
+
 func (self *Cmd) GetVal2Env() *Val2Env {
 	return self.val2env
 }
@@ -481,10 +505,6 @@ func (self *Cmd) GetArg2Env() *Arg2Env {
 
 func (self *Cmd) GetDepends() []Depend {
 	return self.depends
-}
-
-func (self *Cmd) GetArg2EnvAutoMap(names []string) []string {
-	return self.argsAutoMap
 }
 
 func (self *Cmd) MetaFile() string {
@@ -864,10 +884,32 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	return true
 }
 
-func (self *Cmd) AutoMapArg2Env() {
-	if !self.HasSubFlow() {
-		return
+func (self *Cmd) addArgFromAnotherArg(args Args, name string) bool {
+	if self.argsAutoMap == nil {
+		return false
 	}
+	if self.args.Has(name) {
+		return false
+	}
+	if len(self.args.Realname(name)) != 0 {
+		return false
+	}
+	var newAbbrs []string
+	for _, abbr := range args.Abbrs(name) {
+		if abbr == name {
+			continue
+		}
+		if self.args.Has(abbr) {
+			continue
+		}
+		abbrReal := self.args.Realname(abbr)
+		if len(abbrReal) != 0 {
+			continue
+		}
+		newAbbrs = append(newAbbrs, abbr)
+	}
+	self.args.AddArg(self.owner, name, args.DefVal(name), newAbbrs...)
+	return true
 }
 
 func shouldExecByMask(mask *ExecuteMask) bool {
