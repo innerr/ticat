@@ -28,6 +28,7 @@ func PrintCmdStack(
 	isBootstrap bool,
 	screen core.Screen,
 	cmd core.ParsedCmd,
+	mask *core.ExecuteMask,
 	env *core.Env,
 	flow []core.ParsedCmd,
 	currCmdIdx int,
@@ -210,6 +211,22 @@ func PrintCmdStack(
 					line += ColorCmdCurr(">> "+name, env)
 					lineExtraLen += ColorExtraLen(env, "cmd-curr")
 				}
+				if mask != nil {
+					resultStr := string(mask.ResultIfExecuted)
+					if mask.ResultIfExecuted == core.ExecutedResultError {
+						line += ColorExplain(" - executed: ", env) + ColorError(resultStr, env)
+						lineExtraLen += ColorExtraLen(env, "explain", "error")
+					} else if mask.ResultIfExecuted == core.ExecutedResultSucceeded {
+						line += ColorExplain(" - executed: ", env) + ColorCmdDone(resultStr, env)
+						lineExtraLen += ColorExtraLen(env, "explain", "cmd-done")
+					} else if mask.ResultIfExecuted == core.ExecutedResultSkipped {
+						line += ColorExplain(" - executed: ", env) + ColorExplain(resultStr, env)
+						lineExtraLen += ColorExtraLen(env, "explain", "explain")
+					} else if mask.ResultIfExecuted != core.ExecutedResultUnRun || mask.ResultIfExecuted == core.ExecutedResultIncompleted {
+						line += ColorExplain(" - executed: ", env) + ColorHighLight(resultStr, env)
+						lineExtraLen += ColorExtraLen(env, "explain", "highlight")
+					}
+				}
 			} else if i < currCmdIdx {
 				if sysArgv.IsDelay() && !inBg {
 					line += "   " + ColorCmdDelay(name+" (scheduled in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
@@ -226,6 +243,7 @@ func PrintCmdStack(
 				}
 			}
 		}
+
 		lines.Flow = append(lines.Flow, line)
 		lines.FlowLen = append(lines.FlowLen, len(line)-lineExtraLen)
 		if endOmitting {

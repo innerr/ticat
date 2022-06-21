@@ -126,7 +126,7 @@ func (self *ExecutedFlow) GenExecMasks() (masks []*ExecuteMask) {
 		if cmd.Result == ExecutedResultSucceeded && cmd.SubFlow == nil {
 			policy = ExecPolicySkip
 		}
-		masks = append(masks, &ExecuteMask{cmd.Cmd, cmd.StartEnv, cmd.FinishEnv, policy, subMasks})
+		masks = append(masks, &ExecuteMask{cmd.Cmd, cmd.StartEnv, cmd.FinishEnv, policy, subMasks, cmd.Result})
 	}
 	return
 }
