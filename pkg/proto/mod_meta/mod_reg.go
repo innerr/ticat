@@ -270,7 +270,7 @@ func regHideInSessionsLast(meta *meta_file.MetaFile, cmd *core.Cmd) {
 func regArg2EnvAutoMap(cc *core.Cli, meta *meta_file.MetaFile, cmd *core.Cmd) {
 	globalSection := meta.GetGlobalSection()
 	var names []string
-	for _, key := range []string{"arg2env.auto-map", "arg2env.auto", "arg2env.map"} {
+	for _, key := range []string{"args.auto", "arg.auto", "arg2env.auto-map", "arg2env.auto", "arg2env.map"} {
 		lines := globalSection.GetMultiLineVal(key, false)
 		if len(lines) == 0 {
 			continue

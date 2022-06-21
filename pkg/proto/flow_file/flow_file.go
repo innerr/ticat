@@ -29,6 +29,7 @@ func SaveFlowFile(path string, flow []string, help string, abbrs string) {
 	if len(abbrs) != 0 {
 		section.Set("abbrs", abbrs)
 	}
+	section.Set("args.auto", "*")
 	if len(flow) != 0 {
 		section.SetMultiLineVal("flow", flow)
 	}

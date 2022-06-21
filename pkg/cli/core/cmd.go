@@ -75,7 +75,7 @@ type Cmd struct {
 	autoTimerKeys AutoTimerKeys
 	orderedMacros []string
 	macros        map[string][]string
-	argsAutoMap   []string
+	argsAutoMap   *ArgsAutoMapStatus
 }
 
 func defaultCmd(owner *CmdTree, help string) *Cmd {
@@ -97,7 +97,7 @@ func defaultCmd(owner *CmdTree, help string) *Cmd {
 		arg2env:       newArg2Env(),
 		orderedMacros: []string{},
 		macros:        map[string][]string{},
-		argsAutoMap:   nil,
+		argsAutoMap:   NewArgsAutoMapStatus(),
 	}
 }
 
@@ -438,8 +438,12 @@ func (self *Cmd) SetIsBlenderCmd() *Cmd {
 }
 
 func (self *Cmd) SetArg2EnvAutoMap(names []string) *Cmd {
-	self.argsAutoMap = names
+	self.argsAutoMap.Add(names...)
 	return self
+}
+
+func (self *Cmd) GetArgsAutoMapStatus() *ArgsAutoMapStatus {
+	return self.argsAutoMap
 }
 
 func (self *Cmd) IsBlenderCmd() bool {
@@ -471,6 +475,46 @@ func (self *Cmd) AddArg2Env(envKey string, argName string) *Cmd {
 	return self
 }
 
+func (self *Cmd) AddArg2EnvFromAnotherCmd(src *Cmd) {
+	if self.argsAutoMap.IsEmpty() {
+		return
+	}
+	srcMapper := src.GetArg2Env()
+	srcArgs := src.Args()
+
+	// TODO: EnvKeys => RenderedEnvKeys?
+	for _, key := range srcMapper.EnvKeys() {
+		srcArgName := srcMapper.GetArgName(src, key, false)
+		if self.arg2env.Has(key) {
+			continue
+		}
+		srcArgAbbrs := srcArgs.Abbrs(srcArgName)
+		var mapArgName string
+		for _, abbr := range srcArgAbbrs {
+			if self.argsAutoMap.ShouldMap(abbr) {
+				mapArgName = abbr
+				break
+			}
+		}
+		if len(mapArgName) == 0 {
+			continue
+		}
+
+		defVal, newAbbrs, ok := self.checkCanAddArgFromAnotherArg(srcArgs, mapArgName)
+		if ok {
+			self.argsAutoMap.MarkAndCacheMapping(key, mapArgName, defVal, newAbbrs)
+		}
+	}
+}
+
+func (self *Cmd) FinishArg2EnvAutoMap(cc *Cli) {
+	self.argsAutoMap.FlushCache(self)
+	if !self.argsAutoMap.FullyMappedOrMapAll() {
+		err := fmt.Errorf("args of cmd '%s' can't be fully mapped", self.owner.DisplayPath())
+		cc.TolerableErrs.OnErr(err, self.owner.Source(), self.metaFilePath, "arg2env auto mapping failed")
+	}
+}
+
 func (self *Cmd) GetVal2Env() *Val2Env {
 	return self.val2env
 }
@@ -481,10 +525,6 @@ func (self *Cmd) GetArg2Env() *Arg2Env {
 
 func (self *Cmd) GetDepends() []Depend {
 	return self.depends
-}
-
-func (self *Cmd) GetArg2EnvAutoMap(names []string) []string {
-	return self.argsAutoMap
 }
 
 func (self *Cmd) MetaFile() string {
@@ -864,10 +904,29 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	return true
 }
 
-func (self *Cmd) AutoMapArg2Env() {
-	if !self.HasSubFlow() {
+func (self *Cmd) checkCanAddArgFromAnotherArg(srcArgs Args, name string) (defVal string, abbrs []string, ok bool) {
+	if self.args.Has(name) {
 		return
 	}
+	if len(self.args.Realname(name)) != 0 {
+		return
+	}
+	var newAbbrs []string
+	realname := srcArgs.Realname(name)
+	for _, abbr := range srcArgs.Abbrs(realname) {
+		if abbr == name {
+			continue
+		}
+		if self.args.Has(abbr) {
+			continue
+		}
+		abbrReal := self.args.Realname(abbr)
+		if len(abbrReal) != 0 {
+			continue
+		}
+		newAbbrs = append(newAbbrs, abbr)
+	}
+	return srcArgs.DefVal(name), newAbbrs, true
 }
 
 func shouldExecByMask(mask *ExecuteMask) bool {
