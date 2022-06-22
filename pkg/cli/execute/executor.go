@@ -420,6 +420,7 @@ func useEnvAbbrs(abbrs *core.EnvAbbrs, env *core.Env, sep string) {
 }
 
 func stackStepIn(caller string, env *core.Env) {
+	env = env.GetLayer(core.EnvLayerSession)
 	env.PlusInt("sys.stack-depth", 1)
 	sep := env.GetRaw("strs.list-sep")
 	stack := env.GetRaw("sys.stack")
@@ -431,6 +432,7 @@ func stackStepIn(caller string, env *core.Env) {
 }
 
 func stackStepOut(caller string, callerNameEntry string, env *core.Env) {
+	env = env.GetLayer(core.EnvLayerSession)
 	env.PlusInt("sys.stack-depth", -1)
 	sep := env.GetRaw("strs.list-sep")
 	stack := env.GetRaw("sys.stack")
@@ -441,7 +443,7 @@ func stackStepOut(caller string, callerNameEntry string, env *core.Env) {
 			fields := strings.Split(stack, sep)
 			if len(fields) != 1 || fields[0] != caller {
 				panic(fmt.Errorf("stack string not match when stepping out from '%s', stack: '%s'",
-					sep+caller, stack))
+					caller, stack))
 			}
 		}
 	} else {

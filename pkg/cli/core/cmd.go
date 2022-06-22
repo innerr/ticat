@@ -205,14 +205,12 @@ func (self *Cmd) execute(
 	// TODO: this logic should be in upper layer
 	if mask != nil && mask.OverWriteStartEnv != nil {
 		p := env
-		stack := env.GetRaw("sys.stack")
 		for p != nil && p.LayerType() != EnvLayerSession {
 			p.CleanCurrLayer()
 			p = p.Parent()
 		}
 		if p != nil {
 			mask.OverWriteStartEnv.WriteCurrLayerTo(p)
-			p.Set("sys.stack", stack)
 		}
 	}
 
@@ -232,7 +230,7 @@ func (self *Cmd) execute(
 			}
 
 			if (r == nil || !handledErr) && !isAbort {
-				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask))
+				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask) && !executedAndSucceeded(mask))
 				cc.HandledErrors[r] = true
 			}
 			if r != nil && !self.flags.quietError {
@@ -831,7 +829,7 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 	} else {
 		cc.Screen.Print("(skipped+)\n")
 		succeeded = true
-		skipped = true
+		skipped = !executedAndSucceeded(mask)
 	}
 	return
 }
@@ -933,4 +931,8 @@ func (self *Cmd) checkCanAddArgFromAnotherArg(srcArgs Args, name string) (defVal
 
 func shouldExecByMask(mask *ExecuteMask) bool {
 	return (mask == nil || mask.ExecPolicy == ExecPolicyExec)
+}
+
+func executedAndSucceeded(mask *ExecuteMask) bool {
+	return (mask != nil || mask.ResultIfExecuted == ExecutedResultSucceeded)
 }
