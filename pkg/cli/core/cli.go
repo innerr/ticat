@@ -18,20 +18,21 @@ const ExecPolicyExec ExecPolicy = "exec"
 const ExecPolicySkip ExecPolicy = "skip"
 
 type ExecuteMask struct {
-	Cmd                string
-	OverWriteStartEnv  *Env
-	OverWriteFinishEnv *Env
-	ExecPolicy         ExecPolicy
-	SubFlow            []*ExecuteMask
-	ResultIfExecuted   ExecutedResult
+	Cmd                 string
+	OverWriteStartEnv   *Env
+	OverWriteFinishEnv  *Env
+	ExecPolicy          ExecPolicy
+	FileNFlowExecPolicy ExecPolicy
+	SubFlow             []*ExecuteMask
+	ResultIfExecuted    ExecutedResult
 }
 
 func NewExecuteMask(cmd string) *ExecuteMask {
-	return &ExecuteMask{cmd, nil, nil, ExecPolicyExec, nil, ExecutedResultUnRun}
+	return &ExecuteMask{cmd, nil, nil, ExecPolicyExec, ExecPolicyExec, nil, ExecutedResultUnRun}
 }
 
 func (self *ExecuteMask) Copy() *ExecuteMask {
-	return &ExecuteMask{self.Cmd, self.OverWriteStartEnv, self.OverWriteFinishEnv, self.ExecPolicy, self.SubFlow, ExecutedResultUnRun}
+	return &ExecuteMask{self.Cmd, self.OverWriteStartEnv, self.OverWriteFinishEnv, self.ExecPolicy, self.FileNFlowExecPolicy, self.SubFlow, ExecutedResultUnRun}
 }
 
 type Executor interface {
