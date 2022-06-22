@@ -101,7 +101,6 @@ func noSessionCmds(flow *core.ParsedCmds) bool {
 
 	if flow.HasTailMode {
 		funcs := []interface{}{
-			builtin.DbgBreakAtBegin,
 			builtin.DbgBreakAtEnd,
 		}
 		ignore := false
