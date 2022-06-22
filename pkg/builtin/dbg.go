@@ -46,7 +46,7 @@ func DbgExecBash(
 	return currCmdIdx, true
 }
 
-func DbgDelayExecute(
+func DbgWaitSecExecute(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -54,11 +54,11 @@ func DbgDelayExecute(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec", argv.GetInt("seconds"))
+	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-wait-sec", argv.GetInt("seconds"))
 	return currCmdIdx, true
 }
 
-func DbgDelayExecuteAtEnd(
+func DbgWaitSecExecuteAtEnd(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -66,7 +66,7 @@ func DbgDelayExecuteAtEnd(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-delay-sec.at-end", argv.GetInt("seconds"))
+	env.GetLayer(core.EnvLayerSession).SetInt("sys.execute-wait-sec.at-end", argv.GetInt("seconds"))
 	return currCmdIdx, true
 }
 

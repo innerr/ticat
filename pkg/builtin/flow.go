@@ -207,7 +207,7 @@ func SaveFlow(
 		if quietOverwrite {
 			// do nothing
 		} else {
-			if !env.GetBool("sys.interact") {
+			if !env.GetBool("sys.confirm.ask") {
 				panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 					fmt.Sprintf("path '%s' exists", filePath)))
 			} else {
@@ -392,7 +392,7 @@ func getFlowCmdPath(
 
 	filePath = filepath.Join(root, cmdPath) + flowExt
 	if !expectExists && fileExists(filePath) {
-		if !env.GetBool("sys.interact") {
+		if !env.GetBool("sys.confirm.ask") {
 			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 				fmt.Sprintf("flow '%s' file '%s' exists", cmdPath, filePath)))
 		} else {

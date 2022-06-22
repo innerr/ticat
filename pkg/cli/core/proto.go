@@ -90,6 +90,9 @@ func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
 		"sys.stack-depth",
 		"sys.session.",
 		"sys.interact",
+		"sys.step-by-step",
+		"sys.breakpoint",
+		"sys.execute-wait-sec",
 		"sys.event.",
 	}
 	saveEnvToFile(env, path, sep, filtered, skipDefault)

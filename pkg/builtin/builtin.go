@@ -1031,14 +1031,14 @@ func RegisterCtrlCmds(cmds *core.CmdTree) {
 		"sys.step-by-step",
 		"step-by-step", "step", "confirm", "cfm")
 
-	delay := cmds.AddSub("delay-execute", "delay").
-		RegPowerCmd(DbgDelayExecute,
+	wait := cmds.AddSub("wait-execute", "wait-exec", "wait-exe").
+		RegPowerCmd(DbgWaitSecExecute,
 			"wait for specified duration before executing each commands").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")
 
-	delay.AddSub("after", "at-end", "at-finish", "post-execute", "end", "finish").
-		RegPowerCmd(DbgDelayExecuteAtEnd,
+	wait.AddSub("after", "at-end", "at-finish", "post-execute", "end", "finish").
+		RegPowerCmd(DbgWaitSecExecuteAtEnd,
 			"wait for specified duration after executing each commands").
 		SetQuiet().
 		AddArg("seconds", "3", "second", "sec", "s", "S")

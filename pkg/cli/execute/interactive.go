@@ -24,7 +24,7 @@ const (
 	BPAQuit       = "quit executing"
 )
 
-func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd,
+func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd,
 	breakByPrev bool, lastCmdInFlow bool, bootstrap bool, showStack func()) BreakPointAction {
 
 	if env.GetBool("sys.interact.inside") {
@@ -38,7 +38,7 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, showStack)
 	if bpa == BPAContinue {
 		if !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {
-			tryDelay(cc, env, "sys.execute-delay-sec")
+			tryWaitSec(cc, env, "sys.execute-wait-sec")
 		}
 	} else if bpa == BPAStepIn {
 		env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-in", true)
@@ -103,14 +103,14 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	return readUserBPAChoice(reason, choices, bpas, true, cc, env, showStack)
 }
 
-func tryDelayAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool, lastCmdInFlow bool, showStack func()) BreakPointAction {
+func tryWaitSecAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool, lastCmdInFlow bool, showStack func()) BreakPointAction {
 	bpa := tryBreakAfter(cc, env, cmd, showStack)
 	if bpa == BPAStepOver {
 		if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
 			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
 		}
 	} else if bpa == BPAContinue && !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {
-		tryDelay(cc, env, "sys.execute-delay-sec.at-end")
+		tryWaitSec(cc, env, "sys.execute-wait-sec.at-end")
 	}
 	return bpa
 }
@@ -157,10 +157,10 @@ func tryBreakAtEnd(cc *core.Cli, env *core.Env) {
 	}
 }
 
-func tryDelay(cc *core.Cli, env *core.Env, delayKey string) {
-	delaySec := env.GetInt(delayKey)
-	if delaySec > 0 {
-		for i := 0; i < delaySec; i++ {
+func tryWaitSec(cc *core.Cli, env *core.Env, waitSecKey string) {
+	waitSec := env.GetInt(waitSecKey)
+	if waitSec > 0 {
+		for i := 0; i < waitSec; i++ {
 			time.Sleep(time.Second)
 			cc.Screen.Print(".")
 		}

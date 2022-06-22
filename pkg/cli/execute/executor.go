@@ -232,7 +232,7 @@ func (self *Executor) executeCmd(
 	last := cmd.LastCmdNode()
 
 	if !sysArgv.IsDelay() {
-		bpa := tryDelayAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow, bootstrap, showStack)
+		bpa := tryWaitSecAndStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, lastCmdInFlow, bootstrap, showStack)
 		if bpa == BPASkip {
 			mask = copyMask(last.DisplayPath(), mask)
 			mask.ExecPolicy = core.ExecPolicySkip
@@ -293,7 +293,7 @@ func (self *Executor) executeCmd(
 	}
 
 	if !sysArgv.IsDelay() {
-		bpa := tryDelayAndBreakAfter(cc, env, cmd, bootstrap, lastCmdInFlow, showStack)
+		bpa := tryWaitSecAndBreakAfter(cc, env, cmd, bootstrap, lastCmdInFlow, showStack)
 		if bpa == BPAStepOver {
 			breakAtNext = true
 		} else if bpa != BPAContinue {
