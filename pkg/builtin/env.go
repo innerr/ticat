@@ -20,8 +20,8 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.SetBool("sys.step-by-step", false)
 	env.SetBool("sys.panic.recover", true)
-	env.SetInt("sys.execute-delay-sec", 0)
-	env.SetBool("sys.interact", true)
+	env.SetInt("sys.execute-wait-sec", 0)
+	env.SetBool("sys.confirm.ask", true)
 
 	env.Set("sys.version", "1.3.1")
 	env.Set("sys.dev.name", "subflows")
@@ -61,7 +61,7 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	sys.GetOrAddSub("bootstrap").AddAbbrs("boot")
 	sys.GetOrAddSub("interact").AddAbbrs("ir", "i")
 	sys.GetOrAddSub("step-by-step").AddAbbrs("step")
-	sys.GetOrAddSub("delay-execute").AddAbbrs("delay")
+	sys.GetOrAddSub("wait-execute").AddAbbrs("wait-exec", "wait-exe")
 	sys.GetOrAddSub("version").AddAbbrs("ver")
 
 	hub := sys.GetOrAddSub("hub")
