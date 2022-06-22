@@ -52,7 +52,6 @@ func tryDelayAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.P
 }
 
 func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, breakByPrev bool, showStack func()) BreakPointAction {
-	atBegin := cc.BreakPoints.BreakAtBegin()
 	stepByStep := env.GetBool("sys.step-by-step")
 	stepIn := env.GetBool("sys.breakpoint.status.step-in")
 	stepOut := env.GetBool("sys.breakpoint.status.step-out")
@@ -62,7 +61,7 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	breakBefore := cc.BreakPoints.BreakBefore(name) || env.GetBool(breakHereKey)
 	env.GetLayer(core.EnvLayerSession).Delete(breakHereKey)
 
-	if !atBegin && !breakBefore && !stepByStep && !stepIn && !stepOut && !breakByPrev {
+	if !breakBefore && !stepByStep && !stepIn && !stepOut && !breakByPrev {
 		return BPAContinue
 	}
 
@@ -73,11 +72,7 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 		choices = append(choices, "t")
 	}
 
-	if atBegin {
-		cc.BreakPoints.SetAtBegin(false)
-		reason = display.ColorTip("break-point: at begin", env)
-		choices = append(choices, "s", "d", "c")
-	} else if stepByStep {
+	if stepByStep {
 		reason = display.ColorTip("step-by-step", env)
 		choices = append(choices, "c")
 	} else if breakBefore {

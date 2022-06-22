@@ -5,22 +5,13 @@ import (
 )
 
 type BreakPoints struct {
-	AtBegin bool
 	AtEnd   bool
 	Befores map[string]bool
 	Afters  map[string]bool
 }
 
 func NewBreakPoints() *BreakPoints {
-	return &BreakPoints{false, false, map[string]bool{}, map[string]bool{}}
-}
-
-func (self *BreakPoints) SetAtBegin(enabled bool) {
-	self.AtBegin = enabled
-}
-
-func (self *BreakPoints) BreakAtBegin() bool {
-	return self.AtBegin
+	return &BreakPoints{false, map[string]bool{}, map[string]bool{}}
 }
 
 func (self *BreakPoints) SetAtEnd(enabled bool) {
@@ -49,6 +40,16 @@ func (self *BreakPoints) SetAfters(cc *Cli, env *Env, cmdList []string) (verifie
 	}
 	sort.Strings(verifiedCmds)
 	return
+}
+
+func (self *BreakPoints) IsEmpty() bool {
+	return self.AtEnd == false && len(self.Befores) == 0 && len(self.Afters) == 0
+}
+
+func (self *BreakPoints) Clean(cc *Cli, env *Env) {
+	self.AtEnd = false
+	self.Befores = map[string]bool{}
+	self.Afters = map[string]bool{}
 }
 
 func (self *BreakPoints) BreakBefore(cmd string) bool {
