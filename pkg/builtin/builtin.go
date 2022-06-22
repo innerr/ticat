@@ -986,7 +986,7 @@ func RegisterBlenderCmds(cmds *core.CmdTree) {
 }
 
 func RegisterCtrlCmds(cmds *core.CmdTree) {
-	breaks := cmds.AddSub("breaks", "break")
+	breaks := cmds.AddSub("breaks", "break", "pause")
 	breaks.RegEmptyCmd("set break point at the position of this command").
 		SetQuiet().
 		AddVal2Env("sys.breakpoint.here.now", "true")

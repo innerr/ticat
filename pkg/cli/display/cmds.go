@@ -276,16 +276,24 @@ func dumpCmd(
 		}
 
 		if (!args.Skeleton || args.ShowUsage) && cic != nil {
-			args := cic.Args()
-			argNames := args.Names()
+			cicArgs := cic.Args()
+			autoMapInfo := cic.GetArgsAutoMapStatus()
+			argNames := cicArgs.Names()
 			if len(argNames) != 0 {
 				prt(1, ColorProp("- args:", env))
 			}
 			for _, name := range argNames {
-				val := args.DefVal(name)
-				nameStr := strings.Join(args.Abbrs(name), abbrsSep)
+				val := cicArgs.DefVal(name)
+				nameStr := strings.Join(cicArgs.Abbrs(name), abbrsSep)
 				val = mayMaskSensitiveVal(nameStr, val)
-				prt(2, ColorArg(nameStr, env)+ColorSymbol(" = ", env)+mayQuoteStr(val))
+				line := ColorArg(nameStr, env) + ColorSymbol(" = ", env) + mayQuoteStr(val)
+				if !args.Skeleton {
+					entry := autoMapInfo.GetMappedSource(name)
+					if entry != nil {
+						line += ColorExplain(" <- ", env) + ColorCmdLowKey("["+entry.SrcCmd.Owner().DisplayPath()+"]", env)
+					}
+				}
+				prt(2, line)
 			}
 		}
 

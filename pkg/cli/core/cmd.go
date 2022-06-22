@@ -502,7 +502,7 @@ func (self *Cmd) AddArg2EnvFromAnotherCmd(src *Cmd) {
 
 		defVal, newAbbrs, ok := self.checkCanAddArgFromAnotherArg(srcArgs, mapArgName)
 		if ok {
-			self.argsAutoMap.MarkAndCacheMapping(key, mapArgName, defVal, newAbbrs)
+			self.argsAutoMap.MarkAndCacheMapping(src, key, mapArgName, defVal, newAbbrs)
 		}
 	}
 }
