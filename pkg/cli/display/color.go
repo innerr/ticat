@@ -33,6 +33,7 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"cmd-curr":  2,
 		"cmd-empty": 2,
 		"cmd-delay": 2,
+		"cmd-low":   2,
 		"flowing":   2,
 		"enabled":   2,
 		"disabled":  3,
@@ -139,6 +140,10 @@ func ColorCmdDone(origin string, env *core.Env) string {
 func ColorCmdDelay(origin string, env *core.Env) string {
 	//return colorize(origin, fromColor256(22), env)
 	return colorize(origin, fromColor256(28), env)
+}
+
+func ColorCmdLowKey(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(22), env)
 }
 
 func ColorThread(origin string, env *core.Env) string {

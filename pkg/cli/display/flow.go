@@ -850,6 +850,10 @@ func dumpExecutedModifiedEnv(
 		lines = append(lines, ColorKey(k, env)+ColorSymbol(" = ", env)+normalizeValForDisplay(k, v, env, lineLimit-prefixLen)+op)
 	}
 
+	if len(lines) == 0 {
+		return
+	}
+
 	sort.Strings(lines)
 	if !args.Skeleton {
 		if len(lines) != 0 || executedCmd.Result != core.ExecutedResultSucceeded {

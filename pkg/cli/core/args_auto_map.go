@@ -83,19 +83,22 @@ func autoMapArg2EnvForCmdsInFlow(
 }
 
 type ArgsAutoMapStatus struct {
-	argList []string
-	mapAll  bool
-	argSet  map[string]bool
-	mapped  map[string]bool
-	metCmds map[*Cmd]bool
-	cache   map[string]Arg2EnvMappingEntry
+	argList    []string
+	mapAll     bool
+	argSet     map[string]bool
+	mapped     map[string]bool
+	metCmds    map[*Cmd]bool
+	cache      map[string]Arg2EnvMappingEntry
+	resultArgs []string
+	resultData map[string]Arg2EnvMappingEntry
 }
 
 type Arg2EnvMappingEntry struct {
-	key     string
-	argName string
-	defVal  string
-	abbrs   []string
+	SrcCmd  *Cmd
+	Key     string
+	ArgName string
+	DefVal  string
+	Abbrs   []string
 }
 
 func NewArgsAutoMapStatus() *ArgsAutoMapStatus {
@@ -105,6 +108,8 @@ func NewArgsAutoMapStatus() *ArgsAutoMapStatus {
 		map[string]bool{},
 		map[string]bool{},
 		map[*Cmd]bool{},
+		map[string]Arg2EnvMappingEntry{},
+		nil,
 		map[string]Arg2EnvMappingEntry{},
 	}
 }
@@ -164,9 +169,17 @@ func (self *ArgsAutoMapStatus) FullyMapped() bool {
 	return len(self.mapped) == len(self.argSet)
 }
 
-func (self *ArgsAutoMapStatus) MarkAndCacheMapping(key string, argName string, defVal string, abbrs []string) {
-	self.cache[argName] = Arg2EnvMappingEntry{key, argName, defVal, abbrs}
+func (self *ArgsAutoMapStatus) MarkAndCacheMapping(srcCmd *Cmd, key string, argName string, defVal string, abbrs []string) {
+	self.cache[argName] = Arg2EnvMappingEntry{srcCmd, key, argName, defVal, abbrs}
 	self.mapped[argName] = true
+}
+
+func (self *ArgsAutoMapStatus) GetMappedSource(argName string) *Arg2EnvMappingEntry {
+	entry, ok := self.resultData[argName]
+	if !ok {
+		return nil
+	}
+	return &entry
 }
 
 func (self *ArgsAutoMapStatus) FlushCache(cmd *Cmd) {
@@ -186,19 +199,21 @@ func (self *ArgsAutoMapStatus) FlushCache(cmd *Cmd) {
 
 func (self *ArgsAutoMapStatus) flushCacheEntry(cmd *Cmd, entry Arg2EnvMappingEntry) {
 	arg2env := cmd.GetArg2Env()
-	if arg2env.Has(entry.key) {
+	if arg2env.Has(entry.Key) {
 		return
 	}
 	args := cmd.Args()
-	if len(args.Realname(entry.argName)) != 0 {
+	if len(args.Realname(entry.ArgName)) != 0 {
 		return
 	}
 	var newAbbrs []string
-	for _, abbr := range entry.abbrs {
+	for _, abbr := range entry.Abbrs {
 		if len(args.Realname(abbr)) == 0 {
 			newAbbrs = append(newAbbrs, abbr)
 		}
 	}
-	cmd.AddArg(entry.argName, entry.defVal, newAbbrs...)
-	cmd.AddArg2Env(entry.key, entry.argName)
+	cmd.AddArg(entry.ArgName, entry.DefVal, newAbbrs...)
+	cmd.AddArg2Env(entry.Key, entry.ArgName)
+	self.resultArgs = append(self.resultArgs, entry.ArgName)
+	self.resultData[entry.ArgName] = Arg2EnvMappingEntry{entry.SrcCmd, entry.Key, entry.ArgName, entry.DefVal, newAbbrs}
 }

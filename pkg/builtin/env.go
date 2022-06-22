@@ -23,8 +23,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.execute-wait-sec", 0)
 	env.SetBool("sys.confirm.ask", true)
 
-	env.Set("sys.version", "1.3.1")
-	env.Set("sys.dev.name", "subflows")
+	env.Set("sys.version", "1.3.2")
+	env.Set("sys.dev.name", "automating")
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
