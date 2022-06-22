@@ -205,12 +205,14 @@ func (self *Cmd) execute(
 	// TODO: this logic should be in upper layer
 	if mask != nil && mask.OverWriteStartEnv != nil {
 		p := env
+		stack := env.GetRaw("sys.stack")
 		for p != nil && p.LayerType() != EnvLayerSession {
 			p.CleanCurrLayer()
 			p = p.Parent()
 		}
 		if p != nil {
 			mask.OverWriteStartEnv.WriteCurrLayerTo(p)
+			p.Set("sys.stack", stack)
 		}
 	}
 
@@ -284,7 +286,7 @@ func (self *Cmd) executeByType(
 		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeFileNFlow:
 		succeeded := self.executeFlow(argv, cc, env, mask)
-		if succeeded && shouldExecByMask(mask) {
+		if succeeded && (mask == nil || mask.FileNFlowExecPolicy == ExecPolicyExec) {
 			succeeded = self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath)
 		}
 		return currCmdIdx, succeeded

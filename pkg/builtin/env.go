@@ -28,14 +28,15 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
-	env.SetDur("sys.sessions.keep-status-duration", "72h")
+	// 100 days
+	env.SetDur("sys.sessions.keep-status-duration", "2400h")
 
 	env.Set("sys.hub.init-repo", "ticat-mods/marsh")
 	env.Set("sys.self.repo", "https://github.com/innerr/ticat")
 
 	row, col := utils.GetTerminalWidth(50, 100)
 	env.SetInt("display.width.max", col)
-	col = adjustDisplayWidth(col)
+	//col = adjustDisplayWidth(col)
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
 

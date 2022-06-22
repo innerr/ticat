@@ -336,8 +336,7 @@ func PrintCmdResult(
 	lines.Dur = formatDuration(elapsed)
 	lines.DurLen = len(lines.Dur)
 
-	useUtf8 := env.GetBool("display.utf8.symbols")
-	if useUtf8 {
+	if env.GetBool("display.utf8.symbols") {
 		if succeeded {
 			lines.Res = " ✓"
 		} else {
@@ -350,12 +349,12 @@ func PrintCmdResult(
 			lines.Res = " E"
 		}
 	}
+	lines.ResLen = 2
+
 	if succeeded {
 		lines.Res = ColorCmd(lines.Res, env)
-		lines.ResLen = len(lines.Res) - ColorExtraLen(env, "cmd")
 	} else {
 		lines.Res = ColorError(lines.Res, env)
-		lines.ResLen = len(lines.Res) - ColorExtraLen(env, "error")
 	}
 
 	lines.Cmd = ColorCmdDone(cmd.DisplayPath(strs.PathSep, env.GetBool("display.mod.realname")), env)
