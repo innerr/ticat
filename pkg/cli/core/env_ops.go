@@ -41,6 +41,18 @@ func (self EnvOps) MatchWriteKey(key string) bool {
 	return false
 }
 
+func (self EnvOps) AllWriteKeys() (keys []string) {
+	for key, ops := range self.ops {
+		for _, op := range ops {
+			if (op&EnvOpTypeWrite) > 0 || (op&EnvOpTypeMayWrite) > 0 {
+				keys = append(keys, key)
+				break
+			}
+		}
+	}
+	return
+}
+
 func (self EnvOps) MatchFind(findStr string) bool {
 	for _, name := range self.orderedNames {
 		if strings.Index(name, findStr) >= 0 {
