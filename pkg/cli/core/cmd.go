@@ -489,20 +489,14 @@ func (self *Cmd) AddArg2EnvFromAnotherCmd(src *Cmd) {
 			continue
 		}
 		srcArgAbbrs := srcArgs.Abbrs(srcArgName)
-		var mapArgName string
-		for _, abbr := range srcArgAbbrs {
-			if self.argsAutoMap.ShouldMap(abbr) {
-				mapArgName = abbr
-				break
-			}
-		}
-		if len(mapArgName) == 0 {
+		mapArgName, shouldMap, shouldMarkMapped := self.argsAutoMap.ShouldMapByDefinition(self, src, srcArgAbbrs)
+		if !shouldMap {
 			continue
 		}
 
 		defVal, newAbbrs, ok := self.checkCanAddArgFromAnotherArg(srcArgs, mapArgName)
 		if ok {
-			self.argsAutoMap.MarkAndCacheMapping(src, key, mapArgName, defVal, newAbbrs)
+			self.argsAutoMap.MarkAndCacheMapping(src, key, mapArgName, defVal, newAbbrs, shouldMarkMapped)
 		}
 	}
 }
@@ -510,7 +504,8 @@ func (self *Cmd) AddArg2EnvFromAnotherCmd(src *Cmd) {
 func (self *Cmd) FinishArg2EnvAutoMap(cc *Cli) {
 	self.argsAutoMap.FlushCache(self)
 	if !self.argsAutoMap.FullyMappedOrMapAll() {
-		err := fmt.Errorf("args of cmd '%s' can't be fully mapped", self.owner.DisplayPath())
+		err := fmt.Errorf("args of cmd '%s' can't be fully mapped: %s",
+			self.owner.DisplayPath(), strings.Join(self.argsAutoMap.GetUnmappedArgs(), ","))
 		cc.TolerableErrs.OnErr(err, self.owner.Source(), self.metaFilePath, "arg2env auto mapping failed")
 	}
 }
@@ -908,7 +903,7 @@ func (self *Cmd) checkCanAddArgFromAnotherArg(srcArgs Args, name string) (defVal
 	if self.args.Has(name) {
 		return
 	}
-	if len(self.args.Realname(name)) != 0 {
+	if self.args.HasArgOrAbbr(name) {
 		return
 	}
 	var newAbbrs []string
@@ -926,7 +921,7 @@ func (self *Cmd) checkCanAddArgFromAnotherArg(srcArgs Args, name string) (defVal
 		}
 		newAbbrs = append(newAbbrs, abbr)
 	}
-	return srcArgs.DefVal(name), newAbbrs, true
+	return srcArgs.DefVal(realname), newAbbrs, true
 }
 
 func shouldExecByMask(mask *ExecuteMask) bool {

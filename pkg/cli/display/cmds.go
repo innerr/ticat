@@ -267,7 +267,7 @@ func dumpCmd(
 				}
 			}
 			if !args.Skeleton || args.ShowUsage {
-				abbrs := cmd.DisplayAbbrsPath()
+				abbrs := displayCmdAbbrsPath(cmd, env)
 				if len(abbrs) != 0 && abbrs != full {
 					prt(1, ColorProp("- full-abbrs:", env))
 					prt(2, abbrs)
@@ -284,9 +284,18 @@ func dumpCmd(
 			}
 			for _, name := range argNames {
 				val := cicArgs.DefVal(name)
-				nameStr := strings.Join(cicArgs.Abbrs(name), abbrsSep)
+				var nameList []string
+				for i, it := range cicArgs.Abbrs(name) {
+					if i == 0 {
+						it = ColorArg(it, env)
+					} else {
+						it = ColorExplain(it, env)
+					}
+					nameList = append(nameList, it)
+				}
+				nameStr := strings.Join(nameList, ColorAbbrSep(abbrsSep, env))
 				val = mayMaskSensitiveVal(nameStr, val)
-				line := ColorArg(nameStr, env) + ColorSymbol(" = ", env) + mayQuoteStr(val)
+				line := nameStr + ColorSymbol(" = ", env) + mayQuoteStr(val)
 				if !args.Skeleton {
 					entry := autoMapInfo.GetMappedSource(name)
 					if entry != nil {
@@ -428,4 +437,26 @@ func cmdIdStr(cmd *core.CmdTree, name string, env *core.Env) string {
 	return frameColor("[", env) +
 		cmdColor(name, env) +
 		frameColor("]", env)
+}
+
+func getCmdAbbrsPath(cmd *core.CmdTree, env *core.Env) []string {
+	if cmd.Parent() == nil {
+		return nil
+	}
+	abbrs := cmd.Parent().SubAbbrs(cmd.Name())
+	if len(abbrs) == 0 {
+		return nil
+	}
+	sep := cmd.Strs.AbbrsSep
+	//sep := ColorExplain(cmd.Strs.AbbrsSep, env)
+	return append(getCmdAbbrsPath(cmd.Parent(), env), strings.Join(abbrs, sep))
+}
+
+func displayCmdAbbrsPath(cmd *core.CmdTree, env *core.Env) string {
+	path := getCmdAbbrsPath(cmd, env)
+	if len(path) == 0 {
+		return ""
+	} else {
+		return strings.Join(path, cmd.Strs.PathSep)
+	}
 }

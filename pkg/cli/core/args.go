@@ -82,6 +82,11 @@ func (self *Args) Has(name string) bool {
 	return ok
 }
 
+func (self *Args) HasArgOrAbbr(nameOrAbbr string) bool {
+	_, ok := self.abbrsRevIdx[nameOrAbbr]
+	return ok
+}
+
 func (self *Args) Index(name string) int {
 	index, ok := self.names[name]
 	if !ok {

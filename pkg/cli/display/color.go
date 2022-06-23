@@ -41,6 +41,7 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"session":   3,
 		"highlight": 3,
 		"interact":  3,
+		"abbr-sep":  3,
 	}
 	for _, it := range types {
 		extra, ok := lens[it]
@@ -50,6 +51,10 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		res += extra + colorExtraLenWithoutCode
 	}
 	return
+}
+
+func ColorAbbrSep(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(172), env)
 }
 
 func ColorHub(origin string, env *core.Env) string {
