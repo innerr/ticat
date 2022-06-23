@@ -16,6 +16,10 @@ func RenderTemplateStrLines(
 
 	fullyRendered = true
 	for _, line := range in {
+		// TODO: put # into env.strs
+		if strings.HasPrefix(strings.TrimSpace(line), "#") {
+			continue
+		}
 		rendereds, lineFullyRendered := renderTemplateStr(line, targetName, cmd, argv, env, allowError)
 		for _, rendered := range rendereds {
 			out = append(out, rendered)

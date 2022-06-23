@@ -1,5 +1,9 @@
 package core
 
+import (
+	"sort"
+)
+
 type Arg2EnvAutoMapCmds map[*Cmd]bool
 
 func (self Arg2EnvAutoMapCmds) Add(cmd *Cmd) {
@@ -83,15 +87,16 @@ func autoMapArg2EnvForCmdsInFlow(
 }
 
 type ArgsAutoMapStatus struct {
-	argList    []string
-	mapAll     bool
-	argSet     map[string]bool
-	mapped     map[string]bool
-	metCmds    map[*Cmd]bool
-	cache      map[string]Arg2EnvMappingEntry
-	writeKeys  map[string]bool
-	resultArgs []string
-	resultData map[string]Arg2EnvMappingEntry
+	argList       []string
+	mapNoProvider bool
+	mapAll        bool
+	argSet        map[string]bool
+	mapped        map[string]bool
+	metCmds       map[*Cmd]bool
+	cache         map[string]Arg2EnvMappingEntry
+	writeKeys     map[string]bool
+	resultArgs    []string
+	resultData    map[string]Arg2EnvMappingEntry
 }
 
 type Arg2EnvMappingEntry struct {
@@ -106,6 +111,7 @@ func NewArgsAutoMapStatus() *ArgsAutoMapStatus {
 	return &ArgsAutoMapStatus{
 		nil,
 		false,
+		false,
 		map[string]bool{},
 		map[string]bool{},
 		map[*Cmd]bool{},
@@ -119,6 +125,9 @@ func NewArgsAutoMapStatus() *ArgsAutoMapStatus {
 func (self *ArgsAutoMapStatus) Add(args ...string) {
 	for _, arg := range args {
 		if arg == "*" {
+			self.mapNoProvider = true
+		}
+		if arg == "**" {
 			self.mapAll = true
 		}
 		if _, ok := self.argSet[arg]; !ok {
@@ -129,7 +138,7 @@ func (self *ArgsAutoMapStatus) Add(args ...string) {
 }
 
 func (self *ArgsAutoMapStatus) IsEmpty() bool {
-	return len(self.argList) == 0 && !self.mapAll
+	return len(self.argList) == 0 && !self.mapAll && !self.mapNoProvider
 }
 
 // TODO: Keep the order of the generated arg-list
@@ -137,15 +146,26 @@ func (self *ArgsAutoMapStatus) OrderedMappingArgList() []string {
 	return self.argList
 }
 
-func (self *ArgsAutoMapStatus) ShouldMap(arg string) bool {
-	if self.mapAll {
-		return true
+func (self *ArgsAutoMapStatus) ShouldMapByDefinition(
+	cmd *Cmd, srcCmd *Cmd, argNameAndAbbrs []string) (matchName string, shouldMap bool, shouldMarkMapped bool) {
+
+	if len(argNameAndAbbrs) == 0 {
+		return
 	}
-	if _, ok := self.mapped[arg]; ok {
-		return false
+	for _, name := range argNameAndAbbrs {
+		if _, ok := self.mapped[name]; ok {
+			continue
+		}
+		_, ok := self.argSet[name]
+		if ok {
+			return name, true, true
+		}
 	}
-	_, ok := self.argSet[arg]
-	return ok
+	if self.mapAll || self.mapNoProvider {
+		return argNameAndAbbrs[0], true, false
+	}
+
+	return
 }
 
 func (self *ArgsAutoMapStatus) ShouldSkip(srcCmd *Cmd) bool {
@@ -162,23 +182,34 @@ func (self *ArgsAutoMapStatus) MarkMet(cmd *Cmd) {
 }
 
 func (self *ArgsAutoMapStatus) FullyMappedOrMapAll() bool {
-	if self.mapAll {
+	if self.mapAll || self.mapNoProvider {
 		return true
 	}
 	return len(self.mapped) == len(self.argSet)
 }
 
+func (self *ArgsAutoMapStatus) GetUnmappedArgs() (unmapped []string) {
+	for _, argName := range self.argList {
+		if _, ok := self.mapped[argName]; !ok {
+			unmapped = append(unmapped, argName)
+		}
+	}
+	return
+}
+
 func (self *ArgsAutoMapStatus) FullyMapped() bool {
-	if self.mapAll {
+	if self.mapAll || self.mapNoProvider {
 		return false
 	}
 	return len(self.mapped) == len(self.argSet)
 }
 
-func (self *ArgsAutoMapStatus) MarkAndCacheMapping(srcCmd *Cmd, key string, argName string, defVal string, abbrs []string) {
+func (self *ArgsAutoMapStatus) MarkAndCacheMapping(srcCmd *Cmd, key string, argName string, defVal string, abbrs []string, shouldMarkMapped bool) {
 	self.MarkMet(srcCmd)
 	self.cache[argName] = Arg2EnvMappingEntry{srcCmd, key, argName, defVal, abbrs}
-	self.mapped[argName] = true
+	if shouldMarkMapped {
+		self.mapped[argName] = true
+	}
 }
 
 func (self *ArgsAutoMapStatus) GetMappedSource(argName string) *Arg2EnvMappingEntry {
@@ -191,9 +222,14 @@ func (self *ArgsAutoMapStatus) GetMappedSource(argName string) *Arg2EnvMappingEn
 
 func (self *ArgsAutoMapStatus) FlushCache(cmd *Cmd) {
 	for _, argName := range self.argList {
-		if argName == "*" {
-			for _, it := range self.cache {
-				self.flushCacheEntry(cmd, it)
+		if argName == "*" || argName == "**" {
+			var args []string
+			for arg, _ := range self.cache {
+				args = append(args, arg)
+			}
+			sort.Strings(args)
+			for _, arg := range args {
+				self.flushCacheEntry(cmd, self.cache[arg])
 			}
 			return
 		}
@@ -205,27 +241,46 @@ func (self *ArgsAutoMapStatus) FlushCache(cmd *Cmd) {
 }
 
 func (self *ArgsAutoMapStatus) flushCacheEntry(cmd *Cmd, entry Arg2EnvMappingEntry) {
-	if _, ok := self.writeKeys[entry.Key]; ok {
-		return
+	if !self.mapAll && self.mapNoProvider {
+		_, userSpecify := self.argSet[entry.ArgName]
+		if !userSpecify {
+			if _, ok := self.writeKeys[entry.Key]; ok {
+				return
+			}
+		}
 	}
 	arg2env := cmd.GetArg2Env()
 	if arg2env.Has(entry.Key) {
 		return
 	}
 	args := cmd.Args()
-	if len(args.Realname(entry.ArgName)) != 0 {
+	if args.HasArgOrAbbr(entry.ArgName) {
 		return
+	}
+
+	srcArgs := entry.SrcCmd.Args()
+	realArgNameInSrc := srcArgs.Realname(entry.ArgName)
+
+	argName := entry.ArgName
+	if !args.HasArgOrAbbr(realArgNameInSrc) {
+		argName = realArgNameInSrc
+		entry.Abbrs = append(entry.Abbrs, entry.ArgName)
 	}
 	var newAbbrs []string
 	for _, abbr := range entry.Abbrs {
-		if len(args.Realname(abbr)) == 0 {
-			newAbbrs = append(newAbbrs, abbr)
+		if abbr == argName {
+			continue
 		}
+		if args.HasArgOrAbbr(abbr) {
+			continue
+		}
+		newAbbrs = append(newAbbrs, abbr)
 	}
-	cmd.AddArg(entry.ArgName, entry.DefVal, newAbbrs...)
-	cmd.AddArg2Env(entry.Key, entry.ArgName)
-	self.resultArgs = append(self.resultArgs, entry.ArgName)
-	self.resultData[entry.ArgName] = Arg2EnvMappingEntry{entry.SrcCmd, entry.Key, entry.ArgName, entry.DefVal, newAbbrs}
+
+	cmd.AddArg(argName, entry.DefVal, newAbbrs...)
+	cmd.AddArg2Env(entry.Key, argName)
+	self.resultArgs = append(self.resultArgs, argName)
+	self.resultData[argName] = Arg2EnvMappingEntry{entry.SrcCmd, entry.Key, argName, entry.DefVal, newAbbrs}
 }
 
 func (self *ArgsAutoMapStatus) recordWriteKeys(cmd *Cmd) {
