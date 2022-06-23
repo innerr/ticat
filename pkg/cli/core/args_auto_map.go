@@ -89,6 +89,7 @@ type ArgsAutoMapStatus struct {
 	mapped     map[string]bool
 	metCmds    map[*Cmd]bool
 	cache      map[string]Arg2EnvMappingEntry
+	writeKeys  map[string]bool
 	resultArgs []string
 	resultData map[string]Arg2EnvMappingEntry
 }
@@ -109,6 +110,7 @@ func NewArgsAutoMapStatus() *ArgsAutoMapStatus {
 		map[string]bool{},
 		map[*Cmd]bool{},
 		map[string]Arg2EnvMappingEntry{},
+		map[string]bool{},
 		nil,
 		map[string]Arg2EnvMappingEntry{},
 	}
@@ -152,7 +154,11 @@ func (self *ArgsAutoMapStatus) ShouldSkip(srcCmd *Cmd) bool {
 }
 
 func (self *ArgsAutoMapStatus) MarkMet(cmd *Cmd) {
+	if _, ok := self.metCmds[cmd]; ok {
+		return
+	}
 	self.metCmds[cmd] = true
+	self.recordWriteKeys(cmd)
 }
 
 func (self *ArgsAutoMapStatus) FullyMappedOrMapAll() bool {
@@ -170,6 +176,7 @@ func (self *ArgsAutoMapStatus) FullyMapped() bool {
 }
 
 func (self *ArgsAutoMapStatus) MarkAndCacheMapping(srcCmd *Cmd, key string, argName string, defVal string, abbrs []string) {
+	self.MarkMet(srcCmd)
 	self.cache[argName] = Arg2EnvMappingEntry{srcCmd, key, argName, defVal, abbrs}
 	self.mapped[argName] = true
 }
@@ -198,6 +205,9 @@ func (self *ArgsAutoMapStatus) FlushCache(cmd *Cmd) {
 }
 
 func (self *ArgsAutoMapStatus) flushCacheEntry(cmd *Cmd, entry Arg2EnvMappingEntry) {
+	if _, ok := self.writeKeys[entry.Key]; ok {
+		return
+	}
 	arg2env := cmd.GetArg2Env()
 	if arg2env.Has(entry.Key) {
 		return
@@ -216,4 +226,11 @@ func (self *ArgsAutoMapStatus) flushCacheEntry(cmd *Cmd, entry Arg2EnvMappingEnt
 	cmd.AddArg2Env(entry.Key, entry.ArgName)
 	self.resultArgs = append(self.resultArgs, entry.ArgName)
 	self.resultData[entry.ArgName] = Arg2EnvMappingEntry{entry.SrcCmd, entry.Key, entry.ArgName, entry.DefVal, newAbbrs}
+}
+
+func (self *ArgsAutoMapStatus) recordWriteKeys(cmd *Cmd) {
+	envOps := cmd.EnvOps()
+	for _, key := range envOps.AllWriteKeys() {
+		self.writeKeys[key] = true
+	}
 }
