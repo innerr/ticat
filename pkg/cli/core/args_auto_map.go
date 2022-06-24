@@ -37,12 +37,14 @@ func autoMapArg2EnvForCmd(
 
 	subFlow, _, rendered := srcCmd.Flow(argv, cc, env, true, true)
 	if len(subFlow) == 0 || !rendered {
-		return false
+		// TODO: careful test: handle not fully renderd subflow
+		//return false
 	}
 
 	parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	parsedFlow.GlobalEnv.WriteNotArgTo(flowEnv, cc.Cmds.Strs.EnvValDelAllMark)
+
 	return autoMapArg2EnvForCmdsInFlow(cc, flowEnv, parsedFlow, 0, envOpCmds, targetCmd)
 }
 

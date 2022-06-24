@@ -759,8 +759,11 @@ func (self *Cmd) Flow(argv ArgVals, cc *Cli, env *Env,
 	allowFlowTemplateRenderError bool, forChecking bool) (flow []string, masks []*ExecuteMask, rendered bool) {
 
 	flow, masks, rendered = self.RenderedFlowStrs(argv, cc, env, allowFlowTemplateRenderError, forChecking)
-	if !rendered || len(flow) == 0 {
+	if len(flow) == 0 {
 		return
+	}
+	if !rendered {
+		//return
 	}
 	flow = StripFlowForExecute(flow, env.GetRaw("strs.seq-sep"))
 	flowStr := FlowStrsToStr(flow)
