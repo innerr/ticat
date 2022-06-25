@@ -361,6 +361,15 @@ func dumpCmd(
 				prt(2, line)
 			}
 
+			if len(cmd.Source()) == 0 || !strings.HasPrefix(cic.CmdLine(), cmd.Source()) {
+				prt(1, ColorProp("- from:", env))
+				if len(cmd.Source()) == 0 {
+					prt(2, builtinName)
+				} else {
+					prt(2, cmd.Source())
+				}
+			}
+
 			// TODO: a bit messy
 			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
 				if len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0 {
@@ -380,15 +389,6 @@ func dumpCmd(
 						}
 						prt(2, cic.CmdLine())
 					}
-				}
-			}
-
-			if len(cmd.Source()) == 0 || !strings.HasPrefix(cic.CmdLine(), cmd.Source()) {
-				prt(1, ColorProp("- from:", env))
-				if len(cmd.Source()) == 0 {
-					prt(2, builtinName)
-				} else {
-					prt(2, cmd.Source())
 				}
 			}
 

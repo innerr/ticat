@@ -118,6 +118,10 @@ func (self *CmdTree) IsApi() bool {
 	return self.isApi
 }
 
+func (self *CmdTree) IsEmpty() bool {
+	return self.cmd == nil || self.cmd.Type() == CmdTypeEmptyDir || self.cmd.Type() == CmdTypeEmpty
+}
+
 func (self *CmdTree) SetIsApi() {
 	self.isApi = true
 }
