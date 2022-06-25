@@ -93,3 +93,24 @@ func ApiCmdDir(
 	}
 	return currCmdIdx, true
 }
+
+func ApiCmdListAll(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+	cmdDumpName(cc.Cmds, cc.Screen)
+	return currCmdIdx, true
+}
+
+func cmdDumpName(cmd *core.CmdTree, screen core.Screen) {
+	if !cmd.IsEmpty() {
+		screen.Print(cmd.DisplayPath() + "\n")
+	}
+	for _, name := range cmd.SubNames() {
+		cmdDumpName(cmd.GetSub(name), screen)
+	}
+}

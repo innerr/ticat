@@ -1403,6 +1403,11 @@ func RegisterApiCmds(cmds *core.CmdTree) {
 			"get command executable file path").
 		AddArg("cmd", "")
 
+	cmdList := cmd.AddSub("list")
+	cmdList.AddSub("all").
+		RegPowerCmd(ApiCmdListAll,
+			"list all commands")
+
 	env := cmds.AddSub("env")
 
 	env.AddSub("value", "val", "v").
