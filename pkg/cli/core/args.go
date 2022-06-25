@@ -63,6 +63,22 @@ func (self *Args) Names() []string {
 	return self.orderedList
 }
 
+func (self *Args) Reorder(owner *Cmd, names []string) {
+	changed := func() {
+		panic(fmt.Errorf("[%s] args changed in reordering, origin: %s; new: %s",
+			owner.Owner().DisplayPath(), strings.Join(self.orderedList, ","), strings.Join(names, ",")))
+	}
+	if len(names) != len(self.orderedList) {
+		changed()
+	}
+	for _, name := range names {
+		if _, ok := self.names[name]; !ok {
+			changed()
+		}
+	}
+	self.orderedList = names
+}
+
 func (self *Args) DefVal(name string) string {
 	return self.defVals[name]
 }

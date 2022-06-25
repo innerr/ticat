@@ -1,12 +1,14 @@
 package core
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 )
 
 type Arg2EnvAutoMapCmds map[*Cmd]bool
 
-func (self Arg2EnvAutoMapCmds) Add(cmd *Cmd) {
+func (self Arg2EnvAutoMapCmds) AddAutoMapTarget(cmd *Cmd) {
 	self[cmd] = true
 }
 
@@ -99,6 +101,9 @@ type ArgsAutoMapStatus struct {
 	providedKeys  map[string]bool
 	resultArgs    []string
 	resultData    map[string]Arg2EnvMappingEntry
+	notAutoArgs   map[int]bool
+	originArgCnt  int
+	reorderedArgs []string
 }
 
 type Arg2EnvMappingEntry struct {
@@ -121,20 +126,39 @@ func NewArgsAutoMapStatus() *ArgsAutoMapStatus {
 		map[string]bool{},
 		nil,
 		map[string]Arg2EnvMappingEntry{},
+		map[int]bool{},
+		0,
+		nil,
 	}
 }
 
-func (self *ArgsAutoMapStatus) Add(args ...string) {
-	for _, arg := range args {
-		if arg == "*" {
-			self.mapNoProvider = true
+// TODO: move the parsing coding out of core package
+func (self *ArgsAutoMapStatus) AddDefinitions(owner *Cmd, args ...string) {
+	ownerArgs := owner.Args()
+	self.originArgCnt = len(ownerArgs.Names())
+
+	keyValSep := owner.Owner().Strs.EnvKeyValSep
+
+	for i, argDefinition := range args {
+		argDefinition = strings.TrimSpace(argDefinition)
+		fields := strings.Split(argDefinition, keyValSep)
+		if len(fields) == 1 {
+			if argDefinition == "*" {
+				self.mapNoProvider = true
+			} else if argDefinition == "**" {
+				self.mapAll = true
+			} else {
+				// Will change `self.reorderedArgs[origin_size+i]` later on mapping finish
+				self.reorderedArgs = append(self.reorderedArgs, argDefinition)
+			}
+		} else {
+			self.notAutoArgs[i] = true
+			argName := self.addNotAutoArg(owner, argDefinition)
+			self.reorderedArgs = append(self.reorderedArgs, argName)
 		}
-		if arg == "**" {
-			self.mapAll = true
-		}
-		if _, ok := self.argSet[arg]; !ok {
-			self.argList = append(self.argList, arg)
-			self.argSet[arg] = true
+		if _, ok := self.argSet[argDefinition]; !ok {
+			self.argList = append(self.argList, argDefinition)
+			self.argSet[argDefinition] = true
 		}
 	}
 }
@@ -149,7 +173,7 @@ func (self *ArgsAutoMapStatus) OrderedMappingArgList() []string {
 }
 
 func (self *ArgsAutoMapStatus) ShouldMapByDefinition(
-	cmd *Cmd, srcCmd *Cmd, argNameAndAbbrs []string) (matchName string, shouldMap bool, shouldMarkMapped bool) {
+	owner *Cmd, srcCmd *Cmd, argNameAndAbbrs []string) (matchName string, shouldMap bool, shouldMarkMapped bool) {
 
 	if len(argNameAndAbbrs) == 0 {
 		return
@@ -175,19 +199,19 @@ func (self *ArgsAutoMapStatus) ShouldSkip(srcCmd *Cmd) bool {
 	return ok
 }
 
-func (self *ArgsAutoMapStatus) MarkMet(cmd *Cmd) {
-	if _, ok := self.metCmds[cmd]; ok {
+func (self *ArgsAutoMapStatus) MarkMet(srcCmd *Cmd) {
+	if _, ok := self.metCmds[srcCmd]; ok {
 		return
 	}
-	self.metCmds[cmd] = true
-	self.recordProvidedKeys(cmd)
+	self.metCmds[srcCmd] = true
+	self.recordProvidedKeys(srcCmd)
 }
 
 func (self *ArgsAutoMapStatus) FullyMappedOrMapAll() bool {
 	if self.mapAll || self.mapNoProvider {
 		return true
 	}
-	return len(self.mapped) == len(self.argSet)
+	return len(self.mapped)+len(self.notAutoArgs) == len(self.argSet)
 }
 
 func (self *ArgsAutoMapStatus) GetUnmappedArgs() (unmapped []string) {
@@ -222,27 +246,64 @@ func (self *ArgsAutoMapStatus) GetMappedSource(argName string) *Arg2EnvMappingEn
 	return &entry
 }
 
-func (self *ArgsAutoMapStatus) FlushCache(cmd *Cmd) {
-	for _, argName := range self.argList {
+func (self *ArgsAutoMapStatus) FlushCache(owner *Cmd) {
+	for i, argName := range self.argList {
 		if argName == "*" || argName == "**" {
+			if i+1 != len(self.argList) {
+				panic(fmt.Errorf("[%s] '*' or '**' can only at the end of args auto mapping definition", owner.Owner().DisplayPath()))
+			}
 			var args []string
 			for arg, _ := range self.cache {
 				args = append(args, arg)
 			}
 			sort.Strings(args)
 			for _, arg := range args {
-				self.flushCacheEntry(cmd, self.cache[arg])
+				newArgName := self.flushCacheEntry(owner, self.cache[arg])
+				if len(newArgName) != 0 {
+					self.reorderedArgs = append(self.reorderedArgs, newArgName)
+				}
 			}
-			return
+			break
+		}
+		if self.notAutoArgs[i] {
+			continue
 		}
 		if entry, ok := self.cache[argName]; ok {
-			self.flushCacheEntry(cmd, entry)
+			newArgName := self.flushCacheEntry(owner, entry)
+			self.reorderedArgs[i] = newArgName
 			delete(self.cache, argName)
 		}
 	}
+
+	self.reorderArgs(owner)
 }
 
-func (self *ArgsAutoMapStatus) flushCacheEntry(cmd *Cmd, entry Arg2EnvMappingEntry) {
+func (self *ArgsAutoMapStatus) reorderArgs(owner *Cmd) {
+	ownerArgs := owner.Args()
+	origin := ownerArgs.Names()[:self.originArgCnt]
+	self.reorderedArgs = append(origin, self.reorderedArgs...)
+	owner.ReorderArgs(self.reorderedArgs)
+}
+
+func (self *ArgsAutoMapStatus) addNotAutoArg(owner *Cmd, argDefinition string) string {
+	keyValSep := owner.Owner().Strs.EnvKeyValSep
+	i := strings.Index(argDefinition, keyValSep)
+	if i <= 0 {
+		panic(fmt.Errorf("[%s] bad not-auto arg definition: %s", owner.Owner().DisplayPath(), argDefinition))
+	}
+	argName := argDefinition[:i]
+	defVal := strings.TrimSpace(argDefinition[len(argName)+len(keyValSep):])
+	nameAndAbbrs := strings.Split(argName, owner.Owner().Strs.AbbrsSep)
+	name := strings.TrimSpace(nameAndAbbrs[0])
+	var argAbbrs []string
+	for _, abbr := range nameAndAbbrs[1:] {
+		argAbbrs = append(argAbbrs, strings.TrimSpace(abbr))
+	}
+	owner.AddArg(name, defVal, argAbbrs...)
+	return name
+}
+
+func (self *ArgsAutoMapStatus) flushCacheEntry(owner *Cmd, entry Arg2EnvMappingEntry) (argName string) {
 	if !self.mapAll && self.mapNoProvider {
 		_, userSpecify := self.argSet[entry.ArgName]
 		if !userSpecify {
@@ -251,11 +312,11 @@ func (self *ArgsAutoMapStatus) flushCacheEntry(cmd *Cmd, entry Arg2EnvMappingEnt
 			}
 		}
 	}
-	arg2env := cmd.GetArg2Env()
+	arg2env := owner.GetArg2Env()
 	if arg2env.Has(entry.Key) {
 		return
 	}
-	args := cmd.Args()
+	args := owner.Args()
 	if args.HasArgOrAbbr(entry.ArgName) {
 		return
 	}
@@ -263,7 +324,7 @@ func (self *ArgsAutoMapStatus) flushCacheEntry(cmd *Cmd, entry Arg2EnvMappingEnt
 	srcArgs := entry.SrcCmd.Args()
 	realArgNameInSrc := srcArgs.Realname(entry.ArgName)
 
-	argName := entry.ArgName
+	argName = entry.ArgName
 	if !args.HasArgOrAbbr(realArgNameInSrc) {
 		argName = realArgNameInSrc
 		entry.Abbrs = append(entry.Abbrs, entry.ArgName)
@@ -279,14 +340,15 @@ func (self *ArgsAutoMapStatus) flushCacheEntry(cmd *Cmd, entry Arg2EnvMappingEnt
 		newAbbrs = append(newAbbrs, abbr)
 	}
 
-	cmd.AddArg(argName, entry.DefVal, newAbbrs...)
-	cmd.AddArg2Env(entry.Key, argName)
+	owner.AddArg(argName, entry.DefVal, newAbbrs...)
+	owner.AddArg2Env(entry.Key, argName)
 	self.resultArgs = append(self.resultArgs, argName)
 	self.resultData[argName] = Arg2EnvMappingEntry{entry.SrcCmd, entry.Key, argName, entry.DefVal, newAbbrs}
+	return argName
 }
 
-func (self *ArgsAutoMapStatus) recordProvidedKeys(cmd *Cmd) {
-	envOps := cmd.EnvOps()
+func (self *ArgsAutoMapStatus) recordProvidedKeys(srcCmd *Cmd) {
+	envOps := srcCmd.EnvOps()
 	for _, key := range envOps.AllWriteKeys() {
 		self.providedKeys[key] = true
 	}
