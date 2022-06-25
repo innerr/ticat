@@ -101,10 +101,14 @@ func regModFile(
 	regNoSession(meta, cmd)
 	regQuietCmd(meta, cmd)
 	regHideInSessionsLast(meta, cmd)
-	regArg2EnvAutoMap(cc, meta, cmd)
+
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
+
+	// AutoMap must after regular args are registered
 	regArgs(meta, cmd, abbrsSep)
+	regArg2EnvAutoMap(cc, meta, cmd)
+
 	regDeps(meta, cmd)
 	regEnvOps(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regVal2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
@@ -288,7 +292,7 @@ func regArg2EnvAutoMap(cc *core.Cli, meta *meta_file.MetaFile, cmd *core.Cmd) {
 	}
 	if len(names) != 0 {
 		cmd.SetArg2EnvAutoMap(names)
-		cc.Arg2EnvAutoMapCmds.Add(cmd)
+		cc.Arg2EnvAutoMapCmds.AddAutoMapTarget(cmd)
 	}
 }
 

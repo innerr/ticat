@@ -438,12 +438,16 @@ func (self *Cmd) SetIsBlenderCmd() *Cmd {
 }
 
 func (self *Cmd) SetArg2EnvAutoMap(names []string) *Cmd {
-	self.argsAutoMap.Add(names...)
+	self.argsAutoMap.AddDefinitions(self, names...)
 	return self
 }
 
 func (self *Cmd) GetArgsAutoMapStatus() *ArgsAutoMapStatus {
 	return self.argsAutoMap
+}
+
+func (self *Cmd) ReorderArgs(names []string) {
+	self.args.Reorder(self, names)
 }
 
 func (self *Cmd) IsBlenderCmd() bool {
