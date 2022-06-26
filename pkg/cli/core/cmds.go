@@ -73,12 +73,13 @@ func (self *CmdTree) Execute(
 	env *Env,
 	mask *ExecuteMask,
 	flow *ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int,
+	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (int, bool) {
 
 	if self.cmd == nil {
 		return currCmdIdx, true
 	} else {
-		return self.cmd.Execute(argv, cc, env, mask, flow, currCmdIdx)
+		return self.cmd.Execute(argv, cc, env, mask, flow, currCmdIdx, tryBreakInsideFileNFlow)
 	}
 }
 

@@ -139,7 +139,7 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 		if cmd != nil && cic != nil && cic.IsBlenderCmd() {
 			cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(
 				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
-			_, ok := cic.executeByType(argv, cc, cmdEnv, nil, flow, i, "")
+			_, ok := cic.executeByType(argv, cc, cmdEnv, nil, flow, i, "", nil)
 			if !ok {
 				panic(fmt.Errorf("[Blender.Invoke] blender '%s' invoke failed", cmd.DisplayPath()))
 			}

@@ -170,14 +170,15 @@ func (self *Cmd) Execute(
 	env *Env,
 	mask *ExecuteMask,
 	flow *ParsedCmds,
-	currCmdIdx int) (newCurrCmdIdx int, ok bool) {
+	currCmdIdx int,
+	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, ok bool) {
 
 	begin := time.Now()
 	if len(self.autoTimerKeys.Begin) != 0 {
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Begin, int(begin.Unix()))
 	}
 
-	newCurrCmdIdx, ok = self.execute(argv, cc, env, mask, flow, currCmdIdx)
+	newCurrCmdIdx, ok = self.execute(argv, cc, env, mask, flow, currCmdIdx, tryBreakInsideFileNFlow)
 	if !ok {
 		// Normally the command should print info before return false, so no need to panic
 		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
@@ -200,7 +201,8 @@ func (self *Cmd) execute(
 	env *Env,
 	mask *ExecuteMask,
 	flow *ParsedCmds,
-	currCmdIdx int) (newCurrCmdIdx int, succeeded bool) {
+	currCmdIdx int,
+	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, succeeded bool) {
 
 	// TODO: this logic should be in upper layer
 	if mask != nil && mask.OverWriteStartEnv != nil {
@@ -252,10 +254,11 @@ func (self *Cmd) execute(
 
 	if !shouldExecByMask(mask) {
 		// TODO: print this outside core pkg, so it can be colorize
-		cc.Screen.Print("(skipped)\n")
+		cc.Screen.Print("(skipped executing)\n")
 		newCurrCmdIdx, succeeded = currCmdIdx, true
 	} else {
-		newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow, currCmdIdx, logFilePath)
+		newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow,
+			currCmdIdx, logFilePath, tryBreakInsideFileNFlow)
 	}
 	return
 }
@@ -267,7 +270,8 @@ func (self *Cmd) executeByType(
 	mask *ExecuteMask,
 	flow *ParsedCmds,
 	currCmdIdx int,
-	logFilePath string) (int, bool) {
+	logFilePath string,
+	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (int, bool) {
 
 	switch self.ty {
 	case CmdTypePower:
@@ -283,11 +287,7 @@ func (self *Cmd) executeByType(
 	case CmdTypeFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeFileNFlow:
-		succeeded := self.executeFlow(argv, cc, env, mask)
-		if succeeded && (mask == nil || mask.FileNFlowExecPolicy == ExecPolicyExec) {
-			succeeded = self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath)
-		}
-		return currCmdIdx, succeeded
+		return currCmdIdx, self.executeFileNFlow(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath, mask, tryBreakInsideFileNFlow)
 	case CmdTypeAdHotFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeEmpty:
@@ -829,11 +829,33 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 	if shouldExecByMask(mask) {
 		succeeded = cc.Executor.Execute(self.owner.DisplayPath(), true, cc, flowEnv, masks, flow...)
 	} else {
-		cc.Screen.Print("(skipped+)\n")
+		cc.Screen.Print("(skipped subflow\n")
 		succeeded = true
 		skipped = !executedAndSucceeded(mask)
 	}
 	return
+}
+
+func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd, logFilePath string,
+	mask *ExecuteMask, tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (succeeded bool) {
+
+	succeeded = self.executeFlow(argv, cc, env, mask)
+	if !succeeded {
+		return false
+	}
+	if mask == nil {
+		return self.executeFile(argv, cc, env, parsedCmd, logFilePath)
+	}
+
+	// TODO: user will feel a bit wierd when FileNFlowExecPolicy is skip
+	if tryBreakInsideFileNFlow == nil || tryBreakInsideFileNFlow(cc, env, self) {
+		if mask.FileNFlowExecPolicy == ExecPolicyExec {
+			return self.executeFile(argv, cc, env, parsedCmd, logFilePath)
+		}
+	}
+
+	cc.Screen.Print("(skipped executing after subflow)\n")
+	return true
 }
 
 func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd, logFilePath string) bool {

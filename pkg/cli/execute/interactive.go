@@ -168,6 +168,31 @@ func tryWaitSec(cc *core.Cli, env *core.Env, waitSecKey string) {
 	}
 }
 
+func tryBreakInsideFileNFlow(cc *core.Cli, env *core.Env, cmd *core.Cmd, showStack func()) (shouldExec bool) {
+	if !env.GetBool("sys.breakpoint.status.step-out") {
+		return true
+	}
+
+	name := cmd.Owner().DisplayPath()
+	reason := display.ColorCmd("["+name+"]", env) + display.ColorTip(": pre-executing subflow done, before executing", env)
+	bpa := readUserBPAChoice(
+		reason,
+		[]string{"s", "d", "c", "i", "q"},
+		getAllBPAs(),
+		true,
+		cc,
+		env,
+		showStack)
+	if bpa == BPAContinue {
+		env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.step-out")
+		return true
+	}
+	if bpa == BPAStepToNext {
+		return true
+	}
+	return false
+}
+
 func clearBreakPointStatusInEnv(env *core.Env) {
 	env = env.GetLayer(core.EnvLayerSession)
 	env.Delete("sys.interact.leaving")

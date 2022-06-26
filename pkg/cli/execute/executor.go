@@ -260,7 +260,10 @@ func (self *Executor) executeCmd(
 				if width > 0 {
 					cmdEnv.SetInt("display.executor.displayed", cmdEnv.GetInt("sys.stack-depth"))
 				}
-				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx)
+				tryBreakInsideFileNFlowWrap := func(cc *core.Cli, env *core.Env, cmd *core.Cmd) bool {
+					return tryBreakInsideFileNFlow(cc, env, cmd, showStack)
+				}
+				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx, tryBreakInsideFileNFlowWrap)
 				cmdEnv.SetInt("display.executor.displayed", 0)
 			} else {
 				dur := sysArgv.GetDelayDuration()
@@ -529,7 +532,7 @@ func asyncExecute(
 			env.SetInt("display.executor.displayed", env.GetInt("sys.stack-depth"))
 		}
 		start := time.Now()
-		_, ok := cic.Execute(argv, cc, env, mask, flow, currCmdIdx)
+		_, ok := cic.Execute(argv, cc, env, mask, flow, currCmdIdx, nil)
 		elapsed := time.Now().Sub(start)
 		env.SetInt("display.executor.displayed", 0)
 		if !ok {
