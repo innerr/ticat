@@ -18,6 +18,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.Set("sys.bootstrap", "")
 	env.SetInt("sys.stack-depth", 0)
 
+	env.SetBool("sys.bg.wait", true)
+
 	env.SetBool("sys.step-by-step", false)
 	env.SetBool("sys.panic.recover", true)
 	env.SetInt("sys.execute-wait-sec", 0)
