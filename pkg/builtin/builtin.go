@@ -683,6 +683,15 @@ func RegisterBgManageCmds(cmds *core.CmdTree) {
 	wait.AddSub("all").
 		RegPowerCmd(WaitForAllBgTasksFinish,
 			"wait for all tasks/threads to finish in current(must be main) thread")
+
+	afterMain := wait.AddSub("after-main", "on-main", "at-main", "auto")
+	afterMain.RegEmptyCmd(
+		"auto wait for all tasks/threads to finish after main thread ends").
+		AddVal2Env("sys.bg.wait", "true")
+	afterMain.AddSub("off").
+		RegEmptyCmd(
+			"auto wait for all tasks/threads to finish after main thread ends").
+		AddVal2Env("sys.bg.wait", "false")
 }
 
 func RegisterSessionCmds(cmds *core.CmdTree) {

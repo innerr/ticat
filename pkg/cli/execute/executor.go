@@ -60,9 +60,12 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 
 	tryBreakAtEnd(cc, env)
 
-	errs := builtin.WaitBgTasks(cc, env, "")
-	for _, err := range errs {
-		display.PrintError(cc, env, err)
+	var errs []error
+	if env.GetBool("sys.bg.wait") {
+		errs = builtin.WaitBgTasks(cc, env, "")
+		for _, err := range errs {
+			display.PrintError(cc, env, err)
+		}
 	}
 
 	ok = ok && len(errs) == 0
