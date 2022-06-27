@@ -104,6 +104,13 @@ func LoadRuntimeEnv(
 
 	env = env.GetLayer(core.EnvLayerSession)
 
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("get current work dir fail: %v", err)))
+	}
+	env.Set("sys.paths.work-dir", pwd)
+
 	path, err := os.Executable()
 	if err != nil {
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
