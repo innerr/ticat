@@ -281,8 +281,14 @@ func (self *ArgsAutoMapStatus) FlushCache(owner *Cmd) {
 func (self *ArgsAutoMapStatus) reorderArgs(owner *Cmd) {
 	ownerArgs := owner.Args()
 	origin := ownerArgs.Names()[:self.originArgCnt]
-	self.reorderedArgs = append(origin, self.reorderedArgs...)
-	owner.ReorderArgs(self.reorderedArgs)
+	var reorderedArgs []string
+	for _, it := range self.reorderedArgs {
+		if ownerArgs.Has(it) {
+			reorderedArgs = append(reorderedArgs, it)
+		}
+	}
+	reorderedArgs = append(origin, reorderedArgs...)
+	owner.ReorderArgs(reorderedArgs)
 }
 
 func (self *ArgsAutoMapStatus) addNotAutoArg(owner *Cmd, argDefinition string) string {
