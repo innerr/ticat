@@ -168,8 +168,8 @@ func tryWaitSec(cc *core.Cli, env *core.Env, waitSecKey string) {
 	}
 }
 
-func tryBreakInsideFileNFlow(cc *core.Cli, env *core.Env, cmd *core.Cmd, showStack func()) (shouldExec bool) {
-	if !env.GetBool("sys.breakpoint.status.step-out") {
+func tryBreakInsideFileNFlow(cc *core.Cli, env *core.Env, cmd *core.Cmd, breakByPrev bool, showStack func()) (shouldExec bool) {
+	if !breakByPrev && !env.GetBool("sys.breakpoint.status.step-out") {
 		return true
 	}
 

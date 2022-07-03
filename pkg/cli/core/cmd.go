@@ -843,13 +843,10 @@ func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, parsedCmd Par
 	if !succeeded {
 		return false
 	}
-	if mask == nil {
-		return self.executeFile(argv, cc, env, parsedCmd, logFilePath)
-	}
 
-	// TODO: user will feel a bit wierd when FileNFlowExecPolicy is skip
+	// TODO: user will feel a bit weird when FileNFlowExecPolicy is skip
 	if tryBreakInsideFileNFlow == nil || tryBreakInsideFileNFlow(cc, env, self) {
-		if mask.FileNFlowExecPolicy == ExecPolicyExec {
+		if mask == nil || mask.FileNFlowExecPolicy == ExecPolicyExec {
 			return self.executeFile(argv, cc, env, parsedCmd, logFilePath)
 		}
 	}
