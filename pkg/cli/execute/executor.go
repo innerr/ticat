@@ -264,7 +264,7 @@ func (self *Executor) executeCmd(
 					cmdEnv.SetInt("display.executor.displayed", cmdEnv.GetInt("sys.stack-depth"))
 				}
 				tryBreakInsideFileNFlowWrap := func(cc *core.Cli, env *core.Env, cmd *core.Cmd) bool {
-					return tryBreakInsideFileNFlow(cc, env, cmd, showStack)
+					return tryBreakInsideFileNFlow(cc, env, cmd, breakByPrev, showStack)
 				}
 				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx, tryBreakInsideFileNFlowWrap)
 				cmdEnv.SetInt("display.executor.displayed", 0)
