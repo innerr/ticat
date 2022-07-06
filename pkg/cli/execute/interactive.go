@@ -44,7 +44,8 @@ func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core
 		env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-in", true)
 		bpa = BPAContinue
 	} else if bpa == BPAStepOver || bpa == BPASkip {
-		if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
+		//if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
+		if lastCmdInFlow {
 			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
 		}
 	}
