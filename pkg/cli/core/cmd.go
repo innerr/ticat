@@ -252,14 +252,8 @@ func (self *Cmd) execute(
 		}
 	}
 
-	if !shouldExecByMask(mask) {
-		// TODO: print this outside core pkg, so it can be colorize
-		cc.Screen.Print("(skipped executing)\n")
-		newCurrCmdIdx, succeeded = currCmdIdx, true
-	} else {
-		newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow,
-			currCmdIdx, logFilePath, tryBreakInsideFileNFlow)
-	}
+	newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow,
+		currCmdIdx, logFilePath, tryBreakInsideFileNFlow)
 	return
 }
 
@@ -272,6 +266,12 @@ func (self *Cmd) executeByType(
 	currCmdIdx int,
 	logFilePath string,
 	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (int, bool) {
+
+	if !shouldExecByMask(mask) {
+		// TODO: print this outside core pkg, so it can be colorize
+		cc.Screen.Print("(skipped executing)\n")
+		return currCmdIdx, true
+	}
 
 	switch self.ty {
 	case CmdTypePower:
@@ -829,6 +829,7 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 	if shouldExecByMask(mask) {
 		succeeded = cc.Executor.Execute(self.owner.DisplayPath(), true, cc, flowEnv, masks, flow...)
 	} else {
+		// TODO: print this outside core pkg, so it can be colorize
 		cc.Screen.Print("(skipped subflow\n")
 		succeeded = true
 		skipped = !executedAndSucceeded(mask)
@@ -851,6 +852,7 @@ func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, parsedCmd Par
 		}
 	}
 
+	// TODO: print this outside core pkg, so it can be colorize
 	cc.Screen.Print("(skipped executing after subflow)\n")
 	return true
 }

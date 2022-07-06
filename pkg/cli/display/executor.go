@@ -274,13 +274,13 @@ func PrintCmdStack(
 		//}
 
 		cic := cmd.LastCmd()
-		if cic != nil && !sysArgv.IsDelay() && cic.HasSubFlow() {
-			if i+1 == currCmdIdx || i == currCmdIdx {
+		if cic != nil && !sysArgv.IsDelay() && cic.HasSubFlow() && (mask == nil || mask.SubFlow != nil) {
+			if i < currCmdIdx || i == currCmdIdx {
 				line := ColorFlowing("       --->>>", env)
 				lines.Flow = append(lines.Flow, line)
 				lines.FlowLen = append(lines.FlowLen, len(line)-ColorExtraLen(env, "flowing"))
 			}
-			if i+1 == currCmdIdx {
+			if i < currCmdIdx {
 				line := ColorFlowing("       <<<---", env)
 				lines.Flow = append(lines.Flow, line)
 				lines.FlowLen = append(lines.FlowLen, len(line)-ColorExtraLen(env, "flowing"))

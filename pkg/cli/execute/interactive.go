@@ -24,7 +24,7 @@ const (
 	BPAQuit       = "quit executing"
 )
 
-func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd,
+func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, mask *core.ExecuteMask,
 	breakByPrev bool, lastCmdInFlow bool, bootstrap bool, showStack func()) BreakPointAction {
 
 	if env.GetBool("sys.interact.inside") {
@@ -35,7 +35,7 @@ func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core
 		return BPAContinue
 	}
 
-	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, breakByPrev, showStack)
+	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, mask, breakByPrev, showStack)
 	if bpa == BPAContinue {
 		if !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {
 			tryWaitSec(cc, env, "sys.execute-wait-sec")
@@ -52,7 +52,9 @@ func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core
 	return bpa
 }
 
-func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, breakByPrev bool, showStack func()) BreakPointAction {
+func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, mask *core.ExecuteMask,
+	breakByPrev bool, showStack func()) BreakPointAction {
+
 	stepByStep := env.GetBool("sys.step-by-step")
 	stepIn := env.GetBool("sys.breakpoint.status.step-in")
 	stepOut := env.GetBool("sys.breakpoint.status.step-out")
@@ -69,7 +71,7 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	choices := []string{}
 	var reason string
 
-	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow() && !stepByStep {
+	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow() && !stepByStep && (mask == nil || mask.SubFlow != nil) {
 		choices = append(choices, "t")
 	}
 
