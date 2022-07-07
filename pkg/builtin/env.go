@@ -479,6 +479,8 @@ func setToDefaultVerb(env *core.Env) {
 	env.SetBool("display.env.display", false)
 	env.SetInt("display.max-cmd-cnt", 14)
 
+	env.SetBool("display.sensitive", false)
+
 	env.SetBool("display.tip", true)
 }
 

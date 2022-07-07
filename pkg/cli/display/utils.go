@@ -58,7 +58,10 @@ func rpt(char string, count int) string {
 	return strings.Repeat(char, count)
 }
 
-func mayMaskSensitiveVal(key string, val string) string {
+func mayMaskSensitiveVal(env *core.Env, key string, val string) string {
+	if env.GetBool("display.sensitive") {
+		return val
+	}
 	if core.IsSensitiveKeyVal(key, val) && len(val) != 0 {
 		val = "***"
 	}
