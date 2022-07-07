@@ -294,7 +294,7 @@ func dumpCmd(
 					nameList = append(nameList, it)
 				}
 				nameStr := strings.Join(nameList, ColorAbbrSep(abbrsSep, env))
-				val = mayMaskSensitiveVal(nameStr, val)
+				val = mayMaskSensitiveVal(env, nameStr, val)
 				line := nameStr + ColorSymbol(" = ", env) + mayQuoteStr(val)
 				if !args.Skeleton {
 					entry := autoMapInfo.GetMappedSource(name)
@@ -313,7 +313,7 @@ func dumpCmd(
 			}
 			for _, k := range val2env.EnvKeys() {
 				val := val2env.Val(k)
-				val = mayMaskSensitiveVal(k, val)
+				val = mayMaskSensitiveVal(env, k, val)
 				prt(2, ColorKey(k, env)+ColorSymbol(" = ", env)+mayQuoteStr(val))
 			}
 

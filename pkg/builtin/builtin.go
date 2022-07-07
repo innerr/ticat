@@ -1176,6 +1176,11 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		"display.meow",
 		"meow")
 
+	registerSimpleSwitch(cmds,
+		"display sensitive key-value of env and args",
+		"display.sensitive",
+		"sensitive", "pwd", "masked")
+
 	mod := cmds.AddSub("command", "cmd")
 
 	registerSimpleSwitch(mod,

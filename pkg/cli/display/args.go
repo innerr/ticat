@@ -4,36 +4,13 @@ import (
 	"github.com/pingcap/ticat/pkg/cli/core"
 )
 
-// TODO: remove this, no use
-func DumpArgs(args *core.Args, argv core.ArgVals, printDef bool) (output []string) {
-	for _, k := range args.Names() {
-		defV := args.DefVal(k)
-		line := k + " = "
-		v, provided := argv[k]
-		if !provided || !v.Provided {
-			line += mayQuoteStr(mayMaskSensitiveVal(k, defV))
-		} else {
-			line += mayQuoteStr(mayMaskSensitiveVal(k, v.Raw))
-			if printDef {
-				if defV != v.Raw {
-					line += "(def=" + mayQuoteStr(mayMaskSensitiveVal(k, defV)) + ")"
-				} else {
-					line += "(=def)"
-				}
-			}
-		}
-		output = append(output, line)
-	}
-	return
-}
-
 func DumpProvidedArgs(env *core.Env, args *core.Args, argv core.ArgVals, colorize bool) (output []string) {
 	for _, k := range args.Names() {
 		v, provided := argv[k]
 		if !provided || !v.Provided {
 			continue
 		}
-		val := mayQuoteStr(mayMaskSensitiveVal(k, v.Raw))
+		val := mayQuoteStr(mayMaskSensitiveVal(env, k, v.Raw))
 		if colorize {
 			line := ColorArg(k, env) + ColorSymbol(" = ", env) + val
 			output = append(output, line)
@@ -47,7 +24,7 @@ func DumpProvidedArgs(env *core.Env, args *core.Args, argv core.ArgVals, coloriz
 
 func DumpSysArgs(env *core.Env, sysArgv core.SysArgVals, colorize bool) (output []string) {
 	for k, v := range sysArgv {
-		v = mayMaskSensitiveVal(k, v)
+		v = mayMaskSensitiveVal(env, k, v)
 		if colorize {
 			line := ColorExplain("[sys] ", env) + ColorArg(k, env) +
 				ColorSymbol(" = ", env) + mayQuoteStr(v)

@@ -948,7 +948,7 @@ func getCmdTrivial(parsedCmd core.ParsedCmd) (trivial int) {
 }
 
 func normalizeValForDisplay(key string, val string, env *core.Env, limit int) string {
-	val = mayMaskSensitiveVal(key, val)
+	val = mayMaskSensitiveVal(env, key, val)
 	return mayQuoteMayTrimStr(val, env, limit)
 }
 

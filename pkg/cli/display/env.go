@@ -31,7 +31,7 @@ func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 }
 
 func KeyValueDisplayStr(key string, value string, env *core.Env) string {
-	value = mayMaskSensitiveVal(key, value)
+	value = mayMaskSensitiveVal(env, key, value)
 	return ColorKey(key, env) + ColorSymbol(" = ", env) + mayQuoteStr(value)
 }
 
@@ -87,7 +87,7 @@ func dumpEnv(
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			v := mayMaskSensitiveVal(k, flatten[k])
+			v := mayMaskSensitiveVal(env, k, flatten[k])
 			res = append(res, ColorKey(k, env)+ColorSymbol(" = ", env)+v)
 		}
 		colored = true
@@ -123,7 +123,7 @@ func dumpEnvLayer(
 			}
 		}
 		if !filtered {
-			raw := mayMaskSensitiveVal(k, v.Raw)
+			raw := mayMaskSensitiveVal(env, k, v.Raw)
 			output = append(output, indent+"- "+k+" = "+mayQuoteStr(raw))
 		}
 	}
