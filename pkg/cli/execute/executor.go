@@ -54,7 +54,7 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 	}
 
 	// Do arg2env auto mapping between bootstrap (commands are loaded after this point) and executing
-	cc.Arg2EnvAutoMapCmds.AutoMapArg2Env(cc, env, builtin.EnvOpCmds())
+	cc.Arg2EnvAutoMapCmds.AutoMapArg2Env(cc, env, builtin.EnvOpCmds(), env.GetInt("sys.stack-depth"))
 
 	ok := self.execute(self.callerNameEntry, cc, env, nil, false, false, input...)
 
@@ -215,7 +215,7 @@ func (self *Executor) executeCmd(
 
 	// This is a fake apply just for calculate sys args, the env is a clone
 	cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
-		env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, env.GetInt("sys.stack-depth"))
 	sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
 
 	ln := cc.Screen.OutputNum()
@@ -259,7 +259,7 @@ func (self *Executor) executeCmd(
 			if !sysArgv.IsDelay() {
 				// This cmdEnv is different from env, it included values from 'val2env' and 'arg2env'
 				cmdEnv, argv = cmd.ApplyMappingGenEnvAndArgv(
-					env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+					env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, cmdEnv.GetInt("sys.stack-depth"))
 				if width > 0 {
 					cmdEnv.SetInt("display.executor.displayed", cmdEnv.GetInt("sys.stack-depth"))
 				}

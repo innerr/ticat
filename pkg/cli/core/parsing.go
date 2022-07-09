@@ -256,10 +256,11 @@ func (self ParsedCmd) MatchedPath() (path []string) {
 func (self ParsedCmd) ApplyMappingGenEnvAndArgv(
 	originEnv *Env,
 	valDelAllMark string,
-	cmdPathSep string) (env *Env, argv ArgVals) {
+	cmdPathSep string,
+	stackDepth int) (env *Env, argv ArgVals) {
 
 	env = self.GenCmdEnv(originEnv, valDelAllMark)
-	argv = env.GetArgv(self.Path(), cmdPathSep, self.Args())
+	argv = env.GetArgv(self.Path(), cmdPathSep, stackDepth, self.Args())
 
 	last := self.LastCmd()
 	if last == nil {

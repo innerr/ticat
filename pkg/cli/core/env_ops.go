@@ -231,7 +231,7 @@ func CheckEnvOps(
 	result *[]EnvOpsCheckResult) {
 
 	arg2envs := FirstArg2EnvProviders{}
-	checkEnvOps(cc, flow, env.Clone(), checker, ignoreMaybe, envOpCmds, result, arg2envs)
+	checkEnvOps(cc, flow, env.Clone(), checker, ignoreMaybe, envOpCmds, result, arg2envs, 0)
 }
 
 func checkEnvOps(
@@ -242,7 +242,8 @@ func checkEnvOps(
 	ignoreMaybe bool,
 	envOpCmds []EnvOpCmd,
 	result *[]EnvOpsCheckResult,
-	arg2envs FirstArg2EnvProviders) {
+	arg2envs FirstArg2EnvProviders,
+	depth int) {
 
 	if len(flow.Cmds) == 0 {
 		return
@@ -258,11 +259,11 @@ func checkEnvOps(
 
 		displayPath := cmd.DisplayPath(sep, true)
 
-		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, depth+1)
 
 		if last.Type() == CmdTypeFileNFlow {
 			parsedFlow, flowEnv := renderSubFlowOnChecking(last, cc, argv, cmdEnv)
-			checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs)
+			checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs, depth+1)
 		}
 
 		res := checker.OnCallCmd(cmdEnv, argv, cmd, sep, last, ignoreMaybe, displayPath, arg2envs)
@@ -276,7 +277,7 @@ func checkEnvOps(
 		}
 
 		parsedFlow, flowEnv := renderSubFlowOnChecking(last, cc, argv, cmdEnv)
-		checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs)
+		checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs, depth+1)
 	}
 }
 

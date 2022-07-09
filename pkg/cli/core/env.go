@@ -200,7 +200,7 @@ func (self *Env) Parent() *Env {
 	return self.parent
 }
 
-func (self *Env) GetArgv(cmdPath []string, sep string, args Args) ArgVals {
+func (self *Env) GetArgv(cmdPath []string, sep string, stackDepth int, args Args) ArgVals {
 	argv := ArgVals{}
 	list := args.Names()
 	for i, it := range list {
@@ -209,7 +209,7 @@ func (self *Env) GetArgv(cmdPath []string, sep string, args Args) ArgVals {
 		if ok {
 			argv[it] = ArgVal{val.Raw, true, i}
 		} else {
-			argv[it] = ArgVal{args.DefVal(it), false, i}
+			argv[it] = ArgVal{args.DefVal(it, stackDepth), false, i}
 		}
 	}
 	return argv

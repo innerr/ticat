@@ -16,7 +16,7 @@ func CollectDepends(
 	allowFlowTemplateRenderError bool,
 	envOpCmds []EnvOpCmd) {
 
-	collectDepends(cc, env.Clone(), flow, currCmdIdx, res, allowFlowTemplateRenderError, envOpCmds)
+	collectDepends(cc, env.Clone(), flow, currCmdIdx, res, allowFlowTemplateRenderError, envOpCmds, 0)
 }
 
 func collectDepends(
@@ -26,7 +26,8 @@ func collectDepends(
 	currCmdIdx int,
 	res Depends,
 	allowFlowTemplateRenderError bool,
-	envOpCmds []EnvOpCmd) {
+	envOpCmds []EnvOpCmd,
+	depth int) {
 
 	for i := currCmdIdx; i < len(flow.Cmds); i++ {
 		it := flow.Cmds[i]
@@ -35,7 +36,7 @@ func collectDepends(
 			continue
 		}
 
-		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, depth+1)
 
 		if cic.Type() == CmdTypeFileNFlow {
 			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, allowFlowTemplateRenderError, true)
@@ -44,7 +45,7 @@ func collectDepends(
 				flowEnv := cmdEnv.NewLayer(EnvLayerSubFlow)
 				parsedFlow.GlobalEnv.WriteNotArgTo(flowEnv, cc.Cmds.Strs.EnvValDelAllMark)
 				// Allow parse errors here
-				collectDepends(cc, flowEnv, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds)
+				collectDepends(cc, flowEnv, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds, depth+1)
 			}
 		}
 
@@ -71,7 +72,7 @@ func collectDepends(
 			flowEnv := cmdEnv.NewLayer(EnvLayerSubFlow)
 			parsedFlow.GlobalEnv.WriteNotArgTo(flowEnv, cc.Cmds.Strs.EnvValDelAllMark)
 			// Allow parse errors here
-			collectDepends(cc, flowEnv, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds)
+			collectDepends(cc, flowEnv, parsedFlow, 0, res, allowFlowTemplateRenderError, envOpCmds, depth+1)
 		}
 	}
 }

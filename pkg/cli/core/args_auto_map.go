@@ -12,10 +12,11 @@ func (self Arg2EnvAutoMapCmds) AddAutoMapTarget(cmd *Cmd) {
 	self[cmd] = true
 }
 
-func (self Arg2EnvAutoMapCmds) AutoMapArg2Env(cc *Cli, env *Env, envOpCmds []EnvOpCmd) {
+func (self Arg2EnvAutoMapCmds) AutoMapArg2Env(cc *Cli, env *Env, envOpCmds []EnvOpCmd, stackDepth int) {
+	sep := env.GetRaw("strs.cmd-path-sep")
 	for cmd, _ := range self {
-		argv := env.GetArgv(cmd.Owner().Path(), env.GetRaw("strs.cmd-path-sep"), cmd.Args())
-		autoMapArg2EnvForCmd(cc, env.Clone(), cmd, argv, envOpCmds, cmd)
+		argv := env.GetArgv(cmd.Owner().Path(), sep, stackDepth, cmd.Args())
+		autoMapArg2EnvForCmd(cc, env.Clone(), cmd, argv, envOpCmds, cmd, stackDepth)
 		cmd.FinishArg2EnvAutoMap(cc)
 	}
 }
@@ -26,7 +27,8 @@ func autoMapArg2EnvForCmd(
 	srcCmd *Cmd,
 	argv ArgVals,
 	envOpCmds []EnvOpCmd,
-	targetCmd *Cmd) (done bool) {
+	targetCmd *Cmd,
+	stackDepth int) (done bool) {
 
 	targetCmd.GetArgsAutoMapStatus().MarkMet(srcCmd)
 	if !srcCmd.HasSubFlow() {
@@ -47,7 +49,7 @@ func autoMapArg2EnvForCmd(
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	parsedFlow.GlobalEnv.WriteNotArgTo(flowEnv, cc.Cmds.Strs.EnvValDelAllMark)
 
-	return autoMapArg2EnvForCmdsInFlow(cc, flowEnv, parsedFlow, 0, envOpCmds, targetCmd)
+	return autoMapArg2EnvForCmdsInFlow(cc, flowEnv, parsedFlow, 0, envOpCmds, targetCmd, stackDepth)
 }
 
 func autoMapArg2EnvForCmdsInFlow(
@@ -56,7 +58,8 @@ func autoMapArg2EnvForCmdsInFlow(
 	flow *ParsedCmds,
 	currCmdIdx int,
 	envOpCmds []EnvOpCmd,
-	targetCmd *Cmd) (done bool) {
+	targetCmd *Cmd,
+	stackDepth int) (done bool) {
 
 	for i := currCmdIdx; i < len(flow.Cmds); i++ {
 		it := flow.Cmds[i]
@@ -72,9 +75,10 @@ func autoMapArg2EnvForCmdsInFlow(
 			continue
 		}
 
-		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+		cmdEnv, argv := it.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark,
+			cc.Cmds.Strs.PathSep, stackDepth)
 
-		if autoMapArg2EnvForCmd(cc, cmdEnv, cic, argv, envOpCmds, targetCmd) {
+		if autoMapArg2EnvForCmd(cc, cmdEnv, cic, argv, envOpCmds, targetCmd, stackDepth+1) {
 			return true
 		}
 
@@ -258,7 +262,7 @@ func (self *ArgsAutoMapStatus) FlushCache(owner *Cmd) {
 			}
 			sort.Strings(args)
 			for _, arg := range args {
-				newArgName := self.flushCacheEntry(owner, self.cache[arg])
+				newArgName := self.flushCacheEntry(owner, self.cache[arg], true)
 				if len(newArgName) != 0 {
 					self.reorderedArgs = append(self.reorderedArgs, newArgName)
 				}
@@ -269,7 +273,7 @@ func (self *ArgsAutoMapStatus) FlushCache(owner *Cmd) {
 			continue
 		}
 		if entry, ok := self.cache[argName]; ok {
-			newArgName := self.flushCacheEntry(owner, entry)
+			newArgName := self.flushCacheEntry(owner, entry, false)
 			self.reorderedArgs[i] = newArgName
 			delete(self.cache, argName)
 		}
@@ -309,7 +313,7 @@ func (self *ArgsAutoMapStatus) addNotAutoArg(owner *Cmd, argDefinition string) s
 	return name
 }
 
-func (self *ArgsAutoMapStatus) flushCacheEntry(owner *Cmd, entry Arg2EnvMappingEntry) (argName string) {
+func (self *ArgsAutoMapStatus) flushCacheEntry(owner *Cmd, entry Arg2EnvMappingEntry, isAutoMapAll bool) (argName string) {
 	if !self.mapAll && self.mapNoProvider {
 		_, userSpecify := self.argSet[entry.ArgName]
 		if !userSpecify {
@@ -346,7 +350,11 @@ func (self *ArgsAutoMapStatus) flushCacheEntry(owner *Cmd, entry Arg2EnvMappingE
 		newAbbrs = append(newAbbrs, abbr)
 	}
 
-	owner.AddArg(argName, entry.DefVal, newAbbrs...)
+	if isAutoMapAll {
+		owner.AddAutoMapAllArg(argName, entry.DefVal, newAbbrs...)
+	} else {
+		owner.AddArg(argName, entry.DefVal, newAbbrs...)
+	}
 	owner.AddArg2Env(entry.Key, argName)
 	self.resultArgs = append(self.resultArgs, argName)
 	self.resultData[argName] = Arg2EnvMappingEntry{entry.SrcCmd, entry.Key, argName, entry.DefVal, newAbbrs}

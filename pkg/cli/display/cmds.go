@@ -25,7 +25,8 @@ func DumpCmdsWithTips(
 	}
 
 	buf := NewCacheScreen()
-	allShown = dumpCmd(buf, env, cmds, args, -cmds.Depth(), 0)
+	stackDepth := env.GetInt("sys.stack-depth")
+	allShown = dumpCmd(buf, env, cmds, args, -cmds.Depth(), 0, stackDepth)
 
 	findStr := strings.Join(args.FindStrs, " ")
 
@@ -103,7 +104,7 @@ func DumpCmds(
 	env *core.Env,
 	args *DumpCmdArgs) (allShown bool) {
 
-	return dumpCmd(screen, env, cmds, args, -cmds.Depth(), 0)
+	return dumpCmd(screen, env, cmds, args, -cmds.Depth(), 0, env.GetInt("sys.stack-depth"))
 }
 
 type DumpCmdArgs struct {
@@ -202,7 +203,8 @@ func dumpCmd(
 	cmd *core.CmdTree,
 	args *DumpCmdArgs,
 	indentAdjust int,
-	depth int) (allShown bool) {
+	depth int,
+	stackDepth int) (allShown bool) {
 
 	if cmd == nil || cmd.IsHidden() {
 		return true
@@ -283,7 +285,7 @@ func dumpCmd(
 				prt(1, ColorProp("- args:", env))
 			}
 			for _, name := range argNames {
-				val := cicArgs.DefVal(name)
+				val := cicArgs.DefVal(name, stackDepth)
 				var nameList []string
 				for i, it := range cicArgs.Abbrs(name) {
 					if i == 0 {
@@ -404,7 +406,7 @@ func dumpCmd(
 	allShown = true
 	if args.Recursive && (args.MaxDepth == 0 || depth < args.MaxDepth) {
 		for _, name := range cmd.SubNames() {
-			subShown := dumpCmd(screen, env, cmd.GetSub(name), args, indentAdjust, depth+1)
+			subShown := dumpCmd(screen, env, cmd.GetSub(name), args, indentAdjust, depth+1, stackDepth)
 			allShown = allShown && subShown
 		}
 	} else {

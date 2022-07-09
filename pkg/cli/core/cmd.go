@@ -368,6 +368,11 @@ func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
 	return self
 }
 
+func (self *Cmd) AddAutoMapAllArg(name string, defVal string, abbrs ...string) *Cmd {
+	self.args.AddAutoMapAllArg(self.owner, name, defVal, abbrs...)
+	return self
+}
+
 func (self *Cmd) AddEnvOp(name string, op uint) *Cmd {
 	self.envOps.AddOp(name, op)
 	return self
@@ -928,6 +933,9 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 }
 
 func (self *Cmd) checkCanAddArgFromAnotherArg(srcArgs Args, name string) (defVal string, abbrs []string, ok bool) {
+	if srcArgs.IsFromAutoMapAll(name) {
+		return
+	}
 	if self.args.Has(name) {
 		return
 	}
@@ -949,7 +957,7 @@ func (self *Cmd) checkCanAddArgFromAnotherArg(srcArgs Args, name string) (defVal
 		}
 		newAbbrs = append(newAbbrs, abbr)
 	}
-	return srcArgs.DefVal(realname), newAbbrs, true
+	return srcArgs.RawDefVal(realname), newAbbrs, true
 }
 
 func shouldExecByMask(mask *ExecuteMask) bool {
