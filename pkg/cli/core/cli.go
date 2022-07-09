@@ -126,7 +126,7 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		NewBreakPoints(),
 		HandledErrors{},
 		self.ForestMode.Clone(),
-		NewBlender(),
+		self.Blender.Clone(),
 		Arg2EnvAutoMapCmds{},
 	}
 }
@@ -146,7 +146,7 @@ func (self *Cli) CloneForChecking() *Cli {
 		self.BreakPoints,
 		self.HandledErrors,
 		self.ForestMode,
-		NewBlender(),
+		self.Blender.Clone(),
 		Arg2EnvAutoMapCmds{},
 	}
 }

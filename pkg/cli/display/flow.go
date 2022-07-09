@@ -477,7 +477,8 @@ func dumpCmdDisplayName(
 	inBg bool,
 	showTrivialMark bool) (name string, ok bool) {
 
-	if args.MonitorMode && !(executedCmd.Result == core.ExecutedResultError || executedCmd.Result == core.ExecutedResultIncompleted) {
+	if args.MonitorMode &&
+		!(executedCmd != nil && (executedCmd.Result == core.ExecutedResultError || executedCmd.Result == core.ExecutedResultIncompleted)) {
 		return "", true
 	}
 
