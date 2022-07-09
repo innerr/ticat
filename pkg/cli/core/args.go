@@ -15,6 +15,8 @@ type Args struct {
 	orderedList []string
 	abbrs       map[string][]string
 	abbrsRevIdx map[string]string
+
+	fromAutoMapAll map[string]bool
 }
 
 func newArgs() Args {
@@ -24,6 +26,7 @@ func newArgs() Args {
 		[]string{},
 		map[string][]string{},
 		map[string]string{},
+		map[string]bool{},
 	}
 }
 
@@ -48,6 +51,15 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 	self.names[name] = len(self.names)
 	self.defVals[name] = defVal
 	self.orderedList = append(self.orderedList, name)
+}
+
+func (self *Args) AddAutoMapAllArg(owner *CmdTree, name string, defVal string, abbrs ...string) {
+	self.AddArg(owner, name, defVal, abbrs...)
+	self.fromAutoMapAll[name] = true
+}
+
+func (self *Args) IsFromAutoMapAll(name string) bool {
+	return self.fromAutoMapAll[name]
 }
 
 func (self Args) MatchFind(findStr string) bool {
@@ -79,7 +91,14 @@ func (self *Args) Reorder(owner *Cmd, names []string) {
 	self.orderedList = names
 }
 
-func (self *Args) DefVal(name string) string {
+func (self *Args) DefVal(name string, stackDepth int) string {
+	if self.fromAutoMapAll[name] && stackDepth > 1 {
+		return ""
+	}
+	return self.defVals[name]
+}
+
+func (self *Args) RawDefVal(name string) string {
 	return self.defVals[name]
 }
 

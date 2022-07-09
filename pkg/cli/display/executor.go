@@ -122,7 +122,7 @@ func PrintCmdStack(
 
 	// TODO: show stack depth when no background tasks
 	/*
-		stackDepth := env.Get("sys.stack-depth").Raw
+		stackDepth := env.GetRaw("sys.stack-depth")
 		if len(stackDepth) > 2 {
 			stackDepth = "[..]"
 		} else {
@@ -191,7 +191,7 @@ func PrintCmdStack(
 			continue
 		}
 		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(core.EnvLayerSession),
-			strs.EnvValDelAllMark, strs.PathSep)
+			strs.EnvValDelAllMark, strs.PathSep, stackDepth)
 		sysArgv := cmdEnv.GetSysArgv(cmd.Path(), strs.PathSep)
 		var name string
 		if !printInputName && cmd.LastCmdNode() != nil {

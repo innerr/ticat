@@ -122,6 +122,7 @@ func (self *Blender) IsEmpty() bool {
 
 func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) {
 	result := []ParsedCmd{}
+	stackDepth := env.GetInt("sys.stack-depth")
 
 	for i := 0; i < len(flow.Cmds); i++ {
 		parsedCmd := flow.Cmds[i]
@@ -138,7 +139,7 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 		cic := parsedCmd.LastCmd()
 		if cmd != nil && cic != nil && cic.IsBlenderCmd() {
 			cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(
-				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep)
+				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, stackDepth)
 			_, ok := cic.executeByType(argv, cc, cmdEnv, nil, flow, i, "", nil)
 			if !ok {
 				panic(fmt.Errorf("[Blender.Invoke] blender '%s' invoke failed", cmd.DisplayPath()))

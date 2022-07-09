@@ -42,10 +42,11 @@ func DumpEffectedArgs(
 	arg2env *core.Arg2Env,
 	args *core.Args,
 	argv core.ArgVals,
-	writtenKeys FlowWrittenKeys) (output []string) {
+	writtenKeys FlowWrittenKeys,
+	stackDepth int) (output []string) {
 
 	for _, k := range args.Names() {
-		defV := args.DefVal(k)
+		defV := args.DefVal(k, stackDepth)
 		line := ColorArg(k, env) + " " + ColorSymbol("=", env) + " "
 		v, provided := argv[k]
 		if provided && v.Provided {

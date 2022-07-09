@@ -169,7 +169,7 @@ func dumpFlowCmd(
 
 	// TODO: this is slow
 	originEnv := env.Clone()
-	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cmd.Strs.PathSep)
+	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cmd.Strs.PathSep, depth+1)
 
 	padLenCal := func(indentLvl int) int {
 		indentLvl += depth * 2
@@ -672,6 +672,8 @@ func dumpCmdArgv(
 		return
 	}
 
+	stackDepth := env.GetInt("sys.stack-depth")
+
 	if args.Skeleton {
 		args := cic.Args()
 		for _, name := range args.Names() {
@@ -687,7 +689,7 @@ func dumpCmdArgv(
 	} else {
 		args := cic.Args()
 		arg2env := cic.GetArg2Env()
-		argLines := DumpEffectedArgs(originEnv, arg2env, &args, argv, writtenKeys)
+		argLines := DumpEffectedArgs(originEnv, arg2env, &args, argv, writtenKeys, stackDepth)
 		if len(argLines) != 0 {
 			prt(1, ColorProp("- args:", env))
 		}
