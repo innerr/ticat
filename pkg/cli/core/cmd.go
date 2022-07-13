@@ -54,6 +54,7 @@ type CmdFlags struct {
 	quietError         bool
 	noSession          bool
 	hideInSessionsLast bool
+	quietSubFlow       bool
 }
 
 type Cmd struct {
@@ -428,6 +429,11 @@ func (self *Cmd) SetNoSession() *Cmd {
 
 func (self *Cmd) SetHideInSessionsLast() *Cmd {
 	self.flags.hideInSessionsLast = true
+	return self
+}
+
+func (self *Cmd) SetQuietSubflow() *Cmd {
+	self.flags.quietSubFlow = true
 	return self
 }
 
@@ -845,7 +851,16 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd, logFilePath string,
 	mask *ExecuteMask, tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (succeeded bool) {
 
+	quietKey := "display.executor"
+	envSession := env.GetLayer(EnvLayerSession)
+	quiet := envSession.GetRaw(quietKey)
+	if self.flags.quietSubFlow {
+		envSession.SetBool(quietKey, false)
+	}
 	succeeded = self.executeFlow(argv, cc, env, mask)
+	if self.flags.quietSubFlow {
+		envSession.Set(quietKey, quiet)
+	}
 	if !succeeded {
 		return false
 	}

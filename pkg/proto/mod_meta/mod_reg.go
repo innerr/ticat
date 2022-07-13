@@ -101,6 +101,7 @@ func regModFile(
 	regNoSession(meta, cmd)
 	regQuietCmd(meta, cmd)
 	regHideInSessionsLast(meta, cmd)
+	regQuietSubflow(meta, cmd)
 
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
@@ -266,6 +267,23 @@ func regHideInSessionsLast(meta *meta_file.MetaFile, cmd *core.Cmd) {
 		}
 		if hide {
 			cmd.SetHideInSessionsLast()
+		}
+		return
+	}
+}
+
+func regQuietSubflow(meta *meta_file.MetaFile, cmd *core.Cmd) {
+	for _, key := range []string{"quiet-subflow", "quiet-sub"} {
+		val := meta.Get(key)
+		if len(val) == 0 {
+			continue
+		}
+		quiet, err := strconv.ParseBool(val)
+		if err != nil {
+			panic(fmt.Errorf("[regQuietSubflow] quiet-subflow value string '%s' is not bool: '%v'", val, err))
+		}
+		if quiet {
+			cmd.SetQuietSubflow()
 		}
 		return
 	}

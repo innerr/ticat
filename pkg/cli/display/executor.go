@@ -318,16 +318,17 @@ func PrintCmdResult(
 	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
 		return
 	}
-	if !env.GetBool("display.executor.end") {
-		if currCmdIdx != len(flow)-1 || !callerIsFileNFile(cc, env) {
-			return
-		}
-	}
 	if checkPrintFilter(cmd, env) {
 		return
 	}
+
+	betweenFileNFlow := (currCmdIdx == len(flow)-1) && callerIsFileNFlow(cc, env)
+
+	if !env.GetBool("display.executor.end") && !betweenFileNFlow {
+		return
+	}
 	flow, currCmdIdx = filterQuietCmds(env, flow, currCmdIdx)
-	if len(flow) == 1 && !env.GetBool("display.one-cmd") {
+	if len(flow) == 1 && !env.GetBool("display.one-cmd") && !betweenFileNFlow {
 		return
 	}
 	if len(flow) == 0 {
@@ -408,7 +409,7 @@ func filterQuietCmds(env *core.Env, flow []core.ParsedCmd, currCmdIdx int) ([]co
 	return newCmds, newIdx
 }
 
-func callerIsFileNFile(cc *core.Cli, env *core.Env) bool {
+func callerIsFileNFlow(cc *core.Cli, env *core.Env) bool {
 	listSep := env.GetRaw("strs.list-sep")
 	stack := strings.Split(env.GetRaw("sys.stack"), listSep)
 	if len(stack) <= 1 {
