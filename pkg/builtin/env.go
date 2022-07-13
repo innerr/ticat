@@ -199,6 +199,29 @@ func RemoveEnvValNotSave(
 	return removeEnvVal(argv, cc, env, flow, currCmdIdx, false)
 }
 
+func RemoveEnvValHavePrefixNotSave(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	prefix := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "prefix")
+
+	keyVals := env.FlattenAll()
+	for key, _ := range keyVals {
+		if !strings.HasPrefix(key, prefix) {
+			continue
+		}
+		keyStr := display.ColorKey("'"+key+"'", env)
+		env.DeleteEx(key, core.EnvLayerDefault)
+		cc.Screen.Print(keyStr + " deleted\n")
+	}
+	return currCmdIdx, true
+}
+
 func RemoveEnvValAndSaveToLocal(
 	argv core.ArgVals,
 	cc *core.Cli,
