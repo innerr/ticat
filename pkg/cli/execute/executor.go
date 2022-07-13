@@ -136,13 +136,16 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 
 	display.PrintTolerableErrs(cc.Screen, env, cc.TolerableErrs)
 
+	crossProcessInnerCall := false
+
 	if !innerCall && !bootstrap && !env.GetBool("sys.interact.inside") {
 		noSession := env.GetBool("sys.session.disable") || noSessionCmds(flow)
 		if !noSession {
-			statusWriter, ok := core.SessionInit(cc, flow, env, self.sessionFileName, self.sessionStatusFileName)
+			statusWriter, sessionExisted, ok := core.SessionInit(cc, flow, env, self.sessionFileName, self.sessionStatusFileName)
 			if !ok {
 				return false
 			}
+			crossProcessInnerCall = sessionExisted
 			cc.SetFlowStatusWriter(statusWriter)
 		} else {
 			core.SessionSetId(env)
@@ -158,13 +161,13 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 		}
 	}
 
-	if !bootstrap {
+	if !bootstrap && !crossProcessInnerCall {
 		stackStepIn(caller, env)
 	}
 	if !self.executeFlow(cc, bootstrap, flow, env, masks, input) {
 		return false
 	}
-	if !bootstrap {
+	if !bootstrap && !crossProcessInnerCall {
 		stackStepOut(caller, self.callerNameEntry, env)
 	}
 	return true

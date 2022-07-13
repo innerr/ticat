@@ -261,11 +261,6 @@ func checkEnvOps(
 
 		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, depth+1)
 
-		if last.Type() == CmdTypeFileNFlow {
-			parsedFlow, flowEnv := renderSubFlowOnChecking(last, cc, argv, cmdEnv)
-			checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs, depth+1)
-		}
-
 		res := checker.OnCallCmd(cmdEnv, argv, cmd, sep, last, ignoreMaybe, displayPath, arg2envs)
 		*result = append(*result, res...)
 

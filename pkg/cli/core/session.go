@@ -161,12 +161,12 @@ func SessionSetId(env *Env) {
 }
 
 func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
-	statusFileName string) (flowStatus *ExecutingFlow, ok bool) {
+	statusFileName string) (flowStatus *ExecutingFlow, crossProcessInnerCall bool, ok bool) {
 
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
 		cc.Screen.Print("[sessionInit] can't get sessions' root path\n")
-		return nil, false
+		return nil, false, false
 	}
 
 	sessionDir := env.GetRaw("session")
@@ -177,7 +177,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 		// NOTE: treat recursive ticat call as non-ticat scripts, not record the executing status
 		//statusPath := filepath.Join(sessionDir, statusFileName)
 		//return NewExecutingFlow(statusPath, flow, env), true
-		return nil, true
+		return nil, true, true
 	}
 
 	keepDur := env.GetDur("sys.sessions.keep-status-duration")
@@ -187,7 +187,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 	if err != nil {
 		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't read sessions' root path '%s'\n",
 			sessionsRoot))
-		return nil, false
+		return nil, false, false
 	}
 
 	_, now, id := GenSessionId()
@@ -215,7 +215,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 	if err != nil && !os.IsExist(err) {
 		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create session dir '%s'\n",
 			sessionDir))
-		return nil, false
+		return nil, false, false
 	}
 
 	sessionEnv := env.GetLayer(EnvLayerSession)
@@ -224,7 +224,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 	sessionEnv.Set("sys.session.id.full", id+"@"+env.GetRaw("sys.session.id.ip"))
 
 	statusPath := filepath.Join(sessionDir, statusFileName)
-	return NewExecutingFlow(statusPath, flow, env), true
+	return NewExecutingFlow(statusPath, flow, env), false, true
 }
 
 // TODO: clean it
