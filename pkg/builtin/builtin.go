@@ -517,14 +517,18 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
 		RegPowerCmd(SaveEnvToLocal,
 			"save session env changes to local")
 
-	env.AddSub("remove", "rm", "delete", "del").
+	envRm := env.AddSub("remove", "rm", "delete", "del").
 		RegPowerCmd(RemoveEnvValNotSave,
 			"remove specified env value in current session").
 		SetAllowTailModeCall().
 		AddArg("key", "", "k")
 
-	// '--' is for compatible only, will remove late
-	env.AddSub("reset-session", "reset", "--").
+	envRm.AddSub("prefix", "pre").
+		RegPowerCmd(RemoveEnvValHavePrefixNotSave,
+			"remove env key-values with the specified key-prefix in current session").
+		AddArg("prefix", "", "pre")
+
+	env.AddSub("reset-session", "reset").
 		RegPowerCmd(ResetSessionEnv,
 			"clear all env values in current session, will not remove persisted values").
 		AddArg("exclude-keys", "", "excludes", "exclude", "excl", "exc")
