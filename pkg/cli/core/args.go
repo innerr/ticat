@@ -83,10 +83,11 @@ func (self *Args) Reorder(owner *Cmd, names []string) {
 	if len(names) != len(self.orderedList) {
 		changed()
 	}
-	for _, name := range names {
+	for i, name := range names {
 		if _, ok := self.names[name]; !ok {
 			changed()
 		}
+		self.names[name] = i
 	}
 	self.orderedList = names
 }
