@@ -47,11 +47,17 @@ func NormalizeGitAddr(addr string) string {
 	if strings.HasPrefix(strings.ToLower(addr), "http") {
 		return addr
 	}
-	if strings.HasPrefix(strings.ToLower(addr), "git") {
+	if isSshAddr(addr) {
 		return addr
 	}
-	//return "git@github.com:" + addr
 	return "https://github.com/" + addr
+}
+
+// TODO: need to improve this ssh-format address checking
+func isSshAddr(addr string) bool {
+	symAt := strings.Index(strings.ToLower(addr), "@")
+	symCl := strings.Index(strings.ToLower(addr), ":")
+	return symAt > 0 && symCl > symAt
 }
 
 func AddrDisplayName(addr string) string {
@@ -62,11 +68,22 @@ func AddrDisplayName(addr string) string {
 	return abbr
 }
 
-func GetRepoPath(hubPath string, gitAddr string) string {
-	addr := strings.ToLower(gitAddr)
-	for _, prefix := range []string{"http://", "https://", "git@", "root@"} {
+func GetRepoPath(hubPath string, originGitAddr string) string {
+	addr := strings.ToLower(originGitAddr)
+	for _, prefix := range []string{"http://", "https://"} {
 		addr = strings.TrimPrefix(addr, prefix)
 	}
+
+	symAt := strings.Index(strings.ToLower(addr), "@")
+	if symAt >= 0 {
+		addr = addr[symAt+1:]
+		symCl := strings.LastIndex(strings.ToLower(addr), ":")
+		if symCl <= 0 {
+			panic(fmt.Errorf("ill-format repo address '%v'", originGitAddr))
+		}
+		addr = addr[0:symCl] + "/" + addr[symCl+1:]
+	}
+
 	author := filepath.Dir(addr)
 	return filepath.Join(hubPath,
 		filepath.Dir(author),
