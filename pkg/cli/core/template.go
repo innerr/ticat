@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+	"math/rand"
 	"strings"
 )
 
@@ -162,6 +164,9 @@ func tryRenderTemplate(
 			ok = inArg && len(valStr) != 0
 		}
 		if !ok {
+			valStr, ok = tryRenderSystemVars(key)
+		}
+		if !ok {
 			hasError = true
 			if allowError {
 				findPos += j + len(templBracketRight)
@@ -172,6 +177,13 @@ func tryRenderTemplate(
 		in = in[:findPos] + str[0:i] + valStr + tail[j+len(templBracketRight):]
 	}
 	return in, hasError
+}
+
+func tryRenderSystemVars(key string) (val string, ok bool) {
+	val, ok = map[string]string{
+		"RANDOM": fmt.Sprintf("%d", rand.Int()),
+	}[key]
+	return
 }
 
 func templateRenderPanic(in string, cmd *Cmd, targetName string, key string, isMultiply bool) {

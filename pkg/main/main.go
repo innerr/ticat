@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/pingcap/ticat/pkg/builtin"
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -11,6 +13,8 @@ import (
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	env := core.NewEnv().NewLayers(
 		core.EnvLayerDefault,
 		core.EnvLayerPersisted,
