@@ -9,6 +9,17 @@ import (
 
 // TODO: this is slow, fetch flag from env too many times, and other issues, handle it later
 
+func ColorStrByName(str string, color string, env *core.Env) string {
+	funcs := map[string]func(string, *core.Env) string{
+		"tip": ColorTip,
+	}
+	fun := funcs[color]
+	if fun != nil {
+		return fun(str, env)
+	}
+	return str
+}
+
 func ColorExtraLen(env *core.Env, types ...string) (res int) {
 	enabled := env.GetBool("display.color")
 	if !enabled {
