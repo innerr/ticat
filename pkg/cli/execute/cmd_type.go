@@ -95,7 +95,7 @@ func noSessionCmds(flow *core.ParsedCmds) bool {
 	}
 	cmd := flow.Cmds[0].LastCmdNode()
 
-	if cmd.Cmd() != nil && cmd.Cmd().IsNoSessionCmd() {
+	if cmd != nil && cmd.Cmd() != nil && cmd.Cmd().IsNoSessionCmd() {
 		return true
 	}
 

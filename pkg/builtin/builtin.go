@@ -523,7 +523,7 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
 		SetAllowTailModeCall().
 		AddArg("key", "", "k")
 
-	envRm.AddSub("prefix", "pre").
+	envRm.AddSub("prefix", "pref", "pre").
 		RegPowerCmd(RemoveEnvValHavePrefixNotSave,
 			"remove env key-values with the specified key-prefix in current session").
 		AddArg("prefix", "", "pre")
@@ -1094,12 +1094,6 @@ func RegisterDbgCmds(cmds *core.CmdTree) {
 	interact.AddSub("leave", "l").
 		RegPowerCmd(DbgInteractLeave,
 			"leave interact mode and continue to run")
-
-	// For compatible only, will remove late
-	cmds.AddSub("echo").
-		RegPowerCmd(DbgEcho,
-			"! moved to 'echo', this is just for compatible only, will be removed soon").
-		AddArg("message", "", "msg", "m", "M")
 }
 
 func RegisterDisplayCmds(cmds *core.CmdTree) {
@@ -1339,10 +1333,16 @@ func RegisterOsCmds(cmds *core.CmdTree) {
 			"sleep for specified duration").
 		AddArg("duration", "1s", "dur", "d")
 
-	cmds.AddSub("echo").
-		RegPowerCmd(DbgEcho,
-			"print message from argv").
-		AddArg("message", "", "msg", "m")
+	echo := cmds.AddSub("echo")
+	echo.RegPowerCmd(DbgEcho,
+		"print message from argv").
+		AddArg("message", "", "msg", "m").
+		AddArg("color", "", "colour", "clr", "c")
+
+	echo.AddSub("ln").
+		RegPowerCmd(DbgEchoLn,
+			"print an empty line").
+		SetQuiet()
 
 	sys := cmds.AddSub("sys")
 	sys.AddSub("ext-executor", "ext-exec", "ext-exe").
