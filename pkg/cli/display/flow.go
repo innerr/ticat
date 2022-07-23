@@ -200,7 +200,7 @@ func dumpFlowCmd(
 	}
 
 	foldSubFlowByTrivial := func() bool {
-		return !cmdFailed() && maxTrivial <= trivialDelta && cic.HasSubFlow()
+		return !cmdFailed() && maxTrivial <= trivialDelta && cic.HasSubFlow(false)
 	}
 	foldSubFlowByDepth := func() bool {
 		return !cmdFailed() && maxDepth <= 1
@@ -275,9 +275,9 @@ func dumpFlowCmd(
 		dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
 	}
 
-	if !foldSubFlow() && !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow()) {
+	if !foldSubFlow() && !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow(false)) {
 		metFlow := false
-		if cic.HasSubFlow() {
+		if cic.HasSubFlow(false) {
 			flowStrs, _, _ := cic.RenderedFlowStrs(argv, cc, cmdEnv, true, true)
 			flowStr := strings.Join(flowStrs, " ")
 			metFlow = metFlows[flowStr]
@@ -310,7 +310,7 @@ func dumpFlowCmd(
 			dumpCmdExecutable(cic, env, args, prt, padLenCal, lineLimit)
 		}
 
-		if cic.HasSubFlow() && !cmdSkipped() && (executedCmd == nil || executedCmd.Result != core.ExecutedResultUnRun) {
+		if cic.HasSubFlow(false) && !cmdSkipped() && (executedCmd == nil || executedCmd.Result != core.ExecutedResultUnRun) {
 			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || cmdFailed() {
@@ -668,15 +668,16 @@ func dumpCmdArgv(
 	executedCmd *core.ExecutedCmd,
 	writtenKeys FlowWrittenKeys) {
 
-	if args.MonitorMode {
+	if args.MonitorMode &&
+		!(executedCmd != nil && (executedCmd.Result == core.ExecutedResultError || executedCmd.Result == core.ExecutedResultIncompleted)) {
 		return
 	}
 
 	stackDepth := env.GetInt("sys.stack-depth")
 
-	if args.Skeleton {
-		args := cic.Args()
-		for _, name := range args.Names() {
+	if args.Skeleton || args.MonitorMode {
+		cicArgs := cic.Args()
+		for _, name := range cicArgs.Names() {
 			if _, ok := argv[name]; !ok {
 				continue
 			}
@@ -684,7 +685,11 @@ func dumpCmdArgv(
 			if !val.Provided {
 				continue
 			}
-			prt(1, " "+ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
+			indent := " "
+			if args.MonitorMode {
+				indent = "   "
+			}
+			prt(1, indent+ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
 		}
 	} else {
 		args := cic.Args()

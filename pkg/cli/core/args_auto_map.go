@@ -31,7 +31,7 @@ func autoMapArg2EnvForCmd(
 	stackDepth int) (done bool) {
 
 	targetCmd.GetArgsAutoMapStatus().MarkMet(srcCmd)
-	if !srcCmd.HasSubFlow() {
+	if !srcCmd.HasSubFlow(true) {
 		return false
 	}
 
@@ -303,6 +303,7 @@ func (self *ArgsAutoMapStatus) addNotAutoArg(owner *Cmd, argDefinition string) s
 	}
 	argName := argDefinition[:i]
 	defVal := strings.TrimSpace(argDefinition[len(argName)+len(keyValSep):])
+	defVal = strings.Trim(strings.Trim(defVal, "'"), "\"")
 	nameAndAbbrs := strings.Split(argName, owner.Owner().Strs.AbbrsSep)
 	name := strings.TrimSpace(nameAndAbbrs[0])
 	var argAbbrs []string
