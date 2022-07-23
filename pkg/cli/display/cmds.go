@@ -347,7 +347,7 @@ func dumpCmd(
 			}
 
 			// TODO: a bit messy
-			//if !cic.HasSubFlow() && (cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {
+			//if !cic.HasSubFlow(false) && (cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {
 			if cic.Type() != core.CmdTypeFlow || cic.Type() != core.CmdTypeAdHotFlow {
 				line := string(cic.Type())
 				if cic.IsQuiet() {
@@ -375,7 +375,7 @@ func dumpCmd(
 			// TODO: a bit messy
 			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
 				if len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0 {
-					if cic.HasSubFlow() {
+					if cic.HasSubFlow(false) {
 						prt(1, ColorProp("- flow:", env))
 						for _, flowStr := range cic.FlowStrs() {
 							prt(2, ColorFlow(flowStr, env))

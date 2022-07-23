@@ -267,7 +267,7 @@ func checkEnvOps(
 		TryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, checker,
 			"failed to execute env-op cmd in env-ops checking")
 
-		if !last.HasSubFlow() {
+		if !last.HasSubFlow(true) {
 			continue
 		}
 

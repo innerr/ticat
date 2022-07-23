@@ -44,7 +44,7 @@ func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core
 		env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-in", true)
 		bpa = BPAContinue
 	} else if bpa == BPAStepOver || bpa == BPASkip {
-		//if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
+		//if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow(false)) {
 		if lastCmdInFlow {
 			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
 		}
@@ -71,7 +71,7 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	choices := []string{}
 	var reason string
 
-	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow() && !stepByStep && (mask == nil || mask.SubFlow != nil) {
+	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow(false) && !stepByStep && (mask == nil || mask.SubFlow != nil) {
 		choices = append(choices, "t")
 	}
 
@@ -109,7 +109,7 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 func tryWaitSecAndBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, bootstrap bool, lastCmdInFlow bool, showStack func()) BreakPointAction {
 	bpa := tryBreakAfter(cc, env, cmd, showStack)
 	if bpa == BPAStepOver {
-		if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow()) {
+		if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow(false)) {
 			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
 		}
 	} else if bpa == BPAContinue && !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {

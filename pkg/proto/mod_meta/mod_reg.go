@@ -273,7 +273,7 @@ func regHideInSessionsLast(meta *meta_file.MetaFile, cmd *core.Cmd) {
 }
 
 func regQuietSubFlow(meta *meta_file.MetaFile, cmd *core.Cmd) {
-	for _, key := range []string{"quiet-subflow", "quiet-sub"} {
+	for _, key := range []string{"pack-subflow", "pack-sub", "quiet-subflow", "quiet-sub"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
 			continue

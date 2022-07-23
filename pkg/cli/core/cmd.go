@@ -253,19 +253,19 @@ func (self *Cmd) execute(
 		}
 	}
 
-	quietKey := "display.executor"
+	disableQuietKey := "display.executor"
 	envSession := env.GetLayer(EnvLayerSession)
-	originQuiet := envSession.GetRaw(quietKey)
-	shouldQuietSubFlow := self.HasSubFlow() && self.flags.quietSubFlow
+	originQuiet := envSession.GetRaw(disableQuietKey)
+	shouldQuietSubFlow := self.HasSubFlow(true) && self.flags.quietSubFlow
 	if shouldQuietSubFlow {
-		envSession.SetBool(quietKey, false)
+		envSession.SetBool(disableQuietKey, false)
 	}
 
 	newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow,
 		currCmdIdx, logFilePath, tryBreakInsideFileNFlow)
 
 	if shouldQuietSubFlow {
-		envSession.Set(quietKey, originQuiet)
+		envSession.Set(disableQuietKey, originQuiet)
 	}
 	return
 }
@@ -311,7 +311,10 @@ func (self *Cmd) executeByType(
 	}
 }
 
-func (self *Cmd) HasSubFlow() bool {
+func (self *Cmd) HasSubFlow(includeQuietSubFlow bool) bool {
+	if !includeQuietSubFlow && self.flags.quietSubFlow {
+		return false
+	}
 	return self.ty == CmdTypeFlow || self.ty == CmdTypeFileNFlow || self.ty == CmdTypeAdHotFlow
 }
 
