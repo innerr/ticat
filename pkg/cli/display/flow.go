@@ -313,7 +313,7 @@ func dumpFlowCmd(
 		if cic.HasSubFlow(false) && !cmdSkipped() && (executedCmd == nil || executedCmd.Result != core.ExecutedResultUnRun) {
 			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true, true)
 			if rendered && len(subFlow) != 0 {
-				if !metFlow || cmdFailed() {
+				if !metFlow || executedCmd != nil || cmdFailed() {
 					depthMark := ""
 					if executedCmd != nil && !args.Skeleton {
 						depthMark = fmt.Sprintf(" L%v", depth+1)
