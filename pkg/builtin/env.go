@@ -25,8 +25,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.execute-wait-sec", 0)
 	env.SetBool("sys.confirm.ask", true)
 
-	env.Set("sys.version", "1.3.2")
-	env.Set("sys.dev.name", "automating")
+	env.Set("sys.version", "1.4.0")
+	env.Set("sys.dev.name", "furryball")
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
@@ -38,7 +38,7 @@ func LoadDefaultEnv(env *core.Env) {
 
 	row, col := utils.GetTerminalWidth(50, 100)
 	env.SetInt("display.width.max", col)
-	//col = adjustDisplayWidth(col)
+	col = adjustDisplayWidth(col)
 	env.SetInt("display.width", col)
 	env.SetInt("display.height", row)
 
@@ -509,7 +509,9 @@ func setToDefaultVerb(env *core.Env) {
 
 func adjustDisplayWidth(col int) int {
 	if col > 100 {
-		col = int(math.Max(100+float64(col-100)*4/5, float64(col-20)))
+		col = int(math.Max(100+float64(col-100)*4/5-1, float64(col-24)))
+	} else {
+		col -= 1
 	}
 	return col
 }

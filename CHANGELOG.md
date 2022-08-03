@@ -1,6 +1,6 @@
 # Change Log of ticat
 
-All notable changes to this project are documented in this file.
+All notable changes to this project are documented here.
 
 ## [1.3.1] - 2022-06-15
 + New Features

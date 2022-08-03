@@ -70,6 +70,9 @@ func (self *TipBoxPrinter) Prints(msgs ...string) {
 }
 
 func (self *TipBoxPrinter) colorize(msg string) (string, int) {
+	if !self.env.GetBool("display.color") {
+		return msg, 0
+	}
 	return "\033[38;5;242m" + msg + "\033[0m", ColorExtraLen(self.env, "tip-dark")
 }
 
@@ -132,7 +135,11 @@ func (self *TipBoxPrinter) Finish() {
 	}
 	var frameChars *FrameChars
 	if self.env.GetBool("display.utf8") {
-		frameChars = FrameCharsUtf8Colored(colorCode)
+		if self.env.GetBool("display.color") {
+			frameChars = FrameCharsUtf8Colored(colorCode)
+		} else {
+			frameChars = FrameCharsUtf8()
+		}
 	} else {
 		frameChars = FrameCharsAscii()
 	}
