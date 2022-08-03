@@ -25,7 +25,7 @@ const (
 )
 
 func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, mask *core.ExecuteMask,
-	breakByPrev bool, lastCmdInFlow bool, bootstrap bool, showStack func()) BreakPointAction {
+	/*breakByPrev bool, */ lastCmdInFlow bool, bootstrap bool, showStack func()) BreakPointAction {
 
 	if env.GetBool("sys.interact.inside") {
 		return BPAContinue
@@ -35,7 +35,7 @@ func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core
 		return BPAContinue
 	}
 
-	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, mask, breakByPrev, showStack)
+	bpa := tryStepByStepAndBreakBefore(cc, env, cmd, mask /*breakByPrev, */, showStack)
 	if bpa == BPAContinue {
 		if !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {
 			tryWaitSec(cc, env, "sys.execute-wait-sec")
@@ -53,7 +53,7 @@ func tryWaitSecAndStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core
 }
 
 func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, mask *core.ExecuteMask,
-	breakByPrev bool, showStack func()) BreakPointAction {
+	/*breakByPrev bool, */ showStack func()) BreakPointAction {
 
 	stepByStep := env.GetBool("sys.step-by-step")
 	stepIn := env.GetBool("sys.breakpoint.status.step-in")
@@ -64,6 +64,7 @@ func tryStepByStepAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd
 	breakBefore := cc.BreakPoints.BreakBefore(name) || env.GetBool(breakHereKey)
 	env.GetLayer(core.EnvLayerSession).Delete(breakHereKey)
 
+	breakByPrev := env.GetBool("sys.breakpoint.at-next")
 	if !breakBefore && !stepByStep && !stepIn && !stepOut && !breakByPrev {
 		return BPAContinue
 	}
@@ -171,7 +172,9 @@ func tryWaitSec(cc *core.Cli, env *core.Env, waitSecKey string) {
 	}
 }
 
-func tryBreakInsideFileNFlow(cc *core.Cli, env *core.Env, cmd *core.Cmd, breakByPrev bool, showStack func()) (shouldExec bool) {
+func tryBreakInsideFileNFlow(cc *core.Cli, env *core.Env, cmd *core.Cmd /*breakByPrev bool, */, showStack func()) (shouldExec bool) {
+	breakByPrev := env.GetBool("sys.breakpoint.at-next")
+
 	if !breakByPrev && !env.GetBool("sys.breakpoint.status.step-out") {
 		return true
 	}
@@ -246,6 +249,8 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 				}
 				showTitle()
 				continue
+			} else if action == BPAContinue {
+				env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.at-next", false)
 			}
 			return action
 		}

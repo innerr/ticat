@@ -181,7 +181,7 @@ func (self *Executor) executeFlow(
 	masks []*core.ExecuteMask,
 	input []string) bool {
 
-	breakAtNext := false
+	//breakAtNext := false
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
 		var succeeded bool
@@ -193,8 +193,8 @@ func (self *Executor) executeFlow(
 		if cc.ForestMode.AtForestTopLvl(env) {
 			cmdEnv = env.Clone()
 		}
-		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, cmdEnv, mask, flow, i,
-			breakAtNext, i+1 == len(flow.Cmds))
+		i, succeeded /*, breakAtNext*/ = self.executeCmd(cc, bootstrap, cmd, cmdEnv, mask, flow, i,
+			/*breakAtNext, */ i+1 == len(flow.Cmds))
 		if !succeeded {
 			return false
 		}
@@ -213,8 +213,8 @@ func (self *Executor) executeCmd(
 	mask *core.ExecuteMask,
 	flow *core.ParsedCmds,
 	currCmdIdx int,
-	breakByPrev bool,
-	lastCmdInFlow bool) (newCurrCmdIdx int, succeeded bool, breakAtNext bool) {
+	//breakByPrev bool,
+	lastCmdInFlow bool) (newCurrCmdIdx int, succeeded bool /*, breakAtNext bool*/) {
 
 	// This is a fake apply just for calculate sys args, the env is a clone
 	cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
@@ -238,19 +238,21 @@ func (self *Executor) executeCmd(
 	last := cmd.LastCmdNode()
 
 	if !sysArgv.IsDelay() {
-		bpa := tryWaitSecAndStepByStepAndBreakBefore(cc, env, cmd, mask, breakByPrev, lastCmdInFlow, bootstrap, showStack)
+		bpa := tryWaitSecAndStepByStepAndBreakBefore(cc, env, cmd, mask /*breakByPrev, */, lastCmdInFlow, bootstrap, showStack)
 		if bpa == BPASkip {
 			mask = copyMask(last.DisplayPath(), mask)
 			mask.ExecPolicy = core.ExecPolicySkip
-			breakAtNext = true
+			//breakAtNext = true
+			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.at-next", true)
 		} else if bpa == BPAStepOver {
-			breakAtNext = true
+			//breakAtNext = true
+			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.at-next", true)
 		} else if bpa != BPAContinue {
 			return
 		}
 	} else {
 		// TODO: maybe use env to pass the breaking status for all cases will be better?
-		breakAtNext = breakByPrev
+		//breakAtNext = breakByPrev
 	}
 
 	start := time.Now()
@@ -267,7 +269,7 @@ func (self *Executor) executeCmd(
 					cmdEnv.SetInt("display.executor.displayed", cmdEnv.GetInt("sys.stack-depth"))
 				}
 				tryBreakInsideFileNFlowWrap := func(cc *core.Cli, env *core.Env, cmd *core.Cmd) bool {
-					return tryBreakInsideFileNFlow(cc, env, cmd, breakByPrev, showStack)
+					return tryBreakInsideFileNFlow(cc, env, cmd /*breakByPrev, */, showStack)
 				}
 				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx, tryBreakInsideFileNFlowWrap)
 				cmdEnv.SetInt("display.executor.displayed", 0)
@@ -304,7 +306,8 @@ func (self *Executor) executeCmd(
 	if !sysArgv.IsDelay() {
 		bpa := tryWaitSecAndBreakAfter(cc, env, cmd, bootstrap, lastCmdInFlow, showStack)
 		if bpa == BPAStepOver {
-			breakAtNext = true
+			//breakAtNext = true
+			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.at-next", true)
 		} else if bpa != BPAContinue {
 			return
 		}
