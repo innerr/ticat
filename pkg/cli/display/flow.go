@@ -515,7 +515,7 @@ func dumpCmdDisplayName(
 		//if sysArgv.GetDelayDuration().Nanoseconds() == 0 {
 		//	name += ColorCmdDelay(" (background)", env)
 		//} else {
-		name += ColorCmdDelay(" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
+		name += ColorCmdDelay(" (schedule to bg in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
 		//}
 	}
 

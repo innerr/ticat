@@ -25,7 +25,7 @@ func WaitForBgTaskFinish(
 		return WaitForAllBgTasksFinish(argv, cc, env, flow, currCmdIdx)
 	}
 
-	errs := WaitBgTasks(cc, env, tid)
+	errs := WaitBgTasks(cc, env, tid, true)
 	for _, err := range errs {
 		display.PrintError(cc, env, err)
 	}
@@ -45,14 +45,14 @@ func WaitForAllBgTasksFinish(
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 			"must be in main thread to wait for other threads to finish"))
 	}
-	errs := WaitBgTasks(cc, env, "")
+	errs := WaitBgTasks(cc, env, "", true)
 	for _, err := range errs {
 		display.PrintError(cc, env, err)
 	}
 	return currCmdIdx, true
 }
 
-func WaitBgTasks(cc *core.Cli, env *core.Env, matchTid string) (errs []error) {
+func WaitBgTasks(cc *core.Cli, env *core.Env, matchTid string, manual bool) (errs []error) {
 	preTid := utils.GoRoutineIdStr()
 	for {
 		tid, task, ok := cc.BgTasks.GetEarliestTask()
@@ -64,7 +64,7 @@ func WaitBgTasks(cc *core.Cli, env *core.Env, matchTid string) (errs []error) {
 		}
 		info := task.GetStat()
 
-		display.PrintSwitchingThreadDisplay(preTid, info, env, cc.Screen)
+		display.PrintSwitchingThreadDisplay(preTid, info, env, cc.Screen, manual)
 
 		cc.BgTasks.BringBgTaskToFront(tid, cc.CmdIO.CmdStdout)
 		err := task.WaitForFinish()

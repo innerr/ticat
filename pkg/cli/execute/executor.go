@@ -62,7 +62,7 @@ func (self *Executor) Run(cc *core.Cli, env *core.Env, bootstrap string, input .
 
 	var errs []error
 	if env.GetBool("sys.bg.wait") {
-		errs = builtin.WaitBgTasks(cc, env, "")
+		errs = builtin.WaitBgTasks(cc, env, "", false)
 		for _, err := range errs {
 			display.PrintError(cc, env, err)
 		}

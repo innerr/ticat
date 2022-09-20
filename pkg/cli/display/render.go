@@ -110,14 +110,20 @@ func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen, width 
 	}
 }
 
-func PrintSwitchingThreadDisplay(preTid string, info core.BgTaskInfo, env *core.Env, screen core.Screen) {
+func PrintSwitchingThreadDisplay(preTid string, info core.BgTaskInfo, env *core.Env, screen core.Screen, manual bool) {
 	var title string
 	var extraLen int
 
 	if preTid == utils.GoRoutineIdStrMain {
-		title = ColorThread("thread ", env) + preTid +
-			ColorThread(" ended, switch display to thread ", env) + info.Tid +
-			ColorThread(", command ", env) + ColorCmdDelay("["+info.Cmd+"]", env)
+		if manual {
+			title = ColorThread("in thread ", env) + preTid +
+				ColorThread(" do manual wait, switch display to thread ", env) + info.Tid +
+				ColorThread(", command ", env) + ColorCmdDelay("["+info.Cmd+"]", env)
+		} else {
+			title = ColorThread("thread ", env) + preTid +
+				ColorThread(" ended, switch display to thread ", env) + info.Tid +
+				ColorThread(", command ", env) + ColorCmdDelay("["+info.Cmd+"]", env)
+		}
 		extraLen = ColorExtraLen(env, "thread", "thread", "thread", "cmd-delay")
 	} else {
 		title = ColorThread("switch display to thread ", env) + info.Tid +
