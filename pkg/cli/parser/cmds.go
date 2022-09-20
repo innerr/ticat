@@ -12,11 +12,11 @@ type Parser struct {
 // UPDATE: rewite this with goyacc
 //
 // A very simple implement of command line parsing, lack of char escaping
-//   * The command line argv list have extra tokenizing info
-//         - An example: a quoted string with space inside
-//         - TODO: how to store this info(to flow file?) and still keep it human-editable ?
-//   * The dynamite info(registered modules and env KVs) could use for disambiguation
-//         - Inconvenient to use a LEX/YACC lib to parse
+//   - The command line argv list have extra tokenizing info
+//   - An example: a quoted string with space inside
+//   - TODO: how to store this info(to flow file?) and still keep it human-editable ?
+//   - The dynamite info(registered modules and env KVs) could use for disambiguation
+//   - Inconvenient to use a LEX/YACC lib to parse
 func (self *Parser) Parse(
 	cmds *core.CmdTree,
 	envAbbrs *core.EnvAbbrs,

@@ -207,7 +207,7 @@ func PrintCmdStack(
 		} else {
 			if i == currCmdIdx {
 				if sysArgv.IsDelay() && !inBg {
-					line += ColorCmdCurr(">> "+name+" (schedule in ", env) + sysArgv.GetDelayStr() + ColorCmdCurr(")", env)
+					line += ColorCmdCurr(">> "+name+" (schedule to bg in ", env) + sysArgv.GetDelayStr() + ColorCmdCurr(")", env)
 					lineExtraLen += ColorExtraLen(env, "cmd-curr", "cmd-curr")
 				} else {
 					line += ColorCmdCurr(">> "+name, env)
@@ -231,7 +231,7 @@ func PrintCmdStack(
 				}
 			} else if i < currCmdIdx {
 				if sysArgv.IsDelay() && !inBg {
-					line += "   " + ColorCmdDelay(name+" (scheduled in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
+					line += "   " + ColorCmdDelay(name+" (scheduled to bg in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
 					lineExtraLen += ColorExtraLen(env, "cmd-delay", "cmd-delay")
 				} else {
 					line += "   " + ColorCmdDone(name, env)
@@ -239,7 +239,7 @@ func PrintCmdStack(
 				}
 			} else {
 				if sysArgv.IsDelay() && !inBg {
-					line += "   " + name + " (schedule in " + sysArgv.GetDelayStr() + ")"
+					line += "   " + name + " (schedule to bg in " + sysArgv.GetDelayStr() + ")"
 				} else {
 					line += "   " + name
 				}

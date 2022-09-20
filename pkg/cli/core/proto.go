@@ -95,6 +95,7 @@ func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
 		"sys.breakpoint",
 		"sys.execute-wait-sec",
 		"sys.event.",
+		"sys.paths.",
 	}
 	saveEnvToFile(env, path, sep, filtered, skipDefault)
 }
