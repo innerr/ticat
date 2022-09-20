@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here.
 
+## [1.4.0] - 2022-09-20
++ Highlights
+  + Support `args.auto` in meta, to auto generate args and arg2env for cmd (#192 #199 #201 #203 and more)
+  + Support `pack-subflow` to totally hide suflow (#221)
+  + New command `hook.exit/error/done` for hooking a flow with system events, to do result report or other jobs easily (#183)
++ Other New Features
+  + Support `hide-in-sessions-last=true` `quiet=true` flag in meta files (#186 #188)
+  + Support sys var `RANDOM` in meta file template (#218)
+  + New command `env.rm.prefix`: batchly delete key-values by prefix (#213)
+  + New command `session.running.desc.monitor` to monitor running status
+  + New command `bg.after-main.*`: enable/disable auto wait for bg task when main thread ends (#205)
+  + New command `display.sensitive` to display sensitive env values or args, which are hide by default (#210)
+  + Display optimizations: fix lots of display bugs and some enhancements (#184 #185 #190 and more)
++ Important bug fixs
+  + Fix bugs when use `desc` on an executing/executed session
+  + Fix bugs when use breakpoints on a command with both flow and script
+
 ## [1.3.1] - 2022-06-15
 + New Features
   + Support combined meta file (#178)
