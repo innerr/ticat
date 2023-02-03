@@ -527,33 +527,44 @@ func dumpCmdDisplayName(
 			return name, false
 		}
 
+		name += " " + ColorExplain(executedCmd.StartTs.Format(core.SessionTimeShortFormat), env) + " "
+
 		resultStr := string(executedCmd.Result)
 		if executedCmd.Result == core.ExecutedResultError {
-			name += ColorExplain(" - ", env) + ColorError(resultStr, env)
+			name += ColorError(resultStr, env)
 		} else if executedCmd.Result == core.ExecutedResultSucceeded {
-			name += ColorExplain(" - ", env) + ColorCmdDone(resultStr, env)
+			name += ColorCmdDone(resultStr, env)
 		} else if executedCmd.Result == core.ExecutedResultSkipped {
-			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
+			name += ColorExplain(resultStr, env)
 		} else if executedCmd.Result == core.ExecutedResultIncompleted {
 			if running {
-				name += ColorExplain(" - ", env) + ColorHighLight("running", env)
+				name += ColorHighLight("running", env)
 			} else {
-				name += ColorExplain(" - ", env) + ColorWarn("failed", env)
+				name += ColorWarn("failed", env)
 			}
 		} else if executedCmd.Result == core.ExecutedResultUnRun {
-			name += ColorExplain(" - ", env) + ColorHighLight(resultStr, env)
+			name += ColorHighLight(resultStr, env)
 		} else {
-			name += ColorExplain(" - ", env) + ColorExplain(resultStr, env)
+			name += ColorExplain(resultStr, env)
 		}
 
 		if !executedCmd.StartTs.IsZero() {
 			finishTs := executedCmd.FinishTs
-			if finishTs.IsZero() {
+			if running {
 				finishTs = time.Now().Round(time.Second)
 			}
-			dur := finishTs.Sub(executedCmd.StartTs)
-			durStr := formatDuration(dur)
-			name += ColorExplain(" "+durStr, env)
+			var durStr string
+			if executedCmd.StartTs != finishTs || executedCmd.Result != core.ExecutedResultIncompleted || running {
+				dur := finishTs.Sub(executedCmd.StartTs)
+				durStr += formatDuration(dur)
+			}
+			if (executedCmd.Result == core.ExecutedResultIncompleted) && !running && len(durStr) != 0 {
+				durStr += ColorExplain("+?", env)
+			}
+			if len(durStr) != 0 {
+				durStr += " "
+			}
+			name += " " + ColorExplain(durStr, env)
 		}
 	}
 	return name, true

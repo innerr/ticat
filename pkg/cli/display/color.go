@@ -49,6 +49,7 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 		"enabled":   2,
 		"disabled":  3,
 		"explain":   1,
+		"hidden":    2,
 		"session":   3,
 		"highlight": 3,
 		"interact":  3,
@@ -131,6 +132,10 @@ func ColorHelp(origin string, env *core.Env) string {
 
 func ColorExplain(origin string, env *core.Env) string {
 	return colorize(origin, fromColor256(8), env)
+}
+
+func ColorHidden(origin string, env *core.Env) string {
+	return colorize(origin, fromColor256(235), env)
 }
 
 func ColorFlow(origin string, env *core.Env) string {
