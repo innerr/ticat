@@ -588,13 +588,8 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 
 	screen.Print(display.ColorProp("    start-at:\n", env))
 	screen.Print(fmt.Sprintf("        %s\n", session.StartTs.Format(core.SessionTimeFormat)))
-	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago", env),
+	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago\n", env),
 		time.Now().Sub(session.StartTs).Round(time.Second).String()))
-	if session.Running {
-		screen.Print(fmt.Sprintf(display.ColorExplain(", elapsed %s", env),
-			time.Now().Sub(session.StartTs).Round(time.Second)))
-	}
-	screen.Print("\n")
 
 	if !session.Status.FinishTs.IsZero() {
 		if !session.Running {

@@ -550,7 +550,7 @@ func dumpCmdDisplayName(
 
 		if !executedCmd.StartTs.IsZero() {
 			finishTs := executedCmd.FinishTs
-			if running {
+			if executedCmd.Result == core.ExecutedResultIncompleted && running {
 				finishTs = time.Now().Round(time.Second)
 			}
 			var durStr string
