@@ -92,6 +92,10 @@ func ListSessions(
 			}
 		}
 
+		if running && (status.StartTs == status.FinishTs) {
+			status.FinishTs = time.Now()
+		}
+
 		cleaning := oldSessionStartTs.Add(keepDur).Before(now)
 		session := SessionStatus{dir, oldSessionPid, oldSessionStartTs, running, cleaning, status}
 		sessions = append([]SessionStatus{session}, sessions...)
@@ -278,3 +282,4 @@ func parseSessionDirName(dirName string) (pid int, startTs time.Time, ok bool) {
 
 const SessionDirTimeFormat = "20060102-150405"
 const SessionTimeFormat = "2006-01-02 15:04:05"
+const SessionTimeShortFormat = "02-15:04:05"

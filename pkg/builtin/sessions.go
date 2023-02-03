@@ -588,15 +588,27 @@ func dumpSession(session core.SessionStatus, env *core.Env, screen core.Screen, 
 
 	screen.Print(display.ColorProp("    start-at:\n", env))
 	screen.Print(fmt.Sprintf("        %s\n", session.StartTs.Format(core.SessionTimeFormat)))
-	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago", env)+"\n",
+	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago", env),
 		time.Now().Sub(session.StartTs).Round(time.Second).String()))
+	if session.Running {
+		screen.Print(fmt.Sprintf(display.ColorExplain(", elapsed %s", env),
+			time.Now().Sub(session.StartTs).Round(time.Second)))
+	}
+	screen.Print("\n")
 
 	if !session.Status.FinishTs.IsZero() {
-		screen.Print(display.ColorProp("    finish-at:\n", env))
-		screen.Print(fmt.Sprintf("        %s\n", session.Status.FinishTs.Format(core.SessionTimeFormat)))
-		screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago, elapsed %s", env)+"\n",
-			time.Now().Sub(session.Status.FinishTs).Round(time.Second),
-			session.Status.FinishTs.Sub(session.StartTs).Round(time.Second)))
+		if !session.Running {
+			screen.Print(display.ColorProp("    finish-at:\n", env))
+			screen.Print(fmt.Sprintf("        %s\n", session.Status.FinishTs.Format(core.SessionTimeFormat)))
+			incompletedDurStr := ""
+			if !session.Running && session.Status.Result == core.ExecutedResultIncompleted {
+				incompletedDurStr = "+?"
+			}
+			screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s"+
+				incompletedDurStr+" ago, elapsed %s"+incompletedDurStr, env)+"\n",
+				time.Now().Sub(session.Status.FinishTs).Round(time.Second),
+				session.Status.FinishTs.Sub(session.StartTs).Round(time.Second)))
+		}
 	}
 
 	screen.Print(display.ColorProp("    status:\n", env))
