@@ -36,7 +36,7 @@ func ListFlows(
 		}
 
 		cmdPath := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
-		flowStrs, help, abbrsStr := flow_file.LoadFlowFile(path)
+		flowStrs, help, abbrsStr, _, _ := flow_file.LoadFlowFile(path)
 		flowStr := strings.Join(flowStrs, " ")
 
 		matched := true
@@ -198,6 +198,9 @@ func SaveFlow(
 	currCmdIdx int) (int, bool) {
 
 	quietOverwrite := argv.GetBool("quiet-overwrite")
+	help := argv.GetRaw("help-str")
+	trivialLevel := argv.GetRaw("trivial-level")
+	autoArgs := argv.GetRaw("auto-args")
 
 	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, false, argv, cc, env, false, "to-cmd-path")
 	screen := display.NewCacheScreen()
@@ -240,7 +243,7 @@ func SaveFlow(
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
 
-	flow_file.SaveFlowFile(filePath, []string{flowStr}, "", "")
+	flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLevel, autoArgs)
 
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+cmdPath+"' is saved, can be used as a command")
@@ -259,8 +262,8 @@ func SetFlowHelpStr(
 
 	help := argv.GetRaw("help-str")
 	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
-	flowStrs, oldHelp, abbrsStr := flow_file.LoadFlowFile(filePath)
-	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr)
+	flowStrs, oldHelp, abbrsStr, trivial, autoArgs := flow_file.LoadFlowFile(filePath)
+	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr, trivial, autoArgs)
 
 	display.PrintTipTitle(cc.Screen, env,
 		"help string of flow '"+cmdPath+"' is saved")
