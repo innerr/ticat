@@ -637,6 +637,9 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority().
 		AddArg("to-cmd-path", "", "path", "p").
+		AddArg("help-str", "", "help", "h").
+		AddArg("trivial-level", "0", "trivial", "fold-level", "fold").
+		AddArg("auto-args", "", "args", "a").
 		AddArg("quiet-overwrite", "false", "overwrite", "quiet")
 
 	flow.AddSub("set-help-str", "help", "h").
