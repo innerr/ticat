@@ -105,7 +105,8 @@ func main() {
 		CmdPathAlterSeps,
 		Spaces,
 		CmdRootDisplayName,
-		TrivialMark)
+		TrivialMark,
+		FakeCmdPathSepSuffixs)
 	cliParser := parser.NewParser(seqParser, cmdParser)
 
 	// Executing info, commands' output are not included
@@ -208,6 +209,7 @@ const (
 	EnvOpSep                 string = ":"
 	SequenceSep              string = ":"
 	CmdPathSep               string = "."
+	FakeCmdPathSepSuffixs    string = "/\\"
 	CmdPathAlterSeps         string = "."
 	EnvBracketLeft           string = "{"
 	EnvBracketRight          string = "}"
