@@ -458,6 +458,12 @@ func RegisterHubManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		AddArg("path", "", "p")
 
+	add.AddSub("pwd", "here", "p").
+		RegPowerCmd(AddLocalDirToHub,
+			"add current working dir to hub").
+		SetAllowTailModeCall().
+		AddArg("path", ".", "p")
+
 	purge := hub.AddSub("purge", "p")
 	purge.RegPowerCmd(PurgeInactiveRepoFromHub,
 		"remove an inactive repo from hub").
@@ -483,12 +489,6 @@ func RegisterHubManageCmds(cmds *core.CmdTree) {
 			"disable matched git repos in hub").
 		SetAllowTailModeCall().
 		AddArg("find-str", "", "s")
-
-	hub.AddSub("move-flows-to-dir", "mv", "m").
-		RegPowerCmd(MoveSavedFlowsToLocalDir,
-			moveFlowsToDirHelpStr).
-		SetAllowTailModeCall().
-		AddArg("path", "", "p")
 }
 
 func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
@@ -622,6 +622,10 @@ func RegisterEnvSnapshotManageCmds(cmds *core.CmdTree) {
 
 func RegisterFlowManageCmds(cmds *core.CmdTree) {
 	flow := cmds.AddSub("flow", "f")
+	flow.RegPowerCmd(ListFlows,
+		"same as 'flow.list', list local saved but unlinked (to any repo) flows").
+		SetAllowTailModeCall()
+	addFindStrArgs(flow.Cmd())
 
 	list := flow.AddSub("list", "ls").
 		RegPowerCmd(ListFlows,
@@ -629,18 +633,18 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall()
 	addFindStrArgs(list)
 
-	// TODO: check the new cmd is conflicted with other cmds
 	flow.AddSub("save", "s").
 		RegPowerCmd(SaveFlow,
 			"save current commands as a flow").
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
-		AddArg("to-cmd-path", "", "path", "p").
+		AddArg("new-cmd-path", "", "new-cmd", "cmd", "path", "new", "p", "c").
 		AddArg("help-str", "", "help", "h").
-		AddArg("trivial-level", "0", "trivial", "fold-level", "fold").
+		AddArg("unfold-trivial", "0", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("auto-args", "", "args", "a").
-		AddArg("quiet-overwrite", "false", "overwrite", "quiet")
+		AddArg("to-dir", "", "dir", "d").
+		AddArg("quiet-overwrite", "false", "overwrite", "quiet", "q")
 
 	flow.AddSub("set-help-str", "help", "h").
 		RegPowerCmd(SetFlowHelpStr,
@@ -649,7 +653,6 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 		AddArg("cmd-path", "", "path", "p").
 		AddArg("help-str", "", "help", "h")
 
-	// TODO: check the new cmd is conflicted with other cmds
 	flow.AddSub("rename").
 		RegPowerCmd(RenameFlow,
 			"rename a saved flow").
@@ -672,11 +675,16 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 		RegPowerCmd(RemoveAllFlows,
 			"remove all flows saved in local")
 
-	flow.AddSub("move-flows-to-dir", "move", "mv", "m").
-		RegPowerCmd(MoveSavedFlowsToLocalDir,
-			moveFlowsToDirHelpStr).
-		SetAllowTailModeCall().
+	mv := flow.AddSub("move-flows-to-dir", "move", "mv", "m")
+	// TODO: impl flow.mv, flow.mv.here
+
+	mvAll := mv.AddSub("all", "a")
+	mvAll.RegPowerCmd(MoveSavedFlowsToLocalDir,
+		moveFlowsToDirHelpStr).
 		AddArg("path", "", "p")
+	mvAll.AddSub("here", "h").
+		RegPowerCmd(MoveSavedFlowsToPwd,
+			"move all saved flows to current working dir")
 }
 
 func RegisterBgManageCmds(cmds *core.CmdTree) {
@@ -753,7 +761,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last failed session").
 		SetAllowTailModeCall().
 		SetQuiet().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	errDesc.AddSub("more", "m").
@@ -761,7 +769,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last failed session with more details").
 		SetAllowTailModeCall().
 		SetQuiet().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	errDesc.AddSub("full", "f").
@@ -769,7 +777,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last failed session with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	doneDesc := sessionsDone.AddSub("desc", "d", "-").
@@ -777,7 +785,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last succeeded session").
 		SetAllowTailModeCall().
 		SetQuiet().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	doneDesc.AddSub("more", "m").
@@ -785,7 +793,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last succeeded session with more details").
 		SetAllowTailModeCall().
 		SetQuiet().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	doneDesc.AddSub("full", "f").
@@ -793,7 +801,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc the last succeeded session with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	runningDesc := sessionsRunning.AddSub("desc", "d", "-").
@@ -802,7 +810,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetHideInSessionsLast().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	runningDesc.AddSub("more", "m").
@@ -811,7 +819,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetHideInSessionsLast().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	runningDesc.AddSub("full", "f").
@@ -820,7 +828,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetHideInSessionsLast().
-		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T").
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d", "D")
 
 	runningDesc.AddSub("monitor", "mon").
@@ -835,7 +843,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc executed/ing session").
 		SetAllowTailModeCall()
 	desc.AddArg("session-id", "", "session", "id")
-	desc.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
+	desc.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t")
 	desc.AddArg("depth", "32", "d", "D")
 
 	descMore := desc.AddSub("more", "m").
@@ -843,7 +851,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"desc executed/ing session with more details").
 		SetAllowTailModeCall()
 	descMore.AddArg("session-id", "", "session", "id")
-	descMore.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t", "T")
+	descMore.AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t")
 	descMore.AddArg("depth", "32", "d")
 
 	descFull := desc.AddSub("full", "f").
@@ -1469,7 +1477,6 @@ func registerSimpleSwitchEx(
 }
 
 const moveFlowsToDirHelpStr = `move all saved flows to a local dir (could be a git repo).
-will do auto move if:
-    * if one(and only one) local(not linked to a repo) dir exists in hub
-    * and the arg "path" is empty
+will do auto moving if the arg "path" is empty and:
+    * one(and only one) local(not linked to a repo) dir exists in hub
     then flows will move to that dir`
