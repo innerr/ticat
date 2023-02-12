@@ -44,7 +44,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 
 	parser := &CmdParser{
 		&EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"},
-		".", "./", "\t ", "<root>", "^",
+		".", "./", "\t ", "<root>", "^", map[byte]bool{'/': true, '\\': true},
 	}
 
 	sep := parsedSeg{parsedSegTypeSep, nil}
@@ -87,7 +87,6 @@ func TestCmdParserParseSeg(t *testing.T) {
 	test([]string{"X{a=V}.21"}, []parsedSeg{cmd("X"), env("a"), sep, cmd("21")})
 	test([]string{"X{a=V}/21"}, []parsedSeg{cmd("X"), env("a"), sep, cmd("21")})
 	test([]string{"X{a=V}/{b=V}21"}, []parsedSeg{cmd("X"), env("a"), sep, env("b"), cmd("21")})
-	test([]string{"X{a=V}./{b=V}21"}, []parsedSeg{cmd("X"), env("a"), sep, env("b"), cmd("21")})
 	test([]string{"X{a=V} / / {b=V}21"}, []parsedSeg{cmd("X"), env("a"), sep, env("b"), cmd("21")})
 
 	test([]string{"X/{a=V}21"}, []parsedSeg{cmd("X"), sep, env("a"), cmd("21")})
@@ -129,7 +128,7 @@ func TestCmdParserParse(t *testing.T) {
 
 	parser := &CmdParser{
 		&EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"},
-		".", "./", "\t ", "<root>", "^",
+		".", "./", "\t ", "<root>", "^", map[byte]bool{'/': true, '\\': true},
 	}
 
 	seg := func(cmdName string, envKeyNames ...string) core.ParsedCmdSeg {
@@ -171,7 +170,6 @@ func TestCmdParserParse(t *testing.T) {
 
 	test([]string{"X{a=V}/21"}, cmd(seg("X", "X.a"), seg("21")))
 	test([]string{"X{a=V}/{b=V}21"}, cmd(seg("X", "X.a", "X.b"), seg("21")))
-	test([]string{"X{a=V}./{b=V}21"}, cmd(seg("X", "X.a", "X.b"), seg("21")))
 	test([]string{"X/{a=V}21"}, cmd(seg("X", "X.a"), seg("21")))
 	test([]string{"X{a=V}{b=V} / / {c=V}{d=V}21{e=V}{f=V}"},
 		cmd(seg("X", "X.a", "X.b", "X.c", "X.d"), seg("21", "X.21.e", "X.21.f")))

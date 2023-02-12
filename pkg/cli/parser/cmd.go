@@ -14,6 +14,7 @@ type CmdParser struct {
 	cmdSpaces       string
 	cmdRootNodeName string
 	TrivialMark     string
+	fakeSepSuffixs  map[byte]bool
 }
 
 func NewCmdParser(
@@ -22,8 +23,13 @@ func NewCmdParser(
 	cmdAlterSeps string,
 	cmdSpaces string,
 	cmdRootNodeName string,
-	TrivialMark string) *CmdParser {
+	TrivialMark string,
+	fakeSepSuffixs string) *CmdParser {
 
+	fakeSepSuffixMap := map[byte]bool{}
+	for _, c := range []byte(fakeSepSuffixs) {
+		fakeSepSuffixMap[c] = true
+	}
 	return &CmdParser{
 		envParser,
 		cmdSep,
@@ -31,6 +37,7 @@ func NewCmdParser(
 		cmdSpaces,
 		cmdRootNodeName,
 		TrivialMark,
+		fakeSepSuffixMap,
 	}
 }
 
@@ -126,19 +133,24 @@ func (self *CmdParser) parse(
 
 		// Try to split input by cmd-sep
 		i := strings.IndexAny(input[0], self.cmdAlterSeps)
-		if i == 0 {
+		if (i == 0) && !(len(input) == 1 && len(input[0]) == 1) {
 			// Tolerat redundant path-sep
 			if len(parsed) != 0 && parsed[len(parsed)-1].Type != parsedSegTypeSep {
 				parsed = append(parsed, parsedSeg{parsedSegTypeSep, nil})
 			}
+			isFakeSep := false
 			if len(input[0]) == 1 {
 				input = input[1:]
+			} else if self.fakeSepSuffixs[input[0][1]] {
+				isFakeSep = true
 			} else {
 				rest := strings.TrimLeft(input[0][1:], self.cmdSpaces)
 				input = append([]string{rest}, input[1:]...)
 			}
-			allowSub = true
-			continue
+			if !isFakeSep {
+				allowSub = true
+				continue
+			}
 		} else if i > 0 && allowSub {
 			head := strings.TrimRight(input[0][0:i], self.cmdSpaces)
 			rest := strings.TrimLeft(input[0][i+1:], self.cmdAlterSeps+self.cmdSpaces)
