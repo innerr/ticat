@@ -457,6 +457,16 @@ func AddLocalDirToHub(
 	return currCmdIdx, true
 }
 
+func MoveSavedFlowsToPwd(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return cmdMoveSavedFlowsToLocalDir(argv, cc, env, flow, currCmdIdx, ".")
+}
+
 func MoveSavedFlowsToLocalDir(
 	argv core.ArgVals,
 	cc *core.Cli,
@@ -464,9 +474,20 @@ func MoveSavedFlowsToLocalDir(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
+	return cmdMoveSavedFlowsToLocalDir(argv, cc, env, flow, currCmdIdx, "")
+}
+
+func cmdMoveSavedFlowsToLocalDir(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	defaultDir string) (int, bool) {
+
 	// TODO: do accurate matching before search
 	cmd := flow.Cmds[currCmdIdx]
-	path := argv.GetRaw("path")
+	path := argv.GetRawEx("path", defaultDir)
 	if len(path) == 0 {
 		args := tailModeGetInput(flow, currCmdIdx, false)
 		if len(args) > 1 {
@@ -488,7 +509,7 @@ func MoveSavedFlowsToLocalDir(
 			}
 			moveSavedFlowsToLocalDir(path, cc, env, cmd)
 			display.PrintTipTitle(cc.Screen, env,
-				"all saved flow moved to '"+path+"'.")
+				"all saved flow moved to '"+path+"'")
 			return currCmdIdx, true
 		}
 	}

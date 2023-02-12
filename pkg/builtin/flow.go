@@ -101,8 +101,8 @@ func RenameFlow(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	argSrcCmdPath, srcCmdPath, srcFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "src")
-	argDestCmdPath, destCmdPath, destFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, false, "dest")
+	argSrcCmdPath, srcCmdPath, srcFilePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, true, "src")
+	argDestCmdPath, destCmdPath, destFilePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, false, "dest")
 
 	_, err := os.Stat(srcFilePath)
 	if os.IsNotExist(err) {
@@ -136,7 +136,7 @@ func RemoveFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	argCmdPath, cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
+	argCmdPath, cmdPath, filePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, true, "cmd-path")
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
@@ -211,10 +211,11 @@ func SaveFlow(
 
 	quietOverwrite := argv.GetBool("quiet-overwrite")
 	help := argv.GetRaw("help-str")
-	trivialLevel := argv.GetRaw("trivial-level")
+	trivialLvl := argv.GetRaw("unfold-trivial")
 	autoArgs := argv.GetRaw("auto-args")
+	toDir := argv.GetRaw("to-dir")
 
-	argCmdPath, cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, false, argv, cc, env, false, "to-cmd-path")
+	argCmdPath, cmdPath, filePath, cmdExists := getFlowCmdPath(flow, currCmdIdx, false, toDir, argv, cc, env, false, "new-cmd-path")
 	realCmdStr := ""
 	if argCmdPath != cmdPath {
 		realCmdStr = "(" + cmdPath + ")"
@@ -237,6 +238,11 @@ func SaveFlow(
 				utils.UserConfirm()
 			}
 		}
+	} else if cmdExists {
+		display.PrintErrTitle(cc.Screen, env,
+			"cmd '"+argCmdPath+"'"+realCmdStr+" exists but it is not a saved flow in default place.",
+			"", "so can not be overwrited by 'flow.save', recommand to use 'cmd.edit' to modify it")
+		return currCmdIdx, false
 	}
 
 	flow.RemoveLeadingCmds(1)
@@ -259,7 +265,7 @@ func SaveFlow(
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
 
-	flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLevel, autoArgs)
+	flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLvl, autoArgs)
 
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+argCmdPath+"'"+realCmdStr+" is saved, can be used as a command")
@@ -277,7 +283,7 @@ func SetFlowHelpStr(
 	assertNotTailMode(flow, currCmdIdx)
 
 	help := argv.GetRaw("help-str")
-	argCmdPath, cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
+	argCmdPath, cmdPath, filePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, true, "cmd-path")
 	flowStrs, oldHelp, abbrsStr, trivial, autoArgs := flow_file.LoadFlowFile(filePath)
 	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr, trivial, autoArgs)
 
@@ -410,11 +416,12 @@ func getFlowCmdPath(
 	flow *core.ParsedCmds,
 	currCmdIdx int,
 	getArgFromFlow bool,
+	inDir string,
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
 	expectExists bool,
-	argName string) (originCmd string, cmdPath string, filePath string) {
+	argName string) (originCmd string, cmdPath string, filePath string, cmdExists bool) {
 
 	var arg string
 	if !getArgFromFlow {
@@ -429,8 +436,7 @@ func getFlowCmdPath(
 
 	cmdPath = normalizeCmdPath(arg,
 		cc.Cmds.Strs.PathSep, cc.Cmds.Strs.PathAlterSeps)
-	var exists bool
-	cmdPath, exists = getCmdRealPath(flow, currCmdIdx, cc, cmdPath)
+	cmdPath, cmdExists = getCmdRealPath(flow, currCmdIdx, cc, cmdPath)
 
 	if len(cmdPath) == 0 {
 		if len(originCmd) == 0 {
@@ -443,7 +449,7 @@ func getFlowCmdPath(
 		}
 	}
 
-	if expectExists && !exists {
+	if expectExists && !cmdExists {
 		if originCmd == cmdPath {
 			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 				fmt.Sprintf("cmd '%s' not exists", originCmd)))
@@ -453,8 +459,18 @@ func getFlowCmdPath(
 		}
 	}
 
+	var root string
+	if len(inDir) == 0 {
+		root = getFlowRoot(env, flow.Cmds[currCmdIdx])
+	} else {
+		if !dirExists(inDir) {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("dir '%s' not exists", inDir)))
+		}
+		root = inDir
+	}
+
 	flowExt := env.GetRaw("strs.flow-ext")
-	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
 
 	filePath = filepath.Join(root, cmdPath) + flowExt
 	if !expectExists && fileExists(filePath) {

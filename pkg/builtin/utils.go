@@ -190,3 +190,8 @@ func fileExists(path string) bool {
 	info, err := os.Stat(path)
 	return !os.IsNotExist(err) && !info.IsDir()
 }
+
+func dirExists(path string) bool {
+	info, err := os.Stat(path)
+	return !os.IsNotExist(err) && info.IsDir()
+}

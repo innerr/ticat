@@ -99,6 +99,9 @@ func StdoutIsPipe() bool {
 
 func MoveFile(src string, dest string) error {
 	err := os.Rename(src, dest)
+	if err == nil {
+		return nil
+	}
 	if strings.Index(err.Error(), "invalid cross-device link") < 0 {
 		return err
 	}
