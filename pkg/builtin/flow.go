@@ -101,8 +101,8 @@ func RenameFlow(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	srcCmdPath, srcFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "src")
-	destCmdPath, destFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, false, "dest")
+	argSrcCmdPath, srcCmdPath, srcFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "src")
+	argDestCmdPath, destCmdPath, destFilePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, false, "dest")
 
 	_, err := os.Stat(srcFilePath)
 	if os.IsNotExist(err) {
@@ -113,11 +113,19 @@ func RenameFlow(
 	err = os.Rename(srcFilePath, destFilePath)
 	if err != nil {
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("move flow file '%s' to'%s' failed: %v", srcFilePath, destFilePath, err)))
+			fmt.Sprintf("move flow file '%s' to '%s' failed: %v", srcFilePath, destFilePath, err)))
 	}
 
-	cc.Screen.Print(display.ColorCmd("["+srcCmdPath+"]", env) +
-		display.ColorSymbol(" -> ", env) + display.ColorCmd("["+destCmdPath+"]", env) + "\n")
+	realSrcCmdStr := ""
+	if argSrcCmdPath != srcCmdPath {
+		realSrcCmdStr = display.ColorExplain("("+srcCmdPath+")", env)
+	}
+	realDestCmdStr := ""
+	if argDestCmdPath != destCmdPath {
+		realDestCmdStr = display.ColorExplain("("+destCmdPath+")", env)
+	}
+	cc.Screen.Print(display.ColorCmd("["+argSrcCmdPath+"]", env) + realSrcCmdStr +
+		display.ColorSymbol(" -> ", env) + display.ColorCmd("["+argDestCmdPath+"]", env) + realDestCmdStr + "\n")
 	return currCmdIdx, true
 }
 
@@ -128,7 +136,7 @@ func RemoveFlow(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
+	argCmdPath, cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
@@ -140,8 +148,12 @@ func RemoveFlow(
 			fmt.Sprintf("remove flow file '%s' failed: %v", filePath, err)))
 	}
 
+	realCmdStr := ""
+	if argCmdPath != cmdPath {
+		realCmdStr = "(" + cmdPath + ")"
+	}
 	display.PrintTipTitle(cc.Screen, env,
-		"flow '"+cmdPath+"' is removed")
+		"flow '"+argCmdPath+"'"+realCmdStr+"  is removed")
 	cc.Screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
 		display.ColorDisabled(" (removed)", env)+"\n", cmdPath))
 	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
@@ -202,7 +214,11 @@ func SaveFlow(
 	trivialLevel := argv.GetRaw("trivial-level")
 	autoArgs := argv.GetRaw("auto-args")
 
-	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, false, argv, cc, env, false, "to-cmd-path")
+	argCmdPath, cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, false, argv, cc, env, false, "to-cmd-path")
+	realCmdStr := ""
+	if argCmdPath != cmdPath {
+		realCmdStr = "(" + cmdPath + ")"
+	}
 	screen := display.NewCacheScreen()
 
 	_, err := os.Stat(filePath)
@@ -215,9 +231,9 @@ func SaveFlow(
 					fmt.Sprintf("path '%s' exists", filePath)))
 			} else {
 				cc.Screen.Print(fmt.Sprintf(display.ColorTip("[confirm]", env)+
-					" flow file of '%s' exists, "+
+					" flow file of '%s'"+realCmdStr+" exists, "+
 					"type "+display.ColorWarn("'y'", env)+" and press enter to "+
-					display.ColorWarn("overwrite:", env)+"\n", cmdPath))
+					display.ColorWarn("overwrite:", env)+"\n", argCmdPath))
 				utils.UserConfirm()
 			}
 		}
@@ -246,7 +262,7 @@ func SaveFlow(
 	flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLevel, autoArgs)
 
 	display.PrintTipTitle(cc.Screen, env,
-		"flow '"+cmdPath+"' is saved, can be used as a command")
+		"flow '"+argCmdPath+"'"+realCmdStr+" is saved, can be used as a command")
 	screen.WriteTo(cc.Screen)
 	return clearFlow(flow)
 }
@@ -261,12 +277,16 @@ func SetFlowHelpStr(
 	assertNotTailMode(flow, currCmdIdx)
 
 	help := argv.GetRaw("help-str")
-	cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
+	argCmdPath, cmdPath, filePath := getFlowCmdPath(flow, currCmdIdx, true, argv, cc, env, true, "cmd-path")
 	flowStrs, oldHelp, abbrsStr, trivial, autoArgs := flow_file.LoadFlowFile(filePath)
 	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr, trivial, autoArgs)
 
+	realCmdStr := ""
+	if argCmdPath != cmdPath {
+		realCmdStr = "(" + cmdPath + ")"
+	}
 	display.PrintTipTitle(cc.Screen, env,
-		"help string of flow '"+cmdPath+"' is saved")
+		"help string of flow '"+argCmdPath+"'"+realCmdStr+" is saved")
 
 	cc.Screen.Print(display.ColorCmd(fmt.Sprintf("[%s]", cmdPath), env) + "\n")
 	cc.Screen.Print("     " + display.ColorHelp("'"+help+"'", env) + "\n")
@@ -357,6 +377,35 @@ func loadFlowsFromDir(
 	return true
 }
 
+func getCmdRealPath(
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	cc *core.Cli,
+	cmdPath string) (newCmdPath string, exists bool) {
+
+	if len(cmdPath) == 0 {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx], "cmd path is empty"))
+	}
+
+	var realSegs []string
+	sep := cc.Cmds.Strs.PathSep
+	cmdSegs := strings.Split(cmdPath, sep)
+	currNode := cc.Cmds
+	exists = true
+	for i, cmdSeg := range cmdSegs {
+		sub := currNode.GetSub(cmdSeg)
+		if sub == nil {
+			exists = false
+			realSegs = append(realSegs, cmdSegs[i:]...)
+			break
+		}
+		realSegs = append(realSegs, sub.Name())
+		currNode = sub
+	}
+
+	return strings.Join(realSegs, sep), exists
+}
+
 func getFlowCmdPath(
 	flow *core.ParsedCmds,
 	currCmdIdx int,
@@ -365,7 +414,7 @@ func getFlowCmdPath(
 	cc *core.Cli,
 	env *core.Env,
 	expectExists bool,
-	argName string) (cmdPath string, filePath string) {
+	argName string) (originCmd string, cmdPath string, filePath string) {
 
 	var arg string
 	if !getArgFromFlow {
@@ -376,17 +425,31 @@ func getFlowCmdPath(
 	} else {
 		arg = tailModeCallArg(flow, currCmdIdx, argv, argName)
 	}
+	originCmd = arg
+
 	cmdPath = normalizeCmdPath(arg,
 		cc.Cmds.Strs.PathSep, cc.Cmds.Strs.PathAlterSeps)
+	var exists bool
+	cmdPath, exists = getCmdRealPath(flow, currCmdIdx, cc, cmdPath)
+
 	if len(cmdPath) == 0 {
-		origin := argv.GetRaw(argName)
-		if len(origin) == 0 {
+		if len(originCmd) == 0 {
 			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 				fmt.Sprintf("arg '%s' is empty", argName)))
 		} else {
 			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 				fmt.Sprintf("arg '%s' is empty after normalizing: %s -> %s",
-					argName, origin, cmdPath)))
+					argName, originCmd, cmdPath)))
+		}
+	}
+
+	if expectExists && !exists {
+		if originCmd == cmdPath {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("cmd '%s' not exists", originCmd)))
+		} else {
+			panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("cmd '%s' (%s) not exists", originCmd, cmdPath)))
 		}
 	}
 
