@@ -673,7 +673,7 @@ func (self *Cmd) genLogFilePath(env *Env) string {
 }
 
 func (self *Cmd) shouldWriteLogFile() bool {
-	if self.flags.unLog {
+	if self.flags.unLog || self.flags.noSession {
 		return false
 	}
 	return self.ty == CmdTypeFile ||
@@ -918,7 +918,11 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	sep := cc.Cmds.Strs.EnvKeyValSep
 	delMark := cc.Cmds.Strs.EnvValDelAllMark
 
-	sessionDir, sessionPath := saveEnvToSessionFile(cc, env, parsedCmd, false)
+	var sessionDir string
+	var sessionPath string
+	if !self.flags.noSession {
+		sessionDir, sessionPath = saveEnvToSessionFile(cc, env, parsedCmd, false)
+	}
 
 	args = append(args, self.cmdLine)
 	args = append(args, sessionDir)
@@ -949,7 +953,9 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 		panic(err)
 	}
 
-	LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep, delMark)
+	if len(sessionPath) != 0 {
+		LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep, delMark)
+	}
 	return true
 }
 
