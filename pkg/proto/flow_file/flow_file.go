@@ -2,6 +2,7 @@ package flow_file
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pingcap/ticat/pkg/proto/meta_file"
 )
@@ -28,7 +29,8 @@ func SaveFlowFile(path string, flow []string, help string, abbrs string, trivial
 	if len(help) != 0 {
 		section.Set("help", help)
 	}
-	if len(trivial) != 0 {
+	trivial = strings.TrimSpace(trivial)
+	if len(trivial) != 0 && trivial != "0" {
 		section.Set("trivial", trivial)
 	}
 	if len(abbrs) != 0 {

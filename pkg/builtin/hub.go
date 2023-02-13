@@ -393,8 +393,29 @@ func AddLocalDirToHub(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	cmd := flow.Cmds[currCmdIdx]
 	path := tailModeCallArg(flow, currCmdIdx, argv, "path")
+	return addLocalDirToHub(argv, cc, env, flow, currCmdIdx, path)
+}
+
+func AddPwdToHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	return addLocalDirToHub(argv, cc, env, flow, currCmdIdx, ".")
+}
+
+func addLocalDirToHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int,
+	path string) (int, bool) {
+
+	cmd := flow.Cmds[currCmdIdx]
 
 	stat, err := os.Stat(path)
 	if err != nil {

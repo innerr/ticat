@@ -458,11 +458,9 @@ func RegisterHubManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		AddArg("path", "", "p")
 
-	add.AddSub("pwd", "here", "p").
-		RegPowerCmd(AddLocalDirToHub,
-			"add current working dir to hub").
-		SetAllowTailModeCall().
-		AddArg("path", ".", "p")
+	add.AddSub("pwd", "here", "p", "h").
+		RegPowerCmd(AddPwdToHub,
+			"add current working dir to hub")
 
 	purge := hub.AddSub("purge", "p")
 	purge.RegPowerCmd(PurgeInactiveRepoFromHub,
