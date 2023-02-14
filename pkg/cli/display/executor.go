@@ -228,6 +228,11 @@ func PrintCmdStack(
 						line += ColorExplain(" - executed: ", env) + ColorHighLight(resultStr, env)
 						lineExtraLen += ColorExtraLen(env, "explain", "highlight")
 					}
+					if mask.ResultIfExecuted != core.ExecutedResultSkipped && mask.ResultIfExecuted != core.ExecutedResultUnRun {
+						durStr, durExtraLen := executedCmdDurStr(mask.ExecutedCmd, false, env)
+						line += " " + durStr
+						lineExtraLen += durExtraLen
+					}
 				}
 			} else if i < currCmdIdx {
 				if sysArgv.IsDelay() && !inBg {
