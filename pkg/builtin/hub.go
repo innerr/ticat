@@ -22,17 +22,8 @@ func LoadModsFromHub(
 
 	assertNotTailMode(flow, currCmdIdx)
 
-	metaExt := env.GetRaw("strs.meta-ext")
-	flowExt := env.GetRaw("strs.flow-ext")
-	helpExt := env.GetRaw("strs.help-ext")
-	abbrsSep := env.GetRaw("strs.abbrs-sep")
-	envPathSep := env.GetRaw("strs.env-path-sep")
-	reposFileName := env.GetRaw("strs.repos-file-name")
-
 	metaPath := getReposInfoPath(env, flow.Cmds[currCmdIdx])
 	fieldSep := env.GetRaw("strs.proto-sep")
-
-	panicRecover := env.GetBool("sys.panic.recover")
 
 	infos, _ := meta.ReadReposInfoFile(metaPath, true, fieldSep)
 	for _, info := range infos {
@@ -43,8 +34,7 @@ func LoadModsFromHub(
 		if len(source) == 0 {
 			source = info.Path
 		}
-		loadLocalMods(cc, info.Path, reposFileName, metaExt, flowExt, helpExt,
-			abbrsSep, envPathSep, source, panicRecover)
+		loadRepoMods(cc, env, info)
 	}
 	return currCmdIdx, true
 }
@@ -57,11 +47,11 @@ func AddGitRepoToHub(
 	currCmdIdx int) (int, bool) {
 
 	addr := tailModeCallArg(flow, currCmdIdx, argv, "git-address")
-	addRepoToHub(addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+	addRepoToHubAndLoadMods(cc, addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 
 	initAddr := env.GetRaw("sys.hub.init-repo")
 	if len(initAddr) != 0 {
-		addRepoToHub(initAddr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+		addRepoToHubAndLoadMods(cc, initAddr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 	}
 
 	showHubFindTip(cc.Screen, env)
@@ -104,7 +94,7 @@ func AddDefaultGitRepoToHub(
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 			"cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
 	}
-	addRepoToHub(addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+	addRepoToHubAndLoadMods(cc, addr, argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 	if argv.GetBool("show-tip") {
 		showHubFindTip(cc.Screen, env)
 	}
@@ -738,7 +728,8 @@ func moveSavedFlowsToLocalDir(toDir string, cc *core.Cli, env *core.Env, cmd cor
 	return count
 }
 
-func addRepoToHub(
+func addRepoToHubAndLoadMods(
+	cc *core.Cli,
 	gitAddr string,
 	argv core.ArgVals,
 	screen core.Screen,
@@ -789,12 +780,32 @@ func addRepoToHub(
 			continue
 		}
 		repoPath := meta.GetRepoPath(path, addr)
-		infos = append(infos, meta.RepoInfo{addr, gitAddr, repoPath, helpStrs[i], "on"})
+		info := meta.RepoInfo{addr, gitAddr, repoPath, helpStrs[i], "on"}
+		loadRepoMods(cc, env, info)
+		infos = append(infos, info)
 	}
 
 	infos = append(oldInfos, infos...)
 	meta.WriteReposInfoFile(metaPath, infos, fieldSep)
 	return
+}
+
+func loadRepoMods(cc *core.Cli, env *core.Env, info meta.RepoInfo) {
+	metaExt := env.GetRaw("strs.meta-ext")
+	flowExt := env.GetRaw("strs.flow-ext")
+	helpExt := env.GetRaw("strs.help-ext")
+	abbrsSep := env.GetRaw("strs.abbrs-sep")
+	envPathSep := env.GetRaw("strs.env-path-sep")
+	reposFileName := env.GetRaw("strs.repos-file-name")
+	panicRecover := env.GetBool("sys.panic.recover")
+
+	source := info.Addr
+	if len(source) == 0 {
+		source = info.Path
+	}
+
+	loadLocalMods(cc, info.Path, reposFileName, metaExt, flowExt, helpExt,
+		abbrsSep, envPathSep, source, panicRecover)
 }
 
 func printInfoProps(screen core.Screen, env *core.Env, info meta.RepoInfo) {
