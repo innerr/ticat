@@ -1306,6 +1306,11 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 		AddSub("platform", "p").
 		RegPowerCmd(LoadPlatformDisplay,
 			"load platform(OS) specialized display settings")
+
+	hub := cmds.AddSub("hub", "h")
+	hub.AddSub("init").
+		RegPowerCmd(EnsureDefaultGitRepoInHub,
+			"trigger 'hub.init' at the first time running")
 }
 
 func RegisterTimerCmds(cmds *core.CmdTree) {

@@ -126,6 +126,7 @@ func main() {
 		builtin.mod.load.flows:
 		builtin.mod.load.hub:
 		builtin.display.load.platform:
+		builtin.hub.init:
 	`
 
 	exitEventHook := func(hookKeyName string) {

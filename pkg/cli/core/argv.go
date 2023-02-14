@@ -69,6 +69,14 @@ func (self ArgVals) GetBool(name string) bool {
 	return StrToBool(val.Raw)
 }
 
+func (self ArgVals) GetBoolEx(name string, defVal bool) bool {
+	val, ok := self[name]
+	if !ok {
+		return defVal
+	}
+	return StrToBool(val.Raw)
+}
+
 type ArgValErrNotFound struct {
 	Str     string
 	ArgName string

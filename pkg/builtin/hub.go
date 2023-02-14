@@ -68,6 +68,28 @@ func AddGitRepoToHub(
 	return currCmdIdx, true
 }
 
+func EnsureDefaultGitRepoInHub(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	hubDir := env.GetRaw("sys.paths.hub")
+	if dirExists(hubDir) {
+		return currCmdIdx, true
+	}
+	display.PrintTipTitle(cc.Screen, env,
+		"do 'hub.init' for the first time running")
+	argv["show-tip"] = core.ArgVal{"false", true, 0}
+	newCurrCmdIdx, ok := AddDefaultGitRepoToHub(argv, cc, env, flow, currCmdIdx)
+	if ok {
+		display.PrintTipTitle(cc.Screen, env,
+			"init for the first time running: done")
+	}
+	return newCurrCmdIdx, ok
+}
+
 func AddDefaultGitRepoToHub(
 	argv core.ArgVals,
 	cc *core.Cli,
