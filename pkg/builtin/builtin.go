@@ -637,11 +637,12 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 		SetAllowTailModeCall().
 		SetQuiet().
 		SetPriority().
-		AddArg("new-cmd-path", "", "new-cmd", "cmd", "path", "new", "p", "c").
+		AddArg("new-cmd-path", "", "new-cmd", "cmd", "path", "new", "c").
 		AddArg("help-str", "", "help", "h").
 		AddArg("unfold-trivial", "0", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
 		AddArg("auto-args", "", "args", "a").
 		AddArg("to-dir", "", "dir", "d").
+		AddArg("pack-subflow", "false", "pack-sub", "pack", "p").
 		AddArg("quiet-overwrite", "false", "overwrite", "quiet", "q")
 
 	flow.AddSub("set-help-str", "help", "h").

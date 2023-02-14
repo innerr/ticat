@@ -36,7 +36,7 @@ func ListFlows(
 		}
 
 		cmdPath := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
-		flowStrs, help, abbrsStr, _, _ := flow_file.LoadFlowFile(path)
+		flowStrs, help, abbrsStr, _, _, _ := flow_file.LoadFlowFile(path)
 		flowStr := strings.Join(flowStrs, " ")
 
 		matched := true
@@ -214,6 +214,7 @@ func SaveFlow(
 	trivialLvl := argv.GetRaw("unfold-trivial")
 	autoArgs := argv.GetRaw("auto-args")
 	toDir := argv.GetRaw("to-dir")
+	packSub := argv.GetRaw("pack-subflow")
 
 	argCmdPath, cmdPath, filePath, cmdExists := getFlowCmdPath(flow, currCmdIdx, false, toDir, argv, cc, env, false, "new-cmd-path")
 	realCmdStr := ""
@@ -265,7 +266,7 @@ func SaveFlow(
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
 
-	flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLvl, autoArgs)
+	flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLvl, autoArgs, packSub)
 
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+argCmdPath+"'"+realCmdStr+" is saved, can be used as a command")
@@ -284,8 +285,8 @@ func SetFlowHelpStr(
 
 	help := argv.GetRaw("help-str")
 	argCmdPath, cmdPath, filePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, true, "cmd-path")
-	flowStrs, oldHelp, abbrsStr, trivial, autoArgs := flow_file.LoadFlowFile(filePath)
-	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr, trivial, autoArgs)
+	flowStrs, oldHelp, abbrsStr, trivial, autoArgs, packSub := flow_file.LoadFlowFile(filePath)
+	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr, trivial, autoArgs, packSub)
 
 	realCmdStr := ""
 	if argCmdPath != cmdPath {
