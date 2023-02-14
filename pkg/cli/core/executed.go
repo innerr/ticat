@@ -53,6 +53,18 @@ func (self *ExecutedCmd) CalResultInCaseIncompleted() {
 	self.Result = self.SubFlow.Result
 }
 
+func (self *ExecutedCmd) RoughFinishTs(running bool) time.Time {
+	finishTs := self.FinishTs
+	if self.Result == ExecutedResultIncompleted && running {
+		finishTs = time.Now().Round(time.Second)
+	}
+	return finishTs
+}
+
+func (self *ExecutedCmd) RoughDuration(running bool) time.Duration {
+	return self.RoughFinishTs(running).Sub(self.StartTs)
+}
+
 type ExecutedFlow struct {
 	Flow     string
 	DirName  string
@@ -131,7 +143,16 @@ func (self *ExecutedFlow) GenExecMasks() (masks []*ExecuteMask) {
 				fileNFlowPolicy = ExecPolicySkip
 			}
 		}
-		masks = append(masks, &ExecuteMask{cmd.Cmd, cmd.StartEnv, cmd.FinishEnv, policy, fileNFlowPolicy, subMasks, cmd.Result})
+		masks = append(masks, &ExecuteMask{
+			cmd.Cmd,
+			cmd.StartEnv,
+			cmd.FinishEnv,
+			policy,
+			fileNFlowPolicy,
+			subMasks,
+			cmd.Result,
+			cmd,
+		})
 	}
 	return
 }

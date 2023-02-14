@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/pingcap/ticat/pkg/cli/core"
@@ -549,18 +548,7 @@ func dumpCmdDisplayName(
 		}
 
 		if !executedCmd.StartTs.IsZero() {
-			finishTs := executedCmd.FinishTs
-			if executedCmd.Result == core.ExecutedResultIncompleted && running {
-				finishTs = time.Now().Round(time.Second)
-			}
-			var durStr string
-			if executedCmd.StartTs != finishTs || executedCmd.Result != core.ExecutedResultIncompleted || running {
-				dur := finishTs.Sub(executedCmd.StartTs)
-				durStr += formatDuration(dur)
-			}
-			if (executedCmd.Result == core.ExecutedResultIncompleted) && !running && len(durStr) != 0 {
-				durStr += ColorExplain("+?", env)
-			}
+			durStr, _ := executedCmdDurStr(executedCmd, running, env)
 			if len(durStr) != 0 {
 				durStr += " "
 			}
@@ -1056,6 +1044,24 @@ func (self FlowWrittenKeys) AddCmd(argv core.ArgVals, env *core.Env, cic *core.C
 		// If is read-op, then the key must exists, so no need to check the op flags
 		self[k] = true
 	}
+}
+
+func executedCmdDurStr(executedCmd *core.ExecutedCmd, running bool, env *core.Env) (string, int) {
+	if executedCmd == nil {
+		return "", 0
+	}
+	var durStr string
+	finishTs := executedCmd.RoughFinishTs(running)
+	dur := finishTs.Sub(executedCmd.StartTs)
+	if executedCmd.StartTs != finishTs || executedCmd.Result != core.ExecutedResultIncompleted || running {
+		durStr += formatDuration(dur)
+	}
+	if (executedCmd.Result == core.ExecutedResultIncompleted) && !running && len(durStr) != 0 {
+		durStr += "+?"
+	} else if (executedCmd.Result != core.ExecutedResultSucceeded) && executedCmd.StartTs == finishTs {
+		return "", 0
+	}
+	return ColorExplain(durStr, env), ColorExtraLen(env, "explain")
 }
 
 func stripTermStyle(str string) string {
