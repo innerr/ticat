@@ -55,6 +55,7 @@ type CmdFlags struct {
 	noSession          bool
 	hideInSessionsLast bool
 	quietSubFlow       bool
+	exeInExecuted      bool
 }
 
 type Cmd struct {
@@ -173,6 +174,10 @@ func (self *Cmd) Execute(
 	flow *ParsedCmds,
 	currCmdIdx int,
 	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, ok bool) {
+
+	if self.MustExeInExecuted() {
+		mask = NewExecuteMask(self.owner.DisplayPath())
+	}
 
 	begin := time.Now()
 	if len(self.autoTimerKeys.Begin) != 0 {
@@ -437,6 +442,11 @@ func (self *Cmd) SetQuiet() *Cmd {
 	return self
 }
 
+func (self *Cmd) SetExeInExecuted() *Cmd {
+	self.flags.exeInExecuted = true
+	return self
+}
+
 func (self *Cmd) SetNoSession() *Cmd {
 	self.flags.noSession = true
 	return self
@@ -595,6 +605,10 @@ func (self *Cmd) IsPowerCmd() bool {
 
 func (self *Cmd) AllowTailModeCall() bool {
 	return self.flags.allowTailModeCall
+}
+
+func (self *Cmd) MustExeInExecuted() bool {
+	return self.flags.exeInExecuted
 }
 
 func (self *Cmd) IsQuiet() bool {

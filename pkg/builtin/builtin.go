@@ -934,6 +934,7 @@ func RegisterBlenderCmds(cmds *core.CmdTree) {
 	cmds.AddSub("forest-mode", "forest").
 		RegPowerCmd(SetForestMode,
 			"run following commands in forest-mode: reset env on each command, but not reset on their subflows").
+		SetExeInExecuted().
 		SetQuiet()
 
 	replace := cmds.AddSub("replace", "repl").
