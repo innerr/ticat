@@ -141,7 +141,11 @@ func (self *TipBoxPrinter) Finish() {
 			frameChars = FrameCharsUtf8()
 		}
 	} else {
-		frameChars = FrameCharsAscii()
+		if self.env.GetBool("display.color") {
+			frameChars = FrameCharsAsciiColored(colorCode)
+		} else {
+			frameChars = FrameCharsAscii()
+		}
 	}
 	PrintFramedLines(self.screen, self.env, self.buf, frameChars)
 }
