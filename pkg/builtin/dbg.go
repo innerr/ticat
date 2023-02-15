@@ -181,7 +181,6 @@ func DbgBreakStatus(
 
 	cc.Screen.Print(display.ColorHelp("status:", env) + "\n")
 	keys := []string{
-		"sys.step-by-step",
 		"sys.breakpoint.here.now",
 		"sys.breakpoint.status.step-in",
 		"sys.breakpoint.status.step-out",

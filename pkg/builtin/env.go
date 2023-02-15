@@ -20,7 +20,6 @@ func LoadDefaultEnv(env *core.Env) {
 
 	env.SetBool("sys.bg.wait", true)
 
-	env.SetBool("sys.step-by-step", false)
 	env.SetBool("sys.panic.recover", true)
 	env.SetInt("sys.execute-wait-sec", 0)
 	env.SetBool("sys.confirm.ask", true)
@@ -62,7 +61,6 @@ func LoadEnvAbbrs(abbrs *core.EnvAbbrs) {
 	sys := abbrs.GetOrAddSub("sys")
 	sys.GetOrAddSub("bootstrap").AddAbbrs("boot")
 	sys.GetOrAddSub("interact").AddAbbrs("ir", "i")
-	sys.GetOrAddSub("step-by-step").AddAbbrs("step")
 	sys.GetOrAddSub("wait-execute").AddAbbrs("wait-exec", "wait-exe")
 	sys.GetOrAddSub("version").AddAbbrs("ver")
 
