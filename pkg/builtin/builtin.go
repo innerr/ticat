@@ -1010,7 +1010,7 @@ func RegisterBlenderCmds(cmds *core.CmdTree) {
 }
 
 func RegisterCtrlCmds(cmds *core.CmdTree) {
-	breaks := cmds.AddSub("breaks", "break", "pause")
+	breaks := cmds.AddSub("break", "breaks", "pause")
 	breaks.RegEmptyCmd("set break point at the position of this command").
 		SetQuiet().
 		AddVal2Env("sys.breakpoint.here.now", "true")
@@ -1035,11 +1035,6 @@ func RegisterCtrlCmds(cmds *core.CmdTree) {
 		SetQuiet().
 		SetPriority()
 
-	breaks.AddSub("here").
-		RegEmptyCmd("set break point at the position of this command").
-		SetQuiet().
-		AddVal2Env("sys.breakpoint.here.now", "true")
-
 	breaks.AddSub("list", "ls").
 		RegPowerCmd(DbgBreakStatus,
 			"list all break point status").
@@ -1049,11 +1044,6 @@ func RegisterCtrlCmds(cmds *core.CmdTree) {
 		RegPowerCmd(DbgBreakClean,
 			"clear all break points except 'break.here'").
 		SetQuiet()
-
-	registerSimpleSwitch(cmds,
-		"step by step on executing",
-		"sys.step-by-step",
-		"step-by-step", "step", "confirm", "cfm")
 
 	wait := cmds.AddSub("wait-execute", "wait-exec", "wait-exe").
 		RegPowerCmd(DbgWaitSecExecute,
