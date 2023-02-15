@@ -19,6 +19,8 @@ func LoadPlatformDisplay(
 	env = env.GetLayer(core.EnvLayerDefault)
 	switch runtime.GOOS {
 	case "linux":
+		env.Set("display.utf8.symbols.tip", " ☻ ")
+		env.Set("display.utf8.symbols.err", " ⛔")
 	}
 	return currCmdIdx, true
 }
