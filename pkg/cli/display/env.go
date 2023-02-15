@@ -90,10 +90,10 @@ func dumpEnv(
 			v := mayMaskSensitiveVal(env, k, flatten[k])
 			res = append(res, ColorKey(k, env)+ColorSymbol(" = ", env)+v)
 		}
-		colored = true
 	} else {
 		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefixs, &res, indentSize, 0)
 	}
+	colored = true
 	return
 }
 
@@ -116,22 +116,22 @@ func dumpEnvLayer(
 	for _, k := range keys {
 		v := env.Get(k)
 		filtered := false
+		// Not filter default layer values
 		for _, filterPrefix := range filterPrefixs {
-			if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) {
+			if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) && env.LayerType() != core.EnvLayerDefault {
 				filtered = true
 				break
 			}
 		}
 		if !filtered {
-			raw := mayMaskSensitiveVal(env, k, v.Raw)
-			output = append(output, indent+"- "+k+" = "+mayQuoteStr(raw))
+			output = append(output, indent + "- "+KeyValueDisplayStr(k, v.Raw, env))
 		}
 	}
 	if env.Parent() != nil {
 		dumpEnvLayer(env.Parent(), printEnvLayer, printDefEnv, filterPrefixs, &output, indentSize, depth+1)
 	}
 	if len(output) != 0 {
-		*res = append(*res, indent+"["+env.LayerTypeName()+"]")
+		*res = append(*res, ColorKey(indent, env)+ColorSymbol("["+env.LayerTypeName()+"]", env))
 		*res = append(*res, output...)
 	}
 }

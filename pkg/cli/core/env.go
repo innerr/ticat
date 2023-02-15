@@ -271,6 +271,14 @@ func (self Env) LayerTypeName() string {
 	return EnvLayerName(self.ty)
 }
 
+func (self Env) LayersStr() string {
+	str := string(self.ty)
+	if self.parent != nil {
+		return str + "/" + self.parent.LayersStr()
+	}
+	return str
+}
+
 func (self Env) FlattenAll() map[string]string {
 	return self.Flatten(true, nil, false)
 }
