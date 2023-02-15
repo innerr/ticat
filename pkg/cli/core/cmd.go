@@ -835,11 +835,19 @@ func (self *Cmd) executePowerCmd(
 // TODO: flow must not have argv, is it OK?
 func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask) (succeeded bool) {
 	flow, masks, _ := self.Flow(argv, cc, env, false, false)
+	flowStr := FlowStrsToStr(flow)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	skipped := false
 
+	flowStrEnvVal := flowStr
+	// TODO: calculate the min width properly
+	if len(flowStrEnvVal) > 70 {
+		flowStrEnvVal = flowStrEnvVal[:33] + "...." + flowStrEnvVal[len(flowStrEnvVal)-34:]
+	}
+	flowEnv.Set("sys.subflow", flowStrEnvVal)
+
 	if cc.FlowStatus != nil {
-		cc.FlowStatus.OnSubFlowStart(flowEnv, FlowStrsToStr(flow))
+		cc.FlowStatus.OnSubFlowStart(flowEnv, flowStr)
 		defer func() {
 			if succeeded {
 				cc.FlowStatus.OnSubFlowFinish(flowEnv, succeeded, skipped)

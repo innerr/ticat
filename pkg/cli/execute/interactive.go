@@ -17,7 +17,7 @@ type BreakPointAction string
 const (
 	BPAStepOver   = "step over, execute current, pause before next command"
 	BPAStepToNext = "step over, pause before next command"
-	BPAStepIn     = "step in subflow"
+	BPAStepIn     = "step into subflow"
 	BPAContinue   = "continue"
 	BPASkip       = "skip current, pause before next command"
 	BPAInteract   = "interactive mode"
