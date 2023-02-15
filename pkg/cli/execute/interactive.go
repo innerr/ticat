@@ -25,7 +25,7 @@ const (
 )
 
 func tryWaitSecAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, mask *core.ExecuteMask,
-	/*breakByPrev bool, */ lastCmdInFlow bool, bootstrap bool, showStack func()) BreakPointAction {
+	lastCmdInFlow bool, bootstrap bool, showStack func()) BreakPointAction {
 
 	if env.GetBool("sys.interact.inside") {
 		return BPAContinue
@@ -35,7 +35,7 @@ func tryWaitSecAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, m
 		return BPAContinue
 	}
 
-	bpa := tryBreakBefore(cc, env, cmd, mask /*breakByPrev, */, showStack)
+	bpa := tryBreakBefore(cc, env, cmd, mask, showStack)
 	if bpa == BPAContinue {
 		if !bootstrap && cmd.LastCmdNode() != nil && !cmd.LastCmdNode().IsQuiet() {
 			tryWaitSec(cc, env, "sys.execute-wait-sec")
@@ -53,7 +53,7 @@ func tryWaitSecAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, m
 }
 
 func tryBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, mask *core.ExecuteMask,
-	/*breakByPrev bool, */ showStack func()) BreakPointAction {
+	showStack func()) BreakPointAction {
 
 	stepIn := env.GetBool("sys.breakpoint.status.step-in")
 	stepOut := env.GetBool("sys.breakpoint.status.step-out")
@@ -169,7 +169,7 @@ func tryWaitSec(cc *core.Cli, env *core.Env, waitSecKey string) {
 	}
 }
 
-func tryBreakInsideFileNFlow(cc *core.Cli, env *core.Env, cmd *core.Cmd /*breakByPrev bool, */, showStack func()) (shouldExec bool) {
+func tryBreakInsideFileNFlow(cc *core.Cli, env *core.Env, cmd *core.Cmd, showStack func()) (shouldExec bool) {
 	breakByPrev := env.GetBool("sys.breakpoint.at-next")
 
 	if !breakByPrev && !env.GetBool("sys.breakpoint.status.step-out") {
