@@ -12,7 +12,7 @@ import (
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func LoadDefaultEnv(env *core.Env) {
+func LoadDefaultEnv(env *core.Env, info *core.EnvKeysInfo) {
 	env = env.GetLayer(core.EnvLayerDefault)
 
 	env.Set("sys.bootstrap", "")
@@ -24,8 +24,8 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("sys.execute-wait-sec", 0)
 	env.SetBool("sys.confirm.ask", true)
 
-	env.Set("sys.version", "1.4.0")
-	env.Set("sys.dev.name", "furryball")
+	env.Set("sys.version", "1.5.0")
+	env.Set("sys.dev.name", "jungle")
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
@@ -50,8 +50,10 @@ func LoadDefaultEnv(env *core.Env) {
 	env.SetInt("display.hint.indent.2rd", 41)
 
 	env.Set("display.utf8.symbols.tip", "💡 ")
+	info.GetOrAdd("display.utf8.symbols.tip").DisplayLen = 3
 	env.SetInt("display.utf8.symbols.tip.len", 3)
 	env.Set("display.utf8.symbols.err", "⛔ ")
+	info.GetOrAdd("display.utf8.symbols.err").DisplayLen = 3
 	env.SetInt("display.utf8.symbols.err.len", 3)
 
 	setToDefaultVerb(env)

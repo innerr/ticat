@@ -8,7 +8,7 @@ import (
 )
 
 func DumpEnvTree(screen core.Screen, env *core.Env, indentSize int) {
-	lines, _ := dumpEnv(env, true, true, true, true, nil, indentSize)
+	lines, _ := dumpEnv(env, nil, true, true, true, true, nil, indentSize)
 	for _, line := range lines {
 		screen.Print(line + "\n")
 	}
@@ -33,6 +33,22 @@ func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
 func KeyValueDisplayStr(key string, value string, env *core.Env) string {
 	value = mayMaskSensitiveVal(env, key, value)
 	return ColorKey(key, env) + ColorSymbol(" = ", env) + mayQuoteStr(value)
+}
+
+func KeyValueDisplayStrEx(key string, value string, env *core.Env, envKeysInfo *core.EnvKeysInfo) (string, int) {
+	extraLen := ColorExtraLen(env, "symbol", "key")
+	if envKeysInfo != nil {
+		keyInfo := envKeysInfo.Get(key)
+		if keyInfo != nil {
+			if len(keyInfo.InvisibleDisplay) != 0 {
+				value = keyInfo.InvisibleDisplay
+			} else if keyInfo.DisplayLen != 0 {
+				extraLen += len(value) - keyInfo.DisplayLen
+			}
+		}
+	}
+	value = mayMaskSensitiveVal(env, key, value)
+	return ColorKey(key, env) + ColorSymbol(" = ", env) + mayQuoteStr(value), extraLen
 }
 
 func dumpEnvFlattenVals(screen core.Screen, env *core.Env, flatten map[string]string, findStrs ...string) {
@@ -62,12 +78,13 @@ func dumpEnvFlattenVals(screen core.Screen, env *core.Env, flatten map[string]st
 
 func dumpEnv(
 	env *core.Env,
+	envKeysInfo *core.EnvKeysInfo,
 	printEnvLayer bool,
 	printDefEnv bool,
 	printRuntimeEnv bool,
 	printEnvStrs bool,
 	filterPrefixs []string,
-	indentSize int) (res []string, colored bool) {
+	indentSize int) (res []string, extraLens []int) {
 
 	sep := env.Get("strs.env-path-sep").Raw
 	if !printRuntimeEnv {
@@ -89,20 +106,23 @@ func dumpEnv(
 		for _, k := range keys {
 			v := mayMaskSensitiveVal(env, k, flatten[k])
 			res = append(res, ColorKey(k, env)+ColorSymbol(" = ", env)+v)
+			extraLens = append(extraLens, ColorExtraLen(env, "key", "symbol"))
 		}
 	} else {
-		dumpEnvLayer(env, printEnvLayer, printDefEnv, filterPrefixs, &res, indentSize, 0)
+		dumpEnvLayer(env, env, envKeysInfo, printEnvLayer, printDefEnv, filterPrefixs, &res, &extraLens, indentSize, 0)
 	}
-	colored = true
 	return
 }
 
 func dumpEnvLayer(
 	env *core.Env,
+	topEnv *core.Env,
+	envKeysInfo *core.EnvKeysInfo,
 	printEnvLayer bool,
 	printDefEnv bool,
 	filterPrefixs []string,
 	res *[]string,
+	extraLens *[]int,
 	indentSize int,
 	depth int) {
 
@@ -110,6 +130,7 @@ func dumpEnvLayer(
 		return
 	}
 	var output []string
+	var outputExtraLens []int
 	indent := rpt(" ", depth*indentSize)
 	keys, _ := env.Pairs()
 	sort.Strings(keys)
@@ -124,15 +145,19 @@ func dumpEnvLayer(
 			}
 		}
 		if !filtered {
-			output = append(output, indent+"- "+KeyValueDisplayStr(k, v.Raw, env))
+			kvStr, extraLen := KeyValueDisplayStrEx(k, v.Raw, topEnv, envKeysInfo)
+			output = append(output, indent+"- "+kvStr)
+			outputExtraLens = append(outputExtraLens, extraLen)
 		}
 	}
 	if env.Parent() != nil {
-		dumpEnvLayer(env.Parent(), printEnvLayer, printDefEnv, filterPrefixs, &output, indentSize, depth+1)
+		dumpEnvLayer(env.Parent(), topEnv, envKeysInfo, printEnvLayer, printDefEnv,
+			filterPrefixs, &output, &outputExtraLens, indentSize, depth+1)
 	}
 	if len(output) != 0 {
-		// The key color code is fake, to make sure each line got the same extra len
-		*res = append(*res, ColorKey(indent, env)+ColorSymbol("["+env.LayerTypeName()+"]", env))
+		*res = append(*res, indent+ColorSymbol("["+env.LayerTypeName()+"]", topEnv))
+		*extraLens = append(*extraLens, ColorExtraLen(topEnv, "symbol"))
 		*res = append(*res, output...)
+		*extraLens = append(*extraLens, outputExtraLens...)
 	}
 }

@@ -30,6 +30,7 @@ func PrintCmdStack(
 	cmd core.ParsedCmd,
 	mask *core.ExecuteMask,
 	env *core.Env,
+	envKeysInfo *core.EnvKeysInfo,
 	flow []core.ParsedCmd,
 	currCmdIdx int,
 	strs *core.CmdTreeStrs,
@@ -174,13 +175,11 @@ func PrintCmdStack(
 			filterPrefixs = append(filterPrefixs, "display.")
 		}
 		// TODO: the extra color char len is ugly, handle it better
-		envLines, colored := dumpEnv(env, printEnvLayer, printDefEnv, printRuntimeEnv, false, filterPrefixs, 4)
-		for _, line := range envLines {
+		envLines, envLinesExtraLens := dumpEnv(env, envKeysInfo, printEnvLayer, printDefEnv,
+			printRuntimeEnv, false, filterPrefixs, 4)
+		for i, line := range envLines {
 			line := "   " + line
-			extraLen := 0
-			if colored {
-				extraLen += ColorExtraLen(env, "key", "symbol")
-			}
+			extraLen := envLinesExtraLens[i]
 			lines.Env = append(lines.Env, line)
 			lines.EnvLen = append(lines.EnvLen, len(line)-extraLen)
 		}

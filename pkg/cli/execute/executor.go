@@ -224,7 +224,7 @@ func (self *Executor) executeCmd(
 	ln := cc.Screen.OutputNum()
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd, mask,
-		cmdEnv, flow.Cmds, currCmdIdx, cc.Cmds.Strs, cc.BgTasks, flow.TailModeCall)
+		cmdEnv, cc.EnvKeysInfo, flow.Cmds, currCmdIdx, cc.Cmds.Strs, cc.BgTasks, flow.TailModeCall)
 
 	showStack := func() {
 		display.RenderCmdStack(stackLines, cmdEnv, cc.Screen)
@@ -531,7 +531,7 @@ func asyncExecute(
 		}()
 
 		stackLines := display.PrintCmdStack(false, cc.Screen, cmd, mask,
-			env, flow.Cmds, currCmdIdx, cc.Cmds.Strs, nil, false)
+			env, cc.EnvKeysInfo, flow.Cmds, currCmdIdx, cc.Cmds.Strs, nil, false)
 		var width int
 		if stackLines.Display {
 			width = display.RenderCmdStack(stackLines, env, cc.Screen)

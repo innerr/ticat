@@ -19,7 +19,8 @@ func main() {
 		core.EnvLayerPersisted,
 		core.EnvLayerSession,
 	)
-	builtin.LoadDefaultEnv(env)
+	envKeysInfo := core.NewEnvKeysInfo()
+	builtin.LoadDefaultEnv(env, envKeysInfo)
 
 	// Any mod could get the specific string val from env when it's called
 	defEnv := env.GetLayer(core.EnvLayerDefault)
@@ -59,6 +60,8 @@ func main() {
 	defEnv.Set("strs.env-snapshot-ext", EnvSnapshotExt)
 	defEnv.Set("strs.env-del-all-mark", EnvValDelAllMark)
 	defEnv.Set("strs.cmd-path-str-session", CmdPathSession)
+
+	envKeysInfo.GetOrAdd("strs.proto-sep").InvisibleDisplay = "<tab>"
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := core.NewCmdTree(&core.CmdTreeStrs{
@@ -115,7 +118,7 @@ func main() {
 	cmdIO := core.NewCmdIO(os.Stdin, os.Stdout, os.Stderr)
 
 	// The Cli is a service set, the builtin mods will receive it as a arg when being called
-	cc := core.NewCli(screen, tree, cliParser, abbrs, cmdIO)
+	cc := core.NewCli(screen, tree, cliParser, abbrs, cmdIO, envKeysInfo)
 
 	// Modules and env loaders
 	bootstrap := `
