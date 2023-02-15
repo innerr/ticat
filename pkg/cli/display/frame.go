@@ -49,14 +49,27 @@ func FrameCharsUtf8() *FrameChars {
 
 func FrameCharsUtf8Colored(colorCode int) *FrameChars {
 	prefix := "\033[38;5;" + fmt.Sprintf("%d", colorCode) + "m"
-	darken := func(s string) string {
+	render := func(s string) string {
 		return prefix + s + "\033[0m"
 	}
 	return &FrameChars{
-		darken("│"), darken("─"),
-		darken("┌"), darken("┬"), darken("┐"),
-		darken("├"), darken("┼"), darken("┤"),
-		darken("└"), darken("┴"), darken("┘"),
+		render("│"), render("─"),
+		render("┌"), render("┬"), render("┐"),
+		render("├"), render("┼"), render("┤"),
+		render("└"), render("┴"), render("┘"),
+	}
+}
+
+func FrameCharsAsciiColored(colorCode int) *FrameChars {
+	prefix := "\033[38;5;" + fmt.Sprintf("%d", colorCode) + "m"
+	render := func(s string) string {
+		return prefix + s + "\033[0m"
+	}
+	return &FrameChars{
+		render("|"), render("-"),
+		render("+"), render("+"), render("+"),
+		render("+"), render("+"), render("+"),
+		render("+"), render("+"), render("+"),
 	}
 }
 
