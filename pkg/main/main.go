@@ -15,8 +15,7 @@ import (
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	env := core.NewEnv().NewLayers(
-		core.EnvLayerDefault,
+	env := core.NewEnvEx(core.EnvLayerDefault).NewLayers(
 		core.EnvLayerPersisted,
 		core.EnvLayerSession,
 	)
