@@ -76,9 +76,12 @@ type Cli struct {
 	ForestMode         *ForestMode
 	Blender            *Blender
 	Arg2EnvAutoMapCmds Arg2EnvAutoMapCmds
+	EnvKeysInfo        *EnvKeysInfo
 }
 
-func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO) *Cli {
+func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO,
+	envKeysInfo *EnvKeysInfo) *Cli {
+
 	return &Cli{
 		screen,
 		cmds,
@@ -95,6 +98,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		NewForestMode(),
 		NewBlender(),
 		Arg2EnvAutoMapCmds{},
+		envKeysInfo,
 	}
 }
 
@@ -123,6 +127,7 @@ func (self *Cli) CopyForInteract() *Cli {
 		self.ForestMode,
 		self.Blender,
 		Arg2EnvAutoMapCmds{},
+		self.EnvKeysInfo,
 	}
 }
 
@@ -146,6 +151,7 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		self.ForestMode.Clone(),
 		self.Blender.Clone(),
 		Arg2EnvAutoMapCmds{},
+		self.EnvKeysInfo,
 	}
 }
 
@@ -166,6 +172,7 @@ func (self *Cli) CloneForChecking() *Cli {
 		self.ForestMode,
 		self.Blender.Clone(),
 		Arg2EnvAutoMapCmds{},
+		self.EnvKeysInfo,
 	}
 }
 
