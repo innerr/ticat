@@ -102,7 +102,7 @@ func PrintSubCmdByParseError(
 		return PrintFreeSearchResultByParseError(cc, flow, env, isSearch, input...)
 	}
 	printer.PrintWrap(
-		"["+cmdName+"] parse sub command failed.",
+		"parse sub command under ["+cmdName+"] failed.",
 		"",
 		"'"+strings.Join(input, " ")+"' is not valid input.")
 	if last.HasSub() {

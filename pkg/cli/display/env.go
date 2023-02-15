@@ -124,13 +124,14 @@ func dumpEnvLayer(
 			}
 		}
 		if !filtered {
-			output = append(output, indent + "- "+KeyValueDisplayStr(k, v.Raw, env))
+			output = append(output, indent+"- "+KeyValueDisplayStr(k, v.Raw, env))
 		}
 	}
 	if env.Parent() != nil {
 		dumpEnvLayer(env.Parent(), printEnvLayer, printDefEnv, filterPrefixs, &output, indentSize, depth+1)
 	}
 	if len(output) != 0 {
+		// The key color code is fake, to make sure each line got the same extra len
 		*res = append(*res, ColorKey(indent, env)+ColorSymbol("["+env.LayerTypeName()+"]", env))
 		*res = append(*res, output...)
 	}
