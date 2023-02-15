@@ -45,6 +45,14 @@ func (self *ExecuteMask) Copy() *ExecuteMask {
 	}
 }
 
+func (self *ExecuteMask) SetExecPolicyForAll(policy ExecPolicy) {
+	self.ExecPolicy = policy
+	self.FileNFlowExecPolicy = policy
+	for _, sub := range self.SubFlow {
+		sub.SetExecPolicyForAll(policy)
+	}
+}
+
 type Executor interface {
 	Execute(caller string, inerrCall bool, cc *Cli, env *Env, masks []*ExecuteMask, input ...string) bool
 	Clone() Executor

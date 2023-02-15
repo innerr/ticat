@@ -44,10 +44,12 @@ func tryWaitSecAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, m
 		env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-in", true)
 		bpa = BPAContinue
 	} else if bpa == BPASkip {
-		//if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow(false)) {
+		// if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow(false)) {
 		if lastCmdInFlow {
 			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
 		}
+	} else if (bpa == BPAStepOver) && mask != nil {
+		mask.SetExecPolicyForAll(core.ExecPolicyExec)
 	}
 	return bpa
 }
