@@ -75,6 +75,12 @@ func DumpFlowEx(
 		PrintTipTitle(cc.Screen, env, "flow executing description:")
 	}
 
+	if args.MonitorMode {
+		trivialMark := env.GetRaw("strs.trivial-mark")
+		flowStr := core.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
+		cc.Screen.Print(ColorFlow(flowStr, env) + "\n")
+	}
+
 	// TODO: show executed status and duration here
 
 	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")

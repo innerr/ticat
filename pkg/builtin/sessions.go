@@ -162,7 +162,7 @@ func ErrorSessionDescLess(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, true, false, false)
+	session, ok := getLastSession(cc, env, true, false, false)
 	if !ok {
 		panic(fmt.Errorf("no executed error sessions"))
 	}
@@ -177,7 +177,7 @@ func ErrorSessionDescMore(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, true, false, false)
+	session, ok := getLastSession(cc, env, true, false, false)
 	if !ok {
 		panic(fmt.Errorf("no executed error sessions"))
 	}
@@ -192,7 +192,7 @@ func ErrorSessionDescFull(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, true, false, false)
+	session, ok := getLastSession(cc, env, true, false, false)
 	if !ok {
 		panic(fmt.Errorf("no executed error sessions"))
 	}
@@ -207,7 +207,7 @@ func RunningSessionDescLess(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, false, false, true)
+	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no running sessions")
 	} else {
@@ -223,7 +223,7 @@ func DoneSessionDescLess(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, false, true, false)
+	session, ok := getLastSession(cc, env, false, true, false)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 	} else {
@@ -239,7 +239,7 @@ func DoneSessionDescMore(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, false, true, false)
+	session, ok := getLastSession(cc, env, false, true, false)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 	} else {
@@ -255,7 +255,7 @@ func DoneSessionDescFull(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, false, true, false)
+	session, ok := getLastSession(cc, env, false, true, false)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed sessions")
 	} else {
@@ -271,7 +271,7 @@ func RunningSessionDescMore(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, false, false, true)
+	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no running sessions")
 	} else {
@@ -287,7 +287,7 @@ func RunningSessionDescFull(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastSession(env, false, false, true)
+	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no running sessions")
 	} else {
@@ -303,7 +303,7 @@ func RunningSessionDescMonitor(
 	flow *core.ParsedCmds,
 	currCmdIdx int) (int, bool) {
 
-	session, ok := getLastRunningSession(cc, env)
+	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
 		cc.Screen.Print(display.ColorTip("no running sessions", env) + "\n")
 	} else {
@@ -447,7 +447,7 @@ func LastSession(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	session, ok := getLastSession(env, true, true, true)
+	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
 	} else {
@@ -464,7 +464,7 @@ func LastSessionDescLess(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	session, ok := getLastSession(env, true, true, true)
+	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
 	} else {
@@ -481,7 +481,7 @@ func LastSessionDescMore(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	session, ok := getLastSession(env, true, true, true)
+	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
 	} else {
@@ -498,7 +498,7 @@ func LastSessionDescFull(
 	currCmdIdx int) (int, bool) {
 
 	assertNotTailMode(flow, currCmdIdx)
-	session, ok := getLastSession(env, true, true, true)
+	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
 	} else {
@@ -523,7 +523,7 @@ func SessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string
 }
 
 func LastSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
-	session, ok := getLastSession(env, true, true, true)
+	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
@@ -531,7 +531,7 @@ func LastSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []st
 }
 
 func LastErrorSessionRetry(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, masks []*core.ExecuteMask, ok bool) {
-	session, ok := getLastSession(env, true, false, false)
+	session, ok := getLastSession(cc, env, true, false, false)
 	if !ok {
 		panic(fmt.Errorf("no executed sessions"))
 	}
@@ -647,51 +647,46 @@ func descSession(session core.SessionStatus, argv core.ArgVals, cc *core.Cli, en
 	display.DumpFlowEx(cc, env, flow, 0, dumpArgs, session.Status, session.Running, EnvOpCmds())
 }
 
-func getLastSession(env *core.Env, includeError bool, includeDone bool, includeRunning bool) (session core.SessionStatus, ok bool) {
+func getLastSession(cc *core.Cli, env *core.Env, includeError bool, includeDone bool,
+	includeRunning bool) (session core.SessionStatus, ok bool) {
+
 	var sessions []core.SessionStatus
 	currSession := env.GetRaw("sys.session.id")
-	cntLimit := 2
+	cntLimit := 16
 	if len(currSession) == 0 {
 		cntLimit = 1
 	}
 	sessions, _ = core.ListSessions(env, nil, "", cntLimit, includeError, includeDone, includeRunning)
 	for i := len(sessions) - 1; i >= 0; i-- {
 		session := sessions[i]
-		if session.SessionId() != currSession {
-			return session, true
-		}
-	}
-	return
-}
-
-func getLastRunningSession(cc *core.Cli, env *core.Env) (session core.SessionStatus, ok bool) {
-	var sessions []core.SessionStatus
-	currSession := env.GetRaw("sys.session.id")
-
-	sessions, _ = core.ListSessions(env, nil, "", 64, false, false, true)
-	for i := len(sessions) - 1; i >= 0; i-- {
-		session := sessions[i]
 		if session.Status == nil {
-			continue
-		}
-		if session.Status.Result == core.ExecutedResultSucceeded {
 			continue
 		}
 		if len(session.Status.Cmds) == 0 {
 			continue
 		}
-		lastCmdStr := session.Status.Cmds[len(session.Status.Cmds)-1].Cmd
-		if parsedCmd, ok := cc.ParseCmd(false, core.FlowStrToStrs(lastCmdStr)...); ok {
-			if parsedCmd.LastCmd() != nil && parsedCmd.LastCmd().IsHideInSessionsLast() {
-				continue
-			}
-		}
 		if session.SessionId() == currSession {
+			continue
+		}
+		if isSessionShouldHideInLast(cc, session) {
 			continue
 		}
 		return session, true
 	}
 	return
+}
+
+func isSessionShouldHideInLast(cc *core.Cli, session core.SessionStatus) bool {
+	if session.Status == nil {
+		return true
+	}
+	lastCmdStr := session.Status.Cmds[len(session.Status.Cmds)-1].Cmd
+	if parsedCmd, ok := cc.ParseCmd(false, core.FlowStrToStrs(lastCmdStr)...); ok {
+		if parsedCmd.LastCmd() != nil && parsedCmd.LastCmd().IsHideInSessionsLast() {
+			return true
+		}
+	}
+	return false
 }
 
 func retrySession(session core.SessionStatus, errSessionOnly bool) (flow []string, masks []*core.ExecuteMask, ok bool) {
