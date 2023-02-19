@@ -7,7 +7,7 @@ import (
 	"github.com/pingcap/ticat/pkg/proto/meta_file"
 )
 
-func ReadRepoListFromFile(selfName string, path string) (helpStr string, addrs []string, helpStrs []string) {
+func ReadRepoListFromFile(selfName string, path string) (helpStr string, addrs []RepoAddr, helpStrs []string) {
 	metas, err := meta_file.NewMetaFileEx(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -29,7 +29,7 @@ func ReadRepoListFromFile(selfName string, path string) (helpStr string, addrs [
 		return
 	}
 	for _, addr := range repos.Keys() {
-		addrs = append(addrs, addr)
+		addrs = append(addrs, ParseRepoAddr(addr))
 		helpStrs = append(helpStrs, repos.Get(addr))
 	}
 	return

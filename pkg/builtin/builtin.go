@@ -445,7 +445,8 @@ func RegisterHubManageCmds(cmds *core.CmdTree) {
 	add.RegPowerCmd(AddGitRepoToHub,
 		"add and pull a git address to hub, do update if it already exists").
 		SetAllowTailModeCall().
-		AddArg("git-address", "", "git", "address", "addr")
+		AddArg("git-address", "", "git", "address", "addr").
+		AddArg("git-branch", "", "branch", "b")
 
 	repoStatus := hub.AddSub("git-status", "status").
 		RegPowerCmd(CheckGitRepoStatus,

@@ -8,8 +8,33 @@ import (
 	"strings"
 )
 
+type RepoAddr struct {
+	Addr   string
+	Branch string
+}
+
+func (self RepoAddr) Str() string {
+	if len(self.Addr) == 0 {
+		return self.Addr
+	}
+	if len(self.Branch) == 0 {
+		return self.Addr
+	}
+	return self.Addr + RepoAddrBranchSep + self.Branch
+}
+
+func ParseRepoAddr(addr string) RepoAddr {
+	branch := ""
+	i := strings.LastIndex(addr, RepoAddrBranchSep)
+	if i > 0 {
+		branch = addr[i+1:]
+		addr = addr[:i]
+	}
+	return RepoAddr{addr, branch}
+}
+
 type RepoInfo struct {
-	Addr      string
+	Addr      RepoAddr
 	AddReason string
 	Path      string
 	HelpStr   string
@@ -17,10 +42,14 @@ type RepoInfo struct {
 }
 
 func (self RepoInfo) IsLocal() bool {
-	return len(self.Addr) == 0
+	return len(self.Addr.Addr) == 0
 }
 
-func WriteReposInfoFile(path string, infos []RepoInfo, sep string) {
+func WriteReposInfoFile(
+	hubRootPath string,
+	path string,
+	infos []RepoInfo, sep string) {
+
 	os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -30,8 +59,8 @@ func WriteReposInfoFile(path string, infos []RepoInfo, sep string) {
 	defer file.Close()
 
 	for _, info := range infos {
-		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s%s%s\n", info.Addr, sep,
-			info.AddReason, sep, info.Path, sep, info.HelpStr, sep, info.OnOff)
+		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s%s%s\n", info.Addr.Str(), sep, info.AddReason, sep,
+			tryConvAbsPathToRelPath(hubRootPath, info.Path), sep, info.HelpStr, sep, info.OnOff)
 		if err != nil {
 			panic(fmt.Errorf("[WriteReposInfoFile] write file '%s' failed: %v", tmp, err))
 		}
@@ -46,6 +75,7 @@ func WriteReposInfoFile(path string, infos []RepoInfo, sep string) {
 }
 
 func ReadReposInfoFile(
+	hubRootPath string,
 	path string,
 	allowNotExist bool,
 	sep string) (infos []RepoInfo, list map[string]bool) {
@@ -71,26 +101,48 @@ func ReadReposInfoFile(
 				path, line))
 		}
 		info := RepoInfo{
-			fields[0],
+			ParseRepoAddr(fields[0]),
 			fields[1],
-			fields[2],
+			tryConvRelPathToAbsPath(hubRootPath, fields[2]),
 			fields[3],
 			fields[4],
 		}
 		infos = append(infos, info)
-		list[info.Addr] = true
+		list[info.Addr.Str()] = true
 	}
 	return
 }
 
+func tryConvAbsPathToRelPath(hubRootPath string, path string) string {
+	if strings.HasPrefix(path, hubRootPath) {
+		return HubRootPathMark + path[len(hubRootPath):]
+	}
+	return path
+}
+
+func tryConvRelPathToAbsPath(hubRootPath string, path string) string {
+	if strings.HasPrefix(path, HubRootPathMark) {
+		return hubRootPath + path[len(HubRootPathMark):]
+	}
+	return path
+}
+
+// TODO: bad func name
 func ExtractAddrFromList(
 	infos []RepoInfo,
 	findStr string) (extracted []RepoInfo, rest []RepoInfo) {
 
-	for _, info := range infos {
-		findInStr := info.Addr
-		if len(info.Addr) == 0 {
+	if len(findStr) == 0 {
+		return infos, nil
+	}
+
+	for i, info := range infos {
+		findInStr := info.Addr.Str()
+		if len(findInStr) == 0 {
 			findInStr = info.Path
+		}
+		if findInStr == findStr {
+			return []RepoInfo{info}, append(infos[:i], infos[i+1:]...)
 		}
 		if strings.Index(findInStr, findStr) >= 0 {
 			extracted = append(extracted, info)
@@ -100,3 +152,8 @@ func ExtractAddrFromList(
 	}
 	return
 }
+
+const (
+	RepoAddrBranchSep = "#"
+	HubRootPathMark   = "<hub>:"
+)
