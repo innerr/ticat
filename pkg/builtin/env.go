@@ -116,6 +116,10 @@ func LoadRuntimeEnv(
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 			fmt.Sprintf("get abs self-path fail: %v", err)))
 	}
+	pathWithoutLinks, err := filepath.EvalSymlinks(path)
+	if err == nil {
+		path = pathWithoutLinks
+	}
 	data := path + ".data"
 
 	sys := cc.EnvAbbrs.GetOrAddSub("sys")

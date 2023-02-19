@@ -266,6 +266,7 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 	result := []*core.CmdTree{}
 	findAllCmdsByTag(tag, src, filter, cc.Cmds, &result)
 
+	// TODO: use PrintTitleError instead of panic. it's not errors
 	if len(result) == 0 {
 		if len(src) == 0 {
 			if len(filter) == 0 {
@@ -282,6 +283,7 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 		}
 		return
 	}
+
 	ok = true
 	if len(result) != 1 && !parallel {
 		flow = append(flow, "flow.forest-mode")

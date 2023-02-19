@@ -16,18 +16,18 @@ func UpdateRepoAndSubRepos(
 	env *core.Env,
 	finisheds map[string]bool,
 	hubPath string,
-	gitAddr string,
+	gitAddr RepoAddr,
 	repoExt string,
 	listFileName string,
 	selfName string,
-	cmd core.ParsedCmd) (topRepoHelpStr string, addrs []string, helpStrs []string) {
+	cmd core.ParsedCmd) (topRepoHelpStr string, addrs []RepoAddr, helpStrs []string) {
 
-	if finisheds[gitAddr] {
+	if finisheds[gitAddr.Str()] {
 		return
 	}
 	topRepoHelpStr, addrs, helpStrs = updateRepoAndReadSubList(
 		screen, env, hubPath, gitAddr, listFileName, selfName, cmd)
-	finisheds[gitAddr] = true
+	finisheds[gitAddr.Str()] = true
 
 	for i, addr := range addrs {
 		subTopHelpStr, subAddrs, subHelpStrs := UpdateRepoAndSubRepos(
@@ -60,16 +60,16 @@ func isSshAddr(addr string) bool {
 	return symAt > 0 && symCl > symAt
 }
 
-func AddrDisplayName(addr string) string {
-	abbr := gitAddrAbbr(addr)
+func AddrDisplayName(addr RepoAddr) string {
+	abbr := gitAddrAbbr(addr.Addr)
 	if len(abbr) == 0 {
-		return addr
+		return addr.Str()
 	}
-	return abbr
+	return RepoAddr{abbr, addr.Branch}.Str()
 }
 
-func GetRepoPath(hubPath string, originGitAddr string) string {
-	addr := strings.ToLower(originGitAddr)
+func GetRepoPath(hubPath string, originGitAddr RepoAddr) string {
+	addr := strings.ToLower(originGitAddr.Addr)
 	for _, prefix := range []string{"http://", "https://"} {
 		addr = strings.TrimPrefix(addr, prefix)
 	}
@@ -79,9 +79,15 @@ func GetRepoPath(hubPath string, originGitAddr string) string {
 		addr = addr[symAt+1:]
 		symCl := strings.LastIndex(strings.ToLower(addr), ":")
 		if symCl <= 0 {
-			panic(fmt.Errorf("ill-format repo address '%v'", originGitAddr))
+			panic(fmt.Errorf("ill-format repo address '%v'", originGitAddr.Addr))
 		}
 		addr = addr[0:symCl] + "/" + addr[symCl+1:]
+	}
+
+	if len(originGitAddr.Branch) != 0 {
+		addr = filepath.Join(addr, originGitAddr.Branch+".branch")
+	} else {
+		addr = filepath.Join(addr, "default.branch")
 	}
 
 	author := filepath.Dir(addr)
@@ -95,7 +101,7 @@ func CheckRepoGitStatus(
 	screen core.Screen,
 	env *core.Env,
 	hubPath string,
-	gitAddr string) {
+	gitAddr RepoAddr) {
 
 	name := AddrDisplayName(gitAddr)
 	repoPath := GetRepoPath(hubPath, gitAddr)
@@ -128,10 +134,10 @@ func updateRepoAndReadSubList(
 	screen core.Screen,
 	env *core.Env,
 	hubPath string,
-	gitAddr string,
+	gitAddr RepoAddr,
 	listFileName string,
 	selfName string,
-	cmd core.ParsedCmd) (helpStr string, addrs []string, helpStrs []string) {
+	cmd core.ParsedCmd) (helpStr string, addrs []RepoAddr, helpStrs []string) {
 
 	name := AddrDisplayName(gitAddr)
 	repoPath := GetRepoPath(hubPath, gitAddr)
@@ -151,7 +157,11 @@ func updateRepoAndReadSubList(
 	} else {
 		screen.Print(fmt.Sprintf(display.ColorHub("[%s]", env)+display.ColorSymbol(" => ", env)+
 			"git clone\n", name))
-		cmdStrs = []string{"git", "clone", "--recursive", gitAddr, repoPath}
+		cmdStrs = []string{"git", "clone", "--recursive", gitAddr.Addr}
+		if len(gitAddr.Branch) != 0 {
+			cmdStrs = append(cmdStrs, "-b", gitAddr.Branch)
+		}
+		cmdStrs = append(cmdStrs, repoPath)
 	}
 
 	c := exec.Command(cmdStrs[0], cmdStrs[1:]...)
