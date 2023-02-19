@@ -83,8 +83,8 @@ func regModFile(
 	panicRecover bool) {
 
 	mod := cc.Cmds.GetOrAddSubEx(source, cmdPath...)
+	cmd := regMod(meta, mod, executablePath, isDir, source)
 	mod.SetSource(source)
-	cmd := regMod(meta, mod, executablePath, isDir)
 	cmd.SetMetaFile(metaPath)
 
 	// Reg by isFlow, not 'cmd.Type()'
@@ -329,7 +329,8 @@ func regMod(
 	meta *meta_file.MetaFile,
 	mod *core.CmdTree,
 	executablePath string,
-	isDir bool) *core.Cmd {
+	isDir bool,
+	source string) *core.Cmd {
 
 	cmdPath := mod.DisplayPath()
 
@@ -348,11 +349,11 @@ func regMod(
 
 	// Even if 'isFlow' is true, if it does not have 'flow' content, it can't reg as flow
 	if len(flow) != 0 && len(cmdLine) == 0 && len(executablePath) == 0 {
-		return mod.RegFlowCmd(flow, help)
+		return mod.RegFlowCmd(flow, help, source)
 	}
 
 	if len(executablePath) == 0 {
-		return mod.RegEmptyCmd(help)
+		return mod.RegMetaOnlyCmd(help, source)
 	}
 
 	// Adjust 'executablePath'
@@ -380,17 +381,17 @@ func regMod(
 				panic(fmt.Errorf("[regMod] cmd '%s' has both command-line '%s' and flow",
 					cmdPath, cmdLine))
 			}
-			return mod.RegDirWithCmd(executablePath, help)
+			return mod.RegDirWithCmd(executablePath, help, source)
 		} else {
 			if len(flow) != 0 {
-				return mod.RegFlowCmd(flow, help)
+				return mod.RegFlowCmd(flow, help, source)
 			}
 			return mod.RegEmptyDirCmd(executablePath, help)
 		}
 	} else if len(flow) != 0 {
-		return mod.RegFileNFlowCmd(flow, executablePath, help)
+		return mod.RegFileNFlowCmd(flow, executablePath, help, source)
 	} else {
-		return mod.RegFileCmd(executablePath, help)
+		return mod.RegFileCmd(executablePath, help, source)
 	}
 }
 

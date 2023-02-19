@@ -83,18 +83,26 @@ func (self *CmdTree) Execute(
 	}
 }
 
-func (self *CmdTree) cmdConflictCheck(help string, funName string) {
-	if self.cmd == nil {
+func (self *CmdTree) cmdConflictCheck(help string, funName string, source string) {
+	// Allow in-source overwrite when: the cmd is not registered
+	if self.cmd == nil && self.source == source {
 		return
 	}
-	// Allow to overwrite empty dir cmd
-	if self.cmd.Type() == CmdTypeEmptyDir {
+	// Allow cross-source overwrite when: the cmd is a totally empty dir cmd
+	if self.cmd != nil && self.cmd.IsTotallyEmpty() {
 		return
+	}
+	var errStr string
+	if self.cmd != nil {
+		errStr = fmt.Sprintf("reg-cmd conflicted. old-help '%s', new-help '%s'",
+			strings.Split(self.cmd.Help(), "\n")[0],
+			strings.Split(help, "\n")[0])
+	} else {
+		errStr = fmt.Sprintf("reg-cmd conflicted. old-cmd is no executable, new-help '%s'",
+			strings.Split(help, "\n")[0])
 	}
 	err := &CmdTreeErrExecutableConflicted{
-		fmt.Sprintf("reg-cmd conflicted. old-help '%s', new-help '%s'",
-			strings.Split(self.cmd.Help(), "\n")[0],
-			strings.Split(help, "\n")[0]),
+		errStr,
 		self.Path(),
 		self.Source(),
 	}
@@ -168,26 +176,26 @@ func (self *CmdTree) GatherSubNames(includeAbbrs bool, includeShortcuts bool) (n
 	return names
 }
 
-func (self *CmdTree) RegCmd(cmd NormalCmd, help string) *Cmd {
-	self.cmdConflictCheck(help, "RegCmd")
+func (self *CmdTree) RegCmd(cmd NormalCmd, help string, source string) *Cmd {
+	self.cmdConflictCheck(help, "RegCmd", source)
 	self.cmd = NewCmd(self, help, cmd)
 	return self.cmd
 }
 
-func (self *CmdTree) RegFileCmd(cmd string, help string) *Cmd {
-	self.cmdConflictCheck(help, "RegFileCmd")
+func (self *CmdTree) RegFileCmd(cmd string, help string, source string) *Cmd {
+	self.cmdConflictCheck(help, "RegFileCmd", source)
 	self.cmd = NewFileCmd(self, help, cmd)
 	return self.cmd
 }
 
-func (self *CmdTree) RegDirWithCmd(cmd string, help string) *Cmd {
-	self.cmdConflictCheck(help, "RegDirWithCmd")
+func (self *CmdTree) RegDirWithCmd(cmd string, help string, source string) *Cmd {
+	self.cmdConflictCheck(help, "RegDirWithCmd", source)
 	self.cmd = NewDirWithCmd(self, help, cmd)
 	return self.cmd
 }
 
 func (self *CmdTree) RegEmptyDirCmd(dir string, help string) *Cmd {
-	//dirnore empty dir cmd register
+	// Ignore empty dir cmd register
 	if self.cmd != nil {
 		return self.cmd
 	}
@@ -196,31 +204,37 @@ func (self *CmdTree) RegEmptyDirCmd(dir string, help string) *Cmd {
 }
 
 func (self *CmdTree) RegEmptyCmd(help string) *Cmd {
-	self.cmdConflictCheck(help, "RegEmptyCmd")
+	self.cmdConflictCheck(help, "RegEmptyCmd", "")
 	self.cmd = NewEmptyCmd(self, help)
 	return self.cmd
 }
 
-func (self *CmdTree) RegFlowCmd(flow []string, help string) *Cmd {
-	self.cmdConflictCheck(help, "RegFlowCmd")
+func (self *CmdTree) RegMetaOnlyCmd(help string, source string) *Cmd {
+	self.cmdConflictCheck(help, "RegMetaCmd", source)
+	self.cmd = NewMetaOnlyCmd(self, help)
+	return self.cmd
+}
+
+func (self *CmdTree) RegFlowCmd(flow []string, help string, source string) *Cmd {
+	self.cmdConflictCheck(help, "RegFlowCmd", source)
 	self.cmd = NewFlowCmd(self, help, flow)
 	return self.cmd
 }
 
 func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
-	self.cmdConflictCheck(help, "RegPowerCmd")
+	self.cmdConflictCheck(help, "RegPowerCmd", "")
 	self.cmd = NewPowerCmd(self, help, cmd)
 	return self.cmd
 }
 
 func (self *CmdTree) RegAdHotFlowCmd(cmd AdHotFlowCmd, help string) *Cmd {
-	self.cmdConflictCheck(help, "RegAdHotFlowCmd")
+	self.cmdConflictCheck(help, "RegAdHotFlowCmd", "")
 	self.cmd = NewAdHotFlowCmd(self, help, cmd)
 	return self.cmd
 }
 
-func (self *CmdTree) RegFileNFlowCmd(flow []string, cmd string, help string) *Cmd {
-	self.cmdConflictCheck(help, "RegPowerNFlow")
+func (self *CmdTree) RegFileNFlowCmd(flow []string, cmd string, help string, source string) *Cmd {
+	self.cmdConflictCheck(help, "RegPowerNFlow", source)
 	self.cmd = NewFileNFlowCmd(self, help, cmd, flow)
 	return self.cmd
 }
@@ -260,7 +274,7 @@ func (self *CmdTree) GetOrAddSubEx(source string, path ...string) *CmdTree {
 	return self.getOrAddSub(source, true, path...)
 }
 
-func (self *CmdTree) HasSub() bool {
+func (self *CmdTree) HasSubs() bool {
 	return len(self.subs) != 0 && !self.IsHidden()
 }
 

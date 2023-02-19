@@ -15,12 +15,14 @@ import (
 type CmdType string
 
 const (
-	CmdTypeUninited   CmdType = "uninited"
+	CmdTypeUninited CmdType = "uninited"
+	// For internal test
+	CmdTypeEmpty      CmdType = "empty"
+	CmdTypeMetaOnly   CmdType = "no-executable"
 	CmdTypeNormal     CmdType = "normal"
 	CmdTypePower      CmdType = "power"
 	CmdTypeFlow       CmdType = "flow"
 	CmdTypeFileNFlow  CmdType = "executable-file+flow"
-	CmdTypeEmpty      CmdType = "no-executable"
 	CmdTypeFile       CmdType = "executable-file"
 	CmdTypeEmptyDir   CmdType = "dir-with-no-executable"
 	CmdTypeDirWithCmd CmdType = "dir-with-executable-file"
@@ -43,6 +45,12 @@ type AutoTimerKeys struct {
 	Begin string
 	End   string
 	Dur   string
+}
+
+func (self AutoTimerKeys) IsEmpty() bool {
+	return len(self.Begin) == 0 &&
+		len(self.End) == 0 &&
+		len(self.Dur) == 0
 }
 
 type CmdFlags struct {
@@ -113,6 +121,12 @@ func NewCmd(owner *CmdTree, help string, cmd NormalCmd) *Cmd {
 func NewEmptyCmd(owner *CmdTree, help string) *Cmd {
 	c := defaultCmd(owner, help)
 	c.ty = CmdTypeEmpty
+	return c
+}
+
+func NewMetaOnlyCmd(owner *CmdTree, help string) *Cmd {
+	c := defaultCmd(owner, help)
+	c.ty = CmdTypeMetaOnly
 	return c
 }
 
@@ -309,6 +323,8 @@ func (self *Cmd) executeByType(
 	case CmdTypeAdHotFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeEmpty:
+		return currCmdIdx, true
+	case CmdTypeMetaOnly:
 		return currCmdIdx, true
 	default:
 		panic(NewCmdError(flow.Cmds[currCmdIdx],
@@ -582,11 +598,29 @@ func (self *Cmd) DisplayHelpStr() string {
 }
 
 func (self *Cmd) IsBuiltinCmd() bool {
-	return self.ty == CmdTypeNormal || self.ty == CmdTypePower
+	return self.ty == CmdTypeNormal || self.ty == CmdTypeEmpty || self.ty == CmdTypePower
 }
 
 func (self *Cmd) HasCmdLine() bool {
 	return len(self.cmdLine) != 0
+}
+
+func (self *Cmd) IsTotallyEmpty() bool {
+	return (self.ty == CmdTypeEmptyDir || self.ty == CmdTypeEmpty || self.ty == CmdTypeMetaOnly) &&
+		self.args.IsEmpty() &&
+		self.arg2env.IsEmpty() &&
+		self.val2env.IsEmpty() &&
+		self.autoTimerKeys.IsEmpty() &&
+		self.envOps.IsEmpty() &&
+		self.argsAutoMap.IsEmpty() &&
+		len(self.macros) == 0 &&
+		len(self.orderedMacros) == 0 &&
+		len(self.cmdLine) == 0 &&
+		len(self.flow) == 0 &&
+		len(self.depends) == 0 &&
+		self.adhotFlow == nil &&
+		self.power == nil &&
+		self.normal == nil
 }
 
 func (self *Cmd) IsNoExecutableCmd() bool {
@@ -596,7 +630,7 @@ func (self *Cmd) IsNoExecutableCmd() bool {
 	if !self.arg2env.IsEmpty() {
 		return false
 	}
-	return self.ty == CmdTypeUninited || self.ty == CmdTypeEmpty || self.ty == CmdTypeEmptyDir
+	return self.ty == CmdTypeUninited || self.ty == CmdTypeEmpty || self.ty == CmdTypeMetaOnly || self.ty == CmdTypeEmptyDir
 }
 
 func (self *Cmd) IsPowerCmd() bool {

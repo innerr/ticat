@@ -20,6 +20,10 @@ func newEnvOps() EnvOps {
 	return EnvOps{nil, map[string][]uint{}}
 }
 
+func (self *EnvOps) IsEmpty() bool {
+	return len(self.orderedNames) == 0
+}
+
 func (self *EnvOps) AddOp(name string, op uint) {
 	old, ok := self.ops[name]
 	if !ok {

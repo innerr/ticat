@@ -14,6 +14,10 @@ func newVal2Env() *Val2Env {
 	return &Val2Env{nil, map[string]string{}}
 }
 
+func (self *Val2Env) IsEmpty() bool {
+	return len(self.orderedKeys) == 0
+}
+
 func (self *Val2Env) Add(envKey string, val string) {
 	_, ok := self.pairs[envKey]
 	if ok {

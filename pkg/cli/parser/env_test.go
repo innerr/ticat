@@ -47,7 +47,7 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	dummy := func(core.ArgVals, *core.Cli, *core.Env, []core.ParsedCmd) bool {
 		return true
 	}
-	cmd := root.RegCmd(dummy, "")
+	cmd := root.RegCmd(dummy, "", "")
 
 	test(nil, nil, nil)
 	test([]string{}, nil, nil)
