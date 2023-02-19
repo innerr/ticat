@@ -30,6 +30,10 @@ func newArgs() Args {
 	}
 }
 
+func (self *Args) IsEmpty() bool {
+	return len(self.names) == 0
+}
+
 func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...string) {
 	if _, ok := self.names[name]; ok {
 		panic(fmt.Errorf("[Args.AddArg] %s: arg name conflicted: %s",

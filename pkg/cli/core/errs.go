@@ -63,7 +63,7 @@ func (self *TolerableErrs) OnErr(err interface{}, source string, file string, re
 		}
 	}
 
-	list, _ := conflictedMap[source]
+	list := conflictedMap[source]
 	list = append(list, TolerableErr{err, file, source, reason})
 	conflictedMap[source] = list
 }

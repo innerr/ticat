@@ -410,7 +410,7 @@ func dumpCmd(
 			allShown = allShown && subShown
 		}
 	} else {
-		allShown = !cmd.HasSub()
+		allShown = !cmd.HasSubs()
 	}
 	return allShown
 }
@@ -429,7 +429,7 @@ func dumpIsAutoTimerKey(env *core.Env, cmd *core.Cmd, key string) string {
 
 func cmdIdStr(cmd *core.CmdTree, name string, env *core.Env) string {
 	frameColor := ColorCmd
-	if !cmd.HasSub() {
+	if !cmd.HasSubs() {
 		frameColor = ColorCmdEmpty
 	}
 	cmdColor := ColorCmd

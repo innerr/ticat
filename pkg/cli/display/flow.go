@@ -168,7 +168,7 @@ func dumpFlowCmd(
 	if cic == nil {
 		return false, true
 	}
-	if cmd.IsQuiet() && !cmd.HasSub() && !env.GetBool("display.mod.quiet") {
+	if cmd.IsQuiet() && !cmd.HasSubs() && !env.GetBool("display.mod.quiet") {
 		return false, true
 	}
 

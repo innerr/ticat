@@ -11,7 +11,7 @@ func PrintEmptyDirCmdHint(screen core.Screen, env *core.Env, cmd core.ParsedCmd)
 	sep := env.GetRaw("strs.cmd-path-sep")
 	name := cmd.DisplayPath(sep, true)
 	last := cmd.LastCmdNode()
-	if !last.HasSub() {
+	if !last.HasSubs() {
 		PrintTipTitle(screen, env,
 			fmt.Sprintf("'%v' is not executable and has no commands on this branch.", name))
 		return
@@ -171,7 +171,7 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 					fmt.Sprintf("too many (%v) conflicts between these two repos/dirs:", len(list)),
 					"",
 					"    - '"+oldSource+"'",
-					"    - '"+newSource+"' (conflicteds are not loaded)",
+					"    - '"+newSource+"' (conflicted cmds are not loaded)",
 					"",
 					"use command 'h.disable' to disable one of them.",
 				)
