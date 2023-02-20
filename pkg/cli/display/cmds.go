@@ -298,6 +298,10 @@ func dumpCmd(
 				nameStr := strings.Join(nameList, ColorAbbrSep(abbrsSep, env))
 				val = mayMaskSensitiveVal(env, nameStr, val)
 				line := nameStr + ColorSymbol(" = ", env) + mayQuoteStr(val)
+				enums := cicArgs.EnumVals(name)
+				if len(enums) != 0 {
+					line += " " + ColorExplain("(enum: "+strings.Join(enums, cmd.Strs.ArgEnumSep)+")", env)
+				}
 				if !args.Skeleton {
 					entry := autoMapInfo.GetMappedSource(name)
 					if entry != nil {

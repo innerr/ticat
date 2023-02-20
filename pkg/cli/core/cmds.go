@@ -25,11 +25,12 @@ type CmdTreeStrs struct {
 	FlowTemplateBracketRight string
 	FlowTemplateMultiplyMark string
 	TagMark                  string
+	ArgEnumSep               string
 }
 
 func CmdTreeStrsForTest() *CmdTreeStrs {
 	return &CmdTreeStrs{"self", "<root>", "builtin", "<builtin>",
-		".", ".", "|", ":", "--", "=", ".", "\t", ",", "[[", "]]", "*", "@"}
+		".", ".", "|", ":", "--", "=", ".", "\t", ",", "[[", "]]", "*", "@", "|"}
 }
 
 type CmdTree struct {

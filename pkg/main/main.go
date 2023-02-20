@@ -60,6 +60,7 @@ func main() {
 	defEnv.Set("strs.env-snapshot-ext", EnvSnapshotExt)
 	defEnv.Set("strs.env-del-all-mark", EnvValDelAllMark)
 	defEnv.Set("strs.cmd-path-str-session", CmdPathSession)
+	defEnv.Set("strs.arg-enum-sep", ArgEnumSep)
 
 	envKeysInfo.GetOrAdd("strs.proto-sep").InvisibleDisplay = "<tab>"
 
@@ -82,6 +83,7 @@ func main() {
 		FlowTemplateBracketRight,
 		FlowTemplateMultiplyMark,
 		TagMark,
+		ArgEnumSep,
 	})
 	builtin.RegisterCmds(tree)
 
@@ -242,4 +244,5 @@ const (
 	TagSelfTest              string = TagMark + "selftest"
 	EnvSnapshotExt           string = ".env"
 	CmdPathSession           string = "sessions"
+	ArgEnumSep               string = "|"
 )

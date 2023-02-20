@@ -216,7 +216,6 @@ func RegisterCmdsListCmds(cmds *core.CmdTree) {
 		AddArg("depth", "1", "d")
 
 	/*
-		/*
 		list := mods.AddSub("list", "ls").
 			RegPowerCmd(DumpCmdList,
 				"list builtin and loaded commands").
