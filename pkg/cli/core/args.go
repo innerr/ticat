@@ -17,6 +17,9 @@ type Args struct {
 	abbrsRevIdx map[string]string
 
 	fromAutoMapAll map[string]bool
+
+	// map[arg-name]enum-values
+	enums map[string][]string
 }
 
 func newArgs() Args {
@@ -27,6 +30,7 @@ func newArgs() Args {
 		map[string][]string{},
 		map[string]string{},
 		map[string]bool{},
+		map[string][]string{},
 	}
 }
 
@@ -55,6 +59,22 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 	self.names[name] = len(self.names)
 	self.defVals[name] = defVal
 	self.orderedList = append(self.orderedList, name)
+}
+
+func (self *Args) SetArgEnums(owner *CmdTree, name string, vals ...string) {
+	if _, ok := self.names[name]; !ok {
+		panic(fmt.Errorf("[Args.AddArg] %s: arg name not exists: %s",
+			owner.DisplayPath(), name))
+	}
+	if _, ok := self.enums[name]; ok {
+		panic(fmt.Errorf("[Args.AddArg] %s: arg's enum list already exists: %s",
+			owner.DisplayPath(), strings.Join(vals, owner.Strs.ArgEnumSep)))
+	}
+	self.enums[name] = vals
+}
+
+func (self *Args) EnumVals(name string) []string {
+	return self.enums[name]
 }
 
 func (self *Args) AddAutoMapAllArg(owner *CmdTree, name string, defVal string, abbrs ...string) {

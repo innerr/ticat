@@ -405,6 +405,11 @@ func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
 	return self
 }
 
+func (self *Cmd) SetArgEnums(name string, vals ...string) *Cmd {
+	self.args.SetArgEnums(self.owner, name, vals...)
+	return self
+}
+
 func (self *Cmd) AddAutoMapAllArg(name string, defVal string, abbrs ...string) *Cmd {
 	self.args.AddAutoMapAllArg(self.owner, name, defVal, abbrs...)
 	return self

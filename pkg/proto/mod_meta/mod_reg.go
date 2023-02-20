@@ -442,15 +442,31 @@ func regArgs(meta *meta_file.MetaFile, cmd *core.Cmd, abbrsSep string) {
 	if args == nil {
 		return
 	}
+	enumSep := cmd.Owner().Strs.ArgEnumSep
 	for _, names := range args.Keys() {
-		defVal := args.Get(names)
 		nameAndAbbrs := strings.Split(names, abbrsSep)
 		name := strings.TrimSpace(nameAndAbbrs[0])
 		var argAbbrs []string
 		for _, abbr := range nameAndAbbrs[1:] {
 			argAbbrs = append(argAbbrs, strings.TrimSpace(abbr))
 		}
+		defVal := args.Get(names)
+		var enums []string
+		if len(defVal) > 0 && defVal[len(defVal)-1] == ')' {
+			i := strings.LastIndex(defVal, "(")
+			if i >= 0 {
+				enumsStr := strings.TrimSpace(defVal[i+1 : len(defVal)-1])
+				if strings.HasPrefix(enumsStr, "enum:") {
+					enumsStr = strings.TrimSpace(enumsStr[5:])
+				}
+				enums = strings.Split(enumsStr, enumSep)
+				defVal = strings.TrimSpace(defVal[:i])
+			}
+		}
 		cmd.AddArg(name, defVal, argAbbrs...)
+		if len(enums) != 0 {
+			cmd.SetArgEnums(name, enums...)
+		}
 	}
 }
 
