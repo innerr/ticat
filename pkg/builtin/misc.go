@@ -266,21 +266,23 @@ func Selftest(argv core.ArgVals, cc *core.Cli, env *core.Env) (flow []string, ma
 	result := []*core.CmdTree{}
 	findAllCmdsByTag(tag, src, filter, cc.Cmds, &result)
 
-	// TODO: use PrintTitleError instead of panic. it's not errors
 	if len(result) == 0 {
-		if len(src) == 0 {
-			if len(filter) == 0 {
-				panic(fmt.Errorf("no selftest command with tag '%s'", tag))
+		/*
+			// TODO: use PrintTitleError instead of panic. it's not errors
+			if len(src) == 0 {
+				if len(filter) == 0 {
+					panic(fmt.Errorf("no selftest command with tag '%s'", tag))
+				} else {
+					panic(fmt.Errorf("no selftest command with tag '%s' and source not match '%s'", tag, filter))
+				}
 			} else {
-				panic(fmt.Errorf("no selftest command with tag '%s' and source not match '%s'", tag, filter))
+				if len(filter) == 0 {
+					panic(fmt.Errorf("no selftest command with tag '%s' and source match '%s'", tag, src))
+				} else {
+					panic(fmt.Errorf("no selftest command with tag '%s' and source match '%s' but not match '%s'", tag, src, filter))
+				}
 			}
-		} else {
-			if len(filter) == 0 {
-				panic(fmt.Errorf("no selftest command with tag '%s' and source match '%s'", tag, src))
-			} else {
-				panic(fmt.Errorf("no selftest command with tag '%s' and source match '%s' but not match '%s'", tag, src, filter))
-			}
-		}
+		*/
 		return
 	}
 
