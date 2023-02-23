@@ -118,6 +118,9 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 	}
 
 	removeEmptyCmds(flow)
+	if len(flow.Cmds) == 0 {
+		return true
+	}
 
 	if !innerCall && !bootstrap {
 		checkTailModeCalls(flow)
@@ -156,8 +159,14 @@ func (self *Executor) execute(caller string, cc *core.Cli, env *core.Env, masks 
 		if !flow.TailModeCall && !verifyEnvOps(cc, flow, env) {
 			return false
 		}
-		if !verifyOsDepCmds(cc, flow, env) {
-			return false
+		var firstCmd *core.Cmd
+		if len(flow.Cmds) != 0 {
+			firstCmd = flow.Cmds[0].LastCmd()
+		}
+		if firstCmd == nil || !firstCmd.ShouldIgnoreFollowingDeps() {
+			if !verifyOsDepCmds(cc, flow, env) {
+				return false
+			}
 		}
 	}
 
