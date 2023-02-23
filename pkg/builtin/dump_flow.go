@@ -42,6 +42,7 @@ func DumpFlow(
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
+	printFatalRiskMark(cc, env, flow, currCmdIdx)
 	return clearFlow(flow)
 }
 
@@ -60,6 +61,7 @@ func DumpFlowSimple(
 	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
+	printFatalRiskMark(cc, env, flow, currCmdIdx)
 	return clearFlow(flow)
 }
 
@@ -78,6 +80,16 @@ func DumpFlowSkeleton(
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
+	printFatalRiskMark(cc, env, flow, currCmdIdx)
+
+	return clearFlow(flow)
+}
+
+func printFatalRiskMark(
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) {
 
 	deps := core.Depends{}
 	core.CollectDepends(cc, env, flow, currCmdIdx+1, deps, false, EnvOpCmds())
@@ -103,8 +115,6 @@ func DumpFlowSkeleton(
 		riskStr := adds(errs, "risk")
 		cc.Screen.Print(display.ColorWarn(fmt.Sprintf("(%s:%d)", riskStr, len(risks.Result)), env) + "\n")
 	}
-
-	return clearFlow(flow)
 }
 
 func DumpFlowDepends(

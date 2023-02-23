@@ -54,16 +54,17 @@ func (self AutoTimerKeys) IsEmpty() bool {
 }
 
 type CmdFlags struct {
-	quiet              bool
-	priority           bool
-	allowTailModeCall  bool
-	unLog              bool
-	blender            bool
-	quietError         bool
-	noSession          bool
-	hideInSessionsLast bool
-	quietSubFlow       bool
-	exeInExecuted      bool
+	quiet               bool
+	priority            bool
+	allowTailModeCall   bool
+	unLog               bool
+	blender             bool
+	quietError          bool
+	noSession           bool
+	hideInSessionsLast  bool
+	quietSubFlow        bool
+	exeInExecuted       bool
+	ignoreFollowingDeps bool
 }
 
 type Cmd struct {
@@ -458,6 +459,11 @@ func (self *Cmd) AddDepend(dep string, reason string) *Cmd {
 	return self
 }
 
+func (self *Cmd) SetIgnoreFollowingDeps() *Cmd {
+	self.flags.ignoreFollowingDeps = true
+	return self
+}
+
 func (self *Cmd) SetQuiet() *Cmd {
 	self.flags.quiet = true
 	return self
@@ -648,6 +654,10 @@ func (self *Cmd) AllowTailModeCall() bool {
 
 func (self *Cmd) MustExeInExecuted() bool {
 	return self.flags.exeInExecuted
+}
+
+func (self *Cmd) ShouldIgnoreFollowingDeps() bool {
+	return self.flags.ignoreFollowingDeps
 }
 
 func (self *Cmd) IsQuiet() bool {

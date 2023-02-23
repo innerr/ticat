@@ -75,6 +75,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 			"search commands by keywords").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(find)
 
@@ -83,6 +84,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 			"shortcut of [find]").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(findShort)
 
@@ -91,6 +93,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 			"search commands by find-strings, with usage info").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(findUsage)
 
@@ -99,6 +102,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 			"shortcut of [find.with-usage]").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(findUsageShort)
 
@@ -107,6 +111,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 			"search commands with strings, with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(findDetail)
 
@@ -115,6 +120,7 @@ func RegisterCmdsFindingCmds(cmds *core.CmdTree) {
 			"shortcut of [find.with-full-info]").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(findDetailShort)
 }
@@ -125,6 +131,7 @@ func RegisterTailSubCmds(cmds *core.CmdTree) {
 			"display commands on the branch of the last command").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(sub)
 	sub.AddArg("tag", "", "t")
@@ -135,6 +142,7 @@ func RegisterTailSubCmds(cmds *core.CmdTree) {
 			"shortcut of [tail-sub]").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(subShort)
 	subShort.AddArg("tag", "", "t")
@@ -145,6 +153,7 @@ func RegisterTailSubCmds(cmds *core.CmdTree) {
 			"display commands on the branch of the last command, with usage info").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(subMore)
 	subMore.AddArg("tag", "", "t")
@@ -155,6 +164,7 @@ func RegisterTailSubCmds(cmds *core.CmdTree) {
 			"shortcut of [tail-sub.with-usage]").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(subMoreShort)
 	subMoreShort.AddArg("tag", "", "t")
@@ -165,6 +175,7 @@ func RegisterTailSubCmds(cmds *core.CmdTree) {
 			"display commands on the branch of the last command, with full details").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(subFull)
 	subFull.AddArg("tag", "", "t")
@@ -175,6 +186,7 @@ func RegisterTailSubCmds(cmds *core.CmdTree) {
 			"shortcut of [tail-sub.with-full-info]").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	addFindStrArgs(subFullShort)
 	subFullShort.AddArg("tag", "", "t")
@@ -185,6 +197,7 @@ func RegisterCmdsListCmds(cmds *core.CmdTree) {
 	addDumpCmdsArgs := func(cmd *core.Cmd) {
 		cmd.SetPriority().
 			SetQuiet().
+			SetIgnoreFollowingDeps().
 			SetAllowTailModeCall().
 			AddArg("cmd-path", "", "path", "p").
 			AddArg("source", "", "repo", "src", "s").
@@ -281,6 +294,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 			"display command usage").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p")
 
@@ -289,6 +303,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 			"display command full info").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p")
 
@@ -297,6 +312,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 			"shortcut of [cmd], if this is at the end of a flow:\n   * display usage of the last command\n   * flow will not execute").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p")
 
@@ -305,6 +321,7 @@ func RegisterCmdAndHelpCmds(cmds *core.CmdTree) {
 			"shortcut of [cmd], if this is at the end of a flow:\n   * display full info of the last command\n   * flow will not execute").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p")
 }
@@ -315,6 +332,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"desc the flow execution in skeleton style").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -323,6 +341,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"shortcut of [desc]").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -331,6 +350,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"shortcut of [desc], unfold more(2L) trivial subflows").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "2", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -339,6 +359,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"shortcut of [desc], unfold more(3L) trivial subflows").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "3", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -348,6 +369,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"desc the flow about to execute in lite style").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -356,6 +378,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"shortcut of [desc.more]").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -364,6 +387,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"shortcut of [desc.more], unfold more(2L) trivial subflows").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "2", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -372,6 +396,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"shortcut of [desc.more], unfold more(3L) trivial subflows").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "3", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -381,6 +406,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"desc the flow about to execute with details").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -390,12 +416,14 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"list the depended os-commands of the flow").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 	desc.AddSub("env-ops-check", "env-ops", "env-op", "env", "ops", "op", "e").
 		RegPowerCmd(DumpFlowEnvOpsCheckResult,
 			"desc the env-ops check result of the flow").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority()
 
 	descFlow := desc.AddSub("flow").
@@ -403,6 +431,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"desc the flow execution in skeleton style").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -411,6 +440,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"desc the flow execution in lite style").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -419,6 +449,7 @@ func RegisterFlowDescCmds(cmds *core.CmdTree) {
 			"desc the flow execution with details").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
 		AddArg("depth", "32", "d")
@@ -636,6 +667,7 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 			"save current commands as a flow").
 		SetAllowTailModeCall().
 		SetQuiet().
+		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("new-cmd-path", "", "new-cmd", "cmd", "path", "new", "c").
 		AddArg("help-str", "", "help", "h").
