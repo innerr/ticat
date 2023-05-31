@@ -11,7 +11,7 @@ Recommend to type and execute the commands during reading.
 
 ### Download and install
 ```
-$> curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ticat-mods/tidb/main/install.sh | sh
+$> curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/innerr/ticat/main/install.sh | sh
 ```
 
 ### Build

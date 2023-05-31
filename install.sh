@@ -45,7 +45,7 @@ function download_bin()
 		return 1
 	fi
 
-	local cnt=`echo "${res_name}" | wc -l`
+	local cnt=`echo "${res_name}" | wc -l | awk '{print $1}'`
 	if [ "${cnt}" != '1' ]; then
 		echo "***" >&2
 		echo "${res_name}" | awk '{print "   - "$0}' >&2
@@ -92,26 +92,26 @@ function download_and_install_ticat()
 	local nc='\033[0m'
 
 	local ticat_repo='github.com/repos/innerr/ticat'
-	echo -e "${title}==> download ticat${nc}"
+	echo "${title}==> download ticat${nc}"
 	download_bin "${ticat_repo}" 'ticat' '.' "${download_rate_limit_token}" 2>&1 | awk '{print "    * "$0}'
 
 	echo
 	if [ ! -z "${mods_repo}" ]; then
-		echo -e "${title}==> fetch components from '${mods_repo}'${nc}"
+		echo "${title}==> fetch components from '${mods_repo}'${nc}"
 		./ticat display.color.on : display.utf.off : display.width 90 : hub.add "${mods_repo}"  2>&1 | awk '{print "    * "$0}'
 	else
-		echo -e "${title}==> init ticat with basic component repos${nc}"
+		echo "${title}==> init ticat with basic component repos${nc}"
 		./ticat display.color.on : display.utf.off : display.width 90 : hub.init  2>&1 | awk '{print "    * "$0}'
 	fi
 
 	echo
-	echo -e "${title}==> add ticat to \$PATH${nc}"
+	echo "${title}==> add ticat to \$PATH${nc}"
 	./ticat display.color.on : install.ticat  2>&1 | awk '{print "    * "$0}'
 
 	echo
-	echo -e "${green}==> Command ${orange}./ticat${green} is ready now, ${orange}ticat${green} is available after relogin${nc}"
-	echo -e "    ${gray}ticat: workflow automating in unix-pipe style${nc}"
-	echo -e "    ${gray}try:   $> ./ticat selftest"
+	echo "${green}==> Command ${orange}./ticat${green} is ready now, ${orange}ticat${green} is available after relogin${nc}"
+	echo "    ${gray}ticat: workflow automating in unix-pipe style${nc}"
+	echo "    ${gray}try:   $> ./ticat selftest"
 }
 
 set -eo pipefail
