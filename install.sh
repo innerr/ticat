@@ -1,3 +1,13 @@
+function printf()
+{
+	local os=`uname`
+	if [ "${os}" = 'Darwin' ]; then
+		echo "${@}"
+	else
+		echo -e "${@}"
+	fi
+}
+
 function check_cmd_exists()
 {
 	local cmd="${1}"
@@ -92,26 +102,26 @@ function download_and_install_ticat()
 	local nc='\033[0m'
 
 	local ticat_repo='github.com/repos/innerr/ticat'
-	echo "${title}==> download ticat${nc}"
+	printf "${title}==> download ticat${nc}"
 	download_bin "${ticat_repo}" 'ticat' '.' "${download_rate_limit_token}" 2>&1 | awk '{print "    * "$0}'
 
 	echo
 	if [ ! -z "${mods_repo}" ]; then
-		echo "${title}==> fetch components from '${mods_repo}'${nc}"
+		printf "${title}==> fetch components from '${mods_repo}'${nc}"
 		./ticat display.color.on : display.utf.off : display.width 90 : hub.add "${mods_repo}"  2>&1 | awk '{print "    * "$0}'
 	else
-		echo "${title}==> init ticat with basic component repos${nc}"
-		./ticat display.color.on : display.utf.off : display.width 90 : hub.init  2>&1 | awk '{print "    * "$0}'
+		printf "${title}==> init ticat with basic component repos${nc}"
+		./ticat display.color.on : display.utf.off : display.width 90 : noop 2>&1 | awk '{print "    * "$0}'
 	fi
 
 	echo
-	echo "${title}==> add ticat to \$PATH${nc}"
+	printf "${title}==> add ticat to \$PATH${nc}"
 	./ticat display.color.on : install.ticat  2>&1 | awk '{print "    * "$0}'
 
 	echo
-	echo "${green}==> Command ${orange}./ticat${green} is ready now, ${orange}ticat${green} is available after relogin${nc}"
-	echo "    ${gray}ticat: workflow automating in unix-pipe style${nc}"
-	echo "    ${gray}try:   $> ./ticat selftest"
+	printf "${green}==> Command ${orange}./ticat${green} is ready now, ${orange}ticat${green} is available after relogin${nc}"
+	printf "    ${gray}ticat: workflow automating in unix-pipe style${nc}"
+	printf "    ${gray}try:   $>./ticat${nc}"
 }
 
 set -eo pipefail
