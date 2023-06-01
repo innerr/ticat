@@ -31,7 +31,7 @@ func DumpFlowEx(
 	fromCmdIdx int,
 	args *DumpFlowArgs,
 	executedFlow *core.ExecutedFlow,
-	running bool,
+	procRunning bool,
 	envOpCmds []core.EnvOpCmd) {
 
 	if len(flow.Cmds) == 0 {
@@ -84,7 +84,7 @@ func DumpFlowEx(
 	// TODO: show executed status and duration here
 
 	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
-	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, running,
+	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, procRunning,
 		false, writtenKeys, args.MaxDepth, args.MaxTrivial, 0, false)
 	if ok {
 		cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
@@ -99,7 +99,7 @@ func dumpFlow(
 	fromCmdIdx int,
 	args *DumpFlowArgs,
 	executedFlow *core.ExecutedFlow,
-	running bool,
+	procRunning bool,
 	parentInBg bool,
 	writtenKeys FlowWrittenKeys,
 	maxDepth int,
@@ -110,6 +110,8 @@ func dumpFlow(
 	sep := cc.Cmds.Strs.PathSep
 
 	metFlows := map[string]bool{}
+
+	metFailedOrRunning := false
 
 	for i, cmd := range flow.Cmds[fromCmdIdx:] {
 		if cmd.IsEmpty() {
@@ -127,14 +129,18 @@ func dumpFlow(
 			}
 		}
 
-		cmdInBg, ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, running,
+		cmdInBg, ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, procRunning,
 			parentInBg, maxDepth, maxTrivial, depth, metFlows, writtenKeys, parentIncompleted)
+
+		if ok && metFailedOrRunning {
+			return false
+		}
 		if !ok {
 			if parentInBg {
-				return false
+				metFailedOrRunning = true
 			}
 			if !cmdInBg {
-				return false
+				metFailedOrRunning = true
 			}
 		}
 	}
@@ -150,7 +156,7 @@ func dumpFlowCmd(
 	currCmdIdx int,
 	args *DumpFlowArgs,
 	executedCmd *core.ExecutedCmd,
-	running bool,
+	procRunning bool,
 	parentInBg bool,
 	maxDepth int,
 	maxTrivial int,
@@ -235,14 +241,14 @@ func dumpFlowCmd(
 			if executedCmd != nil {
 				executedFlow = executedCmd.SubFlow
 			}
-			return cmdInBg, dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, running,
+			return cmdInBg, dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, procRunning,
 				cmdInBg, writtenKeys, maxDepth-1, maxTrivial-trivialDelta, depth+1, cmdFailed() || parentIncompleted)
 		}
 		return cmdInBg, !cmdFailed()
 	}
 
 	showTrivialMark := foldSubFlowByTrivial() && trivialDelta > 0
-	name, ok := dumpCmdDisplayName(cmdEnv, parsedCmd, args, executedCmd, running, cmdInBg, showTrivialMark)
+	name, ok := dumpCmdDisplayName(cmdEnv, parsedCmd, args, executedCmd, procRunning, cmdInBg, showTrivialMark)
 	if len(name) != 0 {
 		prt(0, name)
 	}
@@ -343,7 +349,7 @@ func dumpFlowCmd(
 					if !cmdFailed() {
 						newMaxDepth -= 1
 					}
-					ok := dumpFlow(cc, subflowEnv, envOpCmds, parsedFlow, 0, args, executedFlow, running,
+					ok := dumpFlow(cc, subflowEnv, envOpCmds, parsedFlow, 0, args, executedFlow, procRunning,
 						cmdInBg, writtenKeys, newMaxDepth, maxTrivial-trivialDelta, depth+1, cmdFailed() || parentIncompleted)
 					if !ok {
 						return cmdInBg, false
@@ -478,7 +484,7 @@ func dumpCmdDisplayName(
 	parsedCmd core.ParsedCmd,
 	args *DumpFlowArgs,
 	executedCmd *core.ExecutedCmd,
-	running bool,
+	procRunning bool,
 	inBg bool,
 	showTrivialMark bool) (name string, ok bool) {
 
@@ -542,7 +548,7 @@ func dumpCmdDisplayName(
 		} else if executedCmd.Result == core.ExecutedResultSkipped {
 			name += ColorExplain(resultStr, env)
 		} else if executedCmd.Result == core.ExecutedResultIncompleted {
-			if running {
+			if procRunning {
 				name += ColorHighLight("running", env)
 			} else {
 				name += ColorWarn("failed", env)
@@ -554,7 +560,7 @@ func dumpCmdDisplayName(
 		}
 
 		if !executedCmd.StartTs.IsZero() {
-			durStr, _ := executedCmdDurStr(executedCmd, running, env)
+			durStr, _ := executedCmdDurStr(executedCmd, procRunning, env)
 			if len(durStr) != 0 {
 				durStr += " "
 			}
@@ -1052,17 +1058,17 @@ func (self FlowWrittenKeys) AddCmd(argv core.ArgVals, env *core.Env, cic *core.C
 	}
 }
 
-func executedCmdDurStr(executedCmd *core.ExecutedCmd, running bool, env *core.Env) (string, int) {
+func executedCmdDurStr(executedCmd *core.ExecutedCmd, procRunning bool, env *core.Env) (string, int) {
 	if executedCmd == nil {
 		return "", 0
 	}
 	var durStr string
-	finishTs := executedCmd.RoughFinishTs(running)
+	finishTs := executedCmd.RoughFinishTs(procRunning)
 	dur := finishTs.Sub(executedCmd.StartTs)
-	if executedCmd.StartTs != finishTs || executedCmd.Result != core.ExecutedResultIncompleted || running {
+	if executedCmd.StartTs != finishTs || executedCmd.Result != core.ExecutedResultIncompleted || procRunning {
 		durStr += formatDuration(dur)
 	}
-	if (executedCmd.Result == core.ExecutedResultIncompleted) && !running && len(durStr) != 0 {
+	if (executedCmd.Result == core.ExecutedResultIncompleted) && !procRunning && len(durStr) != 0 {
 		durStr += "+?"
 	} else if (executedCmd.Result != core.ExecutedResultSucceeded) && executedCmd.StartTs == finishTs {
 		return "", 0
