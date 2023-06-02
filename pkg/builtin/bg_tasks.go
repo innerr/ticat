@@ -6,7 +6,7 @@ import (
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func WaitForBgTaskFinish(
+func WaitForLatestBgTaskFinish(
 	argv core.ArgVals,
 	cc *core.Cli,
 	env *core.Env,
@@ -20,14 +20,12 @@ func WaitForBgTaskFinish(
 			"must be in main thread to wait for other threads to finish"))
 	}
 
-	tid := argv.GetRaw("thread")
-	if len(tid) == 0 {
-		return WaitForAllBgTasksFinish(argv, cc, env, flow, currCmdIdx)
-	}
-
-	errs := WaitBgTasks(cc, env, tid, true)
-	for _, err := range errs {
-		display.PrintError(cc, env, err)
+	tid, task, ok := cc.BgTasks.GetLatestTask()
+	if ok {
+		errs := WaitBgTask(cc, env, tid, task)
+		for _, err := range errs {
+			display.PrintError(cc, env, err)
+		}
 	}
 	return currCmdIdx, true
 }
@@ -45,22 +43,32 @@ func WaitForAllBgTasksFinish(
 		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
 			"must be in main thread to wait for other threads to finish"))
 	}
-	errs := WaitBgTasks(cc, env, "", true)
+	errs := WaitBgTasks(cc, env, true)
 	for _, err := range errs {
 		display.PrintError(cc, env, err)
 	}
 	return currCmdIdx, true
 }
 
-func WaitBgTasks(cc *core.Cli, env *core.Env, matchTid string, manual bool) (errs []error) {
+func WaitBgTask(cc *core.Cli, env *core.Env, tid string, task *core.BgTask) (errs []error) {
+	info := task.GetStat()
+	display.PrintSwitchingThreadDisplay(utils.GoRoutineIdStr(), info, env, cc.Screen, true)
+
+	cc.BgTasks.BringBgTaskToFront(tid, cc.CmdIO.CmdStdout)
+	err := task.WaitForFinish()
+	if err != nil {
+		errs = append(errs, err)
+	}
+	cc.BgTasks.RemoveTask(tid)
+	return
+}
+
+func WaitBgTasks(cc *core.Cli, env *core.Env, manual bool) (errs []error) {
 	preTid := utils.GoRoutineIdStr()
 	for {
 		tid, task, ok := cc.BgTasks.GetEarliestTask()
 		if !ok {
 			break
-		}
-		if len(matchTid) != 0 && matchTid != tid {
-			continue
 		}
 		info := task.GetStat()
 

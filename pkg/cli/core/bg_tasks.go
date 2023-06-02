@@ -173,6 +173,17 @@ func (self *BgTasks) GetEarliestTask() (tid string, task *BgTask, ok bool) {
 	return
 }
 
+func (self *BgTasks) GetLatestTask() (tid string, task *BgTask, ok bool) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	if len(self.tids) == 0 {
+		return
+	}
+	tid = self.tids[len(self.tids)-1]
+	task, ok = self.tasks[tid]
+	return
+}
+
 func (self *BgTasks) GetStat() []BgTaskInfo {
 	self.lock.Lock()
 	defer self.lock.Unlock()
