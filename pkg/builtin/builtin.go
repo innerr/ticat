@@ -618,17 +618,6 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
 }
 
 func RegisterEnvSnapshotManageCmds(cmds *core.CmdTree) {
-	cmds.AddSub("save", "s").
-		RegPowerCmd(EnvSaveToSnapshot,
-			"short for 'env.snapshot.save'").
-		AddArg("snapshot-name", "", "snapshot", "name", "sn").
-		AddArg("overwrite", "true", "ow")
-
-	cmds.AddSub("load", "l").
-		RegPowerCmd(EnvLoadFromSnapshot,
-			"short for 'env.snapshot.load'").
-		AddArg("snapshot-name", "", "snapshot", "name", "sn")
-
 	env := cmds.AddSub("snapshot", "snap", "ss").
 		RegEmptyCmd(
 			"env snapshot management")
@@ -662,7 +651,7 @@ func RegisterEnvSnapshotManageCmds(cmds *core.CmdTree) {
 func RegisterFlowManageCmds(cmds *core.CmdTree) {
 	flow := cmds.AddSub("flow", "f")
 	flow.RegPowerCmd(ListFlows,
-		"same as 'flow.list', list local saved but unlinked (to any repo) flows").
+		"same as [flow.list], list local saved but unlinked (to any repo) flows").
 		SetAllowTailModeCall()
 	addFindStrArgs(flow.Cmd())
 
@@ -1084,7 +1073,7 @@ func RegisterCtrlCmds(cmds *core.CmdTree) {
 
 	breaks.AddSub("clear", "clean").
 		RegPowerCmd(DbgBreakClean,
-			"clear all break points except 'break.here'").
+			"clear all break points except [break.here] and [break]").
 		SetQuiet()
 
 	wait := cmds.AddSub("wait-execute", "wait-exec", "wait-exe").
@@ -1183,7 +1172,7 @@ func RegisterDisplayCmds(cmds *core.CmdTree) {
 		"env")
 
 	sys := registerSimpleSwitch(env,
-		"values of env path 'sys.*' display in executing",
+		"values of env path sys.*' display in executing",
 		"display.env.sys",
 		"sys")
 
@@ -1344,7 +1333,7 @@ func RegisterBuiltinCmds(cmds *core.CmdTree) {
 	hub := cmds.AddSub("hub", "h")
 	hub.AddSub("init").
 		RegPowerCmd(EnsureDefaultGitRepoInHub,
-			"trigger 'hub.init' at the first time running")
+			"trigger [hub.init] at the first time running")
 }
 
 func RegisterTimerCmds(cmds *core.CmdTree) {
