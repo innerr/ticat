@@ -65,7 +65,6 @@ func RegisterCmds(cmds *core.CmdTree) {
 
 	api := cmds.AddSub("api")
 	api.RegEmptyCmd("api toolbox")
-	api.SetIsApi()
 	RegisterApiCmds(api)
 }
 
@@ -619,6 +618,17 @@ func RegisterEnvManageCmds(cmds *core.CmdTree) *core.CmdTree {
 }
 
 func RegisterEnvSnapshotManageCmds(cmds *core.CmdTree) {
+	cmds.AddSub("save", "s").
+		RegPowerCmd(EnvSaveToSnapshot,
+			"short for 'env.snapshot.save'").
+		AddArg("snapshot-name", "", "snapshot", "name", "sn").
+		AddArg("overwrite", "true", "ow")
+
+	cmds.AddSub("load", "l").
+		RegPowerCmd(EnvLoadFromSnapshot,
+			"short for 'env.snapshot.load'").
+		AddArg("snapshot-name", "", "snapshot", "name", "sn")
+
 	env := cmds.AddSub("snapshot", "snap", "ss").
 		RegEmptyCmd(
 			"env snapshot management")
@@ -1442,33 +1452,39 @@ func RegisterApiCmds(cmds *core.CmdTree) {
 	cmd.AddSub("type").
 		RegPowerCmd(ApiCmdType,
 			"get command type").
+		SetIsApi().
 		AddArg("cmd", "")
 
 	cmd.AddSub("meta").
 		RegPowerCmd(ApiCmdMeta,
 			"get command meta file path").
+		SetIsApi().
 		AddArg("cmd", "")
 
 	cmd.AddSub("dir").
 		RegPowerCmd(ApiCmdDir,
 			"get command dir path").
+		SetIsApi().
 		AddArg("cmd", "")
 
 	cmd.AddSub("path").
 		RegPowerCmd(ApiCmdPath,
 			"get command executable file path").
+		SetIsApi().
 		AddArg("cmd", "")
 
 	cmdList := cmd.AddSub("list")
 	cmdList.AddSub("all").
 		RegPowerCmd(ApiCmdListAll,
-			"list all commands")
+			"list all commands").
+		SetIsApi()
 
 	env := cmds.AddSub("env")
 
 	env.AddSub("value", "val", "v").
 		RegPowerCmd(DisplayEnvVal,
 			"show specified env value in current session").
+		SetIsApi().
 		AddArg("key", "", "k")
 }
 

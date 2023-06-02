@@ -23,6 +23,18 @@ func SysArgRealnameAndNormalizedValue(
 			value += "s"
 		}
 		return name, value
+	} else if raw == SysArgNameDelayEnvApplyPolicy {
+		if value != SysArgValueDelayEnvApplyPolicyApply {
+			panic(fmt.Errorf("[Args.SysArgRealname] %s: the value of sys arg '%s' could only be '%s'",
+				name, SysArgNameDelayEnvApplyPolicy, SysArgValueDelayEnvApplyPolicyApply))
+		}
+		return name, value
+	} else if raw == SysArgNameError {
+		if value != SysArgValueOK {
+			panic(fmt.Errorf("[Args.SysArgRealname] %s: the value of sys arg '%s' could only be '%s'",
+				name, SysArgNameError, SysArgValueOK))
+		}
+		return name, value
 	} else {
 		panic(fmt.Errorf("[Args.SysArgRealname] %s: only sys args could have '%s' prefix, '%s' is not sys arg",
 			name, sysArgPrefix, raw))
@@ -50,7 +62,20 @@ func (self SysArgVals) GetDelayDuration() time.Duration {
 	return dur
 }
 
+func (self SysArgVals) IsDelayEnvEarlyApply() bool {
+	return self[SysArgNameDelayEnvApplyPolicy] == SysArgValueDelayEnvApplyPolicyApply
+}
+
+func (self SysArgVals) AllowError() bool {
+	return self[SysArgNameError] == SysArgValueOK
+}
+
 // TODO: put sys arg names into env strs
 const (
-	SysArgNameDelay string = "delay"
+	SysArgNameDelay               string = "delay"
+	SysArgNameDelayEnvApplyPolicy string = "env"
+	SysArgNameError               string = "err"
+
+	SysArgValueDelayEnvApplyPolicyApply string = "apply"
+	SysArgValueOK                       string = "ok"
 )

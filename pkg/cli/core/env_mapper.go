@@ -31,8 +31,38 @@ func (self *Val2Env) EnvKeys() []string {
 	return self.orderedKeys
 }
 
+func (self *Val2Env) RenderedEnvKeys(
+	argv ArgVals,
+	env *Env,
+	cmd *Cmd,
+	allowError bool) (renderedKeys []string, origins []string, fullyRendered bool) {
+
+	fullyRendered = true
+	for _, name := range self.orderedKeys {
+		keys, keyFullyRendered := renderTemplateStr(name, "map arg to env", cmd, argv, env, allowError)
+		for _, key := range keys {
+			renderedKeys = append(renderedKeys, key)
+			origins = append(origins, name)
+		}
+		fullyRendered = fullyRendered && keyFullyRendered
+	}
+	return
+}
+
 func (self *Val2Env) Val(envKey string) string {
 	return self.pairs[envKey]
+}
+
+func (self *Val2Env) RenderedVal(
+	envKey string,
+	argv ArgVals,
+	env *Env,
+	cmd *Cmd,
+	allowError bool) string {
+
+	val := self.pairs[envKey]
+	lines, _ := renderTemplateStr(val, "render val in val2env", cmd, argv, env, allowError)
+	return strings.Join(lines, "\n")
 }
 
 func (self *Val2Env) Has(envKey string) bool {
