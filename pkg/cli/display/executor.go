@@ -37,7 +37,7 @@ func PrintCmdStack(
 	bgTasks *core.BgTasks,
 	tailModeCall bool) (lines CmdStackLines) {
 
-	if cmd.IsApi() {
+	if flow[currCmdIdx].LastCmdNode() != nil && flow[currCmdIdx].LastCmdNode().IsApi() {
 		return
 	}
 	if tailModeCall {
@@ -69,8 +69,8 @@ func PrintCmdStack(
 		for _, bg := range bgTasks.GetStat() {
 			line := ""
 			lineLen := 0
-			bgCmd := ColorCmdDelay(bg.Cmd, env) + ColorSymbol(" - ", env) + bg.Tid
-			bgCmdLen := len(bg.Cmd) + len(bg.Tid) + 3
+			bgCmd := ColorCmdDelay(bg.Cmd, env) + ColorSymbol(" -- ", env) + bg.Tid
+			bgCmdLen := len(bg.Cmd) + len(bg.Tid) + 4
 			if bg.Finished {
 				if bg.Err != nil {
 					line += ColorError(" E ", env) + bgCmd

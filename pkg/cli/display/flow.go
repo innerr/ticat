@@ -129,22 +129,22 @@ func dumpFlow(
 			}
 		}
 
+		cmdUnRun := executedCmd != nil && (executedCmd.Result == core.ExecutedResultUnRun)
+		// cmdRunning := procRunning && executedCmd != nil && (executedCmd.Result == core.ExecutedResultIncompleted)
+
 		cmdInBg, ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, procRunning,
 			parentInBg, maxDepth, maxTrivial, depth, metFlows, writtenKeys, parentIncompleted)
 
-		if ok && metFailedOrRunning {
+		if !ok {
+			metFailedOrRunning = true
+		}
+
+		if cmdUnRun && !cmdInBg {
 			return false
 		}
-		if !ok {
-			if parentInBg {
-				metFailedOrRunning = true
-			}
-			if !cmdInBg {
-				metFailedOrRunning = true
-			}
-		}
 	}
-	return true
+
+	return !metFailedOrRunning
 }
 
 func dumpFlowCmd(
@@ -356,7 +356,11 @@ func dumpFlowCmd(
 					}
 					exeMark := ""
 					if cic.Type() == core.CmdTypeFileNFlow {
-						exeMark += ColorCmd(" +", env)
+						if cmdInBg {
+							exeMark += ColorCmdDelay(" +", env)
+						} else {
+							exeMark += ColorCmd(" +", env)
+						}
 					}
 					if !foldSubFlow() && !args.MonitorMode {
 						prt(2, ColorFlowing("<<<---"+depthMark, env)+exeMark)

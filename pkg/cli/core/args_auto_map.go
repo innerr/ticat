@@ -36,7 +36,7 @@ func autoMapArg2EnvForCmd(
 	}
 
 	env = env.Clone().GetLayer(EnvLayerSession)
-	ApplyVal2Env(env, srcCmd)
+	ApplyVal2Env(env, srcCmd, argv)
 	ApplyArg2Env(env, srcCmd, argv)
 
 	subFlow, _, rendered := srcCmd.Flow(argv, cc, env, true, true)

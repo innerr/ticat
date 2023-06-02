@@ -283,10 +283,14 @@ func (self *Executor) executeCmd(
 				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx, tryBreakInsideFileNFlowWrap)
 				cmdEnv.SetInt("display.executor.displayed", 0)
 			} else {
+				if sysArgv.IsDelayEnvEarlyApply() {
+					cmd.ApplyMappingGenEnvAndArgv(
+						env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, cmdEnv.GetInt("sys.stack-depth"))
+				}
 				dur := sysArgv.GetDelayDuration()
 				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
 				var tid string
-				tid, succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(),
+				tid, succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(), sysArgv.AllowError(),
 					dur, last.Cmd(), argv, asyncCC, cmdEnv, mask, flow.CloneOne(currCmdIdx), 0)
 				if cc.FlowStatus != nil {
 					cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env, tid)
@@ -476,6 +480,7 @@ func stackStepOut(caller string, callerNameEntry string, env *core.Env) {
 func asyncExecute(
 	screen core.Screen,
 	durStr string,
+	allowError bool,
 	dur time.Duration,
 	cic *core.Cmd,
 	argv core.ArgVals,
@@ -550,7 +555,7 @@ func asyncExecute(
 			env.SetInt("display.executor.displayed", env.GetInt("sys.stack-depth"))
 		}
 		start := time.Now()
-		_, ok := cic.Execute(argv, cc, env, mask, flow, currCmdIdx, nil)
+		_, ok := cic.Execute(argv, cc, env, mask, flow, allowError, currCmdIdx, nil)
 		elapsed := time.Now().Sub(start)
 		env.SetInt("display.executor.displayed", 0)
 		if !ok {

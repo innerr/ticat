@@ -80,7 +80,7 @@ func (self *CmdTree) Execute(
 	if self.cmd == nil {
 		return currCmdIdx, true
 	} else {
-		return self.cmd.Execute(argv, cc, env, mask, flow, currCmdIdx, tryBreakInsideFileNFlow)
+		return self.cmd.Execute(argv, cc, env, mask, flow, sysArgv.AllowError(), currCmdIdx, tryBreakInsideFileNFlow)
 	}
 }
 

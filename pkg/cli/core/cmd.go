@@ -187,6 +187,7 @@ func (self *Cmd) Execute(
 	env *Env,
 	mask *ExecuteMask,
 	flow *ParsedCmds,
+	allowError bool,
 	currCmdIdx int,
 	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, ok bool) {
 
@@ -199,7 +200,7 @@ func (self *Cmd) Execute(
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Begin, int(begin.Unix()))
 	}
 
-	newCurrCmdIdx, ok = self.execute(argv, cc, env, mask, flow, currCmdIdx, tryBreakInsideFileNFlow)
+	newCurrCmdIdx, ok = self.execute(argv, cc, env, mask, flow, allowError, currCmdIdx, tryBreakInsideFileNFlow)
 	if !ok {
 		// Normally the command should print info before return false, so no need to panic
 		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
@@ -213,7 +214,7 @@ func (self *Cmd) Execute(
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Dur, int(end.Sub(begin)/time.Second))
 	}
 
-	return newCurrCmdIdx, ok
+	return newCurrCmdIdx, ok || allowError
 }
 
 func (self *Cmd) execute(
@@ -222,6 +223,7 @@ func (self *Cmd) execute(
 	env *Env,
 	mask *ExecuteMask,
 	flow *ParsedCmds,
+	allowError bool,
 	currCmdIdx int,
 	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, succeeded bool) {
 
@@ -256,7 +258,7 @@ func (self *Cmd) execute(
 				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask) && !executedAndSucceeded(mask))
 				cc.HandledErrors[r] = true
 			}
-			if r != nil && !self.flags.quietError {
+			if r != nil && !self.flags.quietError && !allowError {
 				panic(r)
 			}
 		}()
@@ -282,7 +284,7 @@ func (self *Cmd) execute(
 	}
 
 	newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow,
-		currCmdIdx, logFilePath, tryBreakInsideFileNFlow)
+		allowError, currCmdIdx, logFilePath, tryBreakInsideFileNFlow)
 
 	if shouldQuietSubFlow {
 		envSession.Set(disableQuietKey, originQuiet)
@@ -296,6 +298,7 @@ func (self *Cmd) executeByType(
 	env *Env,
 	mask *ExecuteMask,
 	flow *ParsedCmds,
+	allowError bool,
 	currCmdIdx int,
 	logFilePath string,
 	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (int, bool) {
@@ -312,15 +315,15 @@ func (self *Cmd) executeByType(
 	case CmdTypeNormal:
 		return currCmdIdx, self.normal(argv, cc, env, flow.Cmds[currCmdIdx:])
 	case CmdTypeFile:
-		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath)
+		return currCmdIdx, self.executeFile(argv, cc, env, allowError, flow.Cmds[currCmdIdx], logFilePath)
 	case CmdTypeEmptyDir:
 		return currCmdIdx, true
 	case CmdTypeDirWithCmd:
-		return currCmdIdx, self.executeFile(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath)
+		return currCmdIdx, self.executeFile(argv, cc, env, allowError, flow.Cmds[currCmdIdx], logFilePath)
 	case CmdTypeFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeFileNFlow:
-		return currCmdIdx, self.executeFileNFlow(argv, cc, env, flow.Cmds[currCmdIdx], logFilePath, mask, tryBreakInsideFileNFlow)
+		return currCmdIdx, self.executeFileNFlow(argv, cc, env, allowError, flow.Cmds[currCmdIdx], logFilePath, mask, tryBreakInsideFileNFlow)
 	case CmdTypeAdHotFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeEmpty:
@@ -399,6 +402,11 @@ func (self *Cmd) MatchWriteKey(key string) bool {
 		return true
 	}
 	return false
+}
+
+func (self *Cmd) SetIsApi() *Cmd {
+	self.owner.SetIsApi()
+	return self
 }
 
 func (self *Cmd) AddArg(name string, defVal string, abbrs ...string) *Cmd {
@@ -934,8 +942,8 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 	return
 }
 
-func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd, logFilePath string,
-	mask *ExecuteMask, tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (succeeded bool) {
+func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, allowError bool, parsedCmd ParsedCmd,
+	logFilePath string, mask *ExecuteMask, tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (succeeded bool) {
 
 	succeeded = self.executeFlow(argv, cc, env, mask)
 	if !succeeded {
@@ -945,7 +953,7 @@ func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, parsedCmd Par
 	// TODO: user will feel a bit weird when FileNFlowExecPolicy is skip
 	if tryBreakInsideFileNFlow == nil || tryBreakInsideFileNFlow(cc, env, self) {
 		if mask == nil || mask.FileNFlowExecPolicy == ExecPolicyExec {
-			return self.executeFile(argv, cc, env, parsedCmd, logFilePath)
+			return self.executeFile(argv, cc, env, allowError, parsedCmd, logFilePath)
 		}
 	}
 
@@ -954,7 +962,7 @@ func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, parsedCmd Par
 	return true
 }
 
-func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCmd, logFilePath string) bool {
+func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, parsedCmd ParsedCmd, logFilePath string) bool {
 	if len(self.cmdLine) == 0 {
 		return true
 	}
@@ -1009,7 +1017,7 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, parsedCmd ParsedCm
 	}
 
 	err := cmd.Run()
-	if err != nil {
+	if err != nil && !allowError {
 		err = &RunCmdFileFailed{
 			err.Error(),
 			parsedCmd,

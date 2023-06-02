@@ -268,15 +268,15 @@ func (self ParsedCmd) ApplyMappingGenEnvAndArgv(
 	}
 	sessionEnv := env.GetLayer(EnvLayerSession)
 	// These apply on the origin env
-	ApplyVal2Env(sessionEnv, last)
+	ApplyVal2Env(sessionEnv, last, argv)
 	ApplyArg2Env(sessionEnv, last, argv)
 	return
 }
 
-func ApplyVal2Env(env *Env, cmd *Cmd) {
+func ApplyVal2Env(env *Env, cmd *Cmd, argv ArgVals) {
 	val2env := cmd.GetVal2Env()
 	for _, key := range val2env.EnvKeys() {
-		env.Set(key, val2env.Val(key))
+		env.Set(key, val2env.RenderedVal(key, argv, env, cmd, true))
 	}
 }
 
