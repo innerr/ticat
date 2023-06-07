@@ -99,8 +99,8 @@ func PrintCmdStack(
 		stack := strings.Split(env.GetRaw("sys.stack"), listSep)
 		if len(stack) > 1 {
 			for i, frame := range stack {
-				line := rpt(" ", i*4+3)
-				extraLen := 0
+				line := rpt(" ", i*4+3) + ColorProp("+ ", env)
+				extraLen := ColorExtraLen(env, "prop")
 				if i == 0 {
 					line += ColorExplain(frame, env)
 					extraLen += ColorExtraLen(env, "explain")

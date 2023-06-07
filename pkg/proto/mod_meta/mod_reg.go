@@ -102,6 +102,7 @@ func regModFile(
 	regQuietCmd(meta, cmd)
 	regHideInSessionsLast(meta, cmd)
 	regQuietSubFlow(meta, cmd)
+	regUnbreakFileNFlow(meta, cmd)
 
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
@@ -284,6 +285,23 @@ func regQuietSubFlow(meta *meta_file.MetaFile, cmd *core.Cmd) {
 		}
 		if quiet {
 			cmd.SetQuietSubFlow()
+		}
+		return
+	}
+}
+
+func regUnbreakFileNFlow(meta *meta_file.MetaFile, cmd *core.Cmd) {
+	for _, key := range []string{"unbreak-file-n-flow", "unbreak-file&flow", "unbreak-file+flow", "unbreak-filenflow", "unbreak-fnf"} {
+		val := meta.Get(key)
+		if len(val) == 0 {
+			continue
+		}
+		quiet, err := strconv.ParseBool(val)
+		if err != nil {
+			panic(fmt.Errorf("[regUnbreakFileNFlow] unbreak-file-n-flow value string '%s' is not bool: '%v'", val, err))
+		}
+		if quiet {
+			cmd.SetUnbreakFileNFlow()
 		}
 		return
 	}
