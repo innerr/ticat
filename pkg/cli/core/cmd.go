@@ -65,6 +65,7 @@ type CmdFlags struct {
 	quietSubFlow        bool
 	exeInExecuted       bool
 	ignoreFollowingDeps bool
+	unbreakFileNFlow    bool
 }
 
 type Cmd struct {
@@ -535,6 +536,11 @@ func (self *Cmd) SetQuietError() *Cmd {
 	return self
 }
 
+func (self *Cmd) SetUnbreakFileNFlow() *Cmd {
+	self.flags.unbreakFileNFlow = true
+	return self
+}
+
 func (self *Cmd) SetPriority() *Cmd {
 	self.flags.priority = true
 	return self
@@ -702,6 +708,10 @@ func (self *Cmd) EnvOps() EnvOps {
 
 func (self *Cmd) FlowStrs() []string {
 	return self.flow
+}
+
+func (self *Cmd) ShouldUnbreakFileNFlow() bool {
+	return self.flags.unbreakFileNFlow
 }
 
 func (self *Cmd) IsTheSameFunc(fun interface{}) bool {

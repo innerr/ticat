@@ -31,7 +31,9 @@ func tryWaitSecAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, m
 		return BPAContinue
 	}
 
-	if cmd.IsQuiet() && !env.GetBool("sys.breakpoint.here.now") {
+	// Not sure why we need to checke "sys.breakpoint.here.now" originally, it cause a bug
+	//if cmd.IsQuiet() && !env.GetBool("sys.breakpoint.here.now") {
+	if cmd.IsQuiet() {
 		return BPAContinue
 	}
 
@@ -44,6 +46,7 @@ func tryWaitSecAndBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, m
 		env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-in", true)
 		bpa = BPAContinue
 	} else if bpa == BPASkip {
+		// When this cmd is skipped, we don't need to check it has subflow or not
 		// if lastCmdInFlow && (cmd.LastCmd() == nil || !cmd.LastCmd().HasSubFlow(false)) {
 		if lastCmdInFlow {
 			env.GetLayer(core.EnvLayerSession).SetBool("sys.breakpoint.status.step-out", true)
@@ -73,7 +76,7 @@ func tryBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, mask *core.
 	choices := []string{}
 	var reason string
 
-	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow(false) && (mask == nil || mask.SubFlow != nil) {
+	if cmd.LastCmd() != nil && cmd.LastCmd().HasSubFlow(false) && !cmd.LastCmd().ShouldUnbreakFileNFlow() && (mask == nil || mask.SubFlow != nil) {
 		choices = append(choices, "t")
 	}
 
@@ -81,6 +84,7 @@ func tryBreakBefore(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, mask *core.
 		reason = display.ColorTip("break-point: before command ", env) + display.ColorCmd("["+name+"]", env)
 		choices = append(choices, "s", "d", "c")
 	} else if stepIn {
+		// TODO: BUG: too soon to delete at here, if the first cmd after step-in is FileNFlow, that this cmd can't break between subflow and script
 		env.GetLayer(core.EnvLayerSession).Delete("sys.breakpoint.status.step-in")
 		reason = display.ColorTip("just stepped in", env)
 		choices = append(choices, "s", "d", "c")
@@ -124,7 +128,7 @@ func tryBreakAfter(cc *core.Cli, env *core.Env, cmd core.ParsedCmd, showStack fu
 	}
 	reason := display.ColorTip("break-point: after command ", env) + display.ColorCmd("["+name+"]", env)
 	bpas := getAllBPAs()
-	// Use BPAStepToNext instead of BPAStepOverf or display
+	// Use BPAStepToNext instead of BPAStepOver for display
 	bpas["d"] = BPAStepToNext
 	bpa := readUserBPAChoice(reason, []string{"d", "c", "i", "q"}, bpas, true, cc, env, showStack)
 	if bpa == BPAStepToNext {
@@ -174,7 +178,18 @@ func tryWaitSec(cc *core.Cli, env *core.Env, waitSecKey string) {
 func tryBreakInsideFileNFlow(cc *core.Cli, env *core.Env, cmd *core.Cmd, breakByPrev bool, showStack func()) (shouldExec bool) {
 	breakByPrev = breakByPrev || env.GetBool("sys.breakpoint.at-next")
 
-	if !breakByPrev && !env.GetBool("sys.breakpoint.status.step-out") {
+	if env.GetBool("sys.in-bg-task") {
+		return true
+	}
+	if cmd.Type() != core.CmdTypeFileNFlow {
+		return true
+	}
+	if cmd.ShouldUnbreakFileNFlow() {
+		return true
+	}
+
+	// TODO: BUG: too soon to delete 'sys.breakpoint.status.step-in', here env.GetBool("sys.breakpoint.status.step-in") will be always false
+	if !breakByPrev && !env.GetBool("sys.breakpoint.status.step-in") && !env.GetBool("sys.breakpoint.status.step-out") {
 		return true
 	}
 
