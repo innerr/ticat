@@ -258,8 +258,11 @@ func dumpFlowCmd(
 
 	dumpCmdHelp(cic.Help(), cmdEnv, args, prt)
 
-	//lineLimit := env.GetInt("display.width")
-	_, lineLimit := utils.GetTerminalWidth(50, 120)
+	lineLimit := env.GetInt("display.width")
+	_, screenLineLimit := utils.GetTerminalWidth(50, 120)
+	if screenLineLimit > lineLimit {
+		lineLimit = screenLineLimit
+	}
 	if args.MonitorMode {
 		lineLimit = 9999
 	}

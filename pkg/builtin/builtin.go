@@ -746,15 +746,13 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 			"show an executed or executing session by id").
 		SetAllowTailModeCall().
 		SetQuiet().
-		SetPriority().
 		AddArg("session-id", "", "session", "id")
 
 	sessionsList := sessions.RegPowerCmd(
 		ListSessions,
 		"list or find executed and executing sessions").
 		SetAllowTailModeCall().
-		SetQuiet().
-		SetPriority()
+		SetQuiet()
 	addFindStrArgs(sessionsList)
 	sessionsList.AddArg("max-count", "32", "limit", "max-cnt", "max")
 
@@ -762,8 +760,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		RegPowerCmd(ListSessionsError,
 			"list executed error sessions").
 		SetAllowTailModeCall().
-		SetQuiet().
-		SetPriority()
+		SetQuiet()
 	addFindStrArgs(sessionsErr)
 	sessionsErr.AddArg("max-count", "32", "limit", "max-cnt", "max")
 
@@ -771,8 +768,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		RegPowerCmd(ListSessionsDone,
 			"list success executed sessions").
 		SetAllowTailModeCall().
-		SetQuiet().
-		SetPriority()
+		SetQuiet()
 	addFindStrArgs(sessionsDone)
 	sessionsDone.AddArg("max-count", "32", "limit", "max-cnt", "max")
 
@@ -780,8 +776,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		RegPowerCmd(ListSessionsRunning,
 			"list executing sessions").
 		SetAllowTailModeCall().
-		SetQuiet().
-		SetPriority()
+		SetQuiet()
 	addFindStrArgs(sessionsRunning)
 	sessionsRunning.AddArg("max-count", "32", "limit", "max-cnt", "max")
 
@@ -937,7 +932,6 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		"remove an executed or (wrongly classify as)executing session by id").
 		SetAllowTailModeCall().
 		SetQuiet().
-		SetPriority().
 		AddArg("session-id", "", "session", "id").
 		AddArg("remove-running", "false", "force")
 
@@ -945,8 +939,7 @@ func RegisterSessionCmds(cmds *core.CmdTree) {
 		RegPowerCmd(FindAndRemoveSessions,
 			"clear executed sessions by keywords").
 		SetAllowTailModeCall().
-		SetQuiet().
-		SetPriority()
+		SetQuiet()
 	addFindStrArgs(removeByFind)
 	removeByFind.AddArg("remove-running", "false", "force")
 
