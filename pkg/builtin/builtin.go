@@ -720,21 +720,25 @@ func RegisterFlowManageCmds(cmds *core.CmdTree) {
 func RegisterBgManageCmds(cmds *core.CmdTree) {
 	bg := cmds.AddSub("background", "bg").
 		RegEmptyCmd(
-			"background tasks management")
+			"background command management")
 	wait := bg.AddSub("wait").
 		RegPowerCmd(WaitForAllBgTasksFinish,
-			"wait for all tasks/threads to finish in current(must be main) thread")
+			"wait for all background commands to finish")
 	wait.AddSub("last", "latest").
 		RegPowerCmd(WaitForLatestBgTaskFinish,
-			"wait for the last tasks/threads to finish in current(must be main) thread")
+			"wait for the last background command to finish")
+	wait.AddSub("command", "cmd", "c").
+		RegPowerCmd(WaitForBgTaskFinishByName,
+			"wait for a background command to finish").
+		AddArg("command", "", "cmd", "c")
 
 	afterMain := wait.AddSub("after-main", "on-main", "at-main", "auto")
 	afterMain.RegEmptyCmd(
-		"auto wait for all tasks/threads to finish after main thread ends").
+		"auto wait for all background commands to finish after main flow ends").
 		AddVal2Env("sys.bg.wait", "true")
 	afterMain.AddSub("off").
 		RegEmptyCmd(
-			"auto wait for all tasks/threads to finish after main thread ends").
+			"auto wait for all background tasks to finish after main flow ends").
 		AddVal2Env("sys.bg.wait", "false")
 }
 
