@@ -291,7 +291,7 @@ func (self *Executor) executeCmd(
 				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
 				var tid string
 				tid, succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(), sysArgv.AllowError(),
-					dur, last.Cmd(), argv, asyncCC, cmdEnv, mask, flow.CloneOne(currCmdIdx), 0)
+					dur, last.Cmd(), argv, asyncCC, cmdEnv.Clone(), mask, flow.CloneOne(currCmdIdx), 0)
 				if cc.FlowStatus != nil {
 					cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env, tid)
 				}
