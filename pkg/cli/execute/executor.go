@@ -507,7 +507,8 @@ func asyncExecute(
 		currCmdIdx int) {
 
 		cmd := flow.Cmds[currCmdIdx]
-		name := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+		displayName := cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)
+		realName := cmd.LastCmdNode().DisplayPath()
 		tid := utils.GoRoutineIdStr()
 
 		sessionDir := env.GetRaw("session")
@@ -525,7 +526,7 @@ func asyncExecute(
 
 		clearBreakPointStatusInEnv(bgSessionEnv)
 
-		task := cc.BgTasks.GetOrAddTask(tid, name, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
+		task := cc.BgTasks.GetOrAddTask(tid, displayName, realName, cc.Screen.(*core.BgTaskScreen).GetBgStdout())
 		tidChan <- tid
 
 		time.Sleep(dur)

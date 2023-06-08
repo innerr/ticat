@@ -137,19 +137,21 @@ func (self *BgTask) WaitForFinish() error {
 }
 
 type BgTasks struct {
-	tids  []string
-	tasks map[string]*BgTask
-	lock  sync.Mutex
+	tids      []string
+	tasks     map[string]*BgTask
+	name2task map[string]*BgTask
+	lock      sync.Mutex
 }
 
 func NewBgTasks() *BgTasks {
 	return &BgTasks{
-		tids:  []string{},
-		tasks: map[string]*BgTask{},
+		tids:      []string{},
+		tasks:     map[string]*BgTask{},
+		name2task: map[string]*BgTask{},
 	}
 }
 
-func (self *BgTasks) GetOrAddTask(tid string, cmd string, stdout *BgStdout) *BgTask {
+func (self *BgTasks) GetOrAddTask(tid string, displayName string, realName string, stdout *BgStdout) *BgTask {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	task, ok := self.tasks[tid]
@@ -157,8 +159,10 @@ func (self *BgTasks) GetOrAddTask(tid string, cmd string, stdout *BgStdout) *BgT
 		return task
 	}
 	self.tids = append(self.tids, tid)
-	task = NewBgTask(tid, cmd, stdout)
+	task = NewBgTask(tid, displayName, stdout)
 	self.tasks[tid] = task
+	println(realName)
+	self.name2task[realName] = task
 	return task
 }
 
@@ -170,6 +174,19 @@ func (self *BgTasks) GetEarliestTask() (tid string, task *BgTask, ok bool) {
 	}
 	tid = self.tids[0]
 	task, ok = self.tasks[tid]
+	return
+}
+
+func (self *BgTasks) GetTaskByCmd(cmd string) (tid string, task *BgTask, ok bool) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	if len(self.tids) == 0 {
+		return
+	}
+	task, ok = self.name2task[cmd]
+	if ok {
+		tid = task.info.Tid
+	}
 	return
 }
 
@@ -216,4 +233,5 @@ func (self *BgTasks) RemoveTask(tid string) {
 	}
 	self.tids = self.tids[1:]
 	delete(self.tasks, tid)
+	// TODO: remove it from name2task
 }

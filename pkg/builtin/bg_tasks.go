@@ -30,6 +30,35 @@ func WaitForLatestBgTaskFinish(
 	return currCmdIdx, true
 }
 
+func WaitForBgTaskFinishByName(
+	argv core.ArgVals,
+	cc *core.Cli,
+	env *core.Env,
+	flow *core.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	assertNotTailMode(flow, currCmdIdx)
+
+	bgCmd := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "command")
+
+	if utils.GoRoutineIdStr() != utils.GoRoutineIdStrMain {
+		panic(core.NewCmdError(flow.Cmds[currCmdIdx],
+			"must be in main thread to wait for other threads to finish"))
+	}
+
+	verifiedCmd := cc.NormalizeCmd(true, bgCmd)
+	tid, task, ok := cc.BgTasks.GetTaskByCmd(verifiedCmd)
+	if !ok {
+		display.PrintTipTitle(cc.Screen, env, "command '"+bgCmd+"' not in background")
+	} else {
+		errs := WaitBgTask(cc, env, tid, task)
+		for _, err := range errs {
+			display.PrintError(cc, env, err)
+		}
+	}
+	return currCmdIdx, true
+}
+
 func WaitForAllBgTasksFinish(
 	argv core.ArgVals,
 	cc *core.Cli,
