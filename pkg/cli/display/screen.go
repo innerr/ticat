@@ -1,10 +1,10 @@
 package display
 
 import (
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
-func PrintFramedLines(screen core.Screen, env *core.Env, buf *CacheScreen, c *FrameChars) {
+func PrintFramedLines(screen model.Screen, env *model.Env, buf *CacheScreen, c *FrameChars) {
 	if buf.IsEmpty() {
 		return
 	}
@@ -62,7 +62,7 @@ func (self *CacheScreen) OutputNum() int {
 }
 
 func (self *CacheScreen) WriteToEx(
-	screen core.Screen,
+	screen model.Screen,
 	transformer func(text string, isError bool, textLen int) (string, bool)) {
 
 	for _, it := range self.data {
@@ -75,7 +75,7 @@ func (self *CacheScreen) WriteToEx(
 	}
 }
 
-func (self *CacheScreen) WriteTo(screen core.Screen) {
+func (self *CacheScreen) WriteTo(screen model.Screen) {
 	self.WriteToEx(screen, func(text string, isError bool, textLen int) (string, bool) {
 		return text, isError
 	})

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
 func DumpCmdsWithTips(
-	cmds *core.CmdTree,
-	screen core.Screen,
-	env *core.Env,
+	cmds *model.CmdTree,
+	screen model.Screen,
+	env *model.Env,
 	args *DumpCmdArgs,
 	displayCmdPath string,
 	lessDetailCmd string,
@@ -99,9 +99,9 @@ func DumpCmdsWithTips(
 }
 
 func DumpCmds(
-	cmds *core.CmdTree,
-	screen core.Screen,
-	env *core.Env,
+	cmds *model.CmdTree,
+	screen model.Screen,
+	env *model.Env,
 	args *DumpCmdArgs) (allShown bool) {
 
 	return dumpCmd(screen, env, cmds, args, -cmds.Depth(), 0, env.GetInt("sys.stack-depth"))
@@ -175,7 +175,7 @@ func (self *DumpCmdArgs) SetMaxDepth(depth int) *DumpCmdArgs {
 	return self
 }
 
-func (self *DumpCmdArgs) MatchFind(cmd *core.CmdTree) bool {
+func (self *DumpCmdArgs) MatchFind(cmd *model.CmdTree) bool {
 	if len(self.MatchWriteKey) != 0 && !cmd.MatchWriteKey(self.MatchWriteKey) {
 		return false
 	}
@@ -198,9 +198,9 @@ func (self *DumpCmdArgs) MatchFind(cmd *core.CmdTree) bool {
 }
 
 func dumpCmd(
-	screen core.Screen,
-	env *core.Env,
-	cmd *core.CmdTree,
+	screen model.Screen,
+	env *model.Env,
+	cmd *model.CmdTree,
 	args *DumpCmdArgs,
 	indentAdjust int,
 	depth int,
@@ -248,7 +248,7 @@ func dumpCmd(
 				prt(1, ColorTag(" "+tagMark+strings.Join(cmd.Tags(), " "+tagMark), env))
 			}
 
-			// TODO: move 'help' from core.Cmd to core.CmdTree
+			// TODO: move 'help' from model.Cmd to model.CmdTree
 			if cic != nil {
 				var helpStr string
 				if !args.Skeleton {
@@ -351,8 +351,8 @@ func dumpCmd(
 			}
 
 			// TODO: a bit messy
-			//if !cic.HasSubFlow(false) && (cic.Type() != core.CmdTypeNormal || cic.IsQuiet()) {
-			if cic.Type() != core.CmdTypeFlow || cic.Type() != core.CmdTypeAdHotFlow {
+			//if !cic.HasSubFlow(false) && (cic.Type() != model.CmdTypeNormal || cic.IsQuiet()) {
+			if cic.Type() != model.CmdTypeFlow || cic.Type() != model.CmdTypeAdHotFlow {
 				line := string(cic.Type())
 				if cic.IsQuiet() {
 					line += " (quiet)"
@@ -377,7 +377,7 @@ func dumpCmd(
 			}
 
 			// TODO: a bit messy
-			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
+			if cic.Type() != model.CmdTypeNormal && cic.Type() != model.CmdTypePower {
 				if len(cic.CmdLine()) != 0 || len(cic.FlowStrs()) != 0 {
 					if cic.HasSubFlow(false) {
 						prt(1, ColorProp("- flow:", env))
@@ -386,9 +386,9 @@ func dumpCmd(
 						}
 					}
 					if len(cic.CmdLine()) != 0 {
-						if cic.Type() == core.CmdTypeEmptyDir {
+						if cic.Type() == model.CmdTypeEmptyDir {
 							prt(1, ColorProp("- dir:", env))
-						} else if cic.Type() == core.CmdTypeFileNFlow {
+						} else if cic.Type() == model.CmdTypeFileNFlow {
 							prt(1, ColorProp("- executable(after flow):", env))
 						} else {
 							prt(1, ColorProp("- executable:", env))
@@ -398,7 +398,7 @@ func dumpCmd(
 				}
 			}
 
-			if cic.Type() != core.CmdTypeNormal && cic.Type() != core.CmdTypePower {
+			if cic.Type() != model.CmdTypeNormal && cic.Type() != model.CmdTypePower {
 				if len(cic.MetaFile()) != 0 {
 					prt(1, ColorProp("- meta:", env))
 					prt(2, cic.MetaFile())
@@ -419,7 +419,7 @@ func dumpCmd(
 	return allShown
 }
 
-func dumpIsAutoTimerKey(env *core.Env, cmd *core.Cmd, key string) string {
+func dumpIsAutoTimerKey(env *model.Env, cmd *model.Cmd, key string) string {
 	keys := cmd.GetAutoTimerKeys()
 	if key == keys.Begin {
 		return ColorSymbol(" <- ", env) + ColorExplain("(when running begins)", env)
@@ -431,7 +431,7 @@ func dumpIsAutoTimerKey(env *core.Env, cmd *core.Cmd, key string) string {
 	return ""
 }
 
-func cmdIdStr(cmd *core.CmdTree, name string, env *core.Env) string {
+func cmdIdStr(cmd *model.CmdTree, name string, env *model.Env) string {
 	frameColor := ColorCmd
 	if !cmd.HasSubs() {
 		frameColor = ColorCmdEmpty
@@ -445,7 +445,7 @@ func cmdIdStr(cmd *core.CmdTree, name string, env *core.Env) string {
 		frameColor("]", env)
 }
 
-func getCmdAbbrsPath(cmd *core.CmdTree, env *core.Env) []string {
+func getCmdAbbrsPath(cmd *model.CmdTree, env *model.Env) []string {
 	if cmd.Parent() == nil {
 		return nil
 	}
@@ -458,7 +458,7 @@ func getCmdAbbrsPath(cmd *core.CmdTree, env *core.Env) []string {
 	return append(getCmdAbbrsPath(cmd.Parent(), env), strings.Join(abbrs, sep))
 }
 
-func displayCmdAbbrsPath(cmd *core.CmdTree, env *core.Env) string {
+func displayCmdAbbrsPath(cmd *model.CmdTree, env *model.Env) string {
 	path := getCmdAbbrsPath(cmd, env)
 	if len(path) == 0 {
 		return ""

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
 func DumpEnvOpsCheckResult(
-	screen core.Screen,
-	cmds []core.ParsedCmd,
-	env *core.Env,
-	result []core.EnvOpsCheckResult,
+	screen model.Screen,
+	cmds []model.ParsedCmd,
+	env *model.Env,
+	result []model.EnvOpsCheckResult,
 	sep string) {
 
 	if len(result) == 0 {
@@ -117,7 +117,7 @@ func DumpEnvOpsCheckResult(
 func dumpEnvOps(ops []uint, sep string) (str string) {
 	var strs []string
 	for _, op := range ops {
-		strs = append(strs, core.EnvOpStr(op))
+		strs = append(strs, model.EnvOpStr(op))
 	}
 	return strings.Join(strs, sep)
 }
@@ -125,8 +125,8 @@ func dumpEnvOps(ops []uint, sep string) (str string) {
 type envOpsCheckResult struct {
 	Key                string
 	Cmds               []string
-	FirstArg2Env       *core.ParsedCmd
-	MayWriteCmdsBefore []core.MayWriteCmd
+	FirstArg2Env       *model.ParsedCmd
+	MayWriteCmdsBefore []model.MayWriteCmd
 	ReadMayWrite       bool
 	MayReadMayWrite    bool
 	MayReadNotExist    bool
@@ -134,7 +134,7 @@ type envOpsCheckResult struct {
 	CmdMap             map[string]bool
 }
 
-func AggEnvOpsCheckResult(result []core.EnvOpsCheckResult) (fatals *EnvOpsCheckResultAgg,
+func AggEnvOpsCheckResult(result []model.EnvOpsCheckResult) (fatals *EnvOpsCheckResultAgg,
 	risks *EnvOpsCheckResultAgg, isArg2EnvCanFixAllFatals bool) {
 
 	fatals = newEnvOpsCheckResultAgg()
@@ -163,7 +163,7 @@ func newEnvOpsCheckResultAgg() *EnvOpsCheckResultAgg {
 	return &EnvOpsCheckResultAgg{nil, map[string]int{}}
 }
 
-func (self *EnvOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
+func (self *EnvOpsCheckResultAgg) Append(res model.EnvOpsCheckResult) {
 	hashKey := fmt.Sprintf("%s_%v_%v_%v_%v", res.Key, res.ReadMayWrite,
 		res.MayReadMayWrite, res.MayReadNotExist, res.ReadNotExist)
 	idx, ok := self.revIdx[hashKey]
@@ -192,13 +192,13 @@ func (self *EnvOpsCheckResultAgg) Append(res core.EnvOpsCheckResult) {
 	}
 }
 
-func getMissedMapperArgInfo(env *core.Env, cic *core.Cmd, key string) string {
+func getMissedMapperArgInfo(env *model.Env, cic *model.Cmd, key string) string {
 	arg2env := cic.GetArg2Env()
 	argName := arg2env.GetArgName(cic, key, true)
 	return getArgInfoLine(env, cic, argName)
 }
 
-func getArgInfoLine(env *core.Env, cic *core.Cmd, argName string) string {
+func getArgInfoLine(env *model.Env, cic *model.Cmd, argName string) string {
 	argInfo := "'" + argName + "'"
 	args := cic.Args()
 	argInfo = ColorArg(argInfo, env) + " " + ColorSymbol(fmt.Sprintf("#%d", args.Index(argName)), env)

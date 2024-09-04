@@ -8,31 +8,31 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
 func DumpFlow(
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
 	fromCmdIdx int,
 	args *DumpFlowArgs,
-	envOpCmds []core.EnvOpCmd) {
+	envOpCmds []model.EnvOpCmd) {
 
 	DumpFlowEx(cc, env, flow, fromCmdIdx, args, nil, false, envOpCmds)
 }
 
 // 'parsedGlobalEnv' + env in 'flow' = all env
 func DumpFlowEx(
-	cc *core.Cli,
-	env *core.Env,
-	flow *core.ParsedCmds,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
 	fromCmdIdx int,
 	args *DumpFlowArgs,
-	executedFlow *core.ExecutedFlow,
+	executedFlow *model.ExecutedFlow,
 	procRunning bool,
-	envOpCmds []core.EnvOpCmd) {
+	envOpCmds []model.EnvOpCmd) {
 
 	if len(flow.Cmds) == 0 {
 		return
@@ -77,7 +77,7 @@ func DumpFlowEx(
 
 	if args.MonitorMode {
 		trivialMark := env.GetRaw("strs.trivial-mark")
-		flowStr := core.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
+		flowStr := model.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 		cc.Screen.Print(ColorFlow(flowStr, env) + "\n")
 	}
 
@@ -92,13 +92,13 @@ func DumpFlowEx(
 }
 
 func dumpFlow(
-	cc *core.Cli,
-	env *core.Env,
-	envOpCmds []core.EnvOpCmd,
-	flow *core.ParsedCmds,
+	cc *model.Cli,
+	env *model.Env,
+	envOpCmds []model.EnvOpCmd,
+	flow *model.ParsedCmds,
 	fromCmdIdx int,
 	args *DumpFlowArgs,
-	executedFlow *core.ExecutedFlow,
+	executedFlow *model.ExecutedFlow,
 	procRunning bool,
 	parentInBg bool,
 	writtenKeys FlowWrittenKeys,
@@ -117,20 +117,20 @@ func dumpFlow(
 		if cmd.IsEmpty() {
 			continue
 		}
-		var executedCmd *core.ExecutedCmd
+		var executedCmd *model.ExecutedCmd
 		if executedFlow != nil {
 			if i < len(executedFlow.Cmds) {
 				executedCmd = executedFlow.GetCmd(i)
 			} else {
 				// TODO: better display
 				name := strings.Join(cmd.Path(), sep)
-				executedCmd = core.NewExecutedCmd(name)
-				executedCmd.Result = core.ExecutedResultUnRun
+				executedCmd = model.NewExecutedCmd(name)
+				executedCmd.Result = model.ExecutedResultUnRun
 			}
 		}
 
-		cmdUnRun := executedCmd != nil && (executedCmd.Result == core.ExecutedResultUnRun)
-		// cmdRunning := procRunning && executedCmd != nil && (executedCmd.Result == core.ExecutedResultIncompleted)
+		cmdUnRun := executedCmd != nil && (executedCmd.Result == model.ExecutedResultUnRun)
+		// cmdRunning := procRunning && executedCmd != nil && (executedCmd.Result == model.ExecutedResultIncompleted)
 
 		cmdInBg, ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, procRunning,
 			parentInBg, maxDepth, maxTrivial, depth, metFlows, writtenKeys, parentIncompleted)
@@ -148,14 +148,14 @@ func dumpFlow(
 }
 
 func dumpFlowCmd(
-	cc *core.Cli,
-	screen core.Screen,
-	env *core.Env,
-	envOpCmds []core.EnvOpCmd,
-	flow *core.ParsedCmds,
+	cc *model.Cli,
+	screen model.Screen,
+	env *model.Env,
+	envOpCmds []model.EnvOpCmd,
+	flow *model.ParsedCmds,
 	currCmdIdx int,
 	args *DumpFlowArgs,
-	executedCmd *core.ExecutedCmd,
+	executedCmd *model.ExecutedCmd,
 	procRunning bool,
 	parentInBg bool,
 	maxDepth int,
@@ -199,11 +199,11 @@ func dumpFlowCmd(
 	trivialDelta := getCmdTrivial(parsedCmd)
 
 	cmdFailed := func() bool {
-		return executedCmd != nil && executedCmd.Result != core.ExecutedResultSucceeded &&
-			executedCmd.Result != core.ExecutedResultSkipped
+		return executedCmd != nil && executedCmd.Result != model.ExecutedResultSucceeded &&
+			executedCmd.Result != model.ExecutedResultSkipped
 	}
 	cmdSkipped := func() bool {
-		return executedCmd != nil && executedCmd.Result == core.ExecutedResultSkipped
+		return executedCmd != nil && executedCmd.Result == model.ExecutedResultSkipped
 	}
 
 	notFold := func() bool {
@@ -225,7 +225,7 @@ func dumpFlowCmd(
 
 	// Folding if too trivial or too deep
 	if !notFold() {
-		core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
+		model.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 			"failed to execute env-op cmd in flow desc")
 
 		// This is for render checking, even it's folded
@@ -237,7 +237,7 @@ func dumpFlowCmd(
 				panic(err.Error)
 			}
 			parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
-			var executedFlow *core.ExecutedFlow
+			var executedFlow *model.ExecutedFlow
 			if executedCmd != nil {
 				executedFlow = executedCmd.SubFlow
 			}
@@ -324,7 +324,7 @@ func dumpFlowCmd(
 			dumpCmdExecutable(cic, env, args, prt, padLenCal, lineLimit)
 		}
 
-		if cic.HasSubFlow(false) && !cmdSkipped() && (executedCmd == nil || executedCmd.Result != core.ExecutedResultUnRun) {
+		if cic.HasSubFlow(false) && !cmdSkipped() && (executedCmd == nil || executedCmd.Result != model.ExecutedResultUnRun) {
 			subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true, true)
 			if rendered && len(subFlow) != 0 {
 				if !metFlow || executedCmd != nil || cmdFailed() {
@@ -341,10 +341,10 @@ func dumpFlowCmd(
 						panic(err.Error)
 					}
 
-					subflowEnv := cmdEnv.NewLayer(core.EnvLayerSubFlow)
+					subflowEnv := cmdEnv.NewLayer(model.EnvLayerSubFlow)
 					parsedFlow.GlobalEnv.WriteNotArgTo(subflowEnv, cc.Cmds.Strs.EnvValDelAllMark)
 
-					var executedFlow *core.ExecutedFlow
+					var executedFlow *model.ExecutedFlow
 					if executedCmd != nil {
 						executedFlow = executedCmd.SubFlow
 					}
@@ -358,7 +358,7 @@ func dumpFlowCmd(
 						return cmdInBg, false
 					}
 					exeMark := ""
-					if cic.Type() == core.CmdTypeFileNFlow {
+					if cic.Type() == model.CmdTypeFileNFlow {
 						if cmdInBg {
 							exeMark += ColorCmdDelay(" +", env)
 						} else {
@@ -373,7 +373,7 @@ func dumpFlowCmd(
 		}
 	}
 
-	core.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
+	model.TryExeEnvOpCmds(argv, cc, cmdEnv, flow, currCmdIdx, envOpCmds, nil,
 		"failed to execute env-op cmd in flow desc")
 
 	if !cmdSkipped() {
@@ -383,7 +383,7 @@ func dumpFlowCmd(
 	return cmdInBg, !cmdFailed()
 }
 
-func dumpCmdHelp(help string, env *core.Env, args *DumpFlowArgs, prt func(indentLvl int, msg string)) {
+func dumpCmdHelp(help string, env *model.Env, args *DumpFlowArgs, prt func(indentLvl int, msg string)) {
 	if args.MonitorMode {
 		return
 	}
@@ -398,9 +398,9 @@ func dumpCmdHelp(help string, env *core.Env, args *DumpFlowArgs, prt func(indent
 }
 
 func dumpCmdExecutedLog(
-	env *core.Env,
+	env *model.Env,
 	args *DumpFlowArgs,
-	executedCmd *core.ExecutedCmd,
+	executedCmd *model.ExecutedCmd,
 	prt func(indentLvl int, msg string),
 	padLenCal func(indentLvl int) int,
 	lineLimit int) {
@@ -408,7 +408,7 @@ func dumpCmdExecutedLog(
 	if executedCmd == nil || len(executedCmd.LogFilePath) == 0 {
 		return
 	}
-	if (args.Skeleton || args.Simple) && executedCmd.Result == core.ExecutedResultSucceeded {
+	if (args.Skeleton || args.Simple) && executedCmd.Result == model.ExecutedResultSucceeded {
 		return
 	}
 
@@ -416,7 +416,7 @@ func dumpCmdExecutedLog(
 	limit := lineLimit - padLen
 
 	if !args.MonitorMode {
-		if executedCmd.Result == core.ExecutedResultSucceeded {
+		if executedCmd.Result == model.ExecutedResultSucceeded {
 			prt(1, ColorProp("- execute-log:", env))
 		} else {
 			//prt(1, ColorHighLight("- execute-log:", env))
@@ -460,9 +460,9 @@ func dumpCmdExecutedLog(
 }
 
 func dumpCmdExecutedErr(
-	env *core.Env,
+	env *model.Env,
 	args *DumpFlowArgs,
-	executedCmd *core.ExecutedCmd,
+	executedCmd *model.ExecutedCmd,
 	prt func(indentLvl int, msg string)) {
 
 	if executedCmd == nil {
@@ -487,16 +487,16 @@ func dumpCmdExecutedErr(
 }
 
 func dumpCmdDisplayName(
-	env *core.Env,
-	parsedCmd core.ParsedCmd,
+	env *model.Env,
+	parsedCmd model.ParsedCmd,
 	args *DumpFlowArgs,
-	executedCmd *core.ExecutedCmd,
+	executedCmd *model.ExecutedCmd,
 	procRunning bool,
 	inBg bool,
 	showTrivialMark bool) (name string, ok bool) {
 
 	if args.MonitorMode &&
-		!(executedCmd != nil && (executedCmd.Result == core.ExecutedResultError || executedCmd.Result == core.ExecutedResultIncompleted)) {
+		!(executedCmd != nil && (executedCmd.Result == model.ExecutedResultError || executedCmd.Result == model.ExecutedResultIncompleted)) {
 		return "", true
 	}
 
@@ -545,22 +545,22 @@ func dumpCmdDisplayName(
 			return name, false
 		}
 
-		name += " " + ColorExplain(executedCmd.StartTs.Format(core.SessionTimeShortFormat), env) + " "
+		name += " " + ColorExplain(executedCmd.StartTs.Format(model.SessionTimeShortFormat), env) + " "
 
 		resultStr := string(executedCmd.Result)
-		if executedCmd.Result == core.ExecutedResultError {
+		if executedCmd.Result == model.ExecutedResultError {
 			name += ColorError(resultStr, env)
-		} else if executedCmd.Result == core.ExecutedResultSucceeded {
+		} else if executedCmd.Result == model.ExecutedResultSucceeded {
 			name += ColorCmdDone(resultStr, env)
-		} else if executedCmd.Result == core.ExecutedResultSkipped {
+		} else if executedCmd.Result == model.ExecutedResultSkipped {
 			name += ColorExplain(resultStr, env)
-		} else if executedCmd.Result == core.ExecutedResultIncompleted {
+		} else if executedCmd.Result == model.ExecutedResultIncompleted {
 			if procRunning {
 				name += ColorHighLight("running", env)
 			} else {
 				name += ColorWarn("failed", env)
 			}
-		} else if executedCmd.Result == core.ExecutedResultUnRun {
+		} else if executedCmd.Result == model.ExecutedResultUnRun {
 			name += ColorHighLight(resultStr, env)
 		} else {
 			name += ColorExplain(resultStr, env)
@@ -578,8 +578,8 @@ func dumpCmdDisplayName(
 }
 
 func dumpCmdExecutable(
-	cic *core.Cmd,
-	env *core.Env,
+	cic *model.Cmd,
+	env *model.Env,
 	args *DumpFlowArgs,
 	prt func(indentLvl int, msg string),
 	padLenCal func(indentLvl int) int,
@@ -592,7 +592,7 @@ func dumpCmdExecutable(
 	padLen := padLenCal(2)
 	limit := lineLimit - padLen
 
-	if cic.Type() == core.CmdTypeEmptyDir {
+	if cic.Type() == model.CmdTypeEmptyDir {
 		prt(1, ColorProp("- dir:", env))
 		prt(2, mayTrimStr(cic.CmdLine(), env, limit))
 	} else {
@@ -606,8 +606,8 @@ func dumpCmdExecutable(
 }
 
 func dumpCmdTypeAndSource(
-	cmd *core.CmdTree,
-	env *core.Env,
+	cmd *model.CmdTree,
+	env *model.Env,
 	prt func(indentLvl int, msg string),
 	args *DumpFlowArgs) {
 
@@ -639,12 +639,12 @@ func dumpCmdTypeAndSource(
 }
 
 func dumpCmdEnvValues(
-	cc *core.Cli,
-	flow *core.ParsedCmds,
-	parsedCmd core.ParsedCmd,
-	argv core.ArgVals,
-	env *core.Env,
-	originEnv *core.Env,
+	cc *model.Cli,
+	flow *model.ParsedCmds,
+	parsedCmd model.ParsedCmd,
+	argv model.ArgVals,
+	env *model.Env,
+	originEnv *model.Env,
 	prt func(indentLvl int, msg string),
 	padLenCal func(indentLvl int) int,
 	args *DumpFlowArgs,
@@ -677,17 +677,17 @@ func dumpCmdEnvValues(
 }
 
 func dumpCmdArgv(
-	cic *core.Cmd,
-	argv core.ArgVals,
-	env *core.Env,
-	originEnv *core.Env,
+	cic *model.Cmd,
+	argv model.ArgVals,
+	env *model.Env,
+	originEnv *model.Env,
 	prt func(indentLvl int, msg string),
 	args *DumpFlowArgs,
-	executedCmd *core.ExecutedCmd,
+	executedCmd *model.ExecutedCmd,
 	writtenKeys FlowWrittenKeys) {
 
 	if args.MonitorMode &&
-		!(executedCmd != nil && (executedCmd.Result == core.ExecutedResultError || executedCmd.Result == core.ExecutedResultIncompleted)) {
+		!(executedCmd != nil && (executedCmd.Result == model.ExecutedResultError || executedCmd.Result == model.ExecutedResultIncompleted)) {
 		return
 	}
 
@@ -723,12 +723,12 @@ func dumpCmdArgv(
 }
 
 func dumpEnvOpsDefinition(
-	cic *core.Cmd,
-	argv core.ArgVals,
-	env *core.Env,
+	cic *model.Cmd,
+	argv model.ArgVals,
+	env *model.Env,
 	prt func(indentLvl int, msg string),
 	args *DumpFlowArgs,
-	executedCmd *core.ExecutedCmd) {
+	executedCmd *model.ExecutedCmd) {
 
 	envOpSep := " " + env.GetRaw("strs.env-op-sep") + " "
 
@@ -752,11 +752,11 @@ func dumpEnvOpsDefinition(
 
 // TODO: env-before-execute => env-full-trace
 func dumpExecutedStartEnv(
-	env *core.Env,
+	env *model.Env,
 	prt func(indentLvl int, msg string),
 	padLenCal func(indentLvl int) int,
 	args *DumpFlowArgs,
-	executedCmd *core.ExecutedCmd,
+	executedCmd *model.ExecutedCmd,
 	lineLimit int) (startEnv map[string]string) {
 
 	if args.MonitorMode {
@@ -781,7 +781,7 @@ func dumpExecutedStartEnv(
 		return
 	}
 
-	if !args.ShowExecutedEnvFull && (executedCmd.Result != core.ExecutedResultError) {
+	if !args.ShowExecutedEnvFull && (executedCmd.Result != model.ExecutedResultError) {
 		return
 	}
 
@@ -805,12 +805,12 @@ func dumpExecutedStartEnv(
 
 // TODO: better display
 func dumpExecutedModifiedEnv(
-	env *core.Env,
+	env *model.Env,
 	prt func(indentLvl int, msg string),
 	padLenCal func(indentLvl int) int,
 	args *DumpFlowArgs,
 	startEnv map[string]string,
-	executedCmd *core.ExecutedCmd,
+	executedCmd *model.ExecutedCmd,
 	lineLimit int) {
 
 	if args.MonitorMode {
@@ -824,10 +824,10 @@ func dumpExecutedModifiedEnv(
 		// TODO:
 		// return
 	}
-	if !args.ShowExecutedModifiedEnv && executedCmd.Result != core.ExecutedResultError {
+	if !args.ShowExecutedModifiedEnv && executedCmd.Result != model.ExecutedResultError {
 		return
 	}
-	if executedCmd.FinishEnv == nil && executedCmd.Result != core.ExecutedResultError {
+	if executedCmd.FinishEnv == nil && executedCmd.Result != model.ExecutedResultError {
 		return
 	}
 
@@ -882,10 +882,10 @@ func dumpExecutedModifiedEnv(
 
 	sort.Strings(lines)
 	if !args.Skeleton {
-		if len(lines) != 0 || executedCmd.Result != core.ExecutedResultSucceeded {
+		if len(lines) != 0 || executedCmd.Result != model.ExecutedResultSucceeded {
 			prt(1, ColorProp("- env-modified:", env))
 		}
-		if len(lines) == 0 && executedCmd.Result != core.ExecutedResultSucceeded {
+		if len(lines) == 0 && executedCmd.Result != model.ExecutedResultSucceeded {
 			prt(2, ColorExplain("(none)", env))
 		} else {
 			for _, line := range lines {
@@ -893,10 +893,10 @@ func dumpExecutedModifiedEnv(
 			}
 		}
 	} else {
-		if len(lines) != 0 || executedCmd.Result != core.ExecutedResultSucceeded {
+		if len(lines) != 0 || executedCmd.Result != model.ExecutedResultSucceeded {
 			prt(0, "  "+ColorProp(" - env-modified:", env))
 		}
-		if len(lines) == 0 && executedCmd.Result != core.ExecutedResultSucceeded {
+		if len(lines) == 0 && executedCmd.Result != model.ExecutedResultSucceeded {
 			prt(2, ColorExplain("(none)", env))
 		} else {
 			for _, line := range lines {
@@ -912,18 +912,18 @@ type flowEnvVal struct {
 }
 
 func dumpFlowEnv(
-	cc *core.Cli,
-	env *core.Env,
-	parsedGlobalEnv core.ParsedEnv,
-	parsedCmd core.ParsedCmd,
-	cmd *core.CmdTree,
-	argv core.ArgVals,
+	cc *model.Cli,
+	env *model.Env,
+	parsedGlobalEnv model.ParsedEnv,
+	parsedCmd model.ParsedCmd,
+	cmd *model.CmdTree,
+	argv model.ArgVals,
 	writtenKeys FlowWrittenKeys) (keys []string, kvs map[string]flowEnvVal) {
 
 	kvs = map[string]flowEnvVal{}
 	cic := cmd.Cmd()
 
-	tempEnv := core.NewEnv()
+	tempEnv := model.NewEnv()
 	parsedGlobalEnv.WriteNotArgTo(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
 	cmdEssEnv := parsedCmd.GenCmdEnv(tempEnv, cc.Cmds.Strs.EnvValDelAllMark)
 	val2env := cic.GetVal2Env()
@@ -963,7 +963,7 @@ func dumpFlowEnv(
 	return
 }
 
-func getCmdTrivial(parsedCmd core.ParsedCmd) (trivial int) {
+func getCmdTrivial(parsedCmd model.ParsedCmd) (trivial int) {
 	trivial += parsedCmd.TrivialLvl
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
@@ -973,16 +973,16 @@ func getCmdTrivial(parsedCmd core.ParsedCmd) (trivial int) {
 	return
 }
 
-func normalizeValForDisplay(key string, val string, env *core.Env, limit int) string {
+func normalizeValForDisplay(key string, val string, env *model.Env, limit int) string {
 	val = mayMaskSensitiveVal(env, key, val)
 	return mayQuoteMayTrimStr(val, env, limit)
 }
 
-func mayQuoteMayTrimStr(s string, env *core.Env, limit int) string {
+func mayQuoteMayTrimStr(s string, env *model.Env, limit int) string {
 	return mayTrimStr(mayQuoteStr(s), env, limit)
 }
 
-func mayTrimStr(s string, env *core.Env, limit int) string {
+func mayTrimStr(s string, env *model.Env, limit int) string {
 	if len(s) > limit {
 		if limit <= 1 {
 			return ColorExplain(".", env)
@@ -1053,7 +1053,7 @@ func (self *DumpFlowArgs) SetMonitorMode() *DumpFlowArgs {
 
 type FlowWrittenKeys map[string]bool
 
-func (self FlowWrittenKeys) AddCmd(argv core.ArgVals, env *core.Env, cic *core.Cmd) {
+func (self FlowWrittenKeys) AddCmd(argv model.ArgVals, env *model.Env, cic *model.Cmd) {
 	if cic == nil {
 		return
 	}
@@ -1065,19 +1065,19 @@ func (self FlowWrittenKeys) AddCmd(argv core.ArgVals, env *core.Env, cic *core.C
 	}
 }
 
-func executedCmdDurStr(executedCmd *core.ExecutedCmd, procRunning bool, env *core.Env) (string, int) {
+func executedCmdDurStr(executedCmd *model.ExecutedCmd, procRunning bool, env *model.Env) (string, int) {
 	if executedCmd == nil {
 		return "", 0
 	}
 	var durStr string
 	finishTs := executedCmd.RoughFinishTs(procRunning)
 	dur := finishTs.Sub(executedCmd.StartTs)
-	if executedCmd.StartTs != finishTs || executedCmd.Result != core.ExecutedResultIncompleted || procRunning {
+	if executedCmd.StartTs != finishTs || executedCmd.Result != model.ExecutedResultIncompleted || procRunning {
 		durStr += formatDuration(dur)
 	}
-	if (executedCmd.Result == core.ExecutedResultIncompleted) && !procRunning && len(durStr) != 0 {
+	if (executedCmd.Result == model.ExecutedResultIncompleted) && !procRunning && len(durStr) != 0 {
 		durStr += "+?"
-	} else if (executedCmd.Result != core.ExecutedResultSucceeded) && executedCmd.StartTs == finishTs {
+	} else if (executedCmd.Result != model.ExecutedResultSucceeded) && executedCmd.StartTs == finishTs {
 		return "", 0
 	}
 	return ColorExplain(durStr, env), ColorExtraLen(env, "explain")

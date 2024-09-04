@@ -1,10 +1,10 @@
 package display
 
 import (
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
-func GlobalSuggestExeCmds(env *core.Env) []string {
+func GlobalSuggestExeCmds(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	sep := ColorProp("-", env)
 	indent += ColorExtraLen(env, "cmd")
@@ -15,7 +15,7 @@ func GlobalSuggestExeCmds(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestExeCmdsWithArgs(env *core.Env) []string {
+func GlobalSuggestExeCmdsWithArgs(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	sep := ColorProp("-", env)
 	indent += ColorExtraLen(env, "cmd")
@@ -25,7 +25,7 @@ func GlobalSuggestExeCmdsWithArgs(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestShowCmdInfo(env *core.Env) []string {
+func GlobalSuggestShowCmdInfo(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	sep := ColorProp("-", env)
 	indent += ColorExtraLen(env, "cmd")
@@ -35,7 +35,7 @@ func GlobalSuggestShowCmdInfo(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestCmdTree(env *core.Env) []string {
+func GlobalSuggestCmdTree(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -52,7 +52,7 @@ func GlobalSuggestCmdTree(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestListCmds(env *core.Env) []string {
+func GlobalSuggestListCmds(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -64,7 +64,7 @@ func GlobalSuggestListCmds(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestFindCmds(env *core.Env) []string {
+func GlobalSuggestFindCmds(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -74,7 +74,7 @@ func GlobalSuggestFindCmds(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestHubAdd(env *core.Env) []string {
+func GlobalSuggestHubAdd(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -87,7 +87,7 @@ func GlobalSuggestHubAdd(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestFlowAdd(env *core.Env) []string {
+func GlobalSuggestFlowAdd(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -98,7 +98,7 @@ func GlobalSuggestFlowAdd(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestDesc(env *core.Env) []string {
+func GlobalSuggestDesc(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -109,7 +109,7 @@ func GlobalSuggestDesc(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestSessions(env *core.Env) []string {
+func GlobalSuggestSessions(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -120,7 +120,7 @@ func GlobalSuggestSessions(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestAdvance(env *core.Env) []string {
+func GlobalSuggestAdvance(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -136,7 +136,7 @@ func GlobalSuggestAdvance(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestShortcut(env *core.Env) []string {
+func GlobalSuggestShortcut(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -145,7 +145,7 @@ func GlobalSuggestShortcut(env *core.Env) []string {
 	}
 }
 
-func GlobalSuggestInteract(env *core.Env) []string {
+func GlobalSuggestInteract(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	indent += ColorExtraLen(env, "cmd")
 	sep := ColorProp("-", env)
@@ -154,7 +154,7 @@ func GlobalSuggestInteract(env *core.Env) []string {
 	}
 }
 
-func SuggestHubBranch(env *core.Env) []string {
+func SuggestHubBranch(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	explain := "- branch 'hub' usage"
 	return []string{
@@ -163,14 +163,14 @@ func SuggestHubBranch(env *core.Env) []string {
 	}
 }
 
-func SuggestFindByTagLite(env *core.Env) []string {
+func SuggestFindByTagLite(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" tag str1 str2", indent) + "- search commands by tag",
 	}
 }
 
-func SuggestFindCmdsMore(env *core.Env) []string {
+func SuggestFindCmdsMore(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" find.more str1 str2", indent) + "- search commands and display more info",
@@ -178,7 +178,7 @@ func SuggestFindCmdsMore(env *core.Env) []string {
 	}
 }
 
-func SuggestAddAndSaveEnv(env *core.Env) []string {
+func SuggestAddAndSaveEnv(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	res := []string{
 		padR(selfName+" {k1=v2 k2=v2} cmd1 : cmd2", indent) + "- set/change env key-values, one time only",
@@ -190,7 +190,7 @@ func SuggestAddAndSaveEnv(env *core.Env) []string {
 	return append(res, SuggestListEnv(env)...)
 }
 
-func SuggestListEnv(env *core.Env) []string {
+func SuggestListEnv(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" env", indent) + "- list changed env key-values, not include system's",
@@ -198,14 +198,14 @@ func SuggestListEnv(env *core.Env) []string {
 	}
 }
 
-func SuggestFindEnv(env *core.Env, subCmd string) []string {
+func SuggestFindEnv(env *model.Env, subCmd string) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" env"+subCmd+" str1 str2", indent) + "- search env by strings",
 	}
 }
 
-func SuggestLoadEnvSnapshot(env *core.Env) []string {
+func SuggestLoadEnvSnapshot(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" env.snapshot.load name", indent) + "- load key-values from snapshot",
@@ -213,21 +213,21 @@ func SuggestLoadEnvSnapshot(env *core.Env) []string {
 	}
 }
 
-func SuggestFindCmdsLess(env *core.Env) []string {
+func SuggestFindCmdsLess(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" find str1 str2", indent) + "- search commands",
 	}
 }
 
-func SuggestFilterRepoInMove(env *core.Env) []string {
+func SuggestFilterRepoInMove(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" hub.move str1 str2", indent) + "- filter repos to only one result by strings, then move saved flows to it",
 	}
 }
 
-func SuggestFindCmdsInRepo(env *core.Env) []string {
+func SuggestFindCmdsInRepo(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" cmds src=repo-name", indent) + "- search commands by source(repo or dir)",
@@ -237,7 +237,7 @@ func SuggestFindCmdsInRepo(env *core.Env) []string {
 	}
 }
 
-func SuggestHubAddShort(env *core.Env) []string {
+func SuggestHubAddShort(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" hub.init", indent) + "- add the default git repo.",
@@ -246,7 +246,7 @@ func SuggestHubAddShort(env *core.Env) []string {
 	}
 }
 
-func SuggestEnvSetting(env *core.Env) []string {
+func SuggestEnvSetting(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	explain := "- set 'k=v', then display it"
 	return []string{
@@ -256,7 +256,7 @@ func SuggestEnvSetting(env *core.Env) []string {
 	}
 }
 
-func SuggestFindProvider(env *core.Env) []string {
+func SuggestFindProvider(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	explain := "- find modules which will write this key"
 	return []string{
@@ -264,21 +264,21 @@ func SuggestFindProvider(env *core.Env) []string {
 	}
 }
 
-func SuggestFlowsFilter(env *core.Env) []string {
+func SuggestFlowsFilter(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" flow str1 str2", indent) + "- find flows matched these strings",
 	}
 }
 
-func SuggestTailInfo(env *core.Env) []string {
+func SuggestTailInfo(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" cmd cmd1", indent) + "- show command's detail info",
 	}
 }
 
-func SuggestFindCmds(env *core.Env) []string {
+func SuggestFindCmds(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" find      str1 str2", indent) + "- search commands",
@@ -286,7 +286,7 @@ func SuggestFindCmds(env *core.Env) []string {
 	}
 }
 
-func SuggestFlowAdd(env *core.Env) []string {
+func SuggestFlowAdd(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	return []string{
 		padR(selfName+" echo hi : sleep 1s :flow.save foo", indent) +
@@ -295,13 +295,13 @@ func SuggestFlowAdd(env *core.Env) []string {
 	}
 }
 
-func getSuggestArgs(env *core.Env) (selfName string, explainIndent int) {
+func getSuggestArgs(env *model.Env) (selfName string, explainIndent int) {
 	selfName = env.GetRaw("strs.self-name")
 	explainIndent = env.GetInt("display.hint.indent.2rd")
 	return
 }
 
-func padCmdR(s string, indent int, env *core.Env) string {
+func padCmdR(s string, indent int, env *model.Env) string {
 	s = ColorCmd(s, env)
 	return padR(s, indent)
 }

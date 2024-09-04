@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
-func TooMuchOutput(env *core.Env, screen core.Screen) bool {
+func TooMuchOutput(env *model.Env, screen model.Screen) bool {
 	height := env.GetInt("display.height")
 	return height > 0 && screen.OutputNum() > int(float64(height)*1.1)
 }
@@ -32,7 +32,7 @@ func autoPadNewLine(padding string, msg string) string {
 	return msg
 }
 
-func padCmd(str string, width int, env *core.Env) string {
+func padCmd(str string, width int, env *model.Env) string {
 	return ColorCmd(padR(str, width), env)
 }
 
@@ -58,11 +58,11 @@ func rpt(char string, count int) string {
 	return strings.Repeat(char, count)
 }
 
-func mayMaskSensitiveVal(env *core.Env, key string, val string) string {
+func mayMaskSensitiveVal(env *model.Env, key string, val string) string {
 	if env.GetBool("display.sensitive") {
 		return val
 	}
-	if core.IsSensitiveKeyVal(key, val) && len(val) != 0 {
+	if model.IsSensitiveKeyVal(key, val) && len(val) != 0 {
 		val = "***"
 	}
 	return val

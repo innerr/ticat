@@ -3,13 +3,13 @@ package display
 import (
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
 func HandleParseResult(
-	cc *core.Cli,
-	flow *core.ParsedCmds,
-	env *core.Env,
+	cc *model.Cli,
+	flow *model.ParsedCmds,
+	env *model.Env,
 	isSearch bool) bool {
 
 	if flow.AttempTailModeCall && len(flow.Cmds) == 2 &&
@@ -39,9 +39,9 @@ func HandleParseResult(
 		inputStr := strings.Join(input, " ")
 
 		switch cmd.ParseResult.Error.(type) {
-		case core.ParseErrExpectNoArg:
+		case model.ParseErrExpectNoArg:
 			return PrintCmdByParseError(cc, cmd, env, "doesn't have args")
-		case core.ParseErrEnv:
+		case model.ParseErrEnv:
 			PrintErrTitle(cc.Screen, env,
 				"["+cmd.DisplayPath(cc.Cmds.Strs.PathSep, true)+"] parse env failed.",
 				"",
@@ -52,9 +52,9 @@ func HandleParseResult(
 				SuggestEnvSetting(env),
 				"")
 			return false
-		case core.ParseErrExpectArgs:
+		case model.ParseErrExpectArgs:
 			return PrintCmdByParseError(cc, cmd, env, "parse args failed")
-		case core.ParseErrExpectCmd:
+		case model.ParseErrExpectCmd:
 			return PrintSubCmdByParseError(cc, flow, cmd, env, isSearch)
 		default:
 			return PrintFindResultByParseError(cc, cmd, env, "")
@@ -64,9 +64,9 @@ func HandleParseResult(
 }
 
 func PrintCmdByParseError(
-	cc *core.Cli,
-	cmd core.ParsedCmd,
-	env *core.Env,
+	cc *model.Cli,
+	cmd model.ParsedCmd,
+	env *model.Env,
 	title string) bool {
 
 	sep := cc.Cmds.Strs.PathSep
@@ -86,10 +86,10 @@ func PrintCmdByParseError(
 }
 
 func PrintSubCmdByParseError(
-	cc *core.Cli,
-	flow *core.ParsedCmds,
-	cmd core.ParsedCmd,
-	env *core.Env,
+	cc *model.Cli,
+	flow *model.ParsedCmds,
+	cmd model.ParsedCmd,
+	env *model.Env,
 	isSearch bool) bool {
 
 	sep := cc.Cmds.Strs.PathSep
@@ -126,9 +126,9 @@ func PrintSubCmdByParseError(
 }
 
 func PrintFreeSearchResultByParseError(
-	cc *core.Cli,
-	flow *core.ParsedCmds,
-	env *core.Env,
+	cc *model.Cli,
+	flow *model.ParsedCmds,
+	env *model.Env,
 	isSearch bool,
 	findStr ...string) bool {
 
@@ -174,9 +174,9 @@ func PrintFreeSearchResultByParseError(
 }
 
 func PrintFindResultByParseError(
-	cc *core.Cli,
-	cmd core.ParsedCmd,
-	env *core.Env,
+	cc *model.Cli,
+	cmd model.ParsedCmd,
+	env *model.Env,
 	title string) bool {
 
 	input := cmd.ParseResult.Input
