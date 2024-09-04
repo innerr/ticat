@@ -3,18 +3,18 @@ package display
 import (
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
 // TODO: dump more info, eg: full path
-func DumpEnvAbbrs(cc *core.Cli, env *core.Env, indentSize int) {
+func DumpEnvAbbrs(cc *model.Cli, env *model.Env, indentSize int) {
 	dumpEnvAbbrs(cc.Screen, cc.EnvAbbrs, env, cc.Cmds.Strs.AbbrsSep, indentSize, 0)
 }
 
 func dumpEnvAbbrs(
-	screen core.Screen,
-	abbrs *core.EnvAbbrs,
-	env *core.Env,
+	screen model.Screen,
+	abbrs *model.EnvAbbrs,
+	env *model.Env,
 	abbrsSep string,
 	indentSize int,
 	indent int) {

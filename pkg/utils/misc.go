@@ -17,10 +17,6 @@ import (
 	"unsafe"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
 func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []string) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -130,6 +126,7 @@ func GoRoutineIdStr() string {
 }
 
 func RandomName(n uint) string {
+	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = Chars[rand.Intn(len(Chars))]

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
-func PrintEmptyDirCmdHint(screen core.Screen, env *core.Env, cmd core.ParsedCmd) {
+func PrintEmptyDirCmdHint(screen model.Screen, env *model.Env, cmd model.ParsedCmd) {
 	sep := env.GetRaw("strs.cmd-path-sep")
 	name := cmd.DisplayPath(sep, true)
 	last := cmd.LastCmdNode()
@@ -22,10 +22,10 @@ func PrintEmptyDirCmdHint(screen core.Screen, env *core.Env, cmd core.ParsedCmd)
 	DumpCmds(last, screen, env, dumpArgs)
 }
 
-func PrintError(cc *core.Cli, env *core.Env, err error) {
+func PrintError(cc *model.Cli, env *model.Env, err error) {
 	switch err.(type) {
-	case *core.CmdMissedEnvValWhenRenderFlow:
-		e := err.(*core.CmdMissedEnvValWhenRenderFlow)
+	case *model.CmdMissedEnvValWhenRenderFlow:
+		e := err.(*model.CmdMissedEnvValWhenRenderFlow)
 		PrintErrTitle(cc.Screen, env,
 			e.Error(),
 			"",
@@ -46,8 +46,8 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			cc.Screen.Print(rpt(" ", 4) + argInfo + "\n")
 		}
 
-	case *core.CmdMissedArgValWhenRenderFlow:
-		e := err.(*core.CmdMissedArgValWhenRenderFlow)
+	case *model.CmdMissedArgValWhenRenderFlow:
+		e := err.(*model.CmdMissedArgValWhenRenderFlow)
 		PrintErrTitle(cc.Screen, env,
 			e.Error(),
 			"",
@@ -67,8 +67,8 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 		argInfo := getArgInfoLine(env, e.Cmd, e.MissedArg)
 		cc.Screen.Print(rpt(" ", 4) + argInfo + "\n")
 
-	case *core.CmdError:
-		e := err.(*core.CmdError)
+	case *model.CmdError:
+		e := err.(*model.CmdError)
 		sep := cc.Cmds.Strs.PathSep
 		cmdName := strings.Join(e.Cmd.MatchedPath(), sep)
 		printer := NewTipBoxPrinter(cc.Screen, env, true)
@@ -86,8 +86,8 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 			printer.Finish()
 		}
 
-	case *core.RunCmdFileFailed:
-		e := err.(*core.RunCmdFileFailed)
+	case *model.RunCmdFileFailed:
+		e := err.(*model.RunCmdFileFailed)
 		cic := e.Cmd.LastCmd()
 		sep := cc.Cmds.Strs.PathSep
 		cmdName := strings.Join(e.Cmd.MatchedPath(), sep)
@@ -115,12 +115,12 @@ func PrintError(cc *core.Cli, env *core.Env, err error) {
 	}
 }
 
-func PrintSepTitle(screen core.Screen, env *core.Env, msg string) {
+func PrintSepTitle(screen model.Screen, env *model.Env, msg string) {
 	width := env.GetInt("display.width") - 3
 	screen.Print(rpt("-", width-len(msg)) + "<[" + msg + "]\n")
 }
 
-func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableErrs) {
+func PrintTolerableErrs(screen model.Screen, env *model.Env, errs *model.TolerableErrs) {
 	for _, err := range errs.Uncatalogeds {
 		PrintErrTitle(screen, env,
 			err.Reason+", from repo/dir:",
@@ -150,7 +150,7 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 			)
 		} else {
 			for _, err := range list {
-				cmdPath := err.Err.(core.ErrConflicted).GetConflictedCmdPath()
+				cmdPath := err.Err.(model.ErrConflicted).GetConflictedCmdPath()
 				PrintErrTitle(screen, env,
 					err.Reason+", command conflicted with builtin's, from repo/dir:",
 					"    - '"+err.Source+"'",
@@ -177,7 +177,7 @@ func PrintTolerableErrs(screen core.Screen, env *core.Env, errs *core.TolerableE
 				)
 			} else {
 				for _, err := range list {
-					cmdPath := err.Err.(core.ErrConflicted).GetConflictedCmdPath()
+					cmdPath := err.Err.(model.ErrConflicted).GetConflictedCmdPath()
 					PrintErrTitle(screen, env,
 						err.Reason+", command conflicted from repos/dirs:",
 						"    - '"+oldSource+"'",

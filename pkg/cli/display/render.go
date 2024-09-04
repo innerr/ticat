@@ -3,11 +3,11 @@ package display
 import (
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) (renderWidth int) {
+func RenderCmdStack(l CmdStackLines, env *model.Env, screen model.Screen) (renderWidth int) {
 	if !l.Display {
 		return
 	}
@@ -83,7 +83,7 @@ func RenderCmdStack(l CmdStackLines, env *core.Env, screen core.Screen) (renderW
 	return width + 2
 }
 
-func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen, width int) {
+func RenderCmdResult(l CmdResultLines, env *model.Env, screen model.Screen, width int) {
 	if !l.Display {
 		return
 	}
@@ -110,7 +110,7 @@ func RenderCmdResult(l CmdResultLines, env *core.Env, screen core.Screen, width 
 	}
 }
 
-func PrintSwitchingThreadDisplay(preTid string, info core.BgTaskInfo, env *core.Env, screen core.Screen, manual bool) {
+func PrintSwitchingThreadDisplay(preTid string, info model.BgTaskInfo, env *model.Env, screen model.Screen, manual bool) {
 	var title string
 	var extraLen int
 
@@ -159,7 +159,7 @@ func PrintSwitchingThreadDisplay(preTid string, info core.BgTaskInfo, env *core.
 	pln(ColorTip(c.P7+rpt(c.H, width)+c.P9, env))
 }
 
-func getFrameChars(env *core.Env) *FrameChars {
+func getFrameChars(env *model.Env) *FrameChars {
 	name := strings.ToLower(env.Get("display.style").Raw)
 	chars := getFrameCharsByName(env, name)
 	// TODO: have bug
@@ -178,7 +178,7 @@ func getFrameChars(env *core.Env) *FrameChars {
 	return chars
 }
 
-func getFrameCharsByName(env *core.Env, name string) *FrameChars {
+func getFrameCharsByName(env *model.Env, name string) *FrameChars {
 	if env.GetBool("display.utf8") {
 		if strings.Index(name, "utf") >= 0 {
 			return FrameCharsUtf8()

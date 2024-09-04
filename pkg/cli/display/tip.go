@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
-func PrintErrTitle(screen core.Screen, env *core.Env, msgs ...interface{}) {
+func PrintErrTitle(screen model.Screen, env *model.Env, msgs ...interface{}) {
 	printTipTitle(screen, env, true, msgs...)
 }
 
-func PrintTipTitle(screen core.Screen, env *core.Env, msgs ...interface{}) {
+func PrintTipTitle(screen model.Screen, env *model.Env, msgs ...interface{}) {
 	printTipTitle(screen, env, false, msgs...)
 }
 
-func printTipTitle(screen core.Screen, env *core.Env, isErr bool, msgs ...interface{}) {
+func printTipTitle(screen model.Screen, env *model.Env, isErr bool, msgs ...interface{}) {
 	var strs []string
 	for _, it := range msgs {
 		switch it.(type) {
@@ -34,15 +34,15 @@ func printTipTitle(screen core.Screen, env *core.Env, isErr bool, msgs ...interf
 }
 
 type TipBoxPrinter struct {
-	screen   core.Screen
-	env      *core.Env
+	screen   model.Screen
+	env      *model.Env
 	isErr    bool
 	inited   bool
 	buf      *CacheScreen
 	maxWidth int
 }
 
-func NewTipBoxPrinter(screen core.Screen, env *core.Env, isErr bool) *TipBoxPrinter {
+func NewTipBoxPrinter(screen model.Screen, env *model.Env, isErr bool) *TipBoxPrinter {
 	return &TipBoxPrinter{
 		screen,
 		env,

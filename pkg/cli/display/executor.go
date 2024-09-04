@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
@@ -26,15 +26,15 @@ type CmdStackLines struct {
 
 func PrintCmdStack(
 	isBootstrap bool,
-	screen core.Screen,
-	cmd core.ParsedCmd,
-	mask *core.ExecuteMask,
-	env *core.Env,
-	envKeysInfo *core.EnvKeysInfo,
-	flow []core.ParsedCmd,
+	screen model.Screen,
+	cmd model.ParsedCmd,
+	mask *model.ExecuteMask,
+	env *model.Env,
+	envKeysInfo *model.EnvKeysInfo,
+	flow []model.ParsedCmd,
 	currCmdIdx int,
-	strs *core.CmdTreeStrs,
-	bgTasks *core.BgTasks,
+	strs *model.CmdTreeStrs,
+	bgTasks *model.BgTasks,
 	tailModeCall bool) (lines CmdStackLines) {
 
 	if flow[currCmdIdx].LastCmdNode() != nil && flow[currCmdIdx].LastCmdNode().IsApi() {
@@ -189,7 +189,7 @@ func PrintCmdStack(
 		if i < displayIdxStart || i >= displayIdxEnd {
 			continue
 		}
-		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(core.EnvLayerSession),
+		cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(env.GetLayer(model.EnvLayerSession),
 			strs.EnvValDelAllMark, strs.PathSep, stackDepth)
 		sysArgv := cmdEnv.GetSysArgv(cmd.Path(), strs.PathSep)
 		var name string
@@ -214,20 +214,20 @@ func PrintCmdStack(
 				}
 				if mask != nil {
 					resultStr := string(mask.ResultIfExecuted)
-					if mask.ResultIfExecuted == core.ExecutedResultError {
+					if mask.ResultIfExecuted == model.ExecutedResultError {
 						line += ColorExplain(" - executed: ", env) + ColorError(resultStr, env)
 						lineExtraLen += ColorExtraLen(env, "explain", "error")
-					} else if mask.ResultIfExecuted == core.ExecutedResultSucceeded {
+					} else if mask.ResultIfExecuted == model.ExecutedResultSucceeded {
 						line += ColorExplain(" - executed: ", env) + ColorCmdDone(resultStr, env)
 						lineExtraLen += ColorExtraLen(env, "explain", "cmd-done")
-					} else if mask.ResultIfExecuted == core.ExecutedResultSkipped {
+					} else if mask.ResultIfExecuted == model.ExecutedResultSkipped {
 						line += ColorExplain(" - executed: ", env) + ColorExplain(resultStr, env)
 						lineExtraLen += ColorExtraLen(env, "explain", "explain")
-					} else if mask.ResultIfExecuted != core.ExecutedResultUnRun || mask.ResultIfExecuted == core.ExecutedResultIncompleted {
+					} else if mask.ResultIfExecuted != model.ExecutedResultUnRun || mask.ResultIfExecuted == model.ExecutedResultIncompleted {
 						line += ColorExplain(" - executed: ", env) + ColorHighLight(resultStr, env)
 						lineExtraLen += ColorExtraLen(env, "explain", "highlight")
 					}
-					if mask.ResultIfExecuted != core.ExecutedResultSkipped && mask.ResultIfExecuted != core.ExecutedResultUnRun {
+					if mask.ResultIfExecuted != model.ExecutedResultSkipped && mask.ResultIfExecuted != model.ExecutedResultUnRun {
 						durStr, durExtraLen := executedCmdDurStr(mask.ExecutedCmd, false, env)
 						line += " " + durStr
 						lineExtraLen += durExtraLen
@@ -308,16 +308,16 @@ type CmdResultLines struct {
 }
 
 func PrintCmdResult(
-	cc *core.Cli,
+	cc *model.Cli,
 	isBootstrap bool,
-	screen core.Screen,
-	cmd core.ParsedCmd,
-	env *core.Env,
+	screen model.Screen,
+	cmd model.ParsedCmd,
+	env *model.Env,
 	succeeded bool,
 	elapsed time.Duration,
-	flow []core.ParsedCmd,
+	flow []model.ParsedCmd,
 	currCmdIdx int,
-	strs *core.CmdTreeStrs) (lines CmdResultLines) {
+	strs *model.CmdTreeStrs) (lines CmdResultLines) {
 
 	if isBootstrap && !env.GetBool("display.bootstrap") || !env.GetBool("display.executor") {
 		return
@@ -376,7 +376,7 @@ func PrintCmdResult(
 	return
 }
 
-func checkPrintFilter(cmd core.ParsedCmd, env *core.Env) bool {
+func checkPrintFilter(cmd model.ParsedCmd, env *model.Env) bool {
 	if cmd.IsEmpty() {
 		return true
 	}
@@ -390,12 +390,12 @@ func checkPrintFilter(cmd core.ParsedCmd, env *core.Env) bool {
 	return false
 }
 
-func filterQuietCmds(env *core.Env, flow []core.ParsedCmd, currCmdIdx int) ([]core.ParsedCmd, int) {
+func filterQuietCmds(env *model.Env, flow []model.ParsedCmd, currCmdIdx int) ([]model.ParsedCmd, int) {
 	if env.GetBool("display.mod.quiet") {
 		return flow, currCmdIdx
 	}
 
-	var newCmds []core.ParsedCmd
+	var newCmds []model.ParsedCmd
 	newIdx := currCmdIdx
 	for i, cmd := range flow {
 		if cmd.IsEmpty() {
@@ -413,7 +413,7 @@ func filterQuietCmds(env *core.Env, flow []core.ParsedCmd, currCmdIdx int) ([]co
 	return newCmds, newIdx
 }
 
-func callerIsFileNFlow(cc *core.Cli, env *core.Env) bool {
+func callerIsFileNFlow(cc *model.Cli, env *model.Env) bool {
 	listSep := env.GetRaw("strs.list-sep")
 	stack := strings.Split(env.GetRaw("sys.stack"), listSep)
 	if len(stack) <= 1 {
@@ -426,5 +426,5 @@ func callerIsFileNFlow(cc *core.Cli, env *core.Env) bool {
 		return false
 	}
 	last := callerCmd.LastCmd()
-	return last.Type() == core.CmdTypeFileNFlow
+	return last.Type() == model.CmdTypeFileNFlow
 }

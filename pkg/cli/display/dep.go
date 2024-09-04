@@ -5,10 +5,10 @@ import (
 	"os/exec"
 	"sort"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
-func GatherOsCmdsExistingInfo(deps core.Depends) (foundOsCmds map[string]bool, osCmds []string, missedOsCmds int) {
+func GatherOsCmdsExistingInfo(deps model.Depends) (foundOsCmds map[string]bool, osCmds []string, missedOsCmds int) {
 	foundOsCmds = map[string]bool{}
 	for osCmd, _ := range deps {
 		exists := isOsCmdExists(osCmd)
@@ -23,9 +23,9 @@ func GatherOsCmdsExistingInfo(deps core.Depends) (foundOsCmds map[string]bool, o
 }
 
 func DumpDepends(
-	screen core.Screen,
-	env *core.Env,
-	deps core.Depends) (hasMissedOsCmd bool) {
+	screen model.Screen,
+	env *model.Env,
+	deps model.Depends) (hasMissedOsCmd bool) {
 
 	if len(deps) == 0 {
 		return

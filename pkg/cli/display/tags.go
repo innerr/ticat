@@ -3,14 +3,14 @@ package display
 import (
 	"sort"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
 // TODO: list cmd usage, now only list the tags
 func ListTags(
-	cmds *core.CmdTree,
-	screen core.Screen,
-	env *core.Env) {
+	cmds *model.CmdTree,
+	screen model.Screen,
+	env *model.Env) {
 
 	tags := NewTags()
 	listTags(cmds, screen, env, tags)
@@ -45,9 +45,9 @@ func (self *Tags) Names() []string {
 }
 
 func listTags(
-	cmd *core.CmdTree,
-	screen core.Screen,
-	env *core.Env,
+	cmd *model.CmdTree,
+	screen model.Screen,
+	env *model.Env,
 	tags *Tags) {
 
 	for _, tag := range cmd.Tags() {

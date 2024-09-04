@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
 // TODO: this is slow, fetch flag from env too many times, and other issues, handle it later
 
-func ColorStrByName(str string, color string, env *core.Env) string {
-	funcs := map[string]func(string, *core.Env) string{
+func ColorStrByName(str string, color string, env *model.Env) string {
+	funcs := map[string]func(string, *model.Env) string{
 		"tip": ColorTip,
 	}
 	fun := funcs[color]
@@ -20,7 +20,7 @@ func ColorStrByName(str string, color string, env *core.Env) string {
 	return str
 }
 
-func ColorExtraLen(env *core.Env, types ...string) (res int) {
+func ColorExtraLen(env *model.Env, types ...string) (res int) {
 	enabled := env.GetBool("display.color")
 	if !enabled {
 		return 0
@@ -65,121 +65,121 @@ func ColorExtraLen(env *core.Env, types ...string) (res int) {
 	return
 }
 
-func ColorAbbrSep(origin string, env *core.Env) string {
+func ColorAbbrSep(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(172), env)
 }
 
-func ColorHub(origin string, env *core.Env) string {
+func ColorHub(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(220), env)
 }
 
-func ColorEnabled(origin string, env *core.Env) string {
+func ColorEnabled(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(34), env)
 }
 
-func ColorDisabled(origin string, env *core.Env) string {
+func ColorDisabled(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(202), env)
 }
 
-func ColorArg(origin string, env *core.Env) string {
+func ColorArg(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(215), env)
 }
 
-func ColorKey(origin string, env *core.Env) string {
+func ColorKey(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(135), env)
 }
 
-func ColorWarn(origin string, env *core.Env) string {
+func ColorWarn(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(202), env)
 }
 
-func ColorError(origin string, env *core.Env) string {
+func ColorError(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(colorCodeError), env)
 }
 
-func ColorHighLight(origin string, env *core.Env) string {
+func ColorHighLight(origin string, env *model.Env) string {
 	//return colorize(origin, fromColor256(125), env)
 	return colorize(origin, fromColor256(161), env)
 }
 
-func ColorInteract(origin string, env *core.Env) string {
+func ColorInteract(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(51), env)
 }
 
-func ColorTip(origin string, env *core.Env) string {
+func ColorTip(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(214), env)
 }
 
-func ColorTipDark(origin string, env *core.Env) string {
+func ColorTipDark(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(colorCodeTipDark), env)
 }
 
-func ColorSymbol(origin string, env *core.Env) string {
+func ColorSymbol(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(130), env)
 }
 
-func ColorProp(origin string, env *core.Env) string {
+func ColorProp(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(130), env)
 }
 
-func ColorTag(origin string, env *core.Env) string {
+func ColorTag(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(91), env)
 }
 
-func ColorHelp(origin string, env *core.Env) string {
+func ColorHelp(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(27), env)
 }
 
-func ColorExplain(origin string, env *core.Env) string {
+func ColorExplain(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(8), env)
 }
 
-func ColorHidden(origin string, env *core.Env) string {
+func ColorHidden(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(235), env)
 }
 
-func ColorFlow(origin string, env *core.Env) string {
+func ColorFlow(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(86), env)
 }
 
-func ColorCmd(origin string, env *core.Env) string {
+func ColorCmd(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(76), env)
 }
 
-func ColorCmdCurr(origin string, env *core.Env) string {
+func ColorCmdCurr(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(46), env)
 }
 
-func ColorCmdEmpty(origin string, env *core.Env) string {
+func ColorCmdEmpty(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(95), env)
 }
 
-func ColorCmdDone(origin string, env *core.Env) string {
+func ColorCmdDone(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(34), env)
 }
 
-func ColorCmdDelay(origin string, env *core.Env) string {
+func ColorCmdDelay(origin string, env *model.Env) string {
 	//return colorize(origin, fromColor256(22), env)
 	return colorize(origin, fromColor256(28), env)
 }
 
-func ColorCmdLowKey(origin string, env *core.Env) string {
+func ColorCmdLowKey(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(22), env)
 }
 
-func ColorThread(origin string, env *core.Env) string {
+func ColorThread(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(27), env)
 }
 
-func ColorFlowing(origin string, env *core.Env) string {
+func ColorFlowing(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(81), env)
 }
 
-func ColorSession(origin string, env *core.Env) string {
+func ColorSession(origin string, env *model.Env) string {
 	return colorize(origin, fromColor256(220), env)
 }
 
-func DecodeColor(text string, env *core.Env) string {
+func DecodeColor(text string, env *model.Env) string {
 	for {
 		prefix := strings.Index(text, colorEncodePrefix)
 		if prefix < 0 {
@@ -202,56 +202,56 @@ func DecodeColor(text string, env *core.Env) string {
 }
 
 /*
-func Red(origin string, env *core.Env) string {
+func Red(origin string, env *model.Env) string {
 	return colorize(origin, colorRed, env)
 }
 
-func Green(origin string, env *core.Env) string {
+func Green(origin string, env *model.Env) string {
 	return colorize(origin, colorGreen, env)
 }
 
-func Yellow(origin string, env *core.Env) string {
+func Yellow(origin string, env *model.Env) string {
 	return colorize(origin, colorYellow, env)
 }
 
-func Blue(origin string, env *core.Env) string {
+func Blue(origin string, env *model.Env) string {
 	return colorize(origin, colorBlue, env)
 }
 
-func Purple(origin string, env *core.Env) string {
+func Purple(origin string, env *model.Env) string {
 	return colorize(origin, colorPurple, env)
 }
 
-func Cyan(origin string, env *core.Env) string {
+func Cyan(origin string, env *model.Env) string {
 	return colorize(origin, colorCyan, env)
 }
 
-func BrightRed(origin string, env *core.Env) string {
+func BrightRed(origin string, env *model.Env) string {
 	return colorize(origin, colorBrightRed, env)
 }
 
-func BrightGreen(origin string, env *core.Env) string {
+func BrightGreen(origin string, env *model.Env) string {
 	return colorize(origin, colorBrightGreen, env)
 }
 
-func BrightYellow(origin string, env *core.Env) string {
+func BrightYellow(origin string, env *model.Env) string {
 	return colorize(origin, colorBrightYellow, env)
 }
 
-func BrightBlue(origin string, env *core.Env) string {
+func BrightBlue(origin string, env *model.Env) string {
 	return colorize(origin, colorBrightBlue, env)
 }
 
-func BrightPurple(origin string, env *core.Env) string {
+func BrightPurple(origin string, env *model.Env) string {
 	return colorize(origin, colorBrightPurple, env)
 }
 
-func BrightCyan(origin string, env *core.Env) string {
+func BrightCyan(origin string, env *model.Env) string {
 	return colorize(origin, colorBrightCyan, env)
 }
 */
 
-func colorize(origin string, color string, env *core.Env) string {
+func colorize(origin string, color string, env *model.Env) string {
 	enabled := env.GetBool("display.color")
 	if !enabled {
 		return origin

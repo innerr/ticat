@@ -1,10 +1,10 @@
 package display
 
 import (
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
-func DumpProvidedArgs(env *core.Env, args *core.Args, argv core.ArgVals, colorize bool) (output []string) {
+func DumpProvidedArgs(env *model.Env, args *model.Args, argv model.ArgVals, colorize bool) (output []string) {
 	for _, k := range args.Names() {
 		v, provided := argv[k]
 		if !provided || !v.Provided {
@@ -22,7 +22,7 @@ func DumpProvidedArgs(env *core.Env, args *core.Args, argv core.ArgVals, coloriz
 	return
 }
 
-func DumpSysArgs(env *core.Env, sysArgv core.SysArgVals, colorize bool) (output []string) {
+func DumpSysArgs(env *model.Env, sysArgv model.SysArgVals, colorize bool) (output []string) {
 	for k, v := range sysArgv {
 		v = mayMaskSensitiveVal(env, k, v)
 		if colorize {
@@ -38,10 +38,10 @@ func DumpSysArgs(env *core.Env, sysArgv core.SysArgVals, colorize bool) (output 
 }
 
 func DumpEffectedArgs(
-	env *core.Env,
-	arg2env *core.Arg2Env,
-	args *core.Args,
-	argv core.ArgVals,
+	env *model.Env,
+	arg2env *model.Arg2Env,
+	args *model.Args,
+	argv model.ArgVals,
 	writtenKeys FlowWrittenKeys,
 	stackDepth int) (output []string) {
 

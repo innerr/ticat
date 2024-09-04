@@ -4,17 +4,17 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 )
 
-func DumpEnvTree(screen core.Screen, env *core.Env, indentSize int) {
+func DumpEnvTree(screen model.Screen, env *model.Env, indentSize int) {
 	lines, _ := dumpEnv(env, nil, true, true, true, true, nil, indentSize)
 	for _, line := range lines {
 		screen.Print(line + "\n")
 	}
 }
 
-func DumpEssentialEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
+func DumpEssentialEnvFlattenVals(screen model.Screen, env *model.Env, findStrs ...string) {
 	filterPrefixs := []string{
 		"session",
 		"strs.",
@@ -25,17 +25,17 @@ func DumpEssentialEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...
 	dumpEnvFlattenVals(screen, env, flatten, findStrs...)
 }
 
-func DumpEnvFlattenVals(screen core.Screen, env *core.Env, findStrs ...string) {
+func DumpEnvFlattenVals(screen model.Screen, env *model.Env, findStrs ...string) {
 	flatten := env.Flatten(true, nil, true)
 	dumpEnvFlattenVals(screen, env, flatten, findStrs...)
 }
 
-func KeyValueDisplayStr(key string, value string, env *core.Env) string {
+func KeyValueDisplayStr(key string, value string, env *model.Env) string {
 	value = mayMaskSensitiveVal(env, key, value)
 	return ColorKey(key, env) + ColorSymbol(" = ", env) + mayQuoteStr(value)
 }
 
-func KeyValueDisplayStrEx(key string, value string, env *core.Env, envKeysInfo *core.EnvKeysInfo) (string, int) {
+func KeyValueDisplayStrEx(key string, value string, env *model.Env, envKeysInfo *model.EnvKeysInfo) (string, int) {
 	extraLen := ColorExtraLen(env, "symbol", "key")
 	if envKeysInfo != nil {
 		keyInfo := envKeysInfo.Get(key)
@@ -51,7 +51,7 @@ func KeyValueDisplayStrEx(key string, value string, env *core.Env, envKeysInfo *
 	return ColorKey(key, env) + ColorSymbol(" = ", env) + mayQuoteStr(value), extraLen
 }
 
-func dumpEnvFlattenVals(screen core.Screen, env *core.Env, flatten map[string]string, findStrs ...string) {
+func dumpEnvFlattenVals(screen model.Screen, env *model.Env, flatten map[string]string, findStrs ...string) {
 	var keys []string
 	for k, _ := range flatten {
 		keys = append(keys, k)
@@ -77,8 +77,8 @@ func dumpEnvFlattenVals(screen core.Screen, env *core.Env, flatten map[string]st
 }
 
 func dumpEnv(
-	env *core.Env,
-	envKeysInfo *core.EnvKeysInfo,
+	env *model.Env,
+	envKeysInfo *model.EnvKeysInfo,
 	printEnvLayer bool,
 	printDefEnv bool,
 	printRuntimeEnv bool,
@@ -115,9 +115,9 @@ func dumpEnv(
 }
 
 func dumpEnvLayer(
-	env *core.Env,
-	topEnv *core.Env,
-	envKeysInfo *core.EnvKeysInfo,
+	env *model.Env,
+	topEnv *model.Env,
+	envKeysInfo *model.EnvKeysInfo,
 	printEnvLayer bool,
 	printDefEnv bool,
 	filterPrefixs []string,
@@ -126,7 +126,7 @@ func dumpEnvLayer(
 	indentSize int,
 	depth int) {
 
-	if env.LayerType() == core.EnvLayerDefault && !printDefEnv {
+	if env.LayerType() == model.EnvLayerDefault && !printDefEnv {
 		return
 	}
 	var output []string
@@ -139,7 +139,7 @@ func dumpEnvLayer(
 		filtered := false
 		// Not filter default layer values
 		for _, filterPrefix := range filterPrefixs {
-			if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) && env.LayerType() != core.EnvLayerDefault {
+			if len(filterPrefix) != 0 && strings.HasPrefix(k, filterPrefix) && env.LayerType() != model.EnvLayerDefault {
 				filtered = true
 				break
 			}

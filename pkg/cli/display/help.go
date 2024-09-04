@@ -3,11 +3,11 @@ package display
 import (
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/core"
+	"github.com/pingcap/ticat/pkg/core/model"
 	"github.com/pingcap/ticat/pkg/utils"
 )
 
-func PrintGlobalHelp(cc *core.Cli, env *core.Env) {
+func PrintGlobalHelp(cc *model.Cli, env *model.Env) {
 	// TODO: use man page instead of help
 	PrintSelfHelp(cc.Screen, env)
 	return
@@ -68,7 +68,7 @@ func PrintGlobalHelp(cc *core.Cli, env *core.Env) {
 	}
 }
 
-func PrintSelfHelp(screen core.Screen, env *core.Env) {
+func PrintSelfHelp(screen model.Screen, env *model.Env) {
 	pln := func(texts ...string) {
 		for _, text := range texts {
 			if len(text) == 0 {
@@ -86,7 +86,7 @@ func PrintSelfHelp(screen core.Screen, env *core.Env) {
 	pln("")
 	screen.Print(ColorHelp("usage:\n", env))
 
-	list := []func(*core.Env) []string{
+	list := []func(*model.Env) []string{
 		GlobalSuggestExeCmds,
 		GlobalSuggestExeCmdsWithArgs,
 		GlobalSuggestShowCmdInfo,
