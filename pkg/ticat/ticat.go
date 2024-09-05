@@ -5,11 +5,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/display"
-	"github.com/pingcap/ticat/pkg/core/execute"
-	"github.com/pingcap/ticat/pkg/core/model"
-	"github.com/pingcap/ticat/pkg/core/parser"
-	"github.com/pingcap/ticat/pkg/mods/builtin"
+	"github.com/innerr/ticat/pkg/cli/display"
+	"github.com/innerr/ticat/pkg/core/execute"
+	"github.com/innerr/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/parser"
+	"github.com/innerr/ticat/pkg/mods/builtin"
 )
 
 type TiCat struct {
@@ -129,7 +129,7 @@ func NewTiCat() *TiCat {
 	cc := model.NewCli(screen, tree, cliParser, abbrs, cmdIO, envKeysInfo)
 
 	// Modules and env loaders
-	bootstrap := []string {
+	bootstrap := []string{
 		"builtin.env.load.runtime",
 		"builtin.mod.load.ext-executor",
 		"builtin.env.load.local",

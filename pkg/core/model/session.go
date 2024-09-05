@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pingcap/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/utils"
 )
 
 type SessionStatus struct {

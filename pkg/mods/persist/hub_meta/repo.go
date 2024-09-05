@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pingcap/ticat/pkg/mods/persist/meta_file"
+	"github.com/innerr/ticat/pkg/mods/persist/meta_file"
 )
 
 func ReadRepoListFromFile(selfName string, path string) (helpStr string, addrs []RepoAddr, helpStrs []string) {

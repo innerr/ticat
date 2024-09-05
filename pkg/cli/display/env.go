@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func DumpEnvTree(screen model.Screen, env *model.Env, indentSize int) {

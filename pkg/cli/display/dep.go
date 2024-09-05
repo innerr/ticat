@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"sort"
 
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func GatherOsCmdsExistingInfo(deps model.Depends) (foundOsCmds map[string]bool, osCmds []string, missedOsCmds int) {

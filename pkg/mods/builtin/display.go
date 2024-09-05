@@ -3,8 +3,8 @@ package builtin
 import (
 	"runtime"
 
-	"github.com/pingcap/ticat/pkg/core/model"
-	"github.com/pingcap/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/utils"
 )
 
 func LoadPlatformDisplay(

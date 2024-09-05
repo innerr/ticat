@@ -3,8 +3,8 @@ package builtin
 import (
 	"fmt"
 
-	"github.com/pingcap/ticat/pkg/cli/display"
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/cli/display"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func GlobalHelp(

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func TooMuchOutput(env *model.Env, screen model.Screen) bool {

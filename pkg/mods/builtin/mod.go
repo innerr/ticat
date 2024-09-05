@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/core/model"
-	"github.com/pingcap/ticat/pkg/mods/persist/mod_meta"
-	"github.com/pingcap/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/mods/persist/mod_meta"
+	"github.com/innerr/ticat/pkg/utils"
 )
 
 func SetExtExec(

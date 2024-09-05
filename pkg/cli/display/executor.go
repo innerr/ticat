@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pingcap/ticat/pkg/core/model"
-	"github.com/pingcap/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/utils"
 )
 
 type CmdStackLines struct {

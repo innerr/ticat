@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/mods/persist/meta_file"
+	"github.com/innerr/ticat/pkg/mods/persist/meta_file"
 )
 
 func LoadFlowFile(path string) (flow []string, help string, abbrs string,
