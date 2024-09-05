@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/pingcap/ticat/pkg/ticat"
+	"github.com/innerr/ticat/pkg/ticat"
 )
 
 func main() {

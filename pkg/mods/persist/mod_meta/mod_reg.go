@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/core/model"
-	"github.com/pingcap/ticat/pkg/mods/persist/meta_file"
+	"github.com/innerr/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/mods/persist/meta_file"
 )
 
 func RegMod(

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func PrintEmptyDirCmdHint(screen model.Screen, env *model.Env, cmd model.ParsedCmd) {

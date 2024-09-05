@@ -3,8 +3,8 @@ package display
 import (
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/core/model"
-	"github.com/pingcap/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/utils"
 )
 
 func RenderCmdStack(l CmdStackLines, env *model.Env, screen model.Screen) (renderWidth int) {

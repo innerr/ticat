@@ -1,7 +1,7 @@
 package display
 
 import (
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func DumpProvidedArgs(env *model.Env, args *model.Args, argv model.ArgVals, colorize bool) (output []string) {

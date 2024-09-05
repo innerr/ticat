@@ -1,7 +1,7 @@
 package display
 
 import (
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func PrintFramedLines(screen model.Screen, env *model.Env, buf *CacheScreen, c *FrameChars) {

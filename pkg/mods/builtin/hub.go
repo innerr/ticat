@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/cli/display"
-	"github.com/pingcap/ticat/pkg/core/model"
-	meta "github.com/pingcap/ticat/pkg/mods/persist/hub_meta"
-	"github.com/pingcap/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/cli/display"
+	"github.com/innerr/ticat/pkg/core/model"
+	meta "github.com/innerr/ticat/pkg/mods/persist/hub_meta"
+	"github.com/innerr/ticat/pkg/utils"
 )
 
 func LoadModsFromHub(

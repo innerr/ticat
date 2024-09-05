@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 // TODO: this is slow, fetch flag from env too many times, and other issues, handle it later

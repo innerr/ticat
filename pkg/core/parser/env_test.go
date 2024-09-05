@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func TestEnvParserTryParseRaw(t *testing.T) {

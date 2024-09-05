@@ -8,8 +8,8 @@ import (
 
 	"github.com/peterh/liner"
 
-	"github.com/pingcap/ticat/pkg/cli/display"
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/cli/display"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) {

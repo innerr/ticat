@@ -3,7 +3,7 @@ package display
 import (
 	"sort"
 
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 // TODO: list cmd usage, now only list the tags

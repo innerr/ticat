@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pingcap/ticat/pkg/cli/display"
-	"github.com/pingcap/ticat/pkg/core/model"
-	"github.com/pingcap/ticat/pkg/mods/builtin"
+	"github.com/innerr/ticat/pkg/cli/display"
+	"github.com/innerr/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/mods/builtin"
 )
 
 type BreakPointAction string

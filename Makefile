@@ -1,7 +1,7 @@
 .PHONY: unit-test ticat
 .DEFAULT_GOAL := default
 
-REPO    := github.com/pingcap/ticat
+REPO    := github.com/innerr/ticat
 
 GOOS    := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 GOARCH  := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))

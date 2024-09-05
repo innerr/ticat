@@ -1,4 +1,4 @@
-module github.com/pingcap/ticat
+module github.com/innerr/ticat
 
 go 1.16
 

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pingcap/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/utils"
 )
 
 func (self Env) GetRaw(name string) string {

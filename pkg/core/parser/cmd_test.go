@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 func TestCmdParserParseSeg(t *testing.T) {

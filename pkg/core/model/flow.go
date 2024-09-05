@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pingcap/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/utils"
 )
 
 func SaveFlowToStr(flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) string {

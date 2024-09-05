@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 type Parser struct {

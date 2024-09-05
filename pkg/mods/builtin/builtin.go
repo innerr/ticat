@@ -1,7 +1,7 @@
 package builtin
 
 import (
-	"github.com/pingcap/ticat/pkg/core/model"
+	"github.com/innerr/ticat/pkg/core/model"
 )
 
 // TODO: register the env kvs these commands will modify
