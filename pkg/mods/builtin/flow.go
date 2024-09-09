@@ -73,7 +73,7 @@ func ListFlows(
 		return nil
 	})
 
-	if screen.OutputNum() > 0 {
+	if screen.OutputtedLines() > 0 {
 		display.PrintTipTitle(cc.Screen, env,
 			"all saved flows: (flows from added repos are not included)")
 	} else {
@@ -188,7 +188,7 @@ func RemoveAllFlows(
 		return nil
 	})
 
-	if screen.OutputNum() > 0 {
+	if screen.OutputtedLines() > 0 {
 		display.PrintTipTitle(cc.Screen, env, "all saved flows are removed")
 	} else {
 		display.PrintTipTitle(cc.Screen, env,

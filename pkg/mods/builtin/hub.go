@@ -119,7 +119,7 @@ func ListHub(
 	screen := display.NewCacheScreen()
 
 	listHub(screen, env, infos, findStrs...)
-	if screen.OutputNum() <= 0 {
+	if screen.OutputtedLines() <= 0 {
 		if len(findStrs) == 0 {
 			display.PrintTipTitle(cc.Screen, env,
 				"'hub' manages all added git repos, now it's empty.",

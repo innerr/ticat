@@ -10,7 +10,7 @@ import (
 
 func TooMuchOutput(env *model.Env, screen model.Screen) bool {
 	height := env.GetInt("display.height")
-	return height > 0 && screen.OutputNum() > int(float64(height)*1.1)
+	return height > 0 && screen.OutputtedLines() > int(float64(height)*1.1)
 }
 
 func mayQuoteStr(origin string) string {

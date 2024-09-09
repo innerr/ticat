@@ -89,7 +89,7 @@ func (self *Executor) execute(caller string, cc *model.Cli, env *model.Env, mask
 		useCmdsAbbrs(cc.EnvAbbrs, cc.Cmds)
 	}
 
-	if !innerCall && len(input) == 0 {
+	if !innerCall && emptyInput(input...) {
 		if !env.GetBool("sys.interact.inside") {
 			display.PrintGlobalHelp(cc, env)
 		}
@@ -230,7 +230,7 @@ func (self *Executor) executeCmd(
 		env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, env.GetInt("sys.stack-depth"))
 	sysArgv := cmdEnv.GetSysArgv(cmd.Path(), cc.Cmds.Strs.PathSep)
 
-	ln := cc.Screen.OutputNum()
+	ln := cc.Screen.OutputtedLines()
 
 	stackLines := display.PrintCmdStack(bootstrap, cc.Screen, cmd, mask,
 		cmdEnv, cc.EnvKeysInfo, flow.Cmds, currCmdIdx, cc.Cmds.Strs, cc.BgTasks, flow.TailModeCall)
@@ -308,7 +308,7 @@ func (self *Executor) executeCmd(
 		resultLines := display.PrintCmdResult(cc, bootstrap, cc.Screen, cmd,
 			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen, width)
-	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputNum() {
+	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputtedLines() {
 		last := flow.Cmds[len(flow.Cmds)-1]
 		if last.LastCmd() != nil && !last.LastCmd().IsQuiet() {
 			// Not pretty, disable for now
@@ -585,4 +585,13 @@ func copyMask(cmd string, mask *model.ExecuteMask) *model.ExecuteMask {
 		mask = model.NewExecuteMask(cmd)
 	}
 	return mask
+}
+
+func emptyInput(input ...string) bool {
+	for _, it := range input {
+		if len(it) != 0 {
+			return false
+		}
+	}
+	return true
 }

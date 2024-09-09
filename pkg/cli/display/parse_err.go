@@ -142,7 +142,7 @@ func PrintFreeSearchResultByParseError(
 		screen := NewCacheScreen()
 		dumpArgs := NewDumpCmdArgs().SetSkeleton().AddFindStrs(input...)
 		DumpCmds(cc.Cmds, screen, env, dumpArgs)
-		lines = screen.OutputNum()
+		lines = screen.OutputtedLines()
 		if lines <= 0 {
 			input = input[:len(input)-1]
 			continue
@@ -189,7 +189,7 @@ func PrintFindResultByParseError(
 		title = cmd.ParseResult.Error.Error()
 	}
 
-	if screen.OutputNum() > 0 {
+	if screen.OutputtedLines() > 0 {
 		PrintErrTitle(cc.Screen, env,
 			title,
 			"",

@@ -43,7 +43,7 @@ func DumpEnvFlattenVals(
 
 	screen := display.NewCacheScreen()
 	display.DumpEnvFlattenVals(screen, env, findStrs...)
-	if screen.OutputNum() <= 0 {
+	if screen.OutputtedLines() <= 0 {
 		display.PrintTipTitle(cc.Screen, env, "no matched env keys.")
 	} else if len(findStrs) == 0 {
 		display.PrintTipTitle(cc.Screen, env, "all env key-values:")
@@ -71,7 +71,7 @@ func DumpEssentialEnvFlattenVals(
 
 	screen := display.NewCacheScreen()
 	display.DumpEssentialEnvFlattenVals(screen, env, findStrs...)
-	if screen.OutputNum() <= 0 {
+	if screen.OutputtedLines() <= 0 {
 		if len(findStrs) != 0 {
 			display.PrintTipTitle(cc.Screen, env,
 				"no matched changed env key-values.",
