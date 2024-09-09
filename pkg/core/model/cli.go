@@ -9,7 +9,7 @@ type Screen interface {
 	Print(text string)
 	Error(text string)
 	// Same as line-number, but it's the count of 'Print'
-	OutputNum() int
+	OutputtedLines() int
 }
 
 type ExecPolicy string

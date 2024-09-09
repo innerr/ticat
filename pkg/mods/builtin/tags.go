@@ -18,7 +18,7 @@ func ListTags(
 
 	screen := display.NewCacheScreen()
 	display.ListTags(cc.Cmds, screen, env)
-	if screen.OutputNum() > 0 {
+	if screen.OutputtedLines() > 0 {
 		display.PrintTipTitle(cc.Screen, env, "all tags:")
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "no command have tags")
@@ -85,7 +85,7 @@ func findByTags(
 
 	screen := display.NewCacheScreen()
 	display.DumpCmds(cc.Cmds, screen, env, dumpArgs)
-	if screen.OutputNum() > 0 {
+	if screen.OutputtedLines() > 0 {
 		display.PrintTipTitle(cc.Screen, env, "search and found"+findStr)
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "search but no"+findStr+", change keywords and retry")

@@ -16,7 +16,7 @@ func (self *QuietScreen) Print(text string) {
 func (self *QuietScreen) Error(text string) {
 }
 
-func (self *QuietScreen) OutputNum() int {
+func (self *QuietScreen) OutputtedLines() int {
 	return self.outN
 }
 
@@ -54,7 +54,7 @@ func (self *StdScreen) Error(text string) {
 	}
 }
 
-func (self *StdScreen) OutputNum() int {
+func (self *StdScreen) OutputtedLines() int {
 	return self.outN
 }
 
@@ -84,10 +84,10 @@ func (self *BgTaskScreen) Error(text string) {
 	self.basic.Error(text)
 }
 
-func (self *BgTaskScreen) OutputNum() int {
+func (self *BgTaskScreen) OutputtedLines() int {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	return self.basic.OutputNum()
+	return self.basic.OutputtedLines()
 }
 
 func (self *BgTaskScreen) GetBgStdout() *BgStdout {

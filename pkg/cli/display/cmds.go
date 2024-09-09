@@ -54,7 +54,7 @@ func DumpCmdsWithTips(
 
 	var footerLines []string
 	if allShown {
-		if buf.OutputNum() <= 6 && args.Skeleton && len(moreDetailCmd) > 0 {
+		if buf.OutputtedLines() <= 6 && args.Skeleton && len(moreDetailCmd) > 0 {
 			footerLines = append(footerLines, "", "use '"+moreDetailCmd+"' to show more details")
 		}
 	} else {
@@ -62,7 +62,7 @@ func DumpCmdsWithTips(
 	}
 
 	title := ""
-	if buf.OutputNum() > 0 {
+	if buf.OutputtedLines() > 0 {
 		if len(filterLines) != 0 {
 			title = "found commands matched:"
 		} else {

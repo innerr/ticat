@@ -121,8 +121,8 @@ func (self *TipBoxPrinter) Error(msg string) {
 	self.buf.Error(msg)
 }
 
-func (self *TipBoxPrinter) OutputNum() int {
-	return self.buf.OutputNum()
+func (self *TipBoxPrinter) OutputtedLines() int {
+	return self.buf.OutputtedLines()
 }
 
 func (self *TipBoxPrinter) Finish() {

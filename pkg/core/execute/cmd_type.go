@@ -119,6 +119,10 @@ func noSessionCmds(flow *model.ParsedCmds) bool {
 		return false
 	}
 
+	if cmd == nil {
+		return true
+	}
+
 	if !cmd.IsBuiltin() {
 		return false
 	}

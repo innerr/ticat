@@ -57,7 +57,7 @@ func (self *CacheScreen) Error(text string) {
 	self.data = append(self.data, CachedOutput{text, true, len(text)})
 }
 
-func (self *CacheScreen) OutputNum() int {
+func (self *CacheScreen) OutputtedLines() int {
 	return self.outN
 }
 

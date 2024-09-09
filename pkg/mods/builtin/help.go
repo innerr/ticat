@@ -107,7 +107,7 @@ func DumpCmdsWhoWriteKey(
 	screen := display.NewCacheScreen()
 	display.DumpCmds(cc.Cmds, screen, env, dumpArgs)
 
-	if screen.OutputNum() > 0 {
+	if screen.OutputtedLines() > 0 {
 		display.PrintTipTitle(cc.Screen, env, "all commands which write key '"+key+"':")
 	} else {
 		display.PrintTipTitle(cc.Screen, env, "no command writes key '"+key+"':")
