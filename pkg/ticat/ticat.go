@@ -166,7 +166,7 @@ func (ticat *TiCat) AddIntegratedModVersion(ver string) {
 func (ticat *TiCat) AddInitRepo(repo string) {
 	env := ticat.Env.GetLayer(model.EnvLayerDefault)
 	strs := strings.Split(env.GetRaw("sys.hub.init-repo"), ListSep)
-	strs = append(strs, ver)
+	strs = append(strs, repo)
 	env.Set("sys.hub.init-repo", strings.Join(strs, ListSep))
 }
 
