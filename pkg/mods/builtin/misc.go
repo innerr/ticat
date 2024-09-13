@@ -10,6 +10,34 @@ import (
 	"github.com/innerr/ticat/pkg/utils"
 )
 
+func Version(
+	argv model.ArgVals,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
+	currCmdIdx int) (int, bool) {
+
+	cc.Screen.Print(env.GetRaw("sys.version") + " " + env.GetRaw("sys.dev.name") + "\n")
+
+	sep := cc.Cmds.Strs.ListSep
+
+	init := env.GetRaw("sys.hub.init-repo")
+	if len(init) != 0 {
+		for _, it := range strings.Split(init, sep) {
+			cc.Screen.Print("- init mod repo: " + it + "\n")
+		}
+	}
+
+	integrated := env.GetRaw("sys.mods.integrated")
+	if len(integrated) != 0 {
+		for _, it := range strings.Split(integrated, sep) {
+			cc.Screen.Print("- integrated: " + it + "\n")
+		}
+	}
+
+	return currCmdIdx, true
+}
+
 func Sleep(
 	argv model.ArgVals,
 	cc *model.Cli,

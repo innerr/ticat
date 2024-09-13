@@ -279,6 +279,10 @@ func RegisterTagsCmds(cmds *model.CmdTree) {
 }
 
 func RegisterCmdAndHelpCmds(cmds *model.CmdTree) {
+	cmds.AddSub(
+		"version", "ver").
+		RegPowerCmd(Version, "display version")
+
 	help := cmds.AddSub("help")
 	help.RegPowerCmd(GlobalHelp,
 		"get help").
