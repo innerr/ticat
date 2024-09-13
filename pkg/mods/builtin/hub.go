@@ -94,8 +94,12 @@ func AddDefaultGitRepoToHub(
 		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
 			"cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
 	}
-	addRepoToHubAndLoadMods(cc, meta.RepoAddr{addr, ""},
-		argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+	sep := env.GetRaw("strs.list-sep")
+	addrs := strings.Split(addr, sep)
+	for _, addr := range addrs {
+		addRepoToHubAndLoadMods(cc, meta.RepoAddr{addr, ""},
+			argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+	}
 	if argv.GetBool("show-tip") {
 		showHubFindTip(cc.Screen, env)
 	}

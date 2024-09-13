@@ -163,6 +163,13 @@ func (ticat *TiCat) AddIntegratedModVersion(ver string) {
 	env.Set("sys.mods.integrated", strings.Join(strs, ListSep))
 }
 
+func (ticat *TiCat) AddInitRepo(repo string) {
+	env := ticat.Env.GetLayer(model.EnvLayerDefault)
+	strs := strings.Split(env.GetRaw("sys.hub.init-repo"), ListSep)
+	strs = append(strs, ver)
+	env.Set("sys.hub.init-repo", strings.Join(strs, ListSep))
+}
+
 func (ticat *TiCat) InjectBootstrap(cmds []string) {
 	bootstrap := ticat.Bootstrap
 	for i, cmd := range bootstrap {
