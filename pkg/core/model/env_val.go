@@ -40,7 +40,7 @@ func (self Env) GetUint64(name string) uint64 {
 	if len(val) == 0 {
 		return 0
 	}
-	intVal, err := strconv.ParseInt(val, 10, 64)
+	intVal, err := strconv.ParseUint(val, 10, 64)
 	if err != nil {
 		panic(&EnvValErrWrongType{
 			fmt.Sprintf("[EnvVal.GetUint64] key '%s' = '%s' is not uint64: %v", name, val, err),
