@@ -29,6 +29,27 @@ func (self ArgVals) GetRawEx(name string, defVal string) (raw string) {
 	return val.Raw
 }
 
+func (self ArgVals) GetUint64(name string) int {
+	val, ok := self[name]
+	if !ok {
+		panic(&ArgValErrNotFound{
+			fmt.Sprintf("[ArgVals.GetUint64] arg '%s' not found", name),
+			name,
+		})
+	}
+	if len(val.Raw) == 0 {
+		return 0
+	}
+	intVal, err := strconv.ParseUint(val.Raw, 10, 64)
+	if err != nil {
+		panic(&ArgValErrWrongType{
+			fmt.Sprintf("[ArgVals.GetUint64] arg '%s' = '%s' is not uint64: %v", name, val.Raw, err),
+			name, val.Raw, "uint64", err,
+		})
+	}
+	return int(intVal)
+}
+
 func (self ArgVals) GetInt(name string) int {
 	val, ok := self[name]
 	if !ok {
