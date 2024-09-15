@@ -16,6 +16,10 @@ func (self Env) SetInt(name string, val int) {
 	self.Set(name, fmt.Sprintf("%d", val))
 }
 
+func (self Env) SetUint64(name string, val uint64) {
+	self.Set(name, fmt.Sprintf("%v", val))
+}
+
 func (self Env) GetInt(name string) int {
 	val := self.Get(name).Raw
 	if len(val) == 0 {
@@ -29,6 +33,21 @@ func (self Env) GetInt(name string) int {
 		})
 	}
 	return int(intVal)
+}
+
+func (self Env) GetUint64(name string) uint64 {
+	val := self.Get(name).Raw
+	if len(val) == 0 {
+		return 0
+	}
+	intVal, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		panic(&EnvValErrWrongType{
+			fmt.Sprintf("[EnvVal.GetUint64] key '%s' = '%s' is not uint64: %v", name, val, err),
+			name, val, "uint64", err,
+		})
+	}
+	return uint64(intVal)
 }
 
 func (self Env) GetDur(name string) time.Duration {

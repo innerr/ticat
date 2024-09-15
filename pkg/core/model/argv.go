@@ -29,7 +29,7 @@ func (self ArgVals) GetRawEx(name string, defVal string) (raw string) {
 	return val.Raw
 }
 
-func (self ArgVals) GetUint64(name string) int {
+func (self ArgVals) GetUint64(name string) uint64 {
 	val, ok := self[name]
 	if !ok {
 		panic(&ArgValErrNotFound{
@@ -47,7 +47,15 @@ func (self ArgVals) GetUint64(name string) int {
 			name, val.Raw, "uint64", err,
 		})
 	}
-	return int(intVal)
+	return uint64(intVal)
+}
+
+func (self ArgVals) GetUint64Ex(name string, defVal uint64) uint64 {
+	_, ok := self[name]
+	if !ok {
+		return defVal
+	}
+	return self.GetUint64(name)
 }
 
 func (self ArgVals) GetInt(name string) int {
