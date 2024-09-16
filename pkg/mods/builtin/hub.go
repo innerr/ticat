@@ -50,8 +50,12 @@ func AddGitRepoToHub(
 
 	initAddr := env.GetRaw("sys.hub.init-repo")
 	if len(initAddr) != 0 {
-		addRepoToHubAndLoadMods(cc, meta.RepoAddr{initAddr, ""},
-			argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+		sep := env.GetRaw("strs.list-sep")
+		addrs := strings.Split(initAddr, sep)
+		for _, addr := range addrs {
+			addRepoToHubAndLoadMods(cc, meta.RepoAddr{addr, ""},
+				argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+		}
 	}
 
 	showHubFindTip(cc.Screen, env)
