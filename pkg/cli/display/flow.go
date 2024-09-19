@@ -316,7 +316,7 @@ func dumpFlowCmd(
 				}
 			}
 			if !args.Skeleton && !foldSubFlow() && !cmdSkipped() {
-				for _, flowStr := range flowStrs {
+				for _, flowStr := range cic.FlowStrs() {
 					prt(2, ColorFlow(flowStr, env))
 				}
 			}
@@ -707,7 +707,7 @@ func dumpCmdArgv(
 			if args.MonitorMode {
 				indent = "   "
 			}
-			prt(1, indent+ColorArg(name, env)+ColorSymbol(" = ", env)+val.Raw)
+			prt(1, indent+ColorArg(name, env)+ColorSymbol(" = ", env)+normalizeValForDisplay(name, val.Raw, env, -1))
 		}
 	} else {
 		args := cic.Args()
@@ -979,7 +979,11 @@ func normalizeValForDisplay(key string, val string, env *model.Env, limit int) s
 }
 
 func mayQuoteMayTrimStr(s string, env *model.Env, limit int) string {
-	return mayTrimStr(mayQuoteStr(s), env, limit)
+	s = mayQuoteStr(s)
+	if limit >= 0 {
+		return mayTrimStr(s, env, limit)
+	}
+	return s
 }
 
 func mayTrimStr(s string, env *model.Env, limit int) string {
