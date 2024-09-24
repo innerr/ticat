@@ -170,17 +170,8 @@ func (ticat *TiCat) AddInitRepo(repo string) {
 	env.Set("sys.hub.init-repo", strings.Join(strs, ListSep))
 }
 
-func (ticat *TiCat) InjectBootstrap(cmds []string) {
-	bootstrap := ticat.Bootstrap
-	for i, cmd := range bootstrap {
-		if cmd == "builtin.hub.init" {
-			newBootstrap := append(bootstrap[0:i], cmds...)
-			newBootstrap = append(newBootstrap, bootstrap[i:len(bootstrap)]...)
-			ticat.Bootstrap = newBootstrap
-			return
-		}
-	}
-	ticat.Bootstrap = append(bootstrap, cmds...)
+func (ticat *TiCat) InjectBootstrap(cmds ...string) {
+	ticat.Bootstrap = append(ticat.Bootstrap, cmds...)
 }
 
 func (ticat *TiCat) RunCli(args ...string) bool {
