@@ -174,6 +174,15 @@ func (ticat *TiCat) InjectBootstrap(cmds ...string) {
 	ticat.Bootstrap = append(ticat.Bootstrap, cmds...)
 }
 
+func (ticat *TiCat) ReplaceCmd(cmd model.PowerCmd, path ...string) {
+	old := ticat.cc.Cmds.GetSub(path...)
+	if old == nil {
+		panic(fmt.Errorf("failed to replace cmd `%s`: not existed",
+			strings.Join(path, ticat.cc.Cmds.Strs.PathSep)))
+	}
+	old.ReplaceCmdWithPowerCmd(cmd)
+}
+
 func (ticat *TiCat) RunCli(args ...string) bool {
 	return ticat.run(args...)
 }
