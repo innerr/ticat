@@ -96,17 +96,19 @@ type BgTaskInfo struct {
 
 type BgTask struct {
 	info           BgTaskInfo
+	realCmd        string
 	stdout         *BgStdout
 	finishNotifier chan error
 	lock           sync.Mutex
 }
 
-func NewBgTask(tid string, cmd string, stdout *BgStdout) *BgTask {
+func NewBgTask(tid string, cmd string, realCmd string, stdout *BgStdout) *BgTask {
 	return &BgTask{
 		info: BgTaskInfo{
 			Tid: tid,
 			Cmd: cmd,
 		},
+		realCmd:        realCmd,
 		stdout:         stdout,
 		finishNotifier: make(chan error),
 	}
@@ -159,7 +161,7 @@ func (self *BgTasks) GetOrAddTask(tid string, displayName string, realName strin
 		return task
 	}
 	self.tids = append(self.tids, tid)
-	task = NewBgTask(tid, displayName, stdout)
+	task = NewBgTask(tid, displayName, realName, stdout)
 	self.tasks[tid] = task
 	println(realName)
 	self.name2task[realName] = task
@@ -224,7 +226,7 @@ func (self *BgTasks) BringBgTaskToFront(tid string, stdout io.Writer) {
 func (self *BgTasks) RemoveTask(tid string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	_, ok := self.tasks[tid]
+	task, ok := self.tasks[tid]
 	if len(self.tids) == 0 || !ok {
 		panic(fmt.Errorf("[BgTasks.RemoveTask] task '%s' not found", tid))
 	}
@@ -233,5 +235,5 @@ func (self *BgTasks) RemoveTask(tid string) {
 	}
 	self.tids = self.tids[1:]
 	delete(self.tasks, tid)
-	// TODO: remove it from name2task
+	delete(self.name2task, task.realCmd)
 }

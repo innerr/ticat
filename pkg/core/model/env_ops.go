@@ -99,6 +99,15 @@ func (self EnvOps) RenderedEnvKeys(
 	return
 }
 
+func (self *EnvOps) Clone() EnvOps {
+	cloned := newEnvOps()
+	cloned.orderedNames = append([]string{}, self.orderedNames...)
+	for k, v := range self.ops {
+		cloned.ops[k] = append([]uint{}, v...)
+	}
+	return cloned
+}
+
 type EnvOpsChecker map[string]envOpsCheckerKeyInfo
 
 type EnvOpsCheckResult struct {

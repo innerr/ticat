@@ -82,6 +82,15 @@ func (self *Val2Env) MatchFind(findStr string) bool {
 	return false
 }
 
+func (self *Val2Env) Clone() *Val2Env {
+	cloned := newVal2Env()
+	cloned.orderedKeys = append([]string{}, self.orderedKeys...)
+	for k, v := range self.pairs {
+		cloned.pairs[k] = v
+	}
+	return cloned
+}
+
 type Arg2Env struct {
 	orderedKeys []string
 	keyNames    map[string]string
@@ -175,4 +184,16 @@ func (self *Arg2Env) MatchFind(findStr string) bool {
 func (self *Arg2Env) Has(envKey string) bool {
 	_, ok := self.keyNames[envKey]
 	return ok
+}
+
+func (self *Arg2Env) Clone() *Arg2Env {
+	cloned := newArg2Env()
+	cloned.orderedKeys = append([]string{}, self.orderedKeys...)
+	for k, v := range self.keyNames {
+		cloned.keyNames[k] = v
+	}
+	for k, v := range self.nameKeys {
+		cloned.nameKeys[k] = v
+	}
+	return cloned
 }

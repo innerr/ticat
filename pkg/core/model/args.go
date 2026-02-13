@@ -154,3 +154,27 @@ func (self *Args) Index(name string) int {
 	}
 	return index
 }
+
+func (self *Args) Clone() Args {
+	cloned := newArgs()
+	for k, v := range self.names {
+		cloned.names[k] = v
+	}
+	for k, v := range self.defVals {
+		cloned.defVals[k] = v
+	}
+	cloned.orderedList = append([]string{}, self.orderedList...)
+	for k, v := range self.abbrs {
+		cloned.abbrs[k] = append([]string{}, v...)
+	}
+	for k, v := range self.abbrsRevIdx {
+		cloned.abbrsRevIdx[k] = v
+	}
+	for k, v := range self.fromAutoMapAll {
+		cloned.fromAutoMapAll[k] = v
+	}
+	for k, v := range self.enums {
+		cloned.enums[k] = append([]string{}, v...)
+	}
+	return cloned
+}
