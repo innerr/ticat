@@ -131,15 +131,14 @@ func (self *Cli) CopyForInteract() *Cli {
 	}
 }
 
-// TODO: fixme, do real clone for ready-only instances
 func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 	screen := NewBgTaskScreen()
 	bgStdout := screen.GetBgStdout()
 	return &Cli{
 		screen,
-		self.Cmds,
+		self.Cmds.Clone(),
 		self.Parser,
-		self.EnvAbbrs,
+		self.EnvAbbrs.Clone(),
 		NewTolerableErrs(),
 		self.Executor.Clone(),
 		self.Helps,

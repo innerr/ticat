@@ -1081,6 +1081,45 @@ func shouldExecByMask(mask *ExecuteMask) bool {
 	return (mask == nil || mask.ExecPolicy == ExecPolicyExec)
 }
 
+func (self *Cmd) Clone(newOwner *CmdTree) *Cmd {
+	cloned := defaultCmd(newOwner, self.help)
+	cloned.ty = self.ty
+	cloned.flags = &CmdFlags{
+		quiet:               self.flags.quiet,
+		priority:            self.flags.priority,
+		allowTailModeCall:   self.flags.allowTailModeCall,
+		unLog:               self.flags.unLog,
+		blender:             self.flags.blender,
+		quietError:          self.flags.quietError,
+		noSession:           self.flags.noSession,
+		hideInSessionsLast:  self.flags.hideInSessionsLast,
+		quietSubFlow:        self.flags.quietSubFlow,
+		exeInExecuted:       self.flags.exeInExecuted,
+		ignoreFollowingDeps: self.flags.ignoreFollowingDeps,
+		unbreakFileNFlow:    self.flags.unbreakFileNFlow,
+	}
+	cloned.args = self.args.Clone()
+	cloned.normal = self.normal
+	cloned.power = self.power
+	cloned.adhotFlow = self.adhotFlow
+	cloned.cmdLine = self.cmdLine
+	cloned.flow = append([]string{}, self.flow...)
+	cloned.envOps = self.envOps.Clone()
+	cloned.depends = append([]Depend{}, self.depends...)
+	cloned.metaFilePath = self.metaFilePath
+	cloned.val2env = self.val2env.Clone()
+	cloned.arg2env = self.arg2env.Clone()
+	cloned.autoTimerKeys = self.autoTimerKeys
+	cloned.orderedMacros = append([]string{}, self.orderedMacros...)
+	for k, v := range self.macros {
+		cloned.macros[k] = append([]string{}, v...)
+	}
+	// Just create a new one for now.
+	cloned.argsAutoMap = NewArgsAutoMapStatus()
+
+	return cloned
+}
+
 func executedAndSucceeded(mask *ExecuteMask) bool {
 	return (mask != nil || mask.ResultIfExecuted == ExecutedResultSucceeded)
 }

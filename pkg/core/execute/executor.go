@@ -513,7 +513,10 @@ func asyncExecute(
 
 		sessionDir := env.GetRaw("session")
 		sessionDir = filepath.Join(sessionDir, tid)
-		os.MkdirAll(sessionDir, os.ModePerm)
+		err := os.MkdirAll(sessionDir, os.ModePerm)
+		if err != nil {
+			panic(fmt.Errorf("could not create session dir '%s' for bg task: %w", sessionDir, err))
+		}
 
 		statusFileName := env.GetRaw("strs.session-status-file")
 		statusPath := filepath.Join(sessionDir, statusFileName)
@@ -539,7 +542,11 @@ func asyncExecute(
 				// TODO: not sure how to handle if config is not-recover
 			} else {
 				if r := recover(); r != nil {
-					err = r.(error)
+					var ok bool
+					err, ok = r.(error)
+					if !ok {
+						err = fmt.Errorf("panic with non-error: %v", r)
+					}
 				}
 			}
 			task.OnFinish(err)

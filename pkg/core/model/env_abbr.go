@@ -161,3 +161,32 @@ func (self *EnvAbbrs) DisplayName() string {
 	}
 	return self.name
 }
+
+func (self *EnvAbbrs) Clone() *EnvAbbrs {
+	cloned := NewEnvAbbrs(self.rootDisplayName)
+	cloned.name = self.name
+
+	// This will be set by the parent in the recursive call
+	cloned.parent = nil
+
+	for _, subName := range self.subOrderedNames {
+		sub := self.subs[subName]
+		clonedSub := sub.Clone()
+		clonedSub.parent = cloned
+		cloned.subs[subName] = clonedSub
+		cloned.subOrderedNames = append(cloned.subOrderedNames, subName)
+	}
+
+	for k, v := range self.subAbbrs {
+		// Create a new slice and copy the values
+		newV := make([]string, len(v))
+		copy(newV, v)
+		cloned.subAbbrs[k] = newV
+	}
+
+	for k, v := range self.subAbbrsRevIdx {
+		cloned.subAbbrsRevIdx[k] = v
+	}
+
+	return cloned
+}
