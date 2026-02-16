@@ -1,16 +1,17 @@
-# Flow: assemble pieces into greate power
+# Flow: assemble pieces into powerful workflows
+
+Flows are one of **ticat**'s most powerful features. They allow you to combine simple commands into complex, reusable workflows.
 
 ## Command sequences and flows
 
 ### Command sequences
 
-We are fimiliar with using commands in **ticat**,
-It's a little bit like unix-pipe `|`, but different:
-* use `:` to concatenate commands, not `|`
-* execute commands one by one, the second one won't start untill the previous one finishes
-* show executing info in a box, the `>>` in the box indicate the current command about to run
+We're familiar with using commands in **ticat**. It's similar to unix-pipe style, but with differences:
+- Use `:` to concatenate commands (not `|`)
+- Commands execute sequentially - the second one won't start until the previous finishes
+- Execution info displays in a box, with `>>` indicating the current command
 
-Sequences are like unix-pipe, but use `:` instead of `|`:
+Example of a command sequence:
 ```
 ┌───────────────────┐
 │ stack-level: [1]  │             06-01 17:07:41
@@ -40,22 +41,22 @@ dummy cmd here
 └────────────────────────────────────────────────┘
 dummy cmd here
 ```
-The boxes indicate the running command by `>>`
+The boxes indicate the running command with `>>`.
 
 ### Command sequence == `flow`
 
-We use the name `flow` to call those sequences,
-`flow` could easily persisted to local disk, then it could be called like a regular command.
-Commands in a flow also could be other flows, in that we are able to assemble complicated features.
+We use the name `flow` to refer to these sequences. Flows can be:
+- **Persisted** to local disk for reuse
+- Called like regular commands
+- **Nested** - flows can call other flows
 
-The command branch `flow` is for managing saved flows,
-the command branch `desc` is for displaying how the flow will do (without executing it).
-`+` `-` can do the most jobs of `desc` as a shortcut.
+The `flow` command branch manages saved flows, and the `desc` branch displays flow execution plans. `+` and `-` are shortcuts for the most common operations.
 
-## Save, call, edit or remove flows
+## Save, call, edit, or remove flows
 
-Command branch `flow` overview:
-```
+### Command branch `flow` overview
+
+```bash
 $> ticat flow:-
 [flow]
      'list local saved but unlinked (to any repo) flows'
@@ -75,37 +76,40 @@ $> ticat flow:-
               then flows will move to that dir'
 ```
 
-### Save command sequence to a flow
+### Save a command sequence as a flow
 
-Use `flow.save` to save a sequence to local, alias `f.+`
-```
+Use `flow.save` to persist a sequence. Alias: `f.+`
+
+```bash
 $> ticat dummy : dummy : dummy : f.+ x
 ```
-If the flow "x" already exists, there will be an overwriting confirming.
 
-Save command sequence to a flow with longer path:
-```
+If flow "x" already exists, you'll be asked to confirm overwriting.
+
+Save with a nested path:
+```bash
 $> ticat x : x : flow.save aa.bb.cc
 ```
 
 ### Run a saved flow
 
-A flow is a regular command, any rule suits a command also suits a flow:
-```
+A flow is a regular command - all command rules apply:
+
+```bash
+# Run a simple flow
 $> ticat x
 (execute dummy * 3)
-```
 
-Call a nested flow:
-```
+# Run a nested flow
 $> ticat aa.bb.cc
 (execute dummy * 6)
 ```
 
 ### List all saved flows
 
-The command `flow` (also a branch) will show all saves flows, alias `f`:
-```
+The `flow` command (also a branch) shows all saved flows. Alias: `f`
+
+```bash
 $> ticat f
 [aa.bb.cc]
     - flow:
@@ -118,17 +122,20 @@ $> ticat f
     - executable:
         ...
 ```
-The flow saved file paths are showed, manually edit them if we like.
+
+The output shows flow file paths - you can manually edit them if needed.
 
 ### Remove saved flows
 
-`flow.remove` will delete a single flow, alias `f.-`:
-```
+Remove a single flow with `flow.remove`. Alias: `f.-`
+
+```bash
 $> ticat f.- aa.bb.cc
 ```
 
-`flow.clear` will delete all flows, alias `f.--`:
-```
+Remove all flows with `flow.clear`. Alias: `f.--`
+
+```bash
 $> ticat f.--
 ```
 
@@ -136,16 +143,18 @@ $> ticat f.--
 
 ### Add a help string to a saved flow
 
-When we have lots of saved flows, or before sharing them,
-it's helpful to add help strings on flows.
+When you have many saved flows (or before sharing them), it's helpful to add descriptive help strings.
 
-Use `flow.set-help-str` to set help string, alias `f.help` or `f.h`:
-```
-## save a flow
+Use `flow.set-help-str` to set a help string. Aliases: `f.help`, `f.h`
+
+```bash
+# Save a flow
 $> ticat dummy : dummy : dummy : f.+ x
-## set help string
+
+# Set help string
 $> ticat f.h x 'power test'
-## show the help string
+
+# Show the help string
 $> ticat c x
 [x]
      'power test'
@@ -155,30 +164,33 @@ $> ticat c x
         dummy : dummy : dummy
 ```
 
-### Share saved flows
+### Share saved flows with others
 
-To share saved flows, we need to move the saved files from **ticat** storing dir to specific dir,
-then if we push the dir to(as) a git repo, those files are being shared.
+To share saved flows:
+1. Move the saved files from **ticat**'s storage directory to a specific directory
+2. Push that directory to a git repository
 
-The flow files could be any place in the repo,
-but we recommend to put these files on root dir of the repo, or sub dir name `flows`.
-Because dir scanning are slow, one day **ticat** may only scan some specific dirs.
+**Recommended locations** in your repository:
+- Root directory
+- `flows/` subdirectory
 
-Use `flow.move-flows-to-dir` to relocate saved flow files, alias `f.mv`:
-```
+(Directory scanning can be slow, so **ticat** may only scan specific directories in the future.)
+
+Use `flow.move-flows-to-dir` to relocate saved flow files. Alias: `f.mv`
+
+```bash
 $> ticat f.mv path=./tmp
 ```
 
 ### Advanced flow file moving
 
-If one(and only one) local dir exists in hub
-(local dir means the dir is not managed by hub as a repo),
-and the arg "path" is empty, then flows will move to that dir.
+If one (and only one) local directory exists in the hub, and the `path` argument is empty, flows will automatically move to that directory.
 
-Notice that if the destiny dir is not in hub, we can't call those moved flows after moving.
+**Note**: If the destination directory isn't in the hub, you won't be able to call those moved flows after moving.
 
-We could also manually move the files, they are at a dir defined by env `sys.paths.flows`:
-```
+You can also manually move the files. They're stored in a directory defined by the environment key `sys.paths.flows`:
+
+```bash
 $> ticat env.flat flow path
 sys.paths.flows = (a local dir)
 ```
@@ -187,13 +199,14 @@ sys.paths.flows = (a local dir)
 
 ### Display properties of a flow
 
-Use `cmds` to show the detail properties of a flow (the same way as other commands), alias `c`:
-```
-## save a flow
+Use `cmds` to show a flow's detailed properties (same as other commands). Alias: `c`
+
+```bash
+# Save a flow
 $> ticat dummy : dummy : dummy : f.+ x
 
-## show info of a flow
-$> ticat x
+# Show flow info
+$> ticat c x
 [x]
     - flow:
         dummy : dummy : dummy
@@ -202,25 +215,25 @@ $> ticat x
 
 ### Display how a flow will execute
 
-`desc` and `desc.simple` show how a flow will do without executing it, abbrs `d` `d.s`:
-```
-## full description
+Use `desc` and `desc.simple` to preview a flow's execution without running it. Aliases: `d`, `d.s`
+
+```bash
+# Full description
 $> ticat dummy : dummy : dummy : desc
 $> ticat x : desc
 $> ticat x : d
 
-## full description, but less info about modules
+# Full description, with less module info
 $> ticat x : desc.simple
 $> ticat x : d.s
 ```
 
-The commands `desc` and `desc.simple` display full description of the execution,
-they also check and give reports about module dependencies of os-commands.
+The `desc` commands display:
+1. Full execution description
+2. OS command dependency check
+3. Environment operation check
 
-An example of os-commands report:
-* the os-command name
-* which modules are using this os-command
-* why a module depends on this os-command
+**Example OS command dependency report**:
 ```
 -------=<depended os commands>=-------
 
@@ -245,13 +258,9 @@ An example of os-commands report:
             [mysql.exec]
 ```
 
-The commands `desc` and `desc.simple` also give an report about env-ops.
-An env key-value being read before write will cause a `FATAL` error.
+**Environment operation check examples**:
 
-`risk` is caused by `may-read` or `may-write` statements,
-these statements are use for cases like "if it's provided in args then use it, or else looking in env".
-
-Examples of env-ops check results:
+Fatal error (read before write):
 ```
 -------=<unsatisfied env read>=-------
 
@@ -261,6 +270,8 @@ Examples of env-ops check results:
             [bench.run]
        - but not provided
 ```
+
+Risk warning (may-read or may-write):
 ```
 -------=<unsatisfied env read>=-------
 
@@ -270,28 +281,33 @@ Examples of env-ops check results:
        - but not provided
 ```
 
-### Better way to display a flow execution
+`risk` warnings come from `may-read` or `may-write` statements, used for cases like "if provided in args, use it; otherwise look in environment".
 
-Use `desc.flow` `desc.flow.simple` to get a cleaner view, abbrs `d.f` `d.f.s`:
-```
-## description without os-command report and env-ops checking
+### Cleaner flow display
+
+Use `desc.flow` and `desc.flow.simple` for cleaner views. Aliases: `d.f`, `d.f.s`
+
+```bash
+# Description without OS-command report and env-ops checking
 $> ticat dummy : dummy : dummy : desc.flow
 $> ticat x : desc.flow
 $> ticat x : d.f
 
-## less info, cleaner view
+# Less info, cleaner view
 $> ticat x : desc.flow.simple
 $> ticat x : d.f.s
 ```
 
-Use `+` as `desc`:
-```
+### Using shortcuts
+
+Use `+` as a shortcut for `desc`:
+```bash
 $> ticat dummy : dummy : dummy : +
 $> ticat x:+
 ```
 
-Use `-` as `desc.flow.simple`:
-```
+Use `-` as a shortcut for `desc.flow.simple`:
+```bash
 $> ticat dummy : dummy : dummy : -
 --->>>
 [dummy]
@@ -302,7 +318,8 @@ $> ticat dummy : dummy : dummy : -
      'dummy cmd for testing'
 <<<---
 ```
-```
+
+```bash
 $> ticat x:-
 --->>>
 [x]
@@ -317,10 +334,54 @@ $> ticat x:-
 <<<---
 ```
 
-## Best practice
+## Best practices
 
-Here are some recommended practices
-* Use `-` (not `desc`) to do general checking
-* Always `+` to check a flow before executing it
-* Set help strings to flows
-* Better no env definitions in a flow
+Here are recommended practices for working with flows:
+
+1. **Use `-` for general checking** - It's faster and shows the essential information
+2. **Always use `+` to check a flow before executing** - Verify environment requirements and dependencies
+3. **Set descriptive help strings** - Help yourself and others understand what the flow does
+4. **Avoid environment definitions in flows** - Separate process logic from configuration for better reusability
+5. **Organize flows with nested paths** - Use paths like `team.project.feature` for better organization
+6. **Share useful flows** - Move flows to git repositories for team collaboration
+
+## Flow workflow examples
+
+### Development workflow
+
+```bash
+# Create a development flow
+$> ticat local.build : cluster.local : cluster.restart : bench.run : flow.save dev.test
+
+# Run it during development
+$> ticat dev.test
+
+# Add step-by-step debugging when needed
+$> ticat dbg.step.on : dev.test
+```
+
+### CI/CD workflow
+
+```bash
+# Create a comprehensive test flow
+$> ticat build : test.unit : test.integration : test.e2e : flow.save ci.full
+
+# Run preflight check
+$> ticat ci.full :+
+
+# Execute
+$> ticat ci.full
+```
+
+### Customization workflow
+
+```bash
+# Start from a shared flow
+$> ticat shared.bench :+
+
+# Customize it
+$> ticat shared.bench : custom.report : flow.save my.bench
+
+# Save configuration separately
+$> ticat {bench.scale=10 bench.threads=8} my.bench : flow.save my.bench.large
+```

@@ -1,13 +1,16 @@
-# Manipulate env key-values
+# Manipulate environment key-values
 
-Env is a set of key-values, it's shared by all modules in an execution.
+The **environment** (env) is a set of key-values shared by all modules during an execution session. Understanding how to manage environment variables is crucial for using **ticat** effectively.
 
-For users, it's important to find out what keys a command(module or flow) need.
+For users, it's important to find out what environment keys a command (module or flow) requires.
 
-## Display a commands env-ops(read/write)
+## Display a command's environment operations (read/write)
 
-For a module, `cmds` shows its detail included env-ops:
-```
+### For modules
+
+Use `cmds` to show a module's details, including environment operations:
+
+```bash
 $> ticat cmds bench.run
 [run]
      'pretend to run bench'
@@ -22,8 +25,11 @@ $> ticat cmds bench.run
 ...
 ```
 
-For a flow, `desc` shows its unsatisfied env-ops:
-```
+### For flows
+
+Use `desc` to show a flow's unsatisfied environment operations:
+
+```bash
 $> ticat bench : desc
 --->>>
 [bench]
@@ -38,54 +44,90 @@ $> ticat bench : desc
             [bench.run]
        - but not provided
 ```
-An env key-value being read before write will cause a `FATAL` error, `risk` is normally fine.
 
-`+` can get instead `cmds` or `desc` for either command or flow:
-```
+An environment key-value being read before write will cause a `FATAL` error. A `risk` warning is normally acceptable.
+
+**Tip**: Use `+` instead of `cmds` or `desc` for either commands or flows:
+
+```bash
 $> ticat bench.run:+
 $> ticat bench:+
 ```
 
-## Set env key-values
+## Set environment key-values
 
-Modules are recommended to read env instead of reading from args as much as possible,
-it's the way to accomplish automatic assembly.
+Modules are recommended to read from the environment instead of reading from arguments whenever possible. This enables automatic assembly.
 
-So how to pass values to modules by env is important.
-The brackets `{``}` are used to set values during running.
+### Basic syntax
 
-it's OK if the key does't exist in **env**:
-```
-$> tiat {display.width=40}
-```
+Use curly braces `{` `}` to set values during execution:
 
-Use another command `env.ls` to show the modified value:
-```
-$> tiat {display.width=40} : env.ls display.width
+```bash
+# Set a single value
+$> ticat {display.width=40}
 ```
 
-Change multi key-values in one pair of brackets:
-```
-$> tiat {display.width=40 display.style=utf8} : env.ls display
+**Note**: It's OK if the key doesn't already exist in the environment.
+
+### Verify values
+
+Use `env.ls` (or `e.ls`) to display the modified value:
+
+```bash
+$> ticat {display.width=40} : env.ls display.width
 ```
 
-## Save env key-values
+### Set multiple values
 
-By saving key-values to env, we don't need to type them down every time.
+Set multiple key-values in one pair of brackets:
 
-Save changes of env by `env.save`, short name `e.+`
+```bash
+$> ticat {display.width=40 display.style=utf8} : env.ls display
 ```
-$> tiat {display.width=40} env.save
-$> tiat env.ls width
+
+### Set values inline
+
+You can also set values inline within command paths:
+
+```bash
+$> ticat env{mykey=666}.ls mykey
+env.mykey = 666
+```
+
+### Whitespace handling
+
+Extra space characters (space and tab) are ignored:
+
+```bash
+$> ticat {display.width = 40}
+```
+
+## Save environment key-values
+
+By saving key-values to the environment, you don't need to type them every time.
+
+Use `env.save` (short name: `e.+`) to persist changes:
+
+```bash
+# Set and save
+$> ticat {display.width=40} env.save
+
+# Verify
+$> ticat env.ls width
 display.width = 40
-$> tiat {display.width=60} env.save
+
+# Update and save again
+$> ticat {display.width=60} env.save
 display.width = 60
 ```
 
-## Observe env key-values during running
+## Observe environment key-values during execution
 
-In the executing info box,  the upper part has the current env key-values.
-```
+### Display box
+
+During execution, the info box shows current environment key-values in the upper part:
+
+```bash
 $> ticat {foo=bar} sleep 3m : dummy : dummy
 ┌───────────────────┐
 │ stack-level: [1]  │             05-31 20:07:39
@@ -100,48 +142,58 @@ $> ticat {foo=bar} sleep 3m : dummy : dummy
 ...
 ```
 
-There are a large amount of key-values hidden,
-to show then we could use `verb` command.
-```
+### Verbosity control
+
+There are many hidden key-values. Use the `verb` command to show them:
+
+```bash
 $> ticat verb : dummy : dummy
 ```
 
-`verb` shows maximum infos, shor name `v`.
-To show a little more info but not too much, we could use `v.+`:
-```
+`verb` shows maximum information. Short name: `v`.
+
+For moderate verbosity, use `v.+`:
+
+```bash
 $> ticat v.+ : dummy : dummy
 $> ticat v.+ 1 : dummy : dummy
 $> ticat v.+ 2 : dummy : dummy
 ```
 
-`quiet` `q` chould totally hide the executing info:
+### Quiet mode
 
-```
+Use `quiet` (short name: `q`) to completely hide execution info:
+
+```bash
 $> ticat q : dummy : dummy
 ```
 
-## Display env key-values
+## Display environment key-values
 
-We know there are lots key-values besides we manually set into env,
-`env.flat` is the command to list them all, short name `e.f`:
-```
+### List all
+
+Use `env.flat` to list all environment key-values. Short name: `e.f`:
+
+```bash
 $> ticat e.f
 ```
 
-Find env key-values:
-```
-$> ticat e.f <find-str>
-```
+### Find/filter
 
-Find env key-values in finding results
-```
+```bash
+# Find by single string
+$> ticat e.f <find-str>
+
+# Find by multiple strings (up to 3)
 $> ticat e.f <find-str> <find-str>
 $> ticat e.f <find-str> <find-str> <find-str>
 ```
 
-The `v` `q` `v.+` commands alter some values to change the display behavior,
-we could find those key-values by:
-```
+### Example: Find display settings
+
+The `v`, `q`, and `v.+` commands alter display behavior values. Find them with:
+
+```bash
 $> ticat e.f display
 display.env = true
 display.env.default = false
@@ -161,3 +213,83 @@ display.utf8 = true
 display.width = 40
 ...
 ```
+
+## Environment layers
+
+The environment has multiple layers. When getting a value, **ticat** searches from the first layer down:
+
+```
+  command layer    - the first layer
+  session layer
+  persisted layer
+  default layer    - the last layer
+```
+
+### Layer meanings
+
+- **command layer**: Key-values for the current command only
+- **session layer**: Key-values for the entire sequence
+- **persisted layer**: Key-values saved via `env.save`
+- **default layer**: Hard-coded default values
+
+### Display layers
+
+```bash
+# Display all layers
+$> ticat env.tree
+
+# Display layers during sequence execution
+$> ticat {display.layer=true} dummy : dummy
+$> ticat {display.layer=true} dummy : {example-key=its-command-layer} dummy
+
+# Save the display flag
+$> ticat {display.layer=true} env.save
+# Now all sequence executions will display layers
+$> ticat dummy: dummy
+```
+
+## Command layer vs. session layer
+
+### Command layer (with `:` prefix)
+
+If key-value settings have `:` in front, they're in the command layer:
+
+```bash
+# This only affects the 2nd dummy command
+$> ticat dummy : {example-key=its-command-layer} dummy
+```
+
+### Session layer (without `:` prefix)
+
+Without the `:` prefix, values go to the session layer:
+
+```bash
+# This affects all commands
+$> ticat {example-key=its-session-layer} dummy : dummy
+```
+
+### Demonstration
+
+```bash
+# Session layer - affects both
+$> ticat {display.width=40} dummy : dummy
+
+# Command layer - only affects second
+$> ticat dummy : {display.width=40} dummy
+```
+
+### Module code changes
+
+If a command changes environment in its code (not via CLI), the changes go to the session layer:
+
+```bash
+# The "display.width" value for <command-2> will be the changed value
+$> ticat <command-1-which-changes-display-width> : <command-2>
+```
+
+## Best practices
+
+1. **Save frequently used values**: Use `env.save` for values you use often
+2. **Use command layer for one-time changes**: Use `:` prefix for temporary overrides
+3. **Document required keys**: If writing modules, clearly document what environment keys are needed
+4. **Check before running**: Use `+` to verify environment requirements before executing flows

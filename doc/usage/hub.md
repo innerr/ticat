@@ -1,8 +1,11 @@
 # Hub: get modules and flows from others
 
+The **hub** is **ticat**'s package management system. It allows you to discover, install, and manage modules and flows from various sources.
+
 ## What is hub?
-The **hub** is all local dirs linked with **ticat**,
-modules will be loaded on bootstrap by scanning these dirs:
+
+The **hub** is a collection of local directories linked with **ticat**. Modules are loaded on startup by scanning these directories:
+
 ```
  ┌────────────────────────────────┐
  │ Ticat Hub                      │
@@ -27,78 +30,130 @@ modules will be loaded on bootstrap by scanning these dirs:
  └────────────────────────────────┘
 ```
 
-This command list all dirs in hub:
-```
+### List directories in hub
+
+```bash
+# List all directories
 $> ticat hub
-```
-Or find dirs:
-```
+
+# Find/filter directories
 $> ticat hub <find-str>
 ```
 
-## Add a git repo to hub
-These dirs could be a git repo, **ticat** will `git clone` it to local dir when:
-```
+## Add a git repository to hub
+
+### Add from GitHub
+
+You can add repositories from GitHub using the short format:
+
+```bash
 $> ticat hub.add <github-id/repo-name>
+
+# Example:
+$> ticat hub.add innerr/tidb.ticat
 ```
-or
-```
+
+### Add from any git server
+
+Or use the full git address:
+
+```bash
 $> ticat hub.add <git-full-address>
+
+# Example:
+$> ticat hub.add git@github.com:innerr/tidb.ticat.git
 ```
 
-If a repo has sub-repos([what is sub-repo](../spec/repo-tree.md)),
-they will be recursively clone to local too.
+### Recursive cloning
 
-All cloned repos store under a specific folder defined by env key `sys.paths.hub`.
-These dirs are under **ticat**'s management, are `managed` dirs.
+If a repository has sub-repositories ([what is sub-repo](../spec/repo-tree.md)), they will be recursively cloned to local as well.
 
-If we add an existed repo to hub, the repo will be updated by `git pull`.
+All cloned repositories are stored under a specific folder defined by the environment key `sys.paths.hub`. These directories are under **ticat**'s management and are called `managed` directories.
 
-## Init hub by adding default git address
-This command could add the default git address defined by env key `sys.hub.init-repo` to hub:
-```
+**Note**: If you add a repository that already exists, **ticat** will update it using `git pull`.
+
+## Initialize hub with default repository
+
+**ticat** provides a command to add a default repository defined by the environment key `sys.hub.init-repo`:
+
+```bash
 $> ticat hub.init
 ```
-This repo has the most common modules, it's useful for new users.
 
-## Update all managed repos
-```
+This repository contains the most common modules and is useful for new users to get started quickly.
+
+## Update all managed repositories
+
+Keep all your repositories up to date:
+
+```bash
 $> ticat hub.update
 ```
-The disabled repos won't be updated.
 
-## Add a local dir to hub
-Dirs in hub could be a normal dir added to **ticat** by:
-```
+**Note**: Disabled repositories won't be updated.
+
+## Add a local directory to hub
+
+You can add any local directory to the hub:
+
+```bash
 $> ticat hub.add.local path=<dir>
+
+# Example:
+$> ticat hub.add.local path=./mymods
 ```
 
-The dir could be a repo manually cloned to local,
-**ticat** treat it as normal dir, they are `unmanaged`,
-it means **ticat** load modules from it but won't change anything in it.
+The directory could be:
+- A regular directory with your modules
+- A repository you manually cloned
 
-## Disable/enable dirs
-We use find string as arg, to disable/enable multi dirs in one command:
-```
+**ticat** treats local directories as `unmanaged`, meaning it loads modules from them but won't modify their contents.
+
+## Disable/enable directories
+
+You can temporarily disable directories without removing them:
+
+```bash
+# Disable directories matching a pattern
 $> ticat hub.disable <find-str>
+
+# Enable directories matching a pattern
 $> ticat hub.enable <find-str>
+
+# Examples:
+$> ticat hub.disable mymods
+$> ticat hub.enable mymods
 ```
 
-## Permanently remove dirs from hub
-A dir must be disabled first, then use **purge** command to remove it:
-```
+Disabled directories remain in the hub but their modules won't be loaded.
+
+## Permanently remove directories from hub
+
+### Remove specific directories
+
+A directory must be disabled first, then you can purge it:
+
+```bash
+# Disable first
+$> ticat hub.disable <find-str>
+
+# Then purge
 $> ticat hub.purge <find-str>
 ```
-This command remove all disabled dirs:
-```
+
+### Remove all inactive directories
+
+```bash
 $> ticat hub.purge.all
 ```
 
-A managed dir will be totally deleted from file system.
-A normal(unmanaged) dir will be removed from hub but keep on file system.
+**Important behavior**:
+- **Managed directories** (cloned repositories): Will be completely deleted from the file system
+- **Unmanaged directories** (local dirs): Will be removed from hub but kept on the file system
 
-## All commands about hub
-```
+## All hub commands overview
+
+```bash
 $> ticat h:-
 [hub]
      'list dir and repo info in hub'
@@ -125,3 +180,16 @@ $> ticat h:-
     [move-flows-to-dir]
          'move all saved flows to a local dir (could be a git repo)'
 ```
+
+## Best practices
+
+1. **Use tags for organization**: Authors can add tags to modules to help users find them
+2. **Keep repositories updated**: Run `hub.update` regularly to get the latest modules
+3. **Disable instead of purge**: If you're unsure, disable repositories first before purging
+4. **Share your modules**: Create your own repository and share it with the community
+
+## Next steps
+
+- Learn how to [search and use commands](./cmds.md)
+- Understand [environment key-values](./env.md)
+- Create [flows](./flow.md) to automate your workflows

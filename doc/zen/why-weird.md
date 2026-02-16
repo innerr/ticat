@@ -1,24 +1,22 @@
-# Zen: the choices we made
+# Why does the usage seem weird?
 
-## Why the usage so weird?
+## The short answer
 
-Q: the usage feels weird, why?
+The core syntax is actually quite simple:
+- Run command sequences in unix-pipe style, just use `:` instead of `|`
+- Use `{key=value}` to set values in the shared environment
 
-There are some necessary design, it's unfair to call them weird:
-* Run command sequence in unix-pipe style, just use `:` instead of `|`.
-* Use `{key=value}` to set values to the shared env.
+That's all. The rest are optional features you can ignore if you prefer.
 
-That all, nothing special.
-Maybe we could call the `foo.bar` form command name weird,
-there is another page to explain that.
+## The "weird" parts explained
 
-Other than that, all things "weird" are extra features,
-**we could totally ignore them as we like**.
+Some aspects might feel unusual at first. Here's why they exist:
 
-## The "power" commands may make us feel weird
+### Power commands
 
-This command maybe a little weird:
-```
+This command might seem weird:
+
+```bash
 $> ticat desc : dummy : dummy
 --->>>
 [dummy]
@@ -28,103 +26,59 @@ $> ticat desc : dummy : dummy
 <<<---
 ```
 
-From the usage doc we know `desc` is for display how this sequence will execute, and it did.
+From the usage guide, we know `desc` displays how a sequence will execute. But in unix-pipe style, shouldn't `dummy` run? Why doesn't it?
 
-But as in unix-pipe style, `dummy` should run, why not? that's weird.
+**The reason**: `desc` is a builtin "power" command. Power commands can access and modify the sequence. `desc` shows the info and then removes all commands, so nothing actually runs.
 
-The reason is, `desc` is a builtin "power" command,
-"power" command have the mechanism to access and modify the sequence.
-`desc` will show the info and then remove all commands, so nothing will run.
+This mechanism allows **ticat** to add powerful features to the executor. For example, you could write a "mock" command that replaces specific commands with mock implementations.
 
-This mechanism is useful for **ticat** core to adding features to executor.
-For example, we could write a "mockup" command, to replace specific commands with "mockup commands".
+### Priority commands
 
-We admit that it's a little unusual, but it's worth it.
+These two commands produce the same result:
 
-## The "priority" commands may make us feel weird
-
-These two commands have the same result:
-```
+```bash
 $> ticat desc : dummy : dummy
 $> ticat dummy : dummy : desc
---->>>
-[dummy]
-     'dummy cmd for testing'
-[dummy]
-     'dummy cmd for testing'
-<<<---
 ```
 
-The reason is `desc` have a "priority" flag,
-the "priority" commands will be move to the front of the sequence.
+**The reason**: `desc` has a "priority" flag. Priority commands move to the front of the sequence automatically.
 
-If there are more than one priority commands in a sequence,
-their executing order will follow their appear order.
-(not a good thing, we consider adding a priority-level to command properties)
+If there are multiple priority commands, they maintain their relative order.
 
-So, below the first `desc` will reveal the real executing order:
-```
-$> ticat desc: dummy:dummy:desc
---->>>
-[desc]
-     'desc the flow about to execute'
-    - cmd-type:
-        power (quiet) (priority)
-[dummy]
-     'dummy cmd for testing'
-[dummy]
-     'dummy cmd for testing'
-<<<---
-```
+This might seem nonsensical at first, but it's actually quite handy:
 
-This looks extremely nonsense, but trust us, it's handy.
-
-Suppose we are typing a sequence:
-```
+```bash
+# Suppose you're typing a sequence:
 $> ticat dummy:dummy:dummy:dummy:dummy:dummy
 ```
 
-We want to take a preflight check before executing.
+You want to do a preflight check. Without priority:
 
-If we don't use the priority featue,
-(like we just said, it's extra, we could pretend it's not exists)
-We need to move the cursor to the front, type "desc:", then hit "enter":
-```
-$> ticat desc: dummy:dummy:dummy:dummy:dummy:dummy
-```
+1. Move cursor to the front
+2. Type "desc:"
+3. Execute
+4. Roll up history, edit, re-execute
 
-After checking, we roll up command line history, move cursor, edit, then execute.
+With priority:
 
-(roll up twice then execute the history? no it can't be done,
-because this sequence never execute so not in the history)
+1. Append ":desc"
+2. Execute
+3. Roll up history, delete ":desc", execute
 
-In a terminal which the os variable "$PS1" not properly setup, or in WSL,
-history editing will cause incorrect display.
+In terminals where `$PS1` isn't properly set, or in WSL, history editing can cause display issues. Priority commands make this much easier.
 
-Now do it again with the priority featue, things are a little easier.
-Do preflight check by append ":desc":
-```
-$> ticat dummy:dummy:dummy:dummy:dummy:dummy :desc
-```
-Then roll up history, delete ":desc", hit "enter", done.
+### The `+` and `-` shortcuts
 
-(TODO: this two commands are simplified)
-## The "weird" `+` and `-`
+**ticat** has lots of information to display. Different commands like `cmds.list` and `desc` show different levels of detail.
 
-As a small platform running on the user-end, **ticat** has lots of infos.
-To show different infos we have different commands such like `cmds.list` `desc`.
+We needed a single command to cover all frequent info queries. First, we created `help` (abbr `?`), but:
+- One command wasn't enough - either too much or too little info
+- `?` is intercepted by some shells (like zsh)
 
-We need a single command to cover all frequent info queries, to make **ticat** easy to use.
+So we created `more` and `less`, with abbreviations `+` and `-`.
 
-At first, command `help` is created, abbr `?`.
-But we realize that one command is not enough,
-it either show too much or too little.
-Bisides, `?` is intercepted by "zsh".
+**How they work**:
 
-So commands `more` and `less` are here to do the "help" job, abbrs `+` `-`.
-
-They works so far so good, show infos base on args and sequence they are in.
-Here is their info:
 ```
 $> ticat +:-
 [less|-]
@@ -149,120 +103,83 @@ $> ticat +:-
     - from:
         builtin
 ```
-```
-$> ticat -:+
-[more|+]
-     'display rich info base on:
-      * if in a sequence having
-          * more than 1 other commands: show the sequence execution.
-          * only 1 other command and
-              * has no args and the other command is
-                  * a flow: show the flow execution.
-                  * not a flow: show the command or the branch info.
-              * has args: find commands under the branch of the other command.
-      * if not in a sequence and
-          * has args: do global search.
-          * has no args: show global help.'
-    - args:
-        1st-str|find-str = ''
-        2nd-str = ''
-        3rh-str = ''
-        4th-str = ''
-    - cmd-type:
-        power (quiet) (priority)
-    - from:
-        builtin
-```
 
-Alternately using these pair of commands give us excellent experience browsing infos.
-Let's check it out.
+**Using them together gives an excellent browsing experience**:
 
 Global searching:
-```
-## Find commands:
+```bash
+# Find commands
 $> ticat - <find-str>
 
-## Find commands base on the previous result:
+# Filter results
 $> ticat - <find-str> <find-str> <find-str>
 
-## Continue filtering the result:
-$> ticat - <find-str> <find-str> <find-str>
-
-## Switch to "+" to show details in a small result set:
-$> ticat - <find-str> <find-str> <find-str>
+# Switch to "+" for details
+$> ticat + <find-str> <find-str> <find-str>
 ```
 
-Investigate a command branch:
-```
-## Investigate command branch:
+Investigate a branch:
+```bash
+# Brief view
 $> ticat <command> :-
 
-## Investigate command from the branch:
+# Detailed view
 $> ticat <command> :+
-
-## Investigate more command from the branch:
-$> ticat <command>.<command> :+
 ```
 
 Preflight check:
-```
-## Preflight check, focus on what this flow do:
+```bash
+# Focus on what the flow does
 $> ticat <flow> :-
 
-## Preflight check again, focus on dependecies report:
+# Focus on dependency report
 $> ticat <flow> :+
 ```
 
-Inplace searching when writing a sequence:
-```
-## Inplace search for what command we should use after a sequence of commands:
+In-place searching while writing a sequence:
+```bash
+# Search for what command to use next
 $> ticat <command>:<command> :- <find-str>
 
-## Continue searching
+# Continue filtering
 $> ticat <command>:<command> :- <find-str> <find-str>
 
-## Switch to "+" to show the result detail
+# Show details
 $> ticat <command>:<command> :+ <find-str> <find-str>
 
-## Add a new command we just found:
-$> ticat <command>:<command>:<commad>
-...
+# Add the found command
+$> ticat <command>:<command>:<new-command>
 ```
 
-## Full tail editing style support
-(TODO: tail mode is enhanced a lot: recursived tail mode, tail mode call)
+### Advanced tail editing
 
-We already discussed how we could benefit from tail editing above.
-
-Sometimes `+` and `-` are not enough for full tail editing.
-
-For example, in these cases `+` and `-` are occupied by describing flow execution:
-```
+Sometimes `+` and `-` aren't enough. For example:
+```bash
 $> ticat <flow-command> :-
 $> ticat <flow-command> :+
-$> ticat <command>:<command>:<command>:<command> :+
-$> ticat <command>:<command>:<command>:<command> :-
+$> ticat <cmd>:<cmd>:<cmd>:<cmd> :+
 ```
 
-Obviously, more "priority" and "power" commands are needed to avoid long-cusor-move editing.
+In these cases, `+` and `-` are occupied by describing flow execution.
 
-We tentatively use `=` for "show the last command's info",
-there might be more function giving to `=` in the future,
-but this command is not stable, maybe we would cancel it someday,
-because there are too much weird things for users already.
+We tentatively use `=` for "show the last command's info". This command is less stable and may change in the future.
 
-For now, we check the input args to **ticat**, if the grammar is wrong, **ticat** will report error.
-To achive full tail editing,
-we need a way to let users putting wrong things and then we give back the suggestions.
+## The golden rule
 
-## The only one rule
+To avoid confusion, remember this simple rule:
 
-To avoid confusing, there is a clean rule for when we could use tail editing:
+**All command-related operations support tail editing. Others do not.**
 
-All command-related things is supported with tail editing, others are not.
+Command-related operations include:
+- Searching commands
+- Checking command details
+- Concatenating commands into flows
+- Checking flow details
 
-Command-related things:
-* searching commands
-* check command details
-* concate command to flow
-* check flow details
+## You can ignore the weirdness
+
+Remember: **you can ignore all the "weird" features**. The core functionality works perfectly with just:
+- `:` for command sequences
+- `{key=value}` for environment settings
+
+Everything else is optional convenience.

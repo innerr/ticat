@@ -1,7 +1,10 @@
 # [Spec] Hub: list/add/add-local/disable/enable/purge
 
+This specification describes the hub system in **ticat**, which manages repositories and directories containing modules and flows.
+
 ## Overview
-```
+
+```bash
 $> ticat cmds.tree.simple hub
 [hub]
      'list dir and repo info in hub'
@@ -33,62 +36,116 @@ $> ticat cmds.tree.simple hub
               then flows will move to that dir'
 ```
 
-## List dirs in hub
-Hub is a set of local local dirs which **ticat** knows
-```
+## List directories in hub
+
+The hub is a collection of local directories that **ticat** knows about:
+
+```bash
+# List all directories
 $> ticat hub.list
+
+# Filter directories
 $> ticat hub.list <find-str>
 
-## Command `hub` == `hub.list`
+# Short form (hub == hub.list)
 $> ticat hub
 
-## Example:
+# Example:
 $> ticat hub.list examples
 ```
 
-## Add/update git addresses
-```
-## Add(link) git address
+## Add and update git repositories
+
+### Add a repository
+
+```bash
+# Add from GitHub (short format)
 $> ticat hub.add <github-id/repo-name>
+
+# Add from any git server (full address)
 $> ticat hub.add <git-full-address>
 
-## Example:
+# Example:
 $> ticat hub.add innerr/tidb.ticat
+```
 
-## Update all linked git repos
+### Update all linked repositories
+
+```bash
+# Update all active repositories
 $> ticat hub.update
+```
 
-## Add builtin (default) address
+### Add the default/builtin repository
+
+```bash
+# Add the default repository defined by sys.hub.init-repo
 $> ticat hub.init
 ```
 
-## Add local dirs
-```
+## Add local directories
+
+```bash
 $> ticat hub.add.local path=<dir>
 
-## Example:
+# Example:
 $> ticat hub.add.local path=./mymods
 ```
 
-## Disable repos or dirs, the modules in disabled repos or dirs can't be loaded
-```
+Local directories are "unmanaged" - **ticat** loads modules from them but won't modify their contents.
+
+## Disable and enable repositories
+
+Disabled repositories remain in the hub but their modules won't be loaded:
+
+```bash
+# Disable repositories matching a pattern
 $> ticat hub.disable <find-str>
+
+# Enable repositories matching a pattern
 $> ticat hub.enable <find-str>
 ```
 
-## Unlink repos/dirs from ticat
+## Remove repositories from hub
 
-Purge will delete all content of linked repos,
-but only remove meta info from **ticat** for local dirs.
-Only disabled ones can be purged
-```
+### Pruning rules
+
+- **Managed directories** (cloned repos): Will be completely deleted from the file system
+- **Unmanaged directories** (local dirs): Will be removed from hub but kept on file system
+- **Prerequisite**: Directories must be disabled before purging
+
+### Commands
+
+```bash
+# Purge a specific repository (must be disabled first)
 $> ticat hub.purge <find-str>
+
+# Purge all inactive repositories
 $> ticat hub.purge.all
 ```
 
-## The stored repo/file
-The saved dir is defined by env key "sys.paths.hub",
-All git cloned repos will be here.
+## Storage locations
 
-There is a repo list file, its name is defined by env key "strs.hub-file-name".
-The format is multi lines, each line has fields `git-address` `add-reason` `dir-path` `help-str` `on-or-off` seperated by "\t".
+### Repository storage
+
+The directory for cloned repositories is defined by the environment key `sys.paths.hub`.
+
+### Hub configuration file
+
+The hub configuration file stores the list of repositories:
+- **Location**: Defined by `strs.hub-file-name`
+- **Format**: Multi-line file
+- **Fields per line** (tab-separated):
+  1. `git-address`
+  2. `add-reason`
+  3. `dir-path`
+  4. `help-str`
+  5. `on-or-off`
+
+## Best practices
+
+1. **Use descriptive repository names**: Helps when searching and filtering
+2. **Disable before purging**: Prevents accidental deletion
+3. **Update regularly**: Keep repositories current with `hub.update`
+4. **Organize local development**: Use `hub.add.local` for your development directories
+5. **Share useful modules**: Create repositories to share modules with your team
