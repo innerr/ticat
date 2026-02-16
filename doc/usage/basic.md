@@ -1,53 +1,88 @@
 # Basic usage of ticat: build, run commands
 
-### Build
+This guide covers the fundamental operations of **ticat**, including building from source and running commands.
 
-`golang` is needed to build ticat:
-```
+## Build
+
+### Prerequisites
+
+- Go 1.16 or later
+- Git
+
+### Installation steps
+
+Golang is needed to build ticat:
+
+```bash
+# Clone the repository
 $> git clone https://github.com/innerr/ticat
 $> cd ticat
+
+# Build the project
 $> make
 ```
-Recommand to set `ticat/bin` to system `$PATH`, it's handy.
 
-### Run a command
+**Recommendation**: Add `ticat/bin` to your system `$PATH` for convenient access:
 
-Run a simple command, it does not thing but print a message:
+```bash
+# Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
+export PATH="/path/to/ticat/bin:$PATH"
 ```
+
+## Run a command
+
+### Simple commands
+
+Run a simple command that prints a message:
+
+```bash
 $> ticat dummy
 dummy cmd here
 ```
-Pass arg(s) to a command, `sleep` will pause for `3s` then wake up:
-```
+
+### Commands with arguments
+
+Pass arguments to a command. For example, `sleep` will pause for the specified duration:
+
+```bash
 $> ticat sleep 20s
 .zzZZ .................... *\O/*
 ```
 
-Use abbrs(or aliases) to call a command:
-```
+### Using abbreviations/aliases
+
+**ticat** supports abbreviations and aliases to save typing:
+
+```bash
+# All of these are equivalent
 $> ticat slp 3s
 $> ticat slp dur=3s
 $> ticat slp d=3s
 ```
 
-### Run a command in the command-tree
+## Run a command in the command-tree
 
-All commands are organized to a tree,
-the `sleep` and `dummy` commands are under the `root`,
-so we could call them directly.
+### Understanding command organization
 
-Another two commands does nothing:
-```
+All commands are organized into a tree structure. The `sleep` and `dummy` commands are under the `root`, so we can call them directly.
+
+Some commands share the same branch for better organization:
+
+```bash
 $> ticat dummy.power
 power dummy cmd here
+
 $> ticat dummy.quiet
 quiet dummy cmd here
 ```
-Do notice that `dummy` `dummy.power` `dummy.quiet` are totally different commands,
-they are in the same command-branch just because users can find related commands easily in this way.
 
-Display a command's info:
-```
+**Important**: `dummy`, `dummy.power`, and `dummy.quiet` are completely different commands. They're in the same command-branch only because it makes it easier for users to find related commands.
+
+### Display command information
+
+Use `==` to display detailed information about a command:
+
+```bash
 $> ticat dbg.echo :==
 [echo]
      'print message from argv'
@@ -56,21 +91,39 @@ $> ticat dbg.echo :==
     - args:
         message|msg|m|M = ''
 ```
-From this we know that `dbg.echo` has an arg `message`, this arg has some abbrs: `msg` `m` `M`.
 
-Different ways to call the command:
-```
+This shows that `dbg.echo` has an argument called `message`, which has abbreviations: `msg`, `m`, `M`.
+
+### Different ways to call commands
+
+You can pass arguments in multiple ways:
+
+```bash
+# Positional argument
 $> ticat dbg.echo hello
+
+# Quoted argument for strings with spaces
 $> ticat dbg.echo "hello world"
+
+# Named argument
 $> ticat dbg.echo msg=hello
+
+# Named argument with spaces
 $> ticat dbg.echo m = hello
+
+# Using braces
 $> ticat dbg.echo {M=hello}
+
+# Using braces with spaces
 $> ticat dbg.echo {M = hello}
 ```
 
-### Use abbrs/aliases
+## Use abbreviations/aliases
 
-When we are searching commands, the output is like:
+### Understanding the abbreviation syntax
+
+When searching commands, the output shows available abbreviations:
+
 ```
 ...
     [hub|h|H]
@@ -82,12 +135,24 @@ When we are searching commands, the output is like:
                 hub|h|H.clear|reset
 ...
 ```
-From this we know a command `hub.clear`,
-the name `hub` has abbrs `h` `H`,
-and the `clear` has an alias `reset`.
 
-So `hub.clear` and `h.reset` are the same command:
-```
+This tells us:
+- The command name `hub` has abbreviations: `h`, `H`
+- The subcommand `clear` has an alias: `reset`
+
+### Using abbreviations
+
+All of these call the same command:
+
+```bash
 $> ticat hub.clear
 $> ticat h.reset
+$> ticat H.clear
 ```
+
+## Next steps
+
+- Learn about [Hub: getting modules and flows from others](./hub.md)
+- Understand [environment key-values](./env.md)
+- Explore [flows and command sequences](./flow.md)
+- Discover [searching and filtering commands](./cmds.md)

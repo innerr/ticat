@@ -1,44 +1,53 @@
-# [Spec] Ticat command sequences
+# [Spec] ticat command sequences
 
-(TODO: tail-mode flow, and tail-mode call)
+This specification describes how command sequences work in **ticat**.
 
-## Execute a sequence of command
-A command sequence will execute commands one by one,
-the latter one won't start untill the previous one finishes.
-Commands in a sequence are seperated by ":".
-```
+## Execute a sequence of commands
+
+A command sequence executes commands one by one. The next command won't start until the previous one finishes. Commands in a sequence are separated by `:`.
+
+```bash
 $> ticat <command> : <command> : <command>
 
-## Example:
+# Example:
 $> ticat dummy : sleep 1s : echo hello
 
-## Spaces(\s\t) are allowed but not necessary:
+# Whitespace (spaces/tabs) is allowed but not necessary:
 $> ticat dummy:sleep 1s:echo hello
 ```
 
-## Display what will happen without execute a sequence
-```
+## Display what will happen without executing
+
+Use `desc` to preview a sequence:
+
+```bash
 $> ticat <command> : <command> : <command> : desc
 
-## Exmaples:
+# Examples:
 $> ticat dummy : desc
 $> ticat dummy : sleep 1s : echo hello : desc
 ```
 
 ## Execute a sequence step by step
-The env key "sys.step-by-step" enable or disable the step-by-step feature:
-```
+
+The environment key `sys.step-by-step` enables step-by-step mode:
+
+```bash
+# Enable step-by-step
 $> ticat {sys.step-by-step = true} <command> : <command> : <command>
 $> ticat {sys.step-by-step = on} <command> : <command> : <command>
 $> ticat {sys.step = on} <command> : <command> : <command>
 
-## Enable it only for <command-2>, to ask for confirmation from user
+# Enable only for <command-2>, to ask for confirmation
 $> ticat <command-1> : {sys.step = on} <command-2> : <command-3>
 ```
 
-A set of builtin commands could changes this env key for better usage:
-```
-## Find these two commands:
+### Built-in step-by-step commands
+
+A set of built-in commands provides easier access to this feature:
+
+```bash
+# Find step-by-step commands
 $> ticat cmds.tree dbg.step
 [step-by-step|step|s|S]
     - full-cmd:
@@ -66,20 +75,21 @@ $> ticat cmds.tree dbg.step
         - from:
             builtin
 
-## Use these commands:
+# Enable step-by-step for a sequence
 $> ticat dbg.step.on : <command> : <command> : <command>
 
-## Enable step-by-step in the middle
+# Enable in the middle of a sequence
 $> ticat <command> : <command> : dbg.step.on : <command>
 
-## Enable and save, after this all executions will need confirming
+# Enable and save - all future executions will need confirmation
 $> ticat dbg.step.on : env.save
 ```
 
 ## The "desc" command branch
 
-Overview
-```
+### Overview
+
+```bash
 $> ticat cmds.tree.simple desc
 [desc]
      'desc the flow about to execute'
@@ -97,20 +107,25 @@ $> ticat cmds.tree.simple desc
              'desc the flow execution in lite style'
 ```
 
-Exmaples of `desc`:
-```
+### Examples
+
+```bash
 $> ticat <command> : <command> : <command> : desc
 
-## Examples:
+# Examples:
 $> ticat dummy : desc
 $> ticat dummy : sleep 1s : echo hello : desc
 ```
 
-## Power/priority commands
-Some commands have "power" flag, these type of command can changes the sequence.
-Use "cmds.list <path>" or "cmds.tree <path>" can check a command's type.
-```
-## Example:
+## Power and priority commands
+
+Some commands have special flags that affect sequence execution:
+
+### Power commands
+
+Power commands can modify the sequence. Check a command's type with `cmds.list` or `cmds.tree`:
+
+```bash
 $> ticat cmds.tree dummy.power
 [power|p|P]
      'power dummy cmd for testing'
@@ -122,28 +137,32 @@ $> ticat cmds.tree dummy.power
         power
 ```
 
-The "desc" command have 3 flags:
-* quiet: it would display in the executing sequence(the boxes)
-* priority: it got to run first, then others could be executed.
-* power: it can change the sequence about to execute.
-```
-## The command type of "desc"
+### The "desc" command flags
+
+The `desc` command has three flags:
+- **quiet**: Doesn't display in the executing sequence (the boxes)
+- **priority**: Runs first, before other commands
+- **power**: Can modify the sequence about to execute
+
+```bash
+# The command type of "desc"
 $> ticat cmds.tree desc
 [desc|d|D]
      'desc the flow about to execute'
     - cmd-type:
         power (quiet) (priority)
 
-## The usage of "desc"
+# Usage
 $> ticat <command> : <command> : <command> : desc
-## The actual execute order
+# Actual execute order
 $> ticat desc : <command> : <command> : <command>
-## The actual execution: "desc" remove all the commands after display the sequence's info
+# Actual execution: "desc" removes all commands after displaying sequence info
 $> ticat desc [: <command> : <command> : <command>]
 ```
 
-Other power commmands:
-```
+### Other power commands
+
+```bash
 $> ticat cmd +
 [more|+]
      'display rich info base on:
@@ -164,11 +183,16 @@ $> ticat cmd +
 ...
 ```
 
-When have more than one priority commands in a sequence:
-```
-## User input
+### Multiple priority commands
+
+When there's more than one priority command in a sequence:
+
+```bash
+# User input
 $> ticat <command-1> : <command-2> : <priority-command-a> : <priority-command-b>
 
-## Actual execute order:
+# Actual execute order:
 $> ticat <priority-command-a> : <priority-command-b> : <command-1> : <command-2>
 ```
+
+Priority commands maintain their relative order from the original input.

@@ -1,42 +1,92 @@
-# Zen: the choices we made
+# Why not just use unix-pipe?
 
-## Why not just use unix-pipe?
+**ticat** uses a unix-pipe-like style, but it's fundamentally different. Here's why.
 
-### Executing order
+## Execution order difference
 
-Even **ticat** use unix-pipe style, but it's not the same.
+### Unix pipe
+All commands in a pipeline launch simultaneously:
+```bash
+$> cmd1 | cmd2 | cmd3
+# All three start at the same time
+# Data flows through buffers
+```
 
-The executing orders are different:
-* In pipe, all commands launch at the same time
-* In **ticat**, commands launch one by one
+### ticat sequence
+Commands execute one at a time, sequentially:
+```bash
+$> ticat cmd1 : cmd2 : cmd3
+# cmd1 runs first, completes
+# Then cmd2 runs, completes
+# Then cmd3 runs
+```
 
-Apparently, **ticat** do this to meet the "workflow control" demand, so pipe is not fit here.
+**Why?** Workflow control requires sequential execution with state management between steps.
 
-### Unix-pipe is weak, ticat env is strong
+## Unix-pipe limitations
 
-* Unix-pipe is anonymous, hard to define and force to apply a specific protocol in concept.
-    - named-pipe(mkfifo) could solve this, but recycling will be a hard job.
-* There is only one pipe between commands, which we can only passing one type of data.
+### Anonymous and unmanaged
 
-Of cause we could define protocols on pipe to solve all those,
-but it will make it inconvenient to write a component(eg, in bash).
+Unix pipes are anonymous - hard to define and enforce a specific protocol.
 
-In **ticat**, env key-values can be considered as another form of named-pipe,
-with a name, a key-value could bind to a format definition.
+**Alternative**: Named pipes (`mkfifo`) could solve this, but:
+- Resource recycling is problematic
+- Complex error handling
+- Not suitable for workflow management
 
-There is no recycling issue about env key-values,
-even it have, **ticat** implemented session model, could handle it easily.
+### Single data stream
 
-The env-ops(read/write) in a **ticat** command sequence will be checked before executing,
-commands are required to register what keys them will read or write,
-read before write will cause fatal report.
-So the **ticat** model is a managed named-pipe-like system.
+There's only one pipe between commands, meaning only one type of data can pass through.
 
-A **ticat** flow can be called in another flow(command sequence),
-which forms callstacks, this is important in complicated assemblings.
-To support this, unix-pipe is far not enough.
+To pass multiple values, you'd need to:
+- Define complex protocols
+- Serialize/deserialize data
+- Handle encoding/decoding in every component
 
-The callstack depth display in executing (stack-level):
+This makes component development significantly harder.
+
+## ticat environment: The better solution
+
+### Named key-values
+
+Environment key-values can be considered as named pipes with benefits:
+- Each key has a meaningful name
+- Values can have defined formats
+- Multiple values flow through the system
+
+### Automatic management
+
+- **No recycling issues** - ticat handles cleanup automatically
+- **Session model** - Clean separation between executions
+- **Type awareness** - Keys can be validated
+
+### Dependency checking
+
+Before execution, ticat checks environment operations:
+
+```bash
+$> ticat bench :+
+-------=<unsatisfied env read>=-------
+
+<FATAL> 'cluster.port'
+       - read by:
+            [bench.load]
+            [bench.run]
+       - but not provided
+```
+
+Commands must register what they read or write:
+- `read` - Must be provided
+- `write` - Will be created
+- `may-read` - Optional input
+- `may-write` - Optional output
+
+This makes ticat a **managed named-pipe-like system**.
+
+## Call stack support
+
+A ticat flow can call other flows, forming call stacks:
+
 ```
 ┌───────────────────┐
 │ stack-level: [3]  │             06-02 04:51:45
@@ -53,3 +103,30 @@ The callstack depth display in executing (stack-level):
 │    ben(=bench).run                             │
 └────────────────────────────────────────────────┘
 ```
+
+Unix pipes cannot support this - there's no concept of nested calls or return values.
+
+## Comparison
+
+| Feature | Unix Pipe | ticat |
+|---------|-----------|-------|
+| Execution | Parallel | Sequential |
+| Data format | Single stream | Named key-values |
+| Protocol | Manual | Automatic checking |
+| Nesting | No | Yes (call stacks) |
+| Error handling | Exit codes | Rich error context |
+| State | None | Environment |
+| Debugging | Difficult | Built-in support |
+
+## When to use each
+
+**Use unix-pipe when**:
+- Processing data streams
+- Parallel execution needed
+- Simple transformations
+
+**Use ticat when**:
+- Orchestrating workflows
+- Managing state between steps
+- Building composable tools
+- Need dependency checking
