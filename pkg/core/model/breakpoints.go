@@ -43,7 +43,7 @@ func (self *BreakPoints) SetAfters(cc *Cli, env *Env, cmdList []string) (verifie
 }
 
 func (self *BreakPoints) IsEmpty() bool {
-	return self.AtEnd == false && len(self.Befores) == 0 && len(self.Afters) == 0
+	return !self.AtEnd && len(self.Befores) == 0 && len(self.Afters) == 0
 }
 
 func (self *BreakPoints) Clean(cc *Cli, env *Env) {

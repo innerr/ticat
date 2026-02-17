@@ -37,10 +37,7 @@ func EnvInput(env *Env, reader io.Reader, sep string, delMark string) error {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
-		text := scanner.Text()
-		if strings.HasSuffix(text, "\n") {
-			text = text[0 : len(text)-1]
-		}
+		text := strings.TrimSuffix(scanner.Text(), "\n")
 		i := strings.Index(text, sep)
 		if i < 0 {
 			return fmt.Errorf("[EnvInput] bad format line '%s', sep '%s'",
@@ -64,13 +61,19 @@ func saveEnvToFile(env *Env, path string, sep string, filtered []string, skipDef
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToFile] open env file '%s' failed: %v", tmp, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[saveEnvToFile] close env file '%s' failed: %v", tmp, err))
+		}
+	}()
 
 	err = EnvOutput(env, file, sep, filtered, skipDefault)
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToFile] write env file '%s' failed: %v", tmp, err))
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		panic(fmt.Errorf("[saveEnvToFile] close env file '%s' failed: %v", tmp, err))
+	}
 
 	err = os.Rename(tmp, path)
 	if err != nil {
@@ -108,7 +111,11 @@ func LoadEnvFromFile(env *Env, path string, sep string, delMark string) {
 		panic(fmt.Errorf("[LoadEnvFromFile] open local env file '%s' failed: %v",
 			path, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[LoadEnvFromFile] close env file '%s' failed: %v", path, err))
+		}
+	}()
 
 	err = EnvInput(env, file, sep, delMark)
 	if err != nil {

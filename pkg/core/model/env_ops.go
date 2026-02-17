@@ -59,11 +59,11 @@ func (self EnvOps) AllWriteKeys() (keys []string) {
 
 func (self EnvOps) MatchFind(findStr string) bool {
 	for _, name := range self.orderedNames {
-		if strings.Index(name, findStr) >= 0 {
+		if strings.Contains(name, findStr) {
 			return true
 		}
 		for _, op := range self.Ops(name) {
-			if strings.Index(EnvOpStr(op), findStr) >= 0 {
+			if strings.Contains(EnvOpStr(op), findStr) {
 				return true
 			}
 		}

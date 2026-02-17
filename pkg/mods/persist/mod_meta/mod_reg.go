@@ -605,10 +605,10 @@ func regEnvKeyAbbrs(
 
 func regEnvOp(cmd *model.Cmd, key string, opOrigin string) {
 	op := strings.ToLower(opOrigin)
-	may := strings.Index(op, "may") >= 0 || strings.Index(op, "opt") >= 0
-	write := strings.Index(op, "w") >= 0
-	read := strings.Index(op, "rd") >= 0 ||
-		strings.Index(op, "read") >= 0 || op == "r"
+	may := strings.Contains(op, "may") || strings.Contains(op, "opt")
+	write := strings.Contains(op, "w")
+	read := strings.Contains(op, "rd") ||
+		strings.Contains(op, "read") || op == "r"
 	if write && read {
 		panic(fmt.Errorf("[LoadLocalMods.regEnvOp] "+
 			"parse env r|w definition failed: %v", opOrigin))

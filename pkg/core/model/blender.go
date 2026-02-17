@@ -83,10 +83,7 @@ func NewBlender() *Blender {
 }
 
 func (self *Blender) Clone() *Blender {
-	invokers := []BlenderInvoker{}
-	for _, info := range self.invokers {
-		invokers = append(invokers, info)
-	}
+	invokers := append([]BlenderInvoker{}, self.invokers...)
 	return &Blender{
 		invokers,
 	}

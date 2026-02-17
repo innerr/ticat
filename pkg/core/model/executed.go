@@ -105,7 +105,11 @@ func ParseExecutedFlow(path ExecutedStatusFilePath) (lastActiveTs time.Time, exe
 	if err != nil {
 		panic(fmt.Errorf("[ParseExecutedFlow] open executed status file '%s' failed: %v", path.Short(), err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[ParseExecutedFlow] close status file '%s' failed: %v", path.Short(), err))
+		}
+	}()
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
 		panic(fmt.Errorf("[ParseExecutedFlow] read executed status file '%s' failed: %v", path.Short(), err))
@@ -166,7 +170,7 @@ func (self *ExecutedFlow) MatchFind(findStrs []string) bool {
 		return true
 	}
 	for _, it := range findStrs {
-		if strings.Index(self.DirName, it) < 0 && strings.Index(self.Flow, it) < 0 {
+		if !strings.Contains(self.DirName, it) && !strings.Contains(self.Flow, it) {
 			return false
 		}
 	}

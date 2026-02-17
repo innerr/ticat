@@ -62,7 +62,7 @@ jobs:
       run: make ticat
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ticat-binary
         path: bin/ticat
@@ -84,14 +84,18 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    - name: Run go vet
-      run: go vet ./...
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: --timeout=5m
 
     - name: Run gofmt
       run: |
-        output=$(gofmt -l .)
+        output=$(gofmt -s -l .)
         if [ -n "$output" ]; then
           echo "The following files are not properly formatted:"
           echo "$output"
           exit 1
         fi
+        echo "All files are properly formatted"

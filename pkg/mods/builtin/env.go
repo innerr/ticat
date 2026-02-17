@@ -216,7 +216,7 @@ func RemoveEnvValHavePrefixNotSave(
 	prefix := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "prefix")
 
 	keyVals := env.FlattenAll()
-	for key, _ := range keyVals {
+	for key := range keyVals {
 		if !strings.HasPrefix(key, prefix) {
 			continue
 		}

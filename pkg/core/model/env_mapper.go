@@ -71,11 +71,11 @@ func (self *Val2Env) Has(envKey string) bool {
 }
 
 func (self *Val2Env) MatchFind(findStr string) bool {
-	if strings.Index("write", findStr) >= 0 {
+	if strings.Contains("write", findStr) {
 		return true
 	}
 	for _, envKey := range self.orderedKeys {
-		if strings.Index(envKey, findStr) >= 0 {
+		if strings.Contains(envKey, findStr) {
 			return true
 		}
 	}
@@ -167,14 +167,14 @@ func (self *Arg2Env) GetEnvKey(argName string) (string, bool) {
 }
 
 func (self *Arg2Env) MatchFind(findStr string) bool {
-	if strings.Index("write", findStr) >= 0 {
+	if strings.Contains("write", findStr) {
 		return true
 	}
 	for argName, envKey := range self.nameKeys {
-		if strings.Index(argName, findStr) >= 0 {
+		if strings.Contains(argName, findStr) {
 			return true
 		}
-		if strings.Index(envKey, findStr) >= 0 {
+		if strings.Contains(envKey, findStr) {
 			return true
 		}
 	}

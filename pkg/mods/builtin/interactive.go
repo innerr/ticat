@@ -26,7 +26,11 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) {
 	shortcutCompletion := env.GetBool("display.completion.shortcut")
 
 	lineReader := liner.NewLiner()
-	defer lineReader.Close()
+	defer func() {
+		if err := lineReader.Close(); err != nil {
+			panic(fmt.Errorf("[RunInteractive] close line reader failed: %v", err))
+		}
+	}()
 
 	lineReader.SetCtrlCAborts(true)
 

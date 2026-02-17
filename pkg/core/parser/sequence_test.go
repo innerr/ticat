@@ -12,7 +12,7 @@ func TestSequenceParserNormalize(t *testing.T) {
 		if len(a) != len(b) {
 			fatal()
 		}
-		for i, _ := range a {
+		for i := range a {
 			if a[i] != b[i] {
 				fatal()
 			}
@@ -76,11 +76,11 @@ func TestSequenceParserBreak(t *testing.T) {
 		if len(a) != len(b) {
 			fatal()
 		}
-		for i, _ := range a {
+		for i := range a {
 			if len(a[i]) != len(b[i]) {
 				fatal()
 			}
-			for j, _ := range a[i] {
+			for j := range a[i] {
 				if len(a[i][j]) != len(b[i][j]) {
 					fatal()
 				}
@@ -94,27 +94,27 @@ func TestSequenceParserBreak(t *testing.T) {
 		assertEq(parsed, b)
 	}
 
-	test([]string{"aa"}, [][]string{[]string{"aa"}})
-	test([]string{"aa", "bb"}, [][]string{[]string{"aa", "bb"}})
-	test([]string{"aa", "bb", "cc"}, [][]string{[]string{"aa", "bb", "cc"}})
-	test([]string{"  aa  ", "  bb  ", "  cc  "}, [][]string{[]string{"aa", "bb", "cc"}})
+	test([]string{"aa"}, [][]string{{"aa"}})
+	test([]string{"aa", "bb"}, [][]string{{"aa", "bb"}})
+	test([]string{"aa", "bb", "cc"}, [][]string{{"aa", "bb", "cc"}})
+	test([]string{"  aa  ", "  bb  ", "  cc  "}, [][]string{{"aa", "bb", "cc"}})
 
 	//test([]string{":aa"}, [][]string{[]string{"aa"}})
 	//test([]string{":aa", "bb", "cc"}, [][]string{[]string{"aa", "bb", "cc"}})
-	test([]string{"aa:", "bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
-	test([]string{"aa", ":bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
-	test([]string{"aa", "bb:", "cc"}, [][]string{[]string{"aa", "bb"}, []string{"cc"}})
-	test([]string{"aa", "bb", ":cc"}, [][]string{[]string{"aa", "bb"}, []string{"cc"}})
+	test([]string{"aa:", "bb", "cc"}, [][]string{{"aa"}, {"bb", "cc"}})
+	test([]string{"aa", ":bb", "cc"}, [][]string{{"aa"}, {"bb", "cc"}})
+	test([]string{"aa", "bb:", "cc"}, [][]string{{"aa", "bb"}, {"cc"}})
+	test([]string{"aa", "bb", ":cc"}, [][]string{{"aa", "bb"}, {"cc"}})
 	//test([]string{"aa", "bb", "cc:"}, [][]string{[]string{"aa", "bb", "cc"}})
 	//test([]string{"  aa  ", "  bb  ", "  cc  :  "}, [][]string{[]string{"aa", "bb", "cc"}})
 
-	test([]string{"a:x"}, [][]string{[]string{"a"}, []string{"x"}})
-	test([]string{"a:x", "bb", "cc"}, [][]string{[]string{"a"}, []string{"x", "bb", "cc"}})
-	test([]string{"aa", "b:x", "cc"}, [][]string{[]string{"aa", "b"}, []string{"x", "cc"}})
-	test([]string{"aa", "bb", "c:x"}, [][]string{[]string{"aa", "bb", "c"}, []string{"x"}})
-	test([]string{"  aa  ", "  bb  ", "  c  :  x  "}, [][]string{[]string{"aa", "bb", "c"}, []string{"x"}})
+	test([]string{"a:x"}, [][]string{{"a"}, {"x"}})
+	test([]string{"a:x", "bb", "cc"}, [][]string{{"a"}, {"x", "bb", "cc"}})
+	test([]string{"aa", "b:x", "cc"}, [][]string{{"aa", "b"}, {"x", "cc"}})
+	test([]string{"aa", "bb", "c:x"}, [][]string{{"aa", "bb", "c"}, {"x"}})
+	test([]string{"  aa  ", "  bb  ", "  c  :  x  "}, [][]string{{"aa", "bb", "c"}, {"x"}})
 
-	test([]string{"aa", ":", "bb"}, [][]string{[]string{"aa"}, []string{"bb"}})
+	test([]string{"aa", ":", "bb"}, [][]string{{"aa"}, {"bb"}})
 	//test([]string{"aa", ":", ":", "bb"}, [][]string{[]string{"aa"}, []string{"bb"}})
 	//test([]string{"aa", "::", "bb"}, [][]string{[]string{"aa"}, []string{"bb"}})
 	//test([]string{"aa:", "::", ":bb"}, [][]string{[]string{"aa"}, []string{"bb"}})
@@ -139,9 +139,9 @@ func TestSequenceParserBreak(t *testing.T) {
 	//test([]string{"aa:", ":", "::bb", "cc"}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
 	//test([]string{"  aa  :  ", "  :  ", "  :  :  bb  ", "  cc  "}, [][]string{[]string{"aa"}, []string{"bb", "cc"}})
 
-	test([]string{"http:?"}, [][]string{[]string{"http:?"}})
-	test([]string{"HTTP:?"}, [][]string{[]string{"HTTP:?"}})
-	test([]string{"HTTP://"}, [][]string{[]string{"HTTP://"}})
-	test([]string{"Http:?"}, [][]string{[]string{"Http"}, []string{"?"}})
-	test([]string{"  Http:?  "}, [][]string{[]string{"Http"}, []string{"?"}})
+	test([]string{"http:?"}, [][]string{{"http:?"}})
+	test([]string{"HTTP:?"}, [][]string{{"HTTP:?"}})
+	test([]string{"HTTP://"}, [][]string{{"HTTP://"}})
+	test([]string{"Http:?"}, [][]string{{"Http"}, {"?"}})
+	test([]string{"  Http:?  "}, [][]string{{"Http"}, {"?"}})
 }

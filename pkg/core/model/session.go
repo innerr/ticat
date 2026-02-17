@@ -186,7 +186,11 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 
 	keepDur := env.GetDur("sys.sessions.keep-status-duration")
 
-	os.MkdirAll(sessionsRoot, os.ModePerm)
+	if err := os.MkdirAll(sessionsRoot, os.ModePerm); err != nil {
+		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create sessions root path '%s': %v\n",
+			sessionsRoot, err))
+		return nil, false, false
+	}
 	dirs, err := os.ReadDir(sessionsRoot)
 	if err != nil {
 		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't read sessions' root path '%s'\n",
@@ -210,7 +214,10 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 		}
 		added := oldSessionStartTs.Add(keepDur)
 		if added.Before(now) {
-			os.RemoveAll(filepath.Join(sessionsRoot, dir.Name()))
+			if err := os.RemoveAll(filepath.Join(sessionsRoot, dir.Name())); err != nil {
+				cc.Screen.Print(fmt.Sprintf("[sessionInit] can't remove old session '%s': %v\n",
+					dir.Name(), err))
+			}
 		}
 	}
 

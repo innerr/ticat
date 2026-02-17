@@ -50,13 +50,19 @@ func WriteReposInfoFile(
 	path string,
 	infos []RepoInfo, sep string) {
 
-	os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		panic(fmt.Errorf("[WriteReposInfoFile] create dir for file '%s' failed: %v", path, err))
+	}
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		panic(fmt.Errorf("[WriteReposInfoFile] open file '%s' failed: %v", tmp, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
+		}
+	}()
 
 	for _, info := range infos {
 		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s%s%s\n", info.Addr.Str(), sep, info.AddReason, sep,
@@ -65,7 +71,9 @@ func WriteReposInfoFile(
 			panic(fmt.Errorf("[WriteReposInfoFile] write file '%s' failed: %v", tmp, err))
 		}
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
+	}
 
 	err = os.Rename(tmp, path)
 	if err != nil {
@@ -89,7 +97,11 @@ func ReadReposInfoFile(
 		}
 		panic(fmt.Errorf("[ReadReposInfoFile] open file '%s' failed: %v", path, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[ReadReposInfoFile] close file '%s' failed: %v", path, err))
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
@@ -144,7 +156,7 @@ func ExtractAddrFromList(
 		if findInStr == findStr {
 			return []RepoInfo{info}, append(infos[:i], infos[i+1:]...)
 		}
-		if strings.Index(findInStr, findStr) >= 0 {
+		if strings.Contains(findInStr, findStr) {
 			extracted = append(extracted, info)
 		} else {
 			rest = append(rest, info)

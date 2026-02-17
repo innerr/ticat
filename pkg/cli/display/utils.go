@@ -1,7 +1,6 @@
 package display
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -48,7 +47,7 @@ func padRight(str string, pad string, width int) string {
 }
 
 func formatDuration(dur time.Duration) string {
-	return strings.ReplaceAll(fmt.Sprintf("%s", dur), "µ", "u")
+	return strings.ReplaceAll(dur.String(), "µ", "u")
 }
 
 func rpt(char string, count int) string {

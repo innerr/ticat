@@ -127,7 +127,10 @@ func CheckRepoGitStatus(
 	c.Dir = repoPath
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	c.Run()
+	if err := c.Run(); err != nil {
+		// Ignore errors intentionally
+		_ = err
+	}
 }
 
 func updateRepoAndReadSubList(

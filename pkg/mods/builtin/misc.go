@@ -179,7 +179,7 @@ func Dummy(
 
 func EnvOpCmds() []model.EnvOpCmd {
 	return []model.EnvOpCmd{
-		model.EnvOpCmd{
+		{
 			Func: ResetSessionEnv,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				if checker != nil {
@@ -187,7 +187,7 @@ func EnvOpCmds() []model.EnvOpCmd {
 				}
 				env.GetLayer(model.EnvLayerSession).Clear(false)
 			}},
-		model.EnvOpCmd{
+		{
 			Func: ResetLocalEnv,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				if checker != nil {
@@ -195,7 +195,7 @@ func EnvOpCmds() []model.EnvOpCmd {
 				}
 				env.GetLayer(model.EnvLayerSession).Clear(false)
 			}},
-		model.EnvOpCmd{
+		{
 			Func: RemoveEnvValAndSaveToLocal,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
@@ -204,7 +204,7 @@ func EnvOpCmds() []model.EnvOpCmd {
 				}
 				env.DeleteEx(key, model.EnvLayerDefault)
 			}},
-		model.EnvOpCmd{
+		{
 			Func: MarkTime,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("write-to-key")
@@ -214,7 +214,7 @@ func EnvOpCmds() []model.EnvOpCmd {
 				env.GetLayer(model.EnvLayerSession).
 					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-MarkTime>")
 			}},
-		model.EnvOpCmd{
+		{
 			Func: MapEnvKeyValueToAnotherKey,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("dest-key")
@@ -224,7 +224,7 @@ func EnvOpCmds() []model.EnvOpCmd {
 				env.GetLayer(model.EnvLayerSession).
 					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-MapEnvKeyValueToAnotherKey>")
 			}},
-		model.EnvOpCmd{
+		{
 			Func: SetEnvKeyValue,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
@@ -234,7 +234,7 @@ func EnvOpCmds() []model.EnvOpCmd {
 				env.GetLayer(model.EnvLayerSession).
 					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-SetEnvKeyValue>")
 			}},
-		model.EnvOpCmd{
+		{
 			Func: AddEnvKeyValue,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
@@ -244,7 +244,7 @@ func EnvOpCmds() []model.EnvOpCmd {
 				env.GetLayer(model.EnvLayerSession).
 					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-AddEnvKeyValue>")
 			}},
-		model.EnvOpCmd{
+		{
 			Func: RemoveEnvValNotSave,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
@@ -253,7 +253,7 @@ func EnvOpCmds() []model.EnvOpCmd {
 				}
 				env.GetLayer(model.EnvLayerSession).Delete(key)
 			}},
-		model.EnvOpCmd{
+		{
 			Func: RemoveEnvValAndSaveToLocal,
 			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
@@ -262,10 +262,10 @@ func EnvOpCmds() []model.EnvOpCmd {
 				}
 				env.GetLayer(model.EnvLayerSession).Delete(key)
 			}},
-		model.EnvOpCmd{
+		{
 			Func:   EnvLoadFromSnapshot,
 			Action: opCheckEnvLoadFromSnapshot},
-		model.EnvOpCmd{
+		{
 			Func:   EnvLoadNonExistFromSnapshot,
 			Action: opCheckEnvLoadFromSnapshot},
 	}
@@ -286,7 +286,7 @@ func opCheckEnvLoadFromSnapshot(checker *model.EnvOpsChecker, argv model.ArgVals
 	model.LoadEnvFromFile(loaded, path, sep, delMark)
 
 	env = env.GetLayer(model.EnvLayerSession)
-	for key, _ := range loaded.FlattenAll() {
+	for key := range loaded.FlattenAll() {
 		if checker != nil {
 			checker.SetKeyWritten(key)
 		}

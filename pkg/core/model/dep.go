@@ -55,7 +55,8 @@ func collectDepends(
 			if ok {
 				cmds[cic] = DependInfo{dep.Reason, it}
 			} else {
-				res[dep.OsCmd] = map[*Cmd]DependInfo{cic: DependInfo{dep.Reason, it}}
+				info := DependInfo{dep.Reason, it}
+				res[dep.OsCmd] = map[*Cmd]DependInfo{cic: info}
 			}
 		}
 

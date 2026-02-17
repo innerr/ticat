@@ -165,7 +165,7 @@ func DbgBreakStatus(
 
 	if len(bps.Befores) != 0 {
 		cc.Screen.Print(fmt.Sprintf(display.ColorTip("    break before one of the commands:\n", env)))
-		for k, _ := range bps.Befores {
+		for k := range bps.Befores {
 			k = display.ColorCmd("["+k+"]", env)
 			cc.Screen.Print(fmt.Sprintf("        %s\n", k))
 		}
@@ -173,7 +173,7 @@ func DbgBreakStatus(
 
 	if len(bps.Afters) != 0 {
 		cc.Screen.Print(fmt.Sprintf(display.ColorTip("    break when one of the commands finishs:\n", env)))
-		for k, _ := range bps.Afters {
+		for k := range bps.Afters {
 			k = display.ColorCmd("["+k+"]", env)
 			cc.Screen.Print(fmt.Sprintf("        %s\n", k))
 		}

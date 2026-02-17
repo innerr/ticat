@@ -205,6 +205,7 @@ func (self *Cmd) Execute(
 	if !ok {
 		// Normally the command should print info before return false, so no need to panic
 		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
+		_ = ok
 	}
 
 	end := time.Now()
@@ -345,13 +346,13 @@ func (self *Cmd) HasSubFlow(includeQuietSubFlow bool) bool {
 }
 
 func (self *Cmd) MatchFind(findStr string) bool {
-	if strings.Index(self.owner.DisplayPath(), findStr) >= 0 {
+	if strings.Contains(self.owner.DisplayPath(), findStr) {
 		return true
 	}
-	if strings.Index(self.help, findStr) >= 0 {
+	if strings.Contains(self.help, findStr) {
 		return true
 	}
-	if strings.Index(self.cmdLine, findStr) >= 0 {
+	if strings.Contains(self.cmdLine, findStr) {
 		return true
 	}
 	if self.args.MatchFind(findStr) {
@@ -366,24 +367,24 @@ func (self *Cmd) MatchFind(findStr string) bool {
 	if self.envOps.MatchFind(findStr) {
 		return true
 	}
-	if strings.Index(string(self.ty), findStr) >= 0 {
+	if strings.Contains(string(self.ty), findStr) {
 		return true
 	}
 	for _, dep := range self.depends {
-		if strings.Index(dep.OsCmd, findStr) >= 0 {
+		if strings.Contains(dep.OsCmd, findStr) {
 			return true
 		}
-		if strings.Index(dep.Reason, findStr) >= 0 {
+		if strings.Contains(dep.Reason, findStr) {
 			return true
 		}
 	}
-	if self.flags.quiet && strings.Index("quiet", findStr) >= 0 {
+	if self.flags.quiet && strings.Contains("quiet", findStr) {
 		return true
 	}
-	if self.ty == CmdTypePower && strings.Index("power", findStr) >= 0 {
+	if self.ty == CmdTypePower && strings.Contains("power", findStr) {
 		return true
 	}
-	if self.flags.priority && strings.Index("priority", findStr) >= 0 {
+	if self.flags.priority && strings.Contains("priority", findStr) {
 		return true
 	}
 	return false
@@ -840,7 +841,7 @@ func normalizeInput(input []string, sequenceSep string) []string {
 func StripFlowForExecute(flow []string, sequenceSep string) []string {
 	var output []string
 	for _, line := range flow {
-		strings.TrimSpace(line)
+		line = strings.TrimSpace(line)
 		if len(line) <= 0 {
 			continue
 		}
@@ -850,7 +851,7 @@ func StripFlowForExecute(flow []string, sequenceSep string) []string {
 	flow = output
 	output = []string{}
 	for i, line := range flow {
-		strings.TrimSpace(line)
+		line = strings.TrimSpace(line)
 		if len(line) <= 0 {
 			continue
 		}
@@ -1024,7 +1025,11 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, p
 
 	logger := cc.CmdIO.SetupForExec(cmd, logFilePath)
 	if logger != nil {
-		defer logger.Close()
+		defer func() {
+			if err := logger.Close(); err != nil {
+				panic(fmt.Errorf("[executeFile] close logger failed: %v", err))
+			}
+		}()
 	}
 
 	err := cmd.Run()
@@ -1038,7 +1043,9 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, p
 			logFilePath,
 		}
 		if logger != nil {
-			logger.Close()
+			if err := logger.Close(); err != nil {
+				panic(fmt.Errorf("[executeFile] close logger failed: %v", err))
+			}
 		}
 		panic(err)
 	}

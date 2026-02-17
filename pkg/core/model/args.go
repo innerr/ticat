@@ -87,8 +87,8 @@ func (self *Args) IsFromAutoMapAll(name string) bool {
 }
 
 func (self Args) MatchFind(findStr string) bool {
-	for k, _ := range self.abbrsRevIdx {
-		if strings.Index(k, findStr) >= 0 {
+	for k := range self.abbrsRevIdx {
+		if strings.Contains(k, findStr) {
 			return true
 		}
 	}
@@ -128,13 +128,11 @@ func (self *Args) RawDefVal(name string) string {
 }
 
 func (self *Args) Realname(nameOrAbbr string) string {
-	name, _ := self.abbrsRevIdx[nameOrAbbr]
-	return name
+	return self.abbrsRevIdx[nameOrAbbr]
 }
 
 func (self *Args) Abbrs(name string) (abbrs []string) {
-	abbrs, _ = self.abbrs[name]
-	return
+	return self.abbrs[name]
 }
 
 func (self *Args) Has(name string) bool {

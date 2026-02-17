@@ -262,6 +262,7 @@ func (self *Executor) executeCmd(
 		}
 	} else {
 		// TODO: need to do anything for bg cmd?
+		_ = true
 	}
 
 	start := time.Now()
@@ -302,7 +303,7 @@ func (self *Executor) executeCmd(
 		// Maybe it's an empty global-env definition
 		newCurrCmdIdx, succeeded = currCmdIdx, true
 	}
-	elapsed := time.Now().Sub(start)
+	elapsed := time.Since(start)
 
 	if stackLines.Display {
 		resultLines := display.PrintCmdResult(cc, bootstrap, cc.Screen, cmd,
@@ -313,6 +314,7 @@ func (self *Executor) executeCmd(
 		if last.LastCmd() != nil && !last.LastCmd().IsQuiet() {
 			// Not pretty, disable for now
 			//cc.Screen.Print("\n")
+			_ = true
 		}
 	}
 
@@ -436,7 +438,7 @@ func useCmdsAbbrs(abbrs *model.EnvAbbrs, cmds *model.CmdTree) {
 }
 
 func useEnvAbbrs(abbrs *model.EnvAbbrs, env *model.Env, sep string) {
-	for k, _ := range env.Flatten(true, nil, true) {
+	for k := range env.Flatten(true, nil, true) {
 		curr := abbrs
 		for _, seg := range strings.Split(k, sep) {
 			curr = curr.GetOrAddSub(seg)
@@ -564,7 +566,7 @@ func asyncExecute(
 		}
 		start := time.Now()
 		_, ok := cic.Execute(argv, cc, env, mask, flow, allowError, currCmdIdx, nil)
-		elapsed := time.Now().Sub(start)
+		elapsed := time.Since(start)
 		env.SetInt("display.executor.displayed", 0)
 		if !ok {
 			// Should already panic inside cmd.Execute

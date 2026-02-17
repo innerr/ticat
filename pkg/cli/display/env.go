@@ -53,7 +53,7 @@ func KeyValueDisplayStrEx(key string, value string, env *model.Env, envKeysInfo 
 
 func dumpEnvFlattenVals(screen model.Screen, env *model.Env, flatten map[string]string, findStrs ...string) {
 	var keys []string
-	for k, _ := range flatten {
+	for k := range flatten {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -62,8 +62,8 @@ func dumpEnvFlattenVals(screen model.Screen, env *model.Env, flatten map[string]
 		if len(findStrs) != 0 {
 			notMatched := false
 			for _, findStr := range findStrs {
-				if strings.Index(k, findStr) < 0 &&
-					strings.Index(v, findStr) < 0 {
+				if !strings.Contains(k, findStr) &&
+					!strings.Contains(v, findStr) {
 					notMatched = true
 					break
 				}
@@ -99,7 +99,7 @@ func dumpEnv(
 	if !printEnvLayer {
 		flatten := env.Flatten(printDefEnv, filterPrefixs, true)
 		var keys []string
-		for k, _ := range flatten {
+		for k := range flatten {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)

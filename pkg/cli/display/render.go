@@ -180,20 +180,20 @@ func getFrameChars(env *model.Env) *FrameChars {
 
 func getFrameCharsByName(env *model.Env, name string) *FrameChars {
 	if env.GetBool("display.utf8") {
-		if strings.Index(name, "utf") >= 0 {
+		if strings.Contains(name, "utf") {
 			return FrameCharsUtf8()
 		}
-		if strings.Index(name, "heavy") >= 0 || strings.Index(name, "bold") >= 0 {
+		if strings.Contains(name, "heavy") || strings.Contains(name, "bold") {
 			return FrameCharsUtf8Heavy()
 		}
 	}
-	if strings.Index(name, "slash") >= 0 {
+	if strings.Contains(name, "slash") {
 		return FrameCharsNoSlash()
 	}
-	if strings.Index(name, "corner") >= 0 {
+	if strings.Contains(name, "corner") {
 		return FrameCharsNoCorner()
 	}
-	if strings.Index(name, "heavy") >= 0 {
+	if strings.Contains(name, "heavy") {
 		return FrameCharsHeavy()
 	}
 	return FrameCharsAscii()

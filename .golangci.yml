@@ -1,0 +1,26 @@
+# golangci-lint configuration for ticat
+# See: https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+
+issues:
+  exclude-dirs:
+    - bin
+    - vendor
+  exclude-use-default: false
+  exclude:
+    - 'unreachable code'
+    - 'statement is unreachable'
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+    - goimports
+    - errcheck
+    - govet
+
+linters-settings:
+  gofmt:
+    simplify: true

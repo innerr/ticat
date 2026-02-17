@@ -9,11 +9,11 @@ type EnvLayerType string
 
 const (
 	EnvLayerDefault   EnvLayerType = "default"
-	EnvLayerPersisted              = "persisted"
-	EnvLayerSession                = "session"
-	EnvLayerCmd                    = "command"
-	EnvLayerSubFlow                = "subflow"
-	EnvLayerTmp                    = "temporary"
+	EnvLayerPersisted EnvLayerType = "persisted"
+	EnvLayerSession   EnvLayerType = "session"
+	EnvLayerCmd       EnvLayerType = "command"
+	EnvLayerSubFlow   EnvLayerType = "subflow"
+	EnvLayerTmp       EnvLayerType = "temporary"
 )
 
 func EnvLayerName(ty EnvLayerType) string {
@@ -341,7 +341,7 @@ func IsSensitiveKeyVal(key string, val string) bool {
 	}
 	key = strings.ToLower(key)
 	for _, it := range sensitives {
-		if strings.Index(key, it) >= 0 && !StrToTrue(val) && !StrToFalse(val) {
+		if strings.Contains(key, it) && !StrToTrue(val) && !StrToFalse(val) {
 			return true
 		}
 	}
