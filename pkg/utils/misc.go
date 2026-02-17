@@ -65,7 +65,7 @@ func UserConfirm() (yes bool) {
 			return true
 		}
 	}
-	return //nolint:unreachable
+	return
 }
 
 type TerminalSize struct {
