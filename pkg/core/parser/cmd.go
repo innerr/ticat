@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/innerr/ticat/pkg/core/model"
@@ -46,7 +45,6 @@ func (self *CmdParser) Parse(
 	envAbbrs *model.EnvAbbrs,
 	input []string) (parsed model.ParsedCmd) {
 
-	// Delay err check
 	segs, trivialLvl, err, isMinorErr := self.parse(cmds, envAbbrs, input)
 
 	curr := model.ParsedCmdSeg{Matched: model.MatchedCmd{}}
@@ -70,9 +68,9 @@ func (self *CmdParser) Parse(
 			} else {
 				curr.Matched = matchedCmd
 			}
-			path = append(path, matchedCmd.Cmd.Name())
-		} else {
-			// ignore parsedSegTypeSep
+			if matchedCmd.Cmd != nil {
+				path = append(path, matchedCmd.Cmd.Name())
+			}
 		}
 	}
 	if !curr.IsEmpty() {
@@ -89,127 +87,159 @@ func (self *CmdParser) parse(
 	envAbbrs *model.EnvAbbrs,
 	input []string) (parsed []parsedSeg, trivialLvl int, err error, isMinorErr bool) {
 
-	var matchedCmdPath []string
-	var curr = cmds
-	var currEnvAbbrs = envAbbrs
+	if len(input) == 0 {
+		return nil, 0, nil, false
+	}
 
-	allowSub := true
+	input, trivialLvl = self.stripTrivialMarks(input)
 
-	for len(input) != 0 {
-		var env model.ParsedEnv
-		var err error
-		var succeeded bool
+	tokens := self.tokenize(input)
 
-		// Try to parse trivial level
-		for len(input) != 0 {
-			stripped := strings.TrimLeft(input[0], "^")
-			trivialLvl += len(input[0]) - len(stripped)
-			if len(stripped) == 0 {
-				input = input[1:]
-			} else {
-				input[0] = stripped
-				break
-			}
+	ctx := &yaccParseContext{
+		cmdParser:    self,
+		envParser:    self.envParser,
+		cmds:         cmds,
+		envAbbrs:     envAbbrs,
+		currCmd:      cmds,
+		currEnvAbbrs: envAbbrs,
+		matchedPath:  nil,
+		trivialLvl:   trivialLvl,
+		allowSub:     true,
+	}
+
+	lexer := newYYLex(tokens, ctx)
+	yyParse(lexer)
+
+	if ctx.err != nil {
+		return lexer.result, ctx.trivialLvl, model.ParseErrExpectCmd{Origin: ctx.err}, ctx.isMinorErr
+	}
+
+	return lexer.result, ctx.trivialLvl, nil, false
+}
+
+func (self *CmdParser) stripTrivialMarks(input []string) ([]string, int) {
+	trivialLvl := 0
+	for len(input) > 0 {
+		stripped := strings.TrimLeft(input[0], self.TrivialMark)
+		trivialLvl += len(input[0]) - len(stripped)
+		if len(stripped) == 0 {
+			input = input[1:]
+		} else {
+			input[0] = stripped
+			break
 		}
+	}
+	return input, trivialLvl
+}
 
-		// Try to parse input to env
-		env, input, succeeded, err = self.envParser.TryParse(curr, currEnvAbbrs, input)
-		if err != nil {
-			err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), err.Error())
-			return parsed, trivialLvl, model.ParseErrEnv{Origin: err}, false
-		}
-		if succeeded {
-			if env != nil {
-				parsed = append(parsed, parsedSeg{Type: parsedSegTypeEnv, Val: env})
-			}
-			// Allow use an env segment as cmd-path-sep
-			allowSub = true
-			continue
-		}
+func (self *CmdParser) tokenize(input []string) []yyToken {
+	var tokens []yyToken
 
-		if len(input) == 0 {
+	for _, s := range input {
+		tokens = append(tokens, self.tokenizeString(s)...)
+	}
+
+	return tokens
+}
+
+func (self *CmdParser) tokenizeString(s string) []yyToken {
+	var tokens []yyToken
+
+	for len(s) > 0 {
+		s = strings.TrimLeft(s, self.cmdSpaces)
+		if len(s) == 0 {
 			break
 		}
 
-		// Try to split input by cmd-sep
-		i := strings.IndexAny(input[0], self.cmdAlterSeps)
-		if (i == 0) && !(len(input) == 1 && len(input[0]) == 1) {
-			// Tolerat redundant path-sep
-			if len(parsed) != 0 && parsed[len(parsed)-1].Type != parsedSegTypeSep {
-				parsed = append(parsed, parsedSeg{Type: parsedSegTypeSep, Val: nil})
+		envIdx := strings.Index(s, self.envParser.brackets.Left)
+		if envIdx >= 0 {
+			if envIdx > 0 {
+				tokens = append(tokens, self.tokenizePlain(s[:envIdx])...)
 			}
-			isFakeSep := false
-			if len(input[0]) == 1 {
-				input = input[1:]
-			} else if self.fakeSepSuffixs[input[0][1]] {
-				isFakeSep = true
-			} else {
-				rest := strings.TrimLeft(input[0][1:], self.cmdSpaces)
-				input = append([]string{rest}, input[1:]...)
-			}
-			if !isFakeSep {
-				allowSub = true
+			envStr, rest := self.extractEnvBlock(s[envIdx:])
+			if envStr != "" {
+				tokens = append(tokens, yyToken{typ: ENV, str: envStr})
+				s = rest
 				continue
 			}
-		} else if i > 0 && allowSub {
-			head := strings.TrimRight(input[0][0:i], self.cmdSpaces)
-			rest := strings.TrimLeft(input[0][i+1:], self.cmdAlterSeps+self.cmdSpaces)
-			input = input[1:]
-			var lead []string
-			if len(head) != 0 {
-				lead = append(lead, head)
-			}
-			lead = append(lead, self.cmdSep)
-			if len(rest) != 0 {
-				lead = append(lead, rest)
-			}
-			input = append(lead, input...)
-			continue
+			break
+		} else {
+			tokens = append(tokens, self.tokenizePlain(s)...)
+			break
+		}
+	}
+
+	return tokens
+}
+
+func (self *CmdParser) tokenizePlain(s string) []yyToken {
+	var tokens []yyToken
+
+	for len(s) > 0 {
+		s = strings.TrimLeft(s, self.cmdSpaces)
+		if len(s) == 0 {
+			break
 		}
 
-		if allowSub {
-			// Try to parse input as cmd-seg to sub
-			sub := curr.GetSub(input[0])
-			if sub != nil {
-				curr = sub
-				if currEnvAbbrs != nil {
-					currEnvAbbrs = currEnvAbbrs.GetSub(input[0])
-				}
-				parsed = append(parsed, parsedSeg{Type: parsedSegTypeCmd, Val: model.MatchedCmd{Name: input[0], Cmd: sub}})
-				matchedCmdPath = append(matchedCmdPath, input[0])
-				input = input[1:]
-				allowSub = false
-				continue
-			} else {
-				errStr := "unknow input '" + input[0] + "' ..., should be sub cmd"
-				err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-				return parsed, trivialLvl, model.ParseErrExpectCmd{Origin: err}, false
+		sepIdx := strings.IndexAny(s, self.cmdAlterSeps)
+		if sepIdx == 0 {
+			if self.isFakeSep(s) {
+				tokens = append(tokens, yyToken{typ: WORD, str: s})
+				break
 			}
+			tokens = append(tokens, yyToken{typ: SEP, str: string(s[0])})
+			s = s[1:]
+		} else if sepIdx > 0 {
+			head := strings.TrimRight(s[:sepIdx], self.cmdSpaces)
+			if len(head) > 0 {
+				tokens = append(tokens, yyToken{typ: WORD, str: head})
+			}
+			tokens = append(tokens, yyToken{typ: SEP, str: string(s[sepIdx])})
+			s = s[sepIdx+1:]
 		} else {
-			// Try to parse cmd args
-			env, input = self.envParser.TryParseRaw(curr, currEnvAbbrs, input)
-			if env != nil {
-				parsed = append(parsed, parsedSeg{Type: parsedSegTypeEnv, Val: env})
-			}
-			if len(input) != 0 {
-				var errStr string
-				if cmdHasArgs(curr) {
-					errStr = "args parse failed"
-					errStr = "unknow input '" + strings.Join(input, " ") + "', " + errStr
-					err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-					return parsed, trivialLvl, model.ParseErrExpectArgs{Origin: err}, true
-				} else {
-					errStr = "looks like args, but curr cmd has no args"
-					errStr = "unknow input '" + strings.Join(input, " ") + "', " + errStr
-					err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-					return parsed, trivialLvl, model.ParseErrExpectNoArg{Origin: err}, true
-				}
+			if len(s) > 0 {
+				tokens = append(tokens, yyToken{typ: WORD, str: s})
 			}
 			break
 		}
 	}
 
-	return parsed, trivialLvl, nil, false
+	return tokens
+}
+
+func (self *CmdParser) extractEnvBlock(s string) (string, string) {
+	if !strings.HasPrefix(s, self.envParser.brackets.Left) {
+		return "", s
+	}
+
+	left := self.envParser.brackets.Left
+	right := self.envParser.brackets.Right
+	depth := 0
+	pos := 0
+
+	for pos < len(s) {
+		if strings.HasPrefix(s[pos:], left) {
+			depth++
+			pos += len(left)
+		} else if strings.HasPrefix(s[pos:], right) {
+			depth--
+			pos += len(right)
+			if depth == 0 {
+				return s[:pos], s[pos:]
+			}
+		} else {
+			pos++
+		}
+	}
+
+	return s, ""
+}
+
+func (self *CmdParser) isFakeSep(s string) bool {
+	if len(s) < 2 {
+		return false
+	}
+	return self.fakeSepSuffixs[s[1]]
 }
 
 func (self *CmdParser) displayPath(matchedCmdPath []string) string {

@@ -1,0 +1,74 @@
+
+state 0
+	$accept: .input $end 
+	input: .    (1)
+
+	WORD  shift 4
+	ENV  shift 5
+	SEP  shift 6
+	.  reduce 1 (src line 45)
+
+	input  goto 1
+	segments  goto 2
+	segment  goto 3
+
+state 1
+	$accept:  input.$end 
+
+	$end  accept
+	.  error
+
+
+state 2
+	input:  segments.    (2)
+	segments:  segments.segment 
+
+	WORD  shift 4
+	ENV  shift 5
+	SEP  shift 6
+	.  reduce 2 (src line 49)
+
+	segment  goto 7
+
+state 3
+	segments:  segment.    (3)
+
+	.  reduce 3 (src line 55)
+
+
+state 4
+	segment:  WORD.    (5)
+
+	.  reduce 5 (src line 89)
+
+
+state 5
+	segment:  ENV.    (6)
+
+	.  reduce 6 (src line 94)
+
+
+state 6
+	segment:  SEP.    (7)
+
+	.  reduce 7 (src line 100)
+
+
+state 7
+	segments:  segments segment.    (4)
+
+	.  reduce 4 (src line 70)
+
+
+6 terminals, 4 nonterminals
+8 grammar rules, 8/16000 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+53 working sets used
+memory: parser 3/240000
+0 extra closures
+6 shift entries, 1 exceptions
+4 goto entries
+0 entries saved by goto default
+Optimizer space used: output 7/240000
+7 table entries, 0 zero
+maximum spread: 6, maximum offset: 4
