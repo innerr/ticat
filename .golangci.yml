@@ -4,6 +4,9 @@
 run:
   timeout: 5m
 
+output:
+  format: colored-line-number
+
 issues:
   exclude-dirs:
     - bin
