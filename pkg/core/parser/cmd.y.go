@@ -27,9 +27,10 @@ type yaccParseContext struct {
 	isMinorErr   bool
 	allowSub     bool
 	rest         []string
+	argIdx       int
 }
 
-//line cmd.y:28
+//line cmd.y:29
 type yySymType struct {
 	yys     int
 	str     string
@@ -58,7 +59,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line cmd.y:107
+//line cmd.y:108
 
 type yyLex struct {
 	tokens   []yyToken
@@ -120,9 +121,51 @@ func (l *yyLex) ProcessWord(word string) parsedSeg {
 		ctx.err = fmt.Errorf("[CmdParser.parse] %s: %s", l.displayPath(), errStr)
 		ctx.isMinorErr = false
 		l.hasError = true
+		return parsedSeg{Type: parsedSegTypeCmd, Val: model.MatchedCmd{Name: word}}
+	}
+
+	env := l.tryParseAsArg(word)
+	if env != nil {
+		return parsedSeg{Type: parsedSegTypeEnv, Val: env}
 	}
 
 	return parsedSeg{Type: parsedSegTypeCmd, Val: model.MatchedCmd{Name: word}}
+}
+
+func (l *yyLex) tryParseAsArg(word string) model.ParsedEnv {
+	ctx := l.ctx
+	if ctx.currCmd == nil || ctx.currCmd.Cmd() == nil {
+		return nil
+	}
+
+	args := ctx.currCmd.Args()
+	if args.IsEmpty() {
+		return nil
+	}
+
+	env := model.ParsedEnv{}
+
+	realName := args.Realname(word)
+	if len(realName) > 0 {
+		if l.pos < len(l.tokens) {
+			nextTok := l.tokens[l.pos]
+			if nextTok.typ == WORD {
+				l.pos++
+				env[realName] = model.NewParsedEnvArgv(word, nextTok.str)
+				return env
+			}
+		}
+	}
+
+	names := args.Names()
+	if len(names) > ctx.argIdx {
+		name := names[ctx.argIdx]
+		env[name] = model.NewParsedEnvArgv(name, word)
+		ctx.argIdx++
+		return env
+	}
+
+	return nil
 }
 
 func (l *yyLex) ProcessEnv(envStr string) parsedSeg {
@@ -604,20 +647,20 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line cmd.y:46
+//line cmd.y:47
 		{
 			yyVAL.segs = nil
 		}
 	case 2:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line cmd.y:50
+//line cmd.y:51
 		{
 			yyVAL.segs = yyDollar[1].segs
 			yylex.(*yyLex).SetResult(yyVAL.segs)
 		}
 	case 3:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line cmd.y:57
+//line cmd.y:58
 		{
 			if yyDollar[1].seg.Type == parsedSegTypeSep && len(yyVAL.segs) == 0 {
 				yyVAL.segs = nil
@@ -633,7 +676,7 @@ yydefault:
 		}
 	case 4:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line cmd.y:71
+//line cmd.y:72
 		{
 			if yyDollar[2].seg.Type == parsedSegTypeEnv {
 				if env, ok := yyDollar[2].seg.Val.(model.ParsedEnv); !ok || len(env) == 0 {
@@ -653,13 +696,13 @@ yydefault:
 		}
 	case 5:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line cmd.y:91
+//line cmd.y:92
 		{
 			yyVAL.seg = yylex.(*yyLex).ProcessWord(yyDollar[1].str)
 		}
 	case 6:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line cmd.y:95
+//line cmd.y:96
 		{
 			yyVAL.seg = yylex.(*yyLex).ProcessEnv(yyDollar[1].str)
 			// After processing env, allow sub command
@@ -667,7 +710,7 @@ yydefault:
 		}
 	case 7:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line cmd.y:101
+//line cmd.y:102
 		{
 			yyVAL.seg = parsedSeg{Type: parsedSegTypeSep, Val: nil}
 			// After separator, allow sub command

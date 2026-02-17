@@ -21,6 +21,7 @@ type yaccParseContext struct {
 	isMinorErr   bool
 	allowSub     bool
 	rest         []string
+	argIdx       int
 }
 
 %}
@@ -166,9 +167,51 @@ func (l *yyLex) ProcessWord(word string) parsedSeg {
 		ctx.err = fmt.Errorf("[CmdParser.parse] %s: %s", l.displayPath(), errStr)
 		ctx.isMinorErr = false
 		l.hasError = true
+		return parsedSeg{Type: parsedSegTypeCmd, Val: model.MatchedCmd{Name: word}}
+	}
+	
+	env := l.tryParseAsArg(word)
+	if env != nil {
+		return parsedSeg{Type: parsedSegTypeEnv, Val: env}
 	}
 	
 	return parsedSeg{Type: parsedSegTypeCmd, Val: model.MatchedCmd{Name: word}}
+}
+
+func (l *yyLex) tryParseAsArg(word string) model.ParsedEnv {
+	ctx := l.ctx
+	if ctx.currCmd == nil || ctx.currCmd.Cmd() == nil {
+		return nil
+	}
+	
+	args := ctx.currCmd.Args()
+	if args.IsEmpty() {
+		return nil
+	}
+	
+	env := model.ParsedEnv{}
+	
+	realName := args.Realname(word)
+	if len(realName) > 0 {
+		if l.pos < len(l.tokens) {
+			nextTok := l.tokens[l.pos]
+			if nextTok.typ == WORD {
+				l.pos++
+				env[realName] = model.NewParsedEnvArgv(word, nextTok.str)
+				return env
+			}
+		}
+	}
+	
+	names := args.Names()
+	if len(names) > ctx.argIdx {
+		name := names[ctx.argIdx]
+		env[name] = model.NewParsedEnvArgv(name, word)
+		ctx.argIdx++
+		return env
+	}
+	
+	return nil
 }
 
 func (l *yyLex) ProcessEnv(envStr string) parsedSeg {
