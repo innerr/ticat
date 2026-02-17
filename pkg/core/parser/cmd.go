@@ -49,7 +49,7 @@ func (self *CmdParser) Parse(
 	// Delay err check
 	segs, trivialLvl, err, isMinorErr := self.parse(cmds, envAbbrs, input)
 
-	curr := model.ParsedCmdSeg{nil, model.MatchedCmd{}}
+	curr := model.ParsedCmdSeg{Matched: model.MatchedCmd{}}
 	var path []string
 	for _, seg := range segs {
 		if seg.Type == parsedSegTypeEnv {
@@ -66,7 +66,7 @@ func (self *CmdParser) Parse(
 			matchedCmd := seg.Val.(model.MatchedCmd)
 			if !curr.IsEmpty() {
 				parsed.Segments = append(parsed.Segments, curr)
-				curr = model.ParsedCmdSeg{nil, matchedCmd}
+				curr = model.ParsedCmdSeg{Matched: matchedCmd}
 			} else {
 				curr.Matched = matchedCmd
 			}
@@ -79,7 +79,7 @@ func (self *CmdParser) Parse(
 		parsed.Segments = append(parsed.Segments, curr)
 	}
 
-	parsed.ParseResult = model.ParseResult{input, err, isMinorErr}
+	parsed.ParseResult = model.ParseResult{Input: input, Error: err, IsMinorErr: isMinorErr}
 	parsed.TrivialLvl = trivialLvl
 	return parsed
 }
@@ -116,11 +116,11 @@ func (self *CmdParser) parse(
 		env, input, succeeded, err = self.envParser.TryParse(curr, currEnvAbbrs, input)
 		if err != nil {
 			err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), err.Error())
-			return parsed, trivialLvl, model.ParseErrEnv{err}, false
+			return parsed, trivialLvl, model.ParseErrEnv{Origin: err}, false
 		}
 		if succeeded {
 			if env != nil {
-				parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
+				parsed = append(parsed, parsedSeg{Type: parsedSegTypeEnv, Val: env})
 			}
 			// Allow use an env segment as cmd-path-sep
 			allowSub = true
@@ -136,7 +136,7 @@ func (self *CmdParser) parse(
 		if (i == 0) && !(len(input) == 1 && len(input[0]) == 1) {
 			// Tolerat redundant path-sep
 			if len(parsed) != 0 && parsed[len(parsed)-1].Type != parsedSegTypeSep {
-				parsed = append(parsed, parsedSeg{parsedSegTypeSep, nil})
+				parsed = append(parsed, parsedSeg{Type: parsedSegTypeSep, Val: nil})
 			}
 			isFakeSep := false
 			if len(input[0]) == 1 {
@@ -175,7 +175,7 @@ func (self *CmdParser) parse(
 				if currEnvAbbrs != nil {
 					currEnvAbbrs = currEnvAbbrs.GetSub(input[0])
 				}
-				parsed = append(parsed, parsedSeg{parsedSegTypeCmd, model.MatchedCmd{input[0], sub}})
+				parsed = append(parsed, parsedSeg{Type: parsedSegTypeCmd, Val: model.MatchedCmd{Name: input[0], Cmd: sub}})
 				matchedCmdPath = append(matchedCmdPath, input[0])
 				input = input[1:]
 				allowSub = false
@@ -183,13 +183,13 @@ func (self *CmdParser) parse(
 			} else {
 				errStr := "unknow input '" + input[0] + "' ..., should be sub cmd"
 				err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-				return parsed, trivialLvl, model.ParseErrExpectCmd{err}, false
+				return parsed, trivialLvl, model.ParseErrExpectCmd{Origin: err}, false
 			}
 		} else {
 			// Try to parse cmd args
 			env, input = self.envParser.TryParseRaw(curr, currEnvAbbrs, input)
 			if env != nil {
-				parsed = append(parsed, parsedSeg{parsedSegTypeEnv, env})
+				parsed = append(parsed, parsedSeg{Type: parsedSegTypeEnv, Val: env})
 			}
 			if len(input) != 0 {
 				var errStr string
@@ -197,12 +197,12 @@ func (self *CmdParser) parse(
 					errStr = "args parse failed"
 					errStr = "unknow input '" + strings.Join(input, " ") + "', " + errStr
 					err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-					return parsed, trivialLvl, model.ParseErrExpectArgs{err}, true
+					return parsed, trivialLvl, model.ParseErrExpectArgs{Origin: err}, true
 				} else {
 					errStr = "looks like args, but curr cmd has no args"
 					errStr = "unknow input '" + strings.Join(input, " ") + "', " + errStr
 					err = fmt.Errorf("[CmdParser.parse] %s: %s", self.displayPath(matchedCmdPath), errStr)
-					return parsed, trivialLvl, model.ParseErrExpectNoArg{err}, true
+					return parsed, trivialLvl, model.ParseErrExpectNoArg{Origin: err}, true
 				}
 			}
 			break

@@ -45,7 +45,7 @@ func AddGitRepoToHub(
 
 	addr := tailModeCallArg(flow, currCmdIdx, argv, "git-address")
 	branch := argv.GetRaw("git-branch")
-	addRepoToHubAndLoadMods(cc, meta.RepoAddr{addr, branch},
+	addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: branch},
 		argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 
 	initAddr := env.GetRaw("sys.hub.init-repo")
@@ -53,7 +53,7 @@ func AddGitRepoToHub(
 		sep := env.GetRaw("strs.list-sep")
 		addrs := strings.Split(initAddr, sep)
 		for _, addr := range addrs {
-			addRepoToHubAndLoadMods(cc, meta.RepoAddr{addr, ""},
+			addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: ""},
 				argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 		}
 	}
@@ -75,7 +75,7 @@ func EnsureDefaultGitRepoInHub(
 	}
 	display.PrintTipTitle(cc.Screen, env,
 		"do 'hub.init' for the first time running")
-	argv["show-tip"] = model.ArgVal{"false", true, 0}
+	argv["show-tip"] = model.ArgVal{Raw: "false", Provided: true, Index: 0}
 	newCurrCmdIdx, ok := AddDefaultGitRepoToHub(argv, cc, env, flow, currCmdIdx)
 	if ok {
 		display.PrintTipTitle(cc.Screen, env,
@@ -101,7 +101,7 @@ func AddDefaultGitRepoToHub(
 	sep := env.GetRaw("strs.list-sep")
 	addrs := strings.Split(addr, sep)
 	for _, addr := range addrs {
-		addRepoToHubAndLoadMods(cc, meta.RepoAddr{addr, ""},
+		addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: ""},
 			argv, cc.Screen, env, flow.Cmds[currCmdIdx])
 	}
 	if argv.GetBool("show-tip") {
@@ -315,7 +315,7 @@ func UpdateHub(
 				continue
 			}
 			repoPath := meta.GetRepoPath(path, addr)
-			infos = append(infos, meta.RepoInfo{addr, info.Addr.Str(), repoPath, helpStrs[i], "on"})
+			infos = append(infos, meta.RepoInfo{Addr: addr, AddReason: info.Addr.Str(), Path: repoPath, HelpStr: helpStrs[i], OnOff: "on"})
 		}
 	}
 
@@ -488,7 +488,7 @@ func addLocalDirToHub(
 		listFileName := env.GetRaw("strs.repos-file-name")
 		listFilePath := filepath.Join(path, listFileName)
 		helpStr, _, _ := meta.ReadRepoListFromFile(env.GetRaw("strs.self-name"), listFilePath)
-		info := meta.RepoInfo{meta.RepoAddr{"", ""}, "<local>", path, helpStr, "on"}
+		info := meta.RepoInfo{Addr: meta.RepoAddr{Addr: "", Branch: ""}, AddReason: "<local>", Path: path, HelpStr: helpStr, OnOff: "on"}
 		infos = append(infos, info)
 		screen.Print(fmt.Sprintf("%s\n", repoDisplayName(info, env)))
 		printInfoProps(screen, env, info)
@@ -833,7 +833,7 @@ func addRepoToHubAndLoadMods(
 			continue
 		}
 		repoPath := meta.GetRepoPath(path, addr)
-		info := meta.RepoInfo{addr, gitAddr.Str(), repoPath, helpStrs[i], "on"}
+		info := meta.RepoInfo{Addr: addr, AddReason: gitAddr.Str(), Path: repoPath, HelpStr: helpStrs[i], OnOff: "on"}
 		loadRepoMods(cc, env, info)
 		infos = append(infos, info)
 	}

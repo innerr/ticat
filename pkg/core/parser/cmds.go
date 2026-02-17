@@ -23,7 +23,7 @@ func (self *Parser) Parse(
 	input ...string) *model.ParsedCmds {
 
 	seqs, firstIsGlobal := self.seqParser.Parse(input)
-	flow := model.ParsedCmds{model.ParsedEnv{}, nil, -1, false, false, false}
+	flow := model.ParsedCmds{GlobalEnv: model.ParsedEnv{}, Cmds: nil, GlobalCmdIdx: -1}
 	for _, seq := range seqs {
 		flow.Cmds = append(flow.Cmds, self.cmdParser.Parse(cmds, envAbbrs, seq))
 	}

@@ -39,7 +39,7 @@ func SysArgRealnameAndNormalizedValue(
 		panic(fmt.Errorf("[Args.SysArgRealname] %s: only sys args could have '%s' prefix, '%s' is not sys arg",
 			name, sysArgPrefix, raw))
 	}
-	return
+	return //nolint:unreachable
 }
 
 func (self SysArgVals) GetDelayStr() string {

@@ -47,17 +47,17 @@ func TestCmdParserParseSeg(t *testing.T) {
 		".", "./", "\t ", "<root>", "^", map[byte]bool{'/': true, '\\': true},
 	}
 
-	sep := parsedSeg{parsedSegTypeSep, nil}
+	sep := parsedSeg{Type: parsedSegTypeSep, Val: nil}
 
 	cmd := func(name string) parsedSeg {
-		return parsedSeg{parsedSegTypeCmd, model.MatchedCmd{name, nil}}
+		return parsedSeg{Type: parsedSegTypeCmd, Val: model.MatchedCmd{Name: name, Cmd: nil}}
 	}
 	env := func(names ...string) parsedSeg {
 		env := model.ParsedEnv{}
 		for _, name := range names {
 			env[name] = model.NewParsedEnvVal(name, "V")
 		}
-		return parsedSeg{parsedSegTypeEnv, env}
+		return parsedSeg{Type: parsedSegTypeEnv, Val: env}
 	}
 
 	test := func(a []string, b []parsedSeg) {
@@ -139,11 +139,11 @@ func TestCmdParserParse(t *testing.T) {
 				env[name] = model.NewParsedEnvVal(name, "V")
 			}
 		}
-		return model.ParsedCmdSeg{env, model.MatchedCmd{cmdName, nil}}
+		return model.ParsedCmdSeg{Env: env, Matched: model.MatchedCmd{Name: cmdName, Cmd: nil}}
 	}
 
 	cmd := func(segs ...model.ParsedCmdSeg) model.ParsedCmd {
-		return model.ParsedCmd{segs, model.ParseResult{nil, nil, false}, 0, false}
+		return model.ParsedCmd{Segments: segs, ParseResult: model.ParseResult{Input: nil, Error: nil, IsMinorErr: false}, TrivialLvl: 0}
 	}
 
 	test := func(a []string, b model.ParsedCmd) {

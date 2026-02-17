@@ -99,7 +99,7 @@ func (self *EnvParser) TryParseRaw(
 				if matched {
 					key = strings.Join(matchedEnvPath, self.envPathSep)
 				}
-				env[key] = model.ParsedEnvVal{value, false, false, matchedEnvPath, strings.Join(matchedEnvPath, self.envPathSep)}
+				env[key] = model.ParsedEnvVal{Val: value, IsArg: false, IsSysArg: false, MatchedPath: matchedEnvPath, MatchedPathStr: strings.Join(matchedEnvPath, self.envPathSep)}
 			} else {
 				env[key] = model.NewParsedEnvVal(key, value)
 			}

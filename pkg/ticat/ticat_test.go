@@ -236,8 +236,8 @@ func TestIntegrationSensitiveData(t *testing.T) {
 
 	// Test sensitive key detection
 	testCases := []struct {
-		key      string
-		val      string
+		key       string
+		val       string
 		sensitive bool
 	}{
 		{"db.password", "secret123", true},
@@ -245,7 +245,7 @@ func TestIntegrationSensitiveData(t *testing.T) {
 		{"api_secret", "key123", true},
 		{"app.name", "MyApp", false},
 		{"debug", "false", false},
-		{"password", "true", false},  // Boolean values are not sensitive
+		{"password", "true", false}, // Boolean values are not sensitive
 		{"password", "false", false},
 	}
 
