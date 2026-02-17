@@ -6,7 +6,7 @@ state 0
 	WORD  shift 4
 	ENV  shift 5
 	SEP  shift 6
-	.  reduce 1 (src line 45)
+	.  reduce 1 (src line 46)
 
 	input  goto 1
 	segments  goto 2
@@ -26,38 +26,38 @@ state 2
 	WORD  shift 4
 	ENV  shift 5
 	SEP  shift 6
-	.  reduce 2 (src line 49)
+	.  reduce 2 (src line 50)
 
 	segment  goto 7
 
 state 3
 	segments:  segment.    (3)
 
-	.  reduce 3 (src line 55)
+	.  reduce 3 (src line 56)
 
 
 state 4
 	segment:  WORD.    (5)
 
-	.  reduce 5 (src line 89)
+	.  reduce 5 (src line 90)
 
 
 state 5
 	segment:  ENV.    (6)
 
-	.  reduce 6 (src line 94)
+	.  reduce 6 (src line 95)
 
 
 state 6
 	segment:  SEP.    (7)
 
-	.  reduce 7 (src line 100)
+	.  reduce 7 (src line 101)
 
 
 state 7
 	segments:  segments segment.    (4)
 
-	.  reduce 4 (src line 70)
+	.  reduce 4 (src line 71)
 
 
 6 terminals, 4 nonterminals

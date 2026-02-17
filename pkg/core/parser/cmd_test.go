@@ -185,3 +185,77 @@ func TestCmdParserParse(t *testing.T) {
 func newCmdTree() *model.CmdTree {
 	return model.NewCmdTree(model.CmdTreeStrsForTest())
 }
+
+func TestCmdParserParseWithArgs(t *testing.T) {
+	root := newCmdTree()
+	echo := root.AddSub("echo")
+	echo.RegEmptyCmd("print message").
+		AddArg("message", "", "msg", "m").
+		AddArg("color", "", "colour", "clr", "c")
+
+	parser := &CmdParser{
+		&EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"},
+		".", "./", "\t ", "<root>", "^", map[byte]bool{'/': true, '\\': true},
+	}
+
+	t.Run("echo with positional arg", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"echo", "hello"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Matched.Name != "echo" {
+			t.Errorf("expected cmd name 'echo', got '%s'", parsed.Segments[0].Matched.Name)
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set with argument")
+		}
+		if parsed.Segments[0].Env["echo.message"].Val != "hello" {
+			t.Errorf("expected echo.message='hello', got '%s'", parsed.Segments[0].Env["echo.message"].Val)
+		}
+	})
+
+	t.Run("echo with named arg", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"echo", "{message=world}"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Matched.Name != "echo" {
+			t.Errorf("expected cmd name 'echo', got '%s'", parsed.Segments[0].Matched.Name)
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set with argument")
+		}
+		if parsed.Segments[0].Env["echo.message"].Val != "world" {
+			t.Errorf("expected echo.message='world', got '%s'", parsed.Segments[0].Env["echo.message"].Val)
+		}
+	})
+
+	t.Run("echo with two positional args", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"echo", "hi", "red"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set with arguments")
+		}
+		if parsed.Segments[0].Env["echo.message"].Val != "hi" {
+			t.Errorf("expected echo.message='hi', got '%s'", parsed.Segments[0].Env["echo.message"].Val)
+		}
+		if parsed.Segments[0].Env["echo.color"].Val != "red" {
+			t.Errorf("expected echo.color='red', got '%s'", parsed.Segments[0].Env["echo.color"].Val)
+		}
+	})
+
+	t.Run("echo with abbreviated arg name", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"echo", "m", "hello"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set with argument")
+		}
+		if parsed.Segments[0].Env["echo.message"].Val != "hello" {
+			t.Errorf("expected echo.message='hello', got '%s'", parsed.Segments[0].Env["echo.message"].Val)
+		}
+	})
+}
