@@ -92,7 +92,7 @@ jobs:
 
     - name: Run gofmt
       run: |
-        output=$(gofmt -l .)
+        output=$(gofmt -s -l .)
         if [ -n "$output" ]; then
           echo "The following files are not properly formatted:"
           echo "$output"
