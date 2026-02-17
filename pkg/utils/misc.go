@@ -25,7 +25,11 @@ func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []strin
 		}
 		panic(fmt.Errorf("[ReadLastLines] %v", err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[ReadLogFileLastLines] close file '%s' failed: %v", path, err))
+		}
+	}()
 
 	stat, err := os.Stat(path)
 	if int64(bufSize) >= stat.Size() {

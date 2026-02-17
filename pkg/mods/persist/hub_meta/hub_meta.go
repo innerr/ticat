@@ -56,7 +56,11 @@ func WriteReposInfoFile(
 	if err != nil {
 		panic(fmt.Errorf("[WriteReposInfoFile] open file '%s' failed: %v", tmp, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
+		}
+	}()
 
 	for _, info := range infos {
 		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s%s%s\n", info.Addr.Str(), sep, info.AddReason, sep,
@@ -65,7 +69,9 @@ func WriteReposInfoFile(
 			panic(fmt.Errorf("[WriteReposInfoFile] write file '%s' failed: %v", tmp, err))
 		}
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
+	}
 
 	err = os.Rename(tmp, path)
 	if err != nil {
@@ -89,7 +95,11 @@ func ReadReposInfoFile(
 		}
 		panic(fmt.Errorf("[ReadReposInfoFile] open file '%s' failed: %v", path, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[ReadReposInfoFile] close file '%s' failed: %v", path, err))
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)

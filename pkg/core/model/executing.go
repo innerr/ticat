@@ -219,7 +219,11 @@ func writeStatusContent(path string, content string) {
 	if err != nil {
 		panic(fmt.Errorf("[ExecutingFlow] open executing status file '%s' failed: %v", path, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[writeStatusContent] close status file '%s' failed: %v", path, err))
+		}
+	}()
 	_, err = file.Write([]byte(content))
 	if err != nil {
 		panic(fmt.Errorf("[ExecutingFlow] write executing status file '%s' failed: %v", path, err))

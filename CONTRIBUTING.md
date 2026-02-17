@@ -168,6 +168,14 @@ Closes #123
 - Update documentation
 - Reference related issues
 - Be responsive to code review feedback
+- **All CI checks must pass before merging**
+  - Tests must pass on all platforms (Ubuntu, macOS)
+  - Code must pass linting (golangci-lint, gofmt)
+  - Build must succeed
+- **Branch protection rules apply**
+  - Direct pushes to `main` branch are not allowed
+  - All changes must go through pull requests
+  - Required status checks must pass before merging
 
 ## Reporting Issues
 

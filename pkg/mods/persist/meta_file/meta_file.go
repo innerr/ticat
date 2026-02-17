@@ -252,7 +252,12 @@ func (self *MetaFile) Save() {
 		panic(fmt.Errorf("[MetaFile.Save] open mod meta file '%s' for save failed: %v",
 			self.path, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[MetaFile.Save] close mod meta file '%s' failed: %v",
+				self.path, err))
+		}
+	}()
 	self.save(file)
 }
 

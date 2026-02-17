@@ -64,7 +64,11 @@ func saveEnvToFile(env *Env, path string, sep string, filtered []string, skipDef
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToFile] open env file '%s' failed: %v", tmp, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[saveEnvToFile] close env file '%s' failed: %v", tmp, err))
+		}
+	}()
 
 	err = EnvOutput(env, file, sep, filtered, skipDefault)
 	if err != nil {
@@ -108,7 +112,11 @@ func LoadEnvFromFile(env *Env, path string, sep string, delMark string) {
 		panic(fmt.Errorf("[LoadEnvFromFile] open local env file '%s' failed: %v",
 			path, err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[LoadEnvFromFile] close env file '%s' failed: %v", path, err))
+		}
+	}()
 
 	err = EnvInput(env, file, sep, delMark)
 	if err != nil {

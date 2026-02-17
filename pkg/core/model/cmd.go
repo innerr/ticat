@@ -1024,7 +1024,11 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, p
 
 	logger := cc.CmdIO.SetupForExec(cmd, logFilePath)
 	if logger != nil {
-		defer logger.Close()
+		defer func() {
+			if err := logger.Close(); err != nil {
+				panic(fmt.Errorf("[executeFile] close logger failed: %v", err))
+			}
+		}()
 	}
 
 	err := cmd.Run()

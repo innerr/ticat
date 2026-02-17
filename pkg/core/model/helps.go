@@ -24,7 +24,11 @@ func (self *Helps) RegHelpFile(path string) {
 	if err != nil {
 		panic(fmt.Errorf("read help file failed: %v", err))
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(fmt.Errorf("[RegHelpFile] close help file '%s' failed: %v", path, err))
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)

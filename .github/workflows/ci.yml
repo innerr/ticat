@@ -98,3 +98,4 @@ jobs:
           echo "$output"
           exit 1
         fi
+        echo "All files are properly formatted"
