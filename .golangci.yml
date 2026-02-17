@@ -4,29 +4,23 @@
 run:
   timeout: 5m
 
-output:
-  format: colored-line-number
-
 issues:
   exclude-dirs:
     - bin
     - vendor
   exclude-use-default: false
-  # Only exclude unreachable code - these are intentional in this codebase
   exclude:
     - 'unreachable code'
     - 'statement is unreachable'
-  # Exclude some overly strict checks
 
 linters:
   disable-all: true
   enable:
-    # Basic checks
     - gofmt
     - goimports
     - errcheck
     - govet
-    
-settings:
+
+linters-settings:
   gofmt:
     simplify: true
