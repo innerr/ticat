@@ -12,7 +12,7 @@ func TestSequenceParserNormalize(t *testing.T) {
 		if len(a) != len(b) {
 			fatal()
 		}
-		for i, _ := range a {
+		for i := range a {
 			if a[i] != b[i] {
 				fatal()
 			}
@@ -76,11 +76,11 @@ func TestSequenceParserBreak(t *testing.T) {
 		if len(a) != len(b) {
 			fatal()
 		}
-		for i, _ := range a {
+		for i := range a {
 			if len(a[i]) != len(b[i]) {
 				fatal()
 			}
-			for j, _ := range a[i] {
+			for j := range a[i] {
 				if len(a[i][j]) != len(b[i][j]) {
 					fatal()
 				}

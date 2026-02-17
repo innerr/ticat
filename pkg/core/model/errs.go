@@ -1,7 +1,7 @@
 package model
 
 import (
-	"fmt"
+	"errors"
 )
 
 type CmdError struct {
@@ -14,7 +14,7 @@ func WrapCmdError(cmd ParsedCmd, err error) *CmdError {
 }
 
 func NewCmdError(cmd ParsedCmd, err string) *CmdError {
-	return &CmdError{cmd, fmt.Errorf(err)}
+	return &CmdError{cmd, errors.New(err)}
 }
 
 func (self CmdError) Error() string {
@@ -56,7 +56,7 @@ func (self *TolerableErrs) OnErr(err interface{}, source string, file string, re
 	if len(old) == 0 {
 		conflictedMap = self.ConflictedWithBuiltin
 	} else {
-		conflictedMap, ok = self.Conflicteds[old]
+		conflictedMap = self.Conflicteds[old]
 		if conflictedMap == nil {
 			conflictedMap = ConflictedWithSameSource{}
 			self.Conflicteds[old] = conflictedMap

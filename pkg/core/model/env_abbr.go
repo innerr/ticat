@@ -59,8 +59,7 @@ func (self *EnvAbbrs) AddSubAbbrs(name string, abbrs ...string) {
 				self.DisplayPath(), abbr, old, name))
 		}
 		self.subAbbrsRevIdx[abbr] = name
-		olds, _ := self.subAbbrs[name]
-		self.subAbbrs[name] = append(olds, abbr)
+		self.subAbbrs[name] = append(self.subAbbrs[name], abbr)
 	}
 }
 

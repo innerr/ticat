@@ -170,7 +170,7 @@ func (self *ExecutedFlow) MatchFind(findStrs []string) bool {
 		return true
 	}
 	for _, it := range findStrs {
-		if strings.Index(self.DirName, it) < 0 && strings.Index(self.Flow, it) < 0 {
+		if !strings.Contains(self.DirName, it) && !strings.Contains(self.Flow, it) {
 			return false
 		}
 	}

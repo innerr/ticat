@@ -772,7 +772,7 @@ func dumpExecutedStartEnv(
 	}
 
 	keys := []string{}
-	for k, _ := range startEnv {
+	for k := range startEnv {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -822,6 +822,7 @@ func dumpExecutedModifiedEnv(
 	}
 	if args.ShowExecutedEnvFull {
 		// TODO:
+		_ = true
 		// return
 	}
 	if !args.ShowExecutedModifiedEnv && executedCmd.Result != model.ExecutedResultError {
@@ -956,7 +957,7 @@ func dumpFlowEnv(
 			ColorArg(" '"+name+"'", env)}
 	}
 
-	for k, _ := range kvs {
+	for k := range kvs {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)

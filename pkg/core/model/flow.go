@@ -31,15 +31,21 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark stri
 		if len(flow.Cmds) > 1 {
 			if i == 0 {
 				if flow.GlobalCmdIdx < 0 {
-					fmt.Fprint(w, seqSep+" ")
+					if _, err := fmt.Fprint(w, seqSep+" "); err != nil {
+						panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+					}
 				}
 			} else {
-				fmt.Fprint(w, " "+seqSep+" ")
+				if _, err := fmt.Fprint(w, " "+seqSep+" "); err != nil {
+					panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+				}
 			}
 		}
 
 		if cmd.ParseResult.Error != nil {
-			fmt.Fprint(w, strings.Join(cmd.ParseResult.Input, " "))
+			if _, err := fmt.Fprint(w, strings.Join(cmd.ParseResult.Input, " ")); err != nil {
+				panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+			}
 			continue
 		}
 
@@ -48,14 +54,20 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark stri
 		var cmdHasEnv bool
 
 		for i := 0; i < cmd.TrivialLvl; i++ {
-			fmt.Fprint(w, trivialMark)
+			if _, err := fmt.Fprint(w, trivialMark); err != nil {
+				panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+			}
 		}
 
 		for j, seg := range cmd.Segments {
 			if len(cmd.Segments) > 1 && j != 0 && !prevSegHasNoCmd {
-				fmt.Fprint(w, cmdPathSep)
+				if _, err := fmt.Fprint(w, cmdPathSep); err != nil {
+					panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+				}
 			}
-			fmt.Fprint(w, seg.Matched.Name)
+			if _, err := fmt.Fprint(w, seg.Matched.Name); err != nil {
+				panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+			}
 
 			if seg.Matched.Cmd != nil {
 				path = append(path, seg.Matched.Cmd.Name())
@@ -116,7 +128,9 @@ func SaveFlowEnv(
 	if isAllArgs && useArgsFmt {
 		format = " %s"
 	}
-	fmt.Fprintf(w, format, strings.Join(kvs, " "))
+	if _, err := fmt.Fprintf(w, format, strings.Join(kvs, " ")); err != nil {
+		panic(fmt.Errorf("[SaveFlowEnv] write failed: %v", err))
+	}
 	return true
 }
 

@@ -24,9 +24,7 @@ func RenderTemplateStrLines(
 			continue
 		}
 		rendereds, lineFullyRendered := renderTemplateStr(line, targetName, cmd, argv, env, allowError)
-		for _, rendered := range rendereds {
-			out = append(out, rendered)
-		}
+		out = append(out, rendereds...)
 		fullyRendered = fullyRendered && lineFullyRendered
 	}
 	return

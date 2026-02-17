@@ -14,7 +14,7 @@ func (self Arg2EnvAutoMapCmds) AddAutoMapTarget(cmd *Cmd) {
 
 func (self Arg2EnvAutoMapCmds) AutoMapArg2Env(cc *Cli, env *Env, envOpCmds []EnvOpCmd, stackDepth int) {
 	sep := env.GetRaw("strs.cmd-path-sep")
-	for cmd, _ := range self {
+	for cmd := range self {
 		argv := env.GetArgv(cmd.Owner().Path(), sep, stackDepth, cmd.Args())
 		autoMapArg2EnvForCmd(cc, env.Clone(), cmd, argv, envOpCmds, cmd, stackDepth)
 		cmd.FinishArg2EnvAutoMap(cc)
@@ -39,10 +39,11 @@ func autoMapArg2EnvForCmd(
 	ApplyVal2Env(env, srcCmd, argv)
 	ApplyArg2Env(env, srcCmd, argv)
 
-	subFlow, _, rendered := srcCmd.Flow(argv, cc, env, true, true)
-	if len(subFlow) == 0 || !rendered {
+	subFlow, _, _ := srcCmd.Flow(argv, cc, env, true, true)
+	if len(subFlow) == 0 {
 		// TODO: careful test: handle not fully renderd subflow
 		//return false
+		_ = subFlow
 	}
 
 	parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
@@ -257,7 +258,7 @@ func (self *ArgsAutoMapStatus) FlushCache(owner *Cmd) {
 				panic(fmt.Errorf("[%s] '*' or '**' can only at the end of args auto mapping definition", owner.Owner().DisplayPath()))
 			}
 			var args []string
-			for arg, _ := range self.cache {
+			for arg := range self.cache {
 				args = append(args, arg)
 			}
 			sort.Strings(args)

@@ -10,7 +10,7 @@ import (
 
 func GatherOsCmdsExistingInfo(deps model.Depends) (foundOsCmds map[string]bool, osCmds []string, missedOsCmds int) {
 	foundOsCmds = map[string]bool{}
-	for osCmd, _ := range deps {
+	for osCmd := range deps {
 		exists := isOsCmdExists(osCmd)
 		foundOsCmds[osCmd] = exists
 		if !exists {

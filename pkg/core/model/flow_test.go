@@ -273,7 +273,7 @@ func TestStripFlowForExecute(t *testing.T) {
 			name:     "with spaces",
 			input:    []string{"  cmd1  ", ":", "  cmd2  "},
 			seqSep:   ":",
-			expected: []string{"  cmd1   :", ":", "  cmd2  "},
+			expected: []string{"cmd1 :", ":", "cmd2"},
 		},
 		{
 			name:     "with comments",

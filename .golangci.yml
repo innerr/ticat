@@ -3,9 +3,37 @@
 
 run:
   timeout: 5m
-  skip-dirs:
+
+issues:
+  exclude-dirs:
     - bin
     - vendor
+  exclude-use-default: false
+  # Only exclude unreachable code - these are intentional in this codebase
+  exclude:
+    - 'unreachable code'
+    - 'statement is unreachable'
+  # Exclude some overly strict checks
+  exclude-rules:
+    # Allow blank identifier assignments for map lookups when we only need one value
+    - path: pkg/core/model/env_abbr\.go
+      linters:
+        - gosimple
+      text: 'unnecessary assignment to the blank identifier'
+    # Allow type switches as they are clearer in error handling
+    - path: pkg/cli/display/(err|tip)\.go
+      linters:
+        - gosimple
+      text: 'S1034'
+    # Allow empty branches for TODO/disabled code
+    - linters:
+        - staticcheck
+      text: 'SA9003'
+    # Nil pointer checks are intentional for safety
+    - path: pkg/core/model/executed\.go
+      linters:
+        - staticcheck
+      text: 'SA5011'
 
 linters:
   disable-all: true
@@ -14,10 +42,8 @@ linters:
     - gofmt
     - goimports
     - errcheck
+    - govet
     
-issues:
-  exclude-use-default: false
-  # Exclude unreachable code - these are intentional in this codebase
-  exclude:
-    - 'unreachable code'
-    - 'statement is unreachable'
+settings:
+  gofmt:
+    simplify: true

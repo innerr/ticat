@@ -14,7 +14,7 @@ func TestCmdParserParseSeg(t *testing.T) {
 		if len(a) != len(b) {
 			t.Fatalf("%#v len not match: %v != %v\n", input, len(a), len(b))
 		}
-		for i, _ := range a {
+		for i := range a {
 			if a[i].Type != b[i].Type {
 				fatal()
 			}

@@ -31,7 +31,7 @@ func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []strin
 		}
 	}()
 
-	stat, err := os.Stat(path)
+	stat, _ := os.Stat(path)
 	if int64(bufSize) >= stat.Size() {
 		bufSize = int(stat.Size())
 	}
@@ -102,7 +102,7 @@ func MoveFile(src string, dest string) error {
 	if err == nil {
 		return nil
 	}
-	if strings.Index(err.Error(), "invalid cross-device link") < 0 {
+	if !strings.Contains(err.Error(), "invalid cross-device link") {
 		return err
 	}
 	cmd := exec.Command("mv", src, dest)
@@ -148,7 +148,7 @@ func NormalizeDurStr(durStr string) string {
 }
 
 func QuoteStrIfHasSpace(str string) string {
-	if strings.IndexAny(str, " \t\r\n") < 0 {
+	if !strings.ContainsAny(str, " \t\r\n") {
 		return str
 	}
 	i := strings.Index(str, "\"")

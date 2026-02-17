@@ -157,7 +157,7 @@ func (self *CmdTree) MatchWriteKey(key string) bool {
 
 func (self *CmdTree) GatherSubNames(includeAbbrs bool, includeShortcuts bool) (names []string) {
 	// Real names first, then abbrs
-	for sub, _ := range self.subs {
+	for sub := range self.subs {
 		if includeShortcuts || !isShortcutCmdName(sub) {
 			names = append(names, sub)
 		}
@@ -367,9 +367,9 @@ func (self *CmdTree) MatchSource(source string) bool {
 		return true
 	}
 	if len(self.source) == 0 {
-		return strings.Index(self.Strs.BuiltinName, source) >= 0
+		return strings.Contains(self.Strs.BuiltinName, source)
 	}
-	return strings.Index(self.source, source) >= 0
+	return strings.Contains(self.source, source)
 }
 
 func (self *CmdTree) MatchTags(tags ...string) bool {
@@ -412,11 +412,11 @@ func (self *CmdTree) matchFind(findStr string) bool {
 		return true
 	}
 	for _, tag := range self.tags {
-		if strings.Index(self.Strs.TagMark+tag, findStr) >= 0 {
+		if strings.Contains(self.Strs.TagMark+tag, findStr) {
 			return true
 		}
 	}
-	if strings.Index(self.name, findStr) >= 0 {
+	if strings.Contains(self.name, findStr) {
 		return true
 	}
 	if self.cmd != nil && self.cmd.MatchFind(findStr) {
@@ -424,17 +424,17 @@ func (self *CmdTree) matchFind(findStr string) bool {
 	}
 	if self.parent != nil {
 		for _, abbr := range self.parent.SubAbbrs(self.name) {
-			if strings.Index(abbr, findStr) >= 0 {
+			if strings.Contains(abbr, findStr) {
 				return true
 			}
 		}
 	}
 	if len(self.source) == 0 {
-		if strings.Index("builtin", findStr) >= 0 {
+		if strings.Contains("builtin", findStr) {
 			return true
 		}
 	} else {
-		if strings.Index(self.source, findStr) >= 0 {
+		if strings.Contains(self.source, findStr) {
 			return true
 		}
 	}
@@ -454,8 +454,7 @@ func (self *CmdTree) Realname(nameOrAbbr string) (realname string) {
 	if self.parent == nil {
 		return
 	}
-	realname, _ = self.parent.subAbbrsRevIdx[nameOrAbbr]
-	return
+	return self.parent.subAbbrsRevIdx[nameOrAbbr]
 }
 
 func (self *CmdTree) SubNames() []string {
@@ -463,8 +462,7 @@ func (self *CmdTree) SubNames() []string {
 }
 
 func (self *CmdTree) SubAbbrs(name string) (abbrs []string) {
-	abbrs, _ = self.subAbbrs[name]
-	return
+	return self.subAbbrs[name]
 }
 
 func (self *CmdTree) Abbrs() (abbrs []string) {
@@ -509,8 +507,7 @@ func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 			panic(err)
 		}
 		self.subAbbrsRevIdx[abbr] = name
-		olds, _ := self.subAbbrs[name]
-		self.subAbbrs[name] = append(olds, abbr)
+		self.subAbbrs[name] = append(self.subAbbrs[name], abbr)
 	}
 }
 

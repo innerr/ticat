@@ -37,10 +37,7 @@ func EnvInput(env *Env, reader io.Reader, sep string, delMark string) error {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
-		text := scanner.Text()
-		if strings.HasSuffix(text, "\n") {
-			text = text[0 : len(text)-1]
-		}
+		text := strings.TrimSuffix(scanner.Text(), "\n")
 		i := strings.Index(text, sep)
 		if i < 0 {
 			return fmt.Errorf("[EnvInput] bad format line '%s', sep '%s'",
@@ -74,7 +71,9 @@ func saveEnvToFile(env *Env, path string, sep string, filtered []string, skipDef
 	if err != nil {
 		panic(fmt.Errorf("[SaveEnvToFile] write env file '%s' failed: %v", tmp, err))
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		panic(fmt.Errorf("[saveEnvToFile] close env file '%s' failed: %v", tmp, err))
+	}
 
 	err = os.Rename(tmp, path)
 	if err != nil {

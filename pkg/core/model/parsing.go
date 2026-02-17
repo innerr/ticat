@@ -94,9 +94,7 @@ type ParseResult struct {
 
 func (self ParseResult) Clone() ParseResult {
 	input := make([]string, len(self.Input))
-	for i, it := range self.Input {
-		input[i] = it
-	}
+	copy(input, self.Input)
 	return ParseResult{
 		input,
 		// TODO: clone error?
@@ -389,10 +387,7 @@ func (self ParsedEnv) AddPrefix(prefix []string, sep string) {
 		v := vals[i]
 
 		// Only deep copy could avoid the issue below, looks like a golang bug
-		prefixClone := []string{}
-		for _, it := range prefix {
-			prefixClone = append(prefixClone, it)
-		}
+		prefixClone := append([]string{}, prefix...)
 		matchedPath := append(prefixClone, v.MatchedPath...)
 		self[prefixPath+k] = ParsedEnvVal{v.Val, v.IsArg, v.IsSysArg, matchedPath, strings.Join(matchedPath, sep)}
 		delete(self, k)

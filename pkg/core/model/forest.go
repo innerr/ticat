@@ -33,9 +33,6 @@ func (self *ForestMode) Push(frame string) {
 }
 
 func (self *ForestMode) Clone() *ForestMode {
-	stack := []string{}
-	for _, it := range self.stack {
-		stack = append(stack, it)
-	}
+	stack := append([]string{}, self.stack...)
 	return &ForestMode{stack}
 }

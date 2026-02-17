@@ -50,7 +50,9 @@ func WriteReposInfoFile(
 	path string,
 	infos []RepoInfo, sep string) {
 
-	os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		panic(fmt.Errorf("[WriteReposInfoFile] create dir for file '%s' failed: %v", path, err))
+	}
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -154,7 +156,7 @@ func ExtractAddrFromList(
 		if findInStr == findStr {
 			return []RepoInfo{info}, append(infos[:i], infos[i+1:]...)
 		}
-		if strings.Index(findInStr, findStr) >= 0 {
+		if strings.Contains(findInStr, findStr) {
 			extracted = append(extracted, info)
 		} else {
 			rest = append(rest, info)
