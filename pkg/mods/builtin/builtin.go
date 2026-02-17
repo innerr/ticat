@@ -985,7 +985,7 @@ func RegisterBlenderCmds(cmds *model.CmdTree) {
 		AddArg("dest", "")
 
 	// TODO: disable blenders now, too many bugs
-	return
+	return //nolint:unreachable
 
 	remove := cmds.AddSub("remove", "rm", "delete", "del").
 		RegPowerCmd(BlenderRemoveOnce,

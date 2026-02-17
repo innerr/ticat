@@ -10,7 +10,7 @@ import (
 func PrintGlobalHelp(cc *model.Cli, env *model.Env) {
 	// TODO: use man page instead of help
 	PrintSelfHelp(cc.Screen, env)
-	return
+	return //nolint:unreachable
 
 	if len(cc.Helps.Sections) == 0 {
 		PrintSelfHelp(cc.Screen, env)

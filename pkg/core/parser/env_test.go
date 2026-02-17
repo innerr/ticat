@@ -21,10 +21,10 @@ func TestEnvParserTryParseRaw(t *testing.T) {
 	}
 
 	v := func(v string) model.ParsedEnvVal {
-		return model.ParsedEnvVal{v, false, false, nil, ""}
+		return model.ParsedEnvVal{Val: v, IsArg: false, IsSysArg: false, MatchedPath: nil, MatchedPathStr: ""}
 	}
 	a := func(v string) model.ParsedEnvVal {
-		return model.ParsedEnvVal{v, true, false, nil, ""}
+		return model.ParsedEnvVal{Val: v, IsArg: true, IsSysArg: false, MatchedPath: nil, MatchedPathStr: ""}
 	}
 
 	test(nil, nil, nil)
@@ -195,7 +195,7 @@ func TestEnvParserTryParse(t *testing.T) {
 	}
 
 	v := func(v string) model.ParsedEnvVal {
-		return model.ParsedEnvVal{v, false, false, nil, ""}
+		return model.ParsedEnvVal{Val: v, IsArg: false, IsSysArg: false, MatchedPath: nil, MatchedPathStr: ""}
 	}
 
 	test(nil, nil, nil, false, nil)

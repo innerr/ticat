@@ -180,31 +180,33 @@ func Dummy(
 func EnvOpCmds() []model.EnvOpCmd {
 	return []model.EnvOpCmd{
 		model.EnvOpCmd{
-			ResetSessionEnv,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+			Func: ResetSessionEnv,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				if checker != nil {
 					checker.Reset()
 				}
 				env.GetLayer(model.EnvLayerSession).Clear(false)
 			}},
 		model.EnvOpCmd{
-			ResetLocalEnv,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+			Func: ResetLocalEnv,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				if checker != nil {
 					checker.Reset()
 				}
 				env.GetLayer(model.EnvLayerSession).Clear(false)
 			}},
-		model.EnvOpCmd{RemoveEnvValAndSaveToLocal,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+		model.EnvOpCmd{
+			Func: RemoveEnvValAndSaveToLocal,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
 				if checker != nil {
 					checker.RemoveKeyStat(key)
 				}
 				env.DeleteEx(key, model.EnvLayerDefault)
 			}},
-		model.EnvOpCmd{MarkTime,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+		model.EnvOpCmd{
+			Func: MarkTime,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("write-to-key")
 				if checker != nil {
 					checker.SetKeyWritten(key)
@@ -212,8 +214,9 @@ func EnvOpCmds() []model.EnvOpCmd {
 				env.GetLayer(model.EnvLayerSession).
 					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-MarkTime>")
 			}},
-		model.EnvOpCmd{MapEnvKeyValueToAnotherKey,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+		model.EnvOpCmd{
+			Func: MapEnvKeyValueToAnotherKey,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("dest-key")
 				if checker != nil {
 					checker.SetKeyWritten(key)
@@ -221,8 +224,9 @@ func EnvOpCmds() []model.EnvOpCmd {
 				env.GetLayer(model.EnvLayerSession).
 					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-MapEnvKeyValueToAnotherKey>")
 			}},
-		model.EnvOpCmd{SetEnvKeyValue,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+		model.EnvOpCmd{
+			Func: SetEnvKeyValue,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
 				if checker != nil {
 					checker.SetKeyWritten(key)
@@ -230,8 +234,9 @@ func EnvOpCmds() []model.EnvOpCmd {
 				env.GetLayer(model.EnvLayerSession).
 					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-SetEnvKeyValue>")
 			}},
-		model.EnvOpCmd{AddEnvKeyValue,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+		model.EnvOpCmd{
+			Func: AddEnvKeyValue,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
 				if checker != nil {
 					checker.SetKeyWritten(key)
@@ -239,26 +244,30 @@ func EnvOpCmds() []model.EnvOpCmd {
 				env.GetLayer(model.EnvLayerSession).
 					SetIfEmpty(key, "<dummy-fake-key-for-env-op-check-only-from-AddEnvKeyValue>")
 			}},
-		model.EnvOpCmd{RemoveEnvValNotSave,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+		model.EnvOpCmd{
+			Func: RemoveEnvValNotSave,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
 				if checker != nil {
 					checker.RemoveKeyStat(key)
 				}
 				env.GetLayer(model.EnvLayerSession).Delete(key)
 			}},
-		model.EnvOpCmd{RemoveEnvValAndSaveToLocal,
-			func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
+		model.EnvOpCmd{
+			Func: RemoveEnvValAndSaveToLocal,
+			Action: func(checker *model.EnvOpsChecker, argv model.ArgVals, env *model.Env) {
 				key := argv.GetRaw("key")
 				if checker != nil {
 					checker.RemoveKeyStat(key)
 				}
 				env.GetLayer(model.EnvLayerSession).Delete(key)
 			}},
-		model.EnvOpCmd{EnvLoadFromSnapshot,
-			opCheckEnvLoadFromSnapshot},
-		model.EnvOpCmd{EnvLoadNonExistFromSnapshot,
-			opCheckEnvLoadFromSnapshot},
+		model.EnvOpCmd{
+			Func:   EnvLoadFromSnapshot,
+			Action: opCheckEnvLoadFromSnapshot},
+		model.EnvOpCmd{
+			Func:   EnvLoadNonExistFromSnapshot,
+			Action: opCheckEnvLoadFromSnapshot},
 	}
 }
 

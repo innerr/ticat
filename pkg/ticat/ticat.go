@@ -72,24 +72,24 @@ func NewTiCat() *TiCat {
 
 	// The available cmds are organized in a tree, will grow bigger after running bootstrap
 	tree := model.NewCmdTree(&model.CmdTreeStrs{
-		SelfName,
-		CmdRootDisplayName,
-		CmdBuiltinName,
-		CmdBuiltinDisplayName,
-		CmdPathSep,
-		CmdPathAlterSeps,
-		AbbrsSep,
-		EnvOpSep,
-		EnvValDelAllMark,
-		EnvKeyValSep,
-		EnvPathSep,
-		ProtoSep,
-		ListSep,
-		FlowTemplateBracketLeft,
-		FlowTemplateBracketRight,
-		FlowTemplateMultiplyMark,
-		TagMark,
-		ArgEnumSep,
+		SelfName:                 SelfName,
+		RootDisplayName:          CmdRootDisplayName,
+		BuiltinName:              CmdBuiltinName,
+		BuiltinDisplayName:       CmdBuiltinDisplayName,
+		PathSep:                  CmdPathSep,
+		PathAlterSeps:            CmdPathAlterSeps,
+		AbbrsSep:                 AbbrsSep,
+		EnvOpSep:                 EnvOpSep,
+		EnvValDelAllMark:         EnvValDelAllMark,
+		EnvKeyValSep:             EnvKeyValSep,
+		EnvPathSep:               EnvPathSep,
+		ProtoSep:                 ProtoSep,
+		ListSep:                  ListSep,
+		FlowTemplateBracketLeft:  FlowTemplateBracketLeft,
+		FlowTemplateBracketRight: FlowTemplateBracketRight,
+		FlowTemplateMultiplyMark: FlowTemplateMultiplyMark,
+		TagMark:                  TagMark,
+		ArgEnumSep:               ArgEnumSep,
 	})
 	builtin.RegisterCmds(tree)
 
@@ -104,7 +104,7 @@ func NewTiCat() *TiCat {
 		nil,
 	)
 	envParser := parser.NewEnvParser(
-		parser.Brackets{EnvBracketLeft, EnvBracketRight},
+		parser.Brackets{Left: EnvBracketLeft, Right: EnvBracketRight},
 		Spaces,
 		EnvKeyValSep,
 		EnvPathSep,
