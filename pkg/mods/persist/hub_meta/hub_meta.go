@@ -59,8 +59,10 @@ func WriteReposInfoFile(
 		panic(fmt.Errorf("[WriteReposInfoFile] open file '%s' failed: %v", tmp, err))
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
+		if file != nil {
+			if err := file.Close(); err != nil {
+				panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
+			}
 		}
 	}()
 
@@ -74,6 +76,7 @@ func WriteReposInfoFile(
 	if err := file.Close(); err != nil {
 		panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
 	}
+	file = nil
 
 	err = os.Rename(tmp, path)
 	if err != nil {
