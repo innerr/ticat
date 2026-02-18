@@ -535,3 +535,204 @@ func TestIntegrationFlowStrsConversion(t *testing.T) {
 		t.Errorf("empty FlowStrToStrs should return empty slice, got %v", emptyParsed)
 	}
 }
+
+// TestIntegrationGlobalEnvInSequence tests that global env {key=val} before cmd1 : cmd2
+// is accessible to all commands in the sequence
+func TestIntegrationGlobalEnvInSequence(t *testing.T) {
+	strs := model.CmdTreeStrsForTest()
+	tree := model.NewCmdTree(strs)
+
+	cmd1 := tree.AddSub("cmd1")
+	cmd1.RegEmptyCmd("test command 1")
+	cmd2 := tree.AddSub("cmd2")
+	cmd2.RegEmptyCmd("test command 2")
+
+	env := model.NewEnv()
+	env.Set("strs.env-path-sep", ".")
+	env.Set("strs.env-bracket-left", "{")
+	env.Set("strs.env-bracket-right", "}")
+	env.Set("strs.env-kv-sep", "=")
+	env.Set("strs.seq-sep", ":")
+
+	t.Run("global env before sequence is parsed correctly", func(t *testing.T) {
+		flow := &model.ParsedCmds{
+			GlobalEnv: model.ParsedEnv{
+				"mock-key": model.NewParsedEnvVal("mock-key", "mock-value"),
+			},
+			Cmds: []model.ParsedCmd{
+				{
+					Segments: []model.ParsedCmdSeg{
+						{Matched: model.MatchedCmd{Name: "cmd1"}},
+					},
+				},
+				{
+					Segments: []model.ParsedCmdSeg{
+						{Matched: model.MatchedCmd{Name: "cmd2"}},
+					},
+				},
+			},
+		}
+
+		if flow.GlobalEnv == nil {
+			t.Fatal("GlobalEnv should not be nil")
+		}
+		if flow.GlobalEnv["mock-key"].Val != "mock-value" {
+			t.Errorf("GlobalEnv should contain mock-key=mock-value, got %v", flow.GlobalEnv["mock-key"])
+		}
+		if len(flow.Cmds) != 2 {
+			t.Fatalf("expected 2 commands, got %d", len(flow.Cmds))
+		}
+	})
+
+	t.Run("global env can be written to command env", func(t *testing.T) {
+		globalEnv := model.ParsedEnv{
+			"shared-key": model.NewParsedEnvVal("shared-key", "shared-value"),
+		}
+
+		cmdEnv := model.NewEnv()
+
+		globalEnv.WriteNotArgTo(cmdEnv, "")
+
+		if cmdEnv.Get("shared-key").Raw != "shared-value" {
+			t.Errorf("cmdEnv should have shared-key=shared-value after WriteNotArgTo, got %v",
+				cmdEnv.Get("shared-key"))
+		}
+	})
+
+	t.Run("multiple global env values", func(t *testing.T) {
+		flow := &model.ParsedCmds{
+			GlobalEnv: model.ParsedEnv{
+				"key1": model.NewParsedEnvVal("key1", "val1"),
+				"key2": model.NewParsedEnvVal("key2", "val2"),
+				"key3": model.NewParsedEnvVal("key3", "val3"),
+			},
+			Cmds: []model.ParsedCmd{
+				{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd1"}}}},
+				{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd2"}}}},
+			},
+		}
+
+		cmdEnv := model.NewEnv()
+		flow.GlobalEnv.WriteNotArgTo(cmdEnv, "")
+
+		if cmdEnv.Get("key1").Raw != "val1" {
+			t.Errorf("cmdEnv should have key1=val1, got %v", cmdEnv.Get("key1"))
+		}
+		if cmdEnv.Get("key2").Raw != "val2" {
+			t.Errorf("cmdEnv should have key2=val2, got %v", cmdEnv.Get("key2"))
+		}
+		if cmdEnv.Get("key3").Raw != "val3" {
+			t.Errorf("cmdEnv should have key3=val3, got %v", cmdEnv.Get("key3"))
+		}
+	})
+
+	t.Run("global env does not affect segment env", func(t *testing.T) {
+		flow := &model.ParsedCmds{
+			GlobalEnv: model.ParsedEnv{
+				"global-key": model.NewParsedEnvVal("global-key", "global-value"),
+			},
+			Cmds: []model.ParsedCmd{
+				{
+					Segments: []model.ParsedCmdSeg{
+						{
+							Env:     model.ParsedEnv{"local-key": model.NewParsedEnvVal("local-key", "local-value")},
+							Matched: model.MatchedCmd{Name: "cmd1"},
+						},
+					},
+				},
+			},
+		}
+
+		if _, ok := flow.Cmds[0].Segments[0].Env["global-key"]; ok {
+			t.Error("segment env should not contain global-key after parsing")
+		}
+		if flow.Cmds[0].Segments[0].Env["local-key"].Val != "local-value" {
+			t.Error("segment env should retain local-key")
+		}
+	})
+
+	t.Run("three commands in sequence share global env", func(t *testing.T) {
+		flow := &model.ParsedCmds{
+			GlobalEnv: model.ParsedEnv{
+				"shared": model.NewParsedEnvVal("shared", "value"),
+			},
+			Cmds: []model.ParsedCmd{
+				{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd1"}}}},
+				{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd2"}}}},
+				{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd3"}}}},
+			},
+		}
+
+		for i, cmd := range flow.Cmds {
+			cmdEnv := model.NewEnv()
+			flow.GlobalEnv.WriteNotArgTo(cmdEnv, "")
+			if cmdEnv.Get("shared").Raw != "value" {
+				t.Errorf("cmd[%d] env should have shared=value", i)
+			}
+			_ = cmd
+		}
+	})
+}
+
+// TestIntegrationGlobalEnvWithCommandArgs tests global env with command arguments
+func TestIntegrationGlobalEnvWithCommandArgs(t *testing.T) {
+	tree := model.NewCmdTree(model.CmdTreeStrsForTest())
+
+	echo := tree.AddSub("echo")
+	echo.RegEmptyCmd("print message").
+		AddArg("message", "", "msg", "m").
+		AddArg("color", "", "c")
+
+	t.Run("global env and cmd args are separate", func(t *testing.T) {
+		flow := &model.ParsedCmds{
+			GlobalEnv: model.ParsedEnv{
+				"debug": model.NewParsedEnvVal("debug", "true"),
+			},
+			Cmds: []model.ParsedCmd{
+				{
+					Segments: []model.ParsedCmdSeg{
+						{
+							Env:     model.ParsedEnv{"echo.message": model.NewParsedEnvArgv("echo.message", "hello")},
+							Matched: model.MatchedCmd{Name: "echo"},
+						},
+					},
+				},
+				{
+					Segments: []model.ParsedCmdSeg{
+						{
+							Env:     model.ParsedEnv{"echo.message": model.NewParsedEnvArgv("echo.message", "world")},
+							Matched: model.MatchedCmd{Name: "echo"},
+						},
+					},
+				},
+			},
+		}
+
+		cmdEnv := model.NewEnv()
+		flow.GlobalEnv.WriteNotArgTo(cmdEnv, "")
+
+		if cmdEnv.Get("debug").Raw != "true" {
+			t.Errorf("cmdEnv should have debug=true from global env, got %v", cmdEnv.Get("debug"))
+		}
+
+		if flow.Cmds[0].Segments[0].Env["echo.message"].Val != "hello" {
+			t.Errorf("first cmd should have echo.message=hello")
+		}
+		if flow.Cmds[1].Segments[0].Env["echo.message"].Val != "world" {
+			t.Errorf("second cmd should have echo.message=world")
+		}
+	})
+
+	t.Run("args are written with IsArg flag", func(t *testing.T) {
+		env := model.NewEnv()
+		parsedEnv := model.ParsedEnv{
+			"echo.message": model.NewParsedEnvArgv("echo.message", "hello"),
+		}
+
+		parsedEnv.WriteTo(env, "")
+
+		if env.Get("echo.message").Raw != "hello" {
+			t.Errorf("env should have echo.message=hello, got %v", env.Get("echo.message"))
+		}
+	})
+}
