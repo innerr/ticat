@@ -10,12 +10,15 @@ func DumpCmdUsage(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+	cmdPath, err := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
 	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "cmd.full")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DumpCmdWithDetails(
@@ -23,12 +26,15 @@ func DumpCmdWithDetails(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	cmdPath := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+	cmdPath, err := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DumpTailCmdWithUsage(
@@ -36,11 +42,11 @@ func DumpTailCmdWithUsage(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	cmdPath := argv.GetRaw("cmd-path")
@@ -59,11 +65,11 @@ func DumpTailCmdWithDetails(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	cmdPath := argv.GetRaw("cmd-path")

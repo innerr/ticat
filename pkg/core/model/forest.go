@@ -18,11 +18,13 @@ func (self ForestMode) AtForestTopLvl(env *Env) bool {
 
 func (self *ForestMode) Pop(env *Env) {
 	if len(self.stack) == 0 {
+		// PANIC: should never happen - pop called on empty stack
 		panic(fmt.Errorf("[Forest] should never happen: pop on empty"))
 	}
 	last1 := GetLastStackFrame(env)
 	last2 := self.stack[len(self.stack)-1]
 	if last1 != last2 {
+		// PANIC: should never happen - frame mismatch
 		panic(fmt.Errorf("[Forest] should never happen: pop on wrong frame: %s != %s", last1, last2))
 	}
 	self.stack = self.stack[0 : len(self.stack)-1]

@@ -15,9 +15,11 @@ func DbgEcho(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	msg := argv.GetRaw("message")
 	color := argv.GetRaw("color")
@@ -27,7 +29,7 @@ func DbgEcho(
 	str = display.ColorStrByName(str, color, env)
 
 	cc.Screen.Print(fmt.Sprintf("%v\n", str))
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgEchoLn(
@@ -35,10 +37,10 @@ func DbgEchoLn(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	cc.Screen.Print("\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgExecBash(
@@ -46,9 +48,11 @@ func DbgExecBash(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cmd := exec.Command("bash")
 	cmd.Stdin = os.Stdin
@@ -56,10 +60,10 @@ func DbgExecBash(
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		panic(model.WrapCmdError(flow.Cmds[currCmdIdx], err))
+		return currCmdIdx, model.WrapCmdError(flow.Cmds[currCmdIdx], err)
 	}
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgWaitSecExecute(
@@ -67,11 +71,13 @@ func DbgWaitSecExecute(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	env.GetLayer(model.EnvLayerSession).SetInt("sys.execute-wait-sec", argv.GetInt("seconds"))
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgWaitSecExecuteAtEnd(
@@ -79,11 +85,13 @@ func DbgWaitSecExecuteAtEnd(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	env.GetLayer(model.EnvLayerSession).SetInt("sys.execute-wait-sec.at-end", argv.GetInt("seconds"))
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgBreakAtEnd(
@@ -91,13 +99,13 @@ func DbgBreakAtEnd(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	cc.BreakPoints.SetAtEnd(true)
 	if 1 == len(flow.Cmds)-1 {
 		env.GetLayer(model.EnvLayerSession).SetBool("display.one-cmd", true)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgBreakBefore(
@@ -105,14 +113,16 @@ func DbgBreakBefore(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	listSep := env.GetRaw("strs.list-sep")
 	cmdList := strings.Split(argv.GetRaw("break-points"), listSep)
 	cc.BreakPoints.SetBefores(cc, env, cmdList)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgBreakAfter(
@@ -120,14 +130,16 @@ func DbgBreakAfter(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	listSep := env.GetRaw("strs.list-sep")
 	cmdList := strings.Split(argv.GetRaw("break-points"), listSep)
 	cc.BreakPoints.SetAfters(cc, env, cmdList)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgBreakClean(
@@ -135,12 +147,14 @@ func DbgBreakClean(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cc.BreakPoints.Clean(cc, env)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgBreakStatus(
@@ -148,9 +162,11 @@ func DbgBreakStatus(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	bps := cc.BreakPoints
 
@@ -192,7 +208,7 @@ func DbgBreakStatus(
 			display.ColorKey(k, env), display.ColorSymbol("=", env), env.GetBool(k)))
 	}
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgInteractLeave(
@@ -200,13 +216,15 @@ func DbgInteractLeave(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	env = env.GetLayer(model.EnvLayerSession)
 	env.SetBool("sys.interact.leaving", true)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgInteract(
@@ -214,12 +232,14 @@ func DbgInteract(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	InteractiveMode(cc, env, "e")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SysSetExtExecutor(
@@ -227,12 +247,20 @@ func SysSetExtExecutor(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	ext := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "ext")
-	exe := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "executor")
+	ext, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "ext")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	exe, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "executor")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	env.GetLayer(model.EnvLayerSession).Set("sys.ext.exec."+ext, exe)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }

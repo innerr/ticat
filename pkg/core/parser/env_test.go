@@ -54,7 +54,7 @@ func TestEnvParserTryParseRawBasic(t *testing.T) {
 
 func TestEnvParserTryParseRawWithArgs(t *testing.T) {
 	root := newCmdTree()
-	dummy := func(model.ArgVals, *model.Cli, *model.Env, []model.ParsedCmd) bool { return true }
+	dummy := func(model.ArgVals, *model.Cli, *model.Env, []model.ParsedCmd) error { return nil }
 	cmd := root.RegCmd(dummy, "", "")
 	cmd.AddArg("aa", "da")
 	cmd.AddArg("bb", "db", "BB")

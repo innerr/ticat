@@ -216,6 +216,7 @@ func templateRenderPanic(in string, cmd *Cmd, targetName string, key string, isM
 			key,
 			findArgIdx(key),
 		}
+		// PANIC: Runtime error - missing arg value when rendering template
 		panic(err)
 	} else {
 		argName := cmd.arg2env.GetArgName(cmd, key, true)
@@ -231,6 +232,7 @@ func templateRenderPanic(in string, cmd *Cmd, targetName string, key string, isM
 			argName,
 			argIdx,
 		}
+		// PANIC: Runtime error - missing env value when rendering template
 		panic(err)
 	}
 }

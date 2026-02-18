@@ -15,7 +15,7 @@ func Version(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	cc.Screen.Print(env.GetRaw("sys.version") + " " + env.GetRaw("sys.dev.name") + "\n")
 
@@ -35,7 +35,7 @@ func Version(
 		}
 	}
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func Sleep(
@@ -43,16 +43,16 @@ func Sleep(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	durStr := utils.NormalizeDurStr(argv.GetRaw("duration"))
 	dur, err := time.ParseDuration(durStr)
 	if err != nil {
-		panic(fmt.Errorf("[Sleep] time string '%s' parse failed: %v\n", durStr, err))
+		return currCmdIdx, fmt.Errorf("[Sleep] time string '%s' parse failed: %v", durStr, err)
 	}
 	secs := int(dur.Seconds())
 	if secs == 0 {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 
 	for i := 0; i < secs; i++ {
@@ -66,7 +66,7 @@ func Sleep(
 		time.Sleep(time.Second)
 	}
 	cc.Screen.Print("\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func MarkTime(
@@ -74,15 +74,20 @@ func MarkTime(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "write-to-key")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	key, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "write-to-key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	env = env.GetLayer(model.EnvLayerSession)
 	val := fmt.Sprintf("%d", int(time.Now().Unix()))
 	env.Set(key, val)
 	cc.Screen.Print(display.ColorKey(key, env) + display.ColorSymbol(" = ", env) + val + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func TimerBegin(
@@ -90,15 +95,20 @@ func TimerBegin(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	begin := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "begin-key")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	begin, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "begin-key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	env = env.GetLayer(model.EnvLayerSession)
 	val := fmt.Sprintf("%d", int(time.Now().Unix()))
 	env.Set(begin, val)
 	cc.Screen.Print(display.ColorKey(begin, env) + display.ColorSymbol(" = ", env) + val + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func TimerElapsed(
@@ -106,21 +116,29 @@ func TimerElapsed(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	beginKey := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "begin-key")
+	beginKey, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "begin-key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	begin := env.GetInt(beginKey)
 	now := int(time.Now().Unix())
 
-	elapsedKey := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "write-to-key")
+	elapsedKey, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "write-to-key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	env = env.GetLayer(model.EnvLayerSession)
 	elapsed := now - begin
 	env.SetInt(elapsedKey, elapsed)
 	cc.Screen.Print(display.ColorKey(elapsedKey, env) + display.ColorSymbol(" = ", env) +
 		fmt.Sprintf("%d\n", elapsed))
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DbgPanic(
@@ -128,10 +146,12 @@ func DbgPanic(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	panic(fmt.Errorf("this is a panic test command"))
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	return currCmdIdx, fmt.Errorf("this is a panic test command")
 }
 
 func DbgPanicCmdError(
@@ -139,10 +159,12 @@ func DbgPanicCmdError(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	panic(model.NewCmdError(flow.Cmds[currCmdIdx], "this is a specified-error-type panic test command"))
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx], "this is a specified-error-type panic test command")
 }
 
 func DbgError(
@@ -150,10 +172,12 @@ func DbgError(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	return currCmdIdx, false
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	return currCmdIdx, fmt.Errorf("debug error")
 }
 
 func Noop(
@@ -161,9 +185,9 @@ func Noop(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func Dummy(
@@ -171,10 +195,10 @@ func Dummy(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	cc.Screen.Print("dummy command here\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnvOpCmds() []model.EnvOpCmd {
@@ -294,7 +318,7 @@ func opCheckEnvLoadFromSnapshot(checker *model.EnvOpsChecker, argv model.ArgVals
 	}
 }
 
-func Selftest(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, ok bool) {
+func Selftest(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, err error) {
 	tag := argv.GetRaw("tag")
 	src := argv.GetRaw("match-source")
 	filter := argv.GetRaw("filter-source")
@@ -304,26 +328,9 @@ func Selftest(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string,
 	findAllCmdsByTag(tag, src, filter, cc.Cmds, &result)
 
 	if len(result) == 0 {
-		/*
-			// TODO: use PrintTitleError instead of panic. it's not errors
-			if len(src) == 0 {
-				if len(filter) == 0 {
-					panic(fmt.Errorf("no selftest command with tag '%s'", tag))
-				} else {
-					panic(fmt.Errorf("no selftest command with tag '%s' and source not match '%s'", tag, filter))
-				}
-			} else {
-				if len(filter) == 0 {
-					panic(fmt.Errorf("no selftest command with tag '%s' and source match '%s'", tag, src))
-				} else {
-					panic(fmt.Errorf("no selftest command with tag '%s' and source match '%s' but not match '%s'", tag, src, filter))
-				}
-			}
-		*/
 		return
 	}
 
-	ok = true
 	if len(result) != 1 && !parallel {
 		flow = append(flow, "flow.forest-mode")
 	}
@@ -341,14 +348,14 @@ func Selftest(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string,
 	return
 }
 
-func Repeat(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, ok bool) {
+func Repeat(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, err error) {
 	cmd := argv.GetRaw("cmd")
 	if len(cmd) == 0 {
-		panic(fmt.Errorf("arg 'cmd' is empty"))
+		return nil, nil, fmt.Errorf("arg 'cmd' is empty")
 	}
 	times := argv.GetInt("times")
 	if times <= 0 {
-		panic(fmt.Errorf("arg 'times' is invalid value '%d'", times))
+		return nil, nil, fmt.Errorf("arg 'times' is invalid value '%d'", times)
 	}
 
 	trivialMark := env.GetRaw("strs.trivial-mark")
@@ -356,7 +363,6 @@ func Repeat(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, m
 	for i := 0; i < times; i++ {
 		flow = append(flow, cmd)
 	}
-	ok = true
 	return
 }
 

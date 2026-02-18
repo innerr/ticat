@@ -8,11 +8,16 @@ import (
 )
 
 func LoadFlowFile(path string) (flow []string, help string, abbrs string,
-	trivial string, autoArgs string, packSub string) {
+	trivial string, autoArgs string, packSub string, err error) {
 
-	metas := meta_file.NewMetaFile(path)
+	var metas []meta_file.VirtualMetaFile
+	metas, err = meta_file.NewMetaFile(path)
+	if err != nil {
+		return
+	}
 	if len(metas) != 1 {
-		panic(fmt.Errorf("can't load content for edit from a combined flow file"))
+		err = fmt.Errorf("can't load content for edit from a combined flow file")
+		return
 	}
 	meta := metas[0].Meta
 
@@ -33,7 +38,7 @@ func LoadFlowFile(path string) (flow []string, help string, abbrs string,
 }
 
 func SaveFlowFile(path string, flow []string, help string, abbrs string,
-	trivial string, autoArgs string, packSub string) {
+	trivial string, autoArgs string, packSub string) error {
 
 	meta := meta_file.CreateMetaFile(path)
 	section := meta.GetGlobalSection()
@@ -57,5 +62,5 @@ func SaveFlowFile(path string, flow []string, help string, abbrs string,
 	if len(flow) != 0 {
 		section.SetMultiLineVal("flow", flow)
 	}
-	meta.Save()
+	return meta.Save()
 }

@@ -26,47 +26,56 @@ func RegMod(
 	abbrsSep string,
 	envPathSep string,
 	source string,
-	panicRecover bool) {
+	panicRecover bool) (err error) {
 
 	defer func() {
 		if !panicRecover {
 			return
 		}
-		if err := recover(); err != nil {
-			cc.TolerableErrs.OnErr(err, source, metaPath, "module loading failed")
+		if panicErr := recover(); panicErr != nil {
+			cc.TolerableErrs.OnErr(panicErr, source, metaPath, "module loading failed")
 		}
 	}()
 
-	metas := meta_file.NewMetaFile(metaPath)
-	if len(metas) == 0 {
-		panic(fmt.Errorf("[RegMod] should never happen: NewMetaFile return no meta"))
+	var metas []meta_file.VirtualMetaFile
+	metas, err = meta_file.NewMetaFile(metaPath)
+	if err != nil {
+		return fmt.Errorf("[RegMod] should never happen: NewMetaFile return no meta")
 	}
 
 	if len(metas) == 1 && metas[0].NotVirtual {
-		regModFile(metas[0].Meta, cc, metaPath, executablePath, isDir, isFlow, cmdPath,
+		err = regModFile(metas[0].Meta, cc, metaPath, executablePath, isDir, isFlow, cmdPath,
 			abbrsSep, envPathSep, source, panicRecover)
 		return
 	}
 
 	if len(executablePath) != 0 || isDir || !isFlow {
-		panic(fmt.Errorf("[RegMod] should never happen: a combined flow file not meet the expection"))
+		return fmt.Errorf("[RegMod] should never happen: a combined flow file not meet the expection")
 	}
 
 	// Discard the cmdPath from real file name
 	for _, meta := range metas {
-		path := getVirtualFileCmdPath(meta.VirtualPath, flowExt, cc.Cmds.Strs.PathSep)
-		regModFile(meta.Meta, cc, metaPath, "", false, true, path,
+		var path []string
+		path, err = getVirtualFileCmdPath(meta.VirtualPath, flowExt, cc.Cmds.Strs.PathSep)
+		if err != nil {
+			return
+		}
+		err = regModFile(meta.Meta, cc, metaPath, "", false, true, path,
 			abbrsSep, envPathSep, source, panicRecover)
+		if err != nil {
+			return
+		}
 	}
+	return nil
 }
 
-func getVirtualFileCmdPath(path string, flowExt string, pathSep string) []string {
+func getVirtualFileCmdPath(path string, flowExt string, pathSep string) ([]string, error) {
 	base := filepath.Base(path)
 	if !strings.HasSuffix(base, flowExt) {
-		panic(fmt.Errorf("virtual flow file '%s' ext not match '%s'", path, flowExt))
+		return nil, fmt.Errorf("virtual flow file '%s' ext not match '%s'", path, flowExt)
 	}
 	raw := base[:len(base)-len(flowExt)]
-	return strings.Split(raw, pathSep)
+	return strings.Split(raw, pathSep), nil
 }
 
 func regModFile(
@@ -80,10 +89,13 @@ func regModFile(
 	abbrsSep string,
 	envPathSep string,
 	source string,
-	panicRecover bool) {
+	panicRecover bool) error {
 
 	mod := cc.Cmds.GetOrAddSubEx(source, cmdPath...)
-	cmd := regMod(meta, mod, executablePath, isDir, source)
+	cmd, err := regMod(meta, mod, executablePath, isDir, source)
+	if err != nil {
+		return err
+	}
 	mod.SetSource(source)
 	cmd.SetMetaFile(metaPath)
 
@@ -95,14 +107,30 @@ func regModFile(
 	}
 
 	regMacro(meta, cmd)
-	regTrivial(meta, mod)
-	regUnLog(meta, cmd)
-	regQuietError(meta, cmd)
-	regNoSession(meta, cmd)
-	regQuietCmd(meta, cmd)
-	regHideInSessionsLast(meta, cmd)
-	regQuietSubFlow(meta, cmd)
-	regUnbreakFileNFlow(meta, cmd)
+	if err := regTrivial(meta, mod); err != nil {
+		return err
+	}
+	if err := regUnLog(meta, cmd); err != nil {
+		return err
+	}
+	if err := regQuietError(meta, cmd); err != nil {
+		return err
+	}
+	if err := regNoSession(meta, cmd); err != nil {
+		return err
+	}
+	if err := regQuietCmd(meta, cmd); err != nil {
+		return err
+	}
+	if err := regHideInSessionsLast(meta, cmd); err != nil {
+		return err
+	}
+	if err := regQuietSubFlow(meta, cmd); err != nil {
+		return err
+	}
+	if err := regUnbreakFileNFlow(meta, cmd); err != nil {
+		return err
+	}
 
 	regAutoTimer(meta, cmd)
 	regTags(meta, mod)
@@ -112,9 +140,12 @@ func regModFile(
 	regArg2EnvAutoMap(cc, meta, cmd)
 
 	regDeps(meta, cmd)
-	regEnvOps(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
+	if err := regEnvOps(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep); err != nil {
+		return err
+	}
 	regVal2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
 	regArg2Env(cc.EnvAbbrs, meta, cmd, abbrsSep, envPathSep)
+	return nil
 }
 
 func regAutoTimer(meta *meta_file.MetaFile, cmd *model.Cmd) {
@@ -176,19 +207,20 @@ func regMacro(meta *meta_file.MetaFile, cmd *model.Cmd) {
 	}
 }
 
-func regTrivial(meta *meta_file.MetaFile, mod *model.CmdTree) {
+func regTrivial(meta *meta_file.MetaFile, mod *model.CmdTree) error {
 	val := meta.Get("trivial")
 	if len(val) == 0 {
-		return
+		return nil
 	}
 	trivial, err := strconv.Atoi(val)
 	if err != nil {
-		panic(fmt.Errorf("[regTrivial] trivial string '%s' is not int: '%v'", val, err))
+		return fmt.Errorf("[regTrivial] trivial string '%s' is not int: '%v'", val, err)
 	}
 	mod.SetTrivial(trivial)
+	return nil
 }
 
-func regUnLog(meta *meta_file.MetaFile, cmd *model.Cmd) {
+func regUnLog(meta *meta_file.MetaFile, cmd *model.Cmd) error {
 	for _, key := range []string{"nolog", "unlog", "interact", "interactive"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
@@ -196,16 +228,17 @@ func regUnLog(meta *meta_file.MetaFile, cmd *model.Cmd) {
 		}
 		unLog, err := strconv.ParseBool(val)
 		if err != nil {
-			panic(fmt.Errorf("[regUnLog] unlog value string '%s' is not bool: '%v'", val, err))
+			return fmt.Errorf("[regUnLog] unlog value string '%s' is not bool: '%v'", val, err)
 		}
 		if unLog {
 			cmd.SetUnLog()
 		}
-		return
+		return nil
 	}
+	return nil
 }
 
-func regQuietError(meta *meta_file.MetaFile, cmd *model.Cmd) {
+func regQuietError(meta *meta_file.MetaFile, cmd *model.Cmd) error {
 	for _, key := range []string{"quiet-error", "quiet-err", "silent-error", "silent-err"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
@@ -213,16 +246,17 @@ func regQuietError(meta *meta_file.MetaFile, cmd *model.Cmd) {
 		}
 		quiet, err := strconv.ParseBool(val)
 		if err != nil {
-			panic(fmt.Errorf("[regQuietError] quiet-error value string '%s' is not bool: '%v'", val, err))
+			return fmt.Errorf("[regQuietError] quiet-error value string '%s' is not bool: '%v'", val, err)
 		}
 		if quiet {
 			cmd.SetQuietError()
 		}
-		return
+		return nil
 	}
+	return nil
 }
 
-func regNoSession(meta *meta_file.MetaFile, cmd *model.Cmd) {
+func regNoSession(meta *meta_file.MetaFile, cmd *model.Cmd) error {
 	for _, key := range []string{"no-session"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
@@ -230,16 +264,17 @@ func regNoSession(meta *meta_file.MetaFile, cmd *model.Cmd) {
 		}
 		no, err := strconv.ParseBool(val)
 		if err != nil {
-			panic(fmt.Errorf("[regNoSession] no-session value string '%s' is not bool: '%v'", val, err))
+			return fmt.Errorf("[regNoSession] no-session value string '%s' is not bool: '%v'", val, err)
 		}
 		if no {
 			cmd.SetNoSession()
 		}
-		return
+		return nil
 	}
+	return nil
 }
 
-func regQuietCmd(meta *meta_file.MetaFile, cmd *model.Cmd) {
+func regQuietCmd(meta *meta_file.MetaFile, cmd *model.Cmd) error {
 	for _, key := range []string{"quiet"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
@@ -247,16 +282,17 @@ func regQuietCmd(meta *meta_file.MetaFile, cmd *model.Cmd) {
 		}
 		quiet, err := strconv.ParseBool(val)
 		if err != nil {
-			panic(fmt.Errorf("[regQuietCmd] quiet value string '%s' is not bool: '%v'", val, err))
+			return fmt.Errorf("[regQuietCmd] quiet value string '%s' is not bool: '%v'", val, err)
 		}
 		if quiet {
 			cmd.SetQuiet()
 		}
-		return
+		return nil
 	}
+	return nil
 }
 
-func regHideInSessionsLast(meta *meta_file.MetaFile, cmd *model.Cmd) {
+func regHideInSessionsLast(meta *meta_file.MetaFile, cmd *model.Cmd) error {
 	for _, key := range []string{"hide-in-sessions-last", "hide-in-session-last", "hide-in-last"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
@@ -264,16 +300,17 @@ func regHideInSessionsLast(meta *meta_file.MetaFile, cmd *model.Cmd) {
 		}
 		hide, err := strconv.ParseBool(val)
 		if err != nil {
-			panic(fmt.Errorf("[regHideInSessionsLast] hide-in-last value string '%s' is not bool: '%v'", val, err))
+			return fmt.Errorf("[regHideInSessionsLast] hide-in-last value string '%s' is not bool: '%v'", val, err)
 		}
 		if hide {
 			cmd.SetHideInSessionsLast()
 		}
-		return
+		return nil
 	}
+	return nil
 }
 
-func regQuietSubFlow(meta *meta_file.MetaFile, cmd *model.Cmd) {
+func regQuietSubFlow(meta *meta_file.MetaFile, cmd *model.Cmd) error {
 	for _, key := range []string{"pack-subflow", "pack-sub"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
@@ -281,16 +318,17 @@ func regQuietSubFlow(meta *meta_file.MetaFile, cmd *model.Cmd) {
 		}
 		quiet, err := strconv.ParseBool(val)
 		if err != nil {
-			panic(fmt.Errorf("[regQuietSubFlow] quiet-subflow value string '%s' is not bool: '%v'", val, err))
+			return fmt.Errorf("[regQuietSubFlow] quiet-subflow value string '%s' is not bool: '%v'", val, err)
 		}
 		if quiet {
 			cmd.SetQuietSubFlow()
 		}
-		return
+		return nil
 	}
+	return nil
 }
 
-func regUnbreakFileNFlow(meta *meta_file.MetaFile, cmd *model.Cmd) {
+func regUnbreakFileNFlow(meta *meta_file.MetaFile, cmd *model.Cmd) error {
 	for _, key := range []string{"unbreak-file-n-flow", "unbreak-file&flow", "unbreak-file+flow", "unbreak-filenflow", "unbreak-fnf"} {
 		val := meta.Get(key)
 		if len(val) == 0 {
@@ -298,13 +336,14 @@ func regUnbreakFileNFlow(meta *meta_file.MetaFile, cmd *model.Cmd) {
 		}
 		quiet, err := strconv.ParseBool(val)
 		if err != nil {
-			panic(fmt.Errorf("[regUnbreakFileNFlow] unbreak-file-n-flow value string '%s' is not bool: '%v'", val, err))
+			return fmt.Errorf("[regUnbreakFileNFlow] unbreak-file-n-flow value string '%s' is not bool: '%v'", val, err)
 		}
 		if quiet {
 			cmd.SetUnbreakFileNFlow()
 		}
-		return
+		return nil
 	}
+	return nil
 }
 
 func regArg2EnvAutoMap(cc *model.Cli, meta *meta_file.MetaFile, cmd *model.Cmd) {
@@ -327,8 +366,12 @@ func regArg2EnvAutoMap(cc *model.Cli, meta *meta_file.MetaFile, cmd *model.Cmd) 
 		break
 	}
 	if len(names) != 0 {
-		cmd.SetArg2EnvAutoMap(names)
-		cc.Arg2EnvAutoMapCmds.AddAutoMapTarget(cmd)
+		_, err := cmd.SetArg2EnvAutoMap(names)
+		if err != nil {
+			cc.TolerableErrs.OnErr(err, cmd.Owner().Source(), meta.Path(), "arg2env auto map definition error")
+		} else {
+			cc.Arg2EnvAutoMapCmds.AddAutoMapTarget(cmd)
+		}
 	}
 }
 
@@ -348,7 +391,7 @@ func regMod(
 	mod *model.CmdTree,
 	executablePath string,
 	isDir bool,
-	source string) *model.Cmd {
+	source string) (*model.Cmd, error) {
 
 	cmdPath := mod.DisplayPath()
 
@@ -361,17 +404,17 @@ func regMod(
 	help := meta.Get("help")
 	// If has executable file, it need to have help string, a flow can have not
 	// if len(help) == 0 && (!isDir && len(flow) == 0 || len(cmdLine) != 0) {
-	// 	panic(fmt.Errorf("[regMod] cmd '%s' has no help string in '%s'",
-	//		cmdPath, meta.Path()))
+	// 	return nil, fmt.Errorf("[regMod] cmd '%s' has no help string in '%s'",
+	//		cmdPath, meta.Path())
 	//}
 
 	// Even if 'isFlow' is true, if it does not have 'flow' content, it can't reg as flow
 	if len(flow) != 0 && len(cmdLine) == 0 && len(executablePath) == 0 {
-		return mod.RegFlowCmd(flow, help, source)
+		return mod.RegFlowCmd(flow, help, source), nil
 	}
 
 	if len(executablePath) == 0 {
-		return mod.RegMetaOnlyCmd(help, source)
+		return mod.RegMetaOnlyCmd(help, source), nil
 	}
 
 	// Adjust 'executablePath'
@@ -382,12 +425,12 @@ func regMod(
 		var err error
 		executablePath, err = filepath.Abs(filepath.Join(executablePath, cmdLine))
 		if err != nil {
-			panic(fmt.Errorf("[regMod] cmd '%s' get abs path of '%s' failed",
-				cmdPath, executablePath))
+			return nil, fmt.Errorf("[regMod] cmd '%s' get abs path of '%s' failed",
+				cmdPath, executablePath)
 		}
 		if !fileExists(executablePath) {
-			panic(fmt.Errorf("[regMod] cmd '%s' point to a not existed file '%s'",
-				cmdPath, executablePath))
+			return nil, fmt.Errorf("[regMod] cmd '%s' point to a not existed file '%s'",
+				cmdPath, executablePath)
 		}
 	}
 
@@ -396,20 +439,20 @@ func regMod(
 	if isDir {
 		if len(cmdLine) != 0 {
 			if len(flow) != 0 {
-				panic(fmt.Errorf("[regMod] cmd '%s' has both command-line '%s' and flow",
-					cmdPath, cmdLine))
+				return nil, fmt.Errorf("[regMod] cmd '%s' has both command-line '%s' and flow",
+					cmdPath, cmdLine)
 			}
-			return mod.RegDirWithCmd(executablePath, help, source)
+			return mod.RegDirWithCmd(executablePath, help, source), nil
 		} else {
 			if len(flow) != 0 {
-				return mod.RegFlowCmd(flow, help, source)
+				return mod.RegFlowCmd(flow, help, source), nil
 			}
-			return mod.RegEmptyDirCmd(executablePath, help)
+			return mod.RegEmptyDirCmd(executablePath, help), nil
 		}
 	} else if len(flow) != 0 {
-		return mod.RegFileNFlowCmd(flow, executablePath, help, source)
+		return mod.RegFileNFlowCmd(flow, executablePath, help, source), nil
 	} else {
-		return mod.RegFileCmd(executablePath, help, source)
+		return mod.RegFileCmd(executablePath, help, source), nil
 	}
 }
 
@@ -506,11 +549,11 @@ func regEnvOps(
 	meta *meta_file.MetaFile,
 	cmd *model.Cmd,
 	abbrsSep string,
-	envPathSep string) {
+	envPathSep string) error {
 
 	envOps := meta.GetSection("env")
 	if envOps == nil {
-		return
+		return nil
 	}
 
 	for _, envKey := range envOps.Keys() {
@@ -521,9 +564,12 @@ func regEnvOps(
 			opFields = strings.Split(op, ":")
 		}
 		for _, it := range opFields {
-			regEnvOp(cmd, key, it)
+			if err := regEnvOp(cmd, key, it); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func regVal2Env(
@@ -603,15 +649,15 @@ func regEnvKeyAbbrs(
 	return strings.Join(path, envPathSep)
 }
 
-func regEnvOp(cmd *model.Cmd, key string, opOrigin string) {
+func regEnvOp(cmd *model.Cmd, key string, opOrigin string) error {
 	op := strings.ToLower(opOrigin)
 	may := strings.Contains(op, "may") || strings.Contains(op, "opt")
 	write := strings.Contains(op, "w")
 	read := strings.Contains(op, "rd") ||
 		strings.Contains(op, "read") || op == "r"
 	if write && read {
-		panic(fmt.Errorf("[LoadLocalMods.regEnvOp] "+
-			"parse env r|w definition failed: %v", opOrigin))
+		return fmt.Errorf("[LoadLocalMods.regEnvOp] "+
+			"parse env r|w definition failed: %v", opOrigin)
 	}
 	if write {
 		if may {
@@ -627,6 +673,7 @@ func regEnvOp(cmd *model.Cmd, key string, opOrigin string) {
 			cmd.AddEnvOp(key, model.EnvOpTypeRead)
 		}
 	}
+	return nil
 }
 
 func fileExists(path string) bool {

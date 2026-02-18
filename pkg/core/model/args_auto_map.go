@@ -138,7 +138,7 @@ func NewArgsAutoMapStatus() *ArgsAutoMapStatus {
 }
 
 // TODO: move the parsing coding out of core package
-func (self *ArgsAutoMapStatus) AddDefinitions(owner *Cmd, args ...string) {
+func (self *ArgsAutoMapStatus) AddDefinitions(owner *Cmd, args ...string) error {
 	ownerArgs := owner.Args()
 	self.originArgCnt = len(ownerArgs.Names())
 
@@ -158,7 +158,10 @@ func (self *ArgsAutoMapStatus) AddDefinitions(owner *Cmd, args ...string) {
 			}
 		} else {
 			self.notAutoArgs[i] = true
-			argName := self.addNotAutoArg(owner, argDefinition)
+			argName, err := self.addNotAutoArg(owner, argDefinition)
+			if err != nil {
+				return err
+			}
 			self.reorderedArgs = append(self.reorderedArgs, argName)
 		}
 		if _, ok := self.argSet[argDefinition]; !ok {
@@ -166,6 +169,7 @@ func (self *ArgsAutoMapStatus) AddDefinitions(owner *Cmd, args ...string) {
 			self.argSet[argDefinition] = true
 		}
 	}
+	return nil
 }
 
 func (self *ArgsAutoMapStatus) IsEmpty() bool {
@@ -251,11 +255,11 @@ func (self *ArgsAutoMapStatus) GetMappedSource(argName string) *Arg2EnvMappingEn
 	return &entry
 }
 
-func (self *ArgsAutoMapStatus) FlushCache(owner *Cmd) {
+func (self *ArgsAutoMapStatus) FlushCache(owner *Cmd) error {
 	for i, argName := range self.argList {
 		if argName == "*" || argName == "**" {
 			if i+1 != len(self.argList) {
-				panic(fmt.Errorf("[%s] '*' or '**' can only at the end of args auto mapping definition", owner.Owner().DisplayPath()))
+				return fmt.Errorf("[%s] '*' or '**' can only at the end of args auto mapping definition", owner.Owner().DisplayPath())
 			}
 			var args []string
 			for arg := range self.cache {
@@ -281,6 +285,7 @@ func (self *ArgsAutoMapStatus) FlushCache(owner *Cmd) {
 	}
 
 	self.reorderArgs(owner)
+	return nil
 }
 
 func (self *ArgsAutoMapStatus) reorderArgs(owner *Cmd) {
@@ -296,11 +301,11 @@ func (self *ArgsAutoMapStatus) reorderArgs(owner *Cmd) {
 	owner.ReorderArgs(reorderedArgs)
 }
 
-func (self *ArgsAutoMapStatus) addNotAutoArg(owner *Cmd, argDefinition string) string {
+func (self *ArgsAutoMapStatus) addNotAutoArg(owner *Cmd, argDefinition string) (string, error) {
 	keyValSep := owner.Owner().Strs.EnvKeyValSep
 	i := strings.Index(argDefinition, keyValSep)
 	if i <= 0 {
-		panic(fmt.Errorf("[%s] bad not-auto arg definition: %s", owner.Owner().DisplayPath(), argDefinition))
+		return "", fmt.Errorf("[%s] bad not-auto arg definition: %s", owner.Owner().DisplayPath(), argDefinition)
 	}
 	argName := argDefinition[:i]
 	defVal := strings.TrimSpace(argDefinition[len(argName)+len(keyValSep):])
@@ -312,7 +317,7 @@ func (self *ArgsAutoMapStatus) addNotAutoArg(owner *Cmd, argDefinition string) s
 		argAbbrs = append(argAbbrs, strings.TrimSpace(abbr))
 	}
 	owner.AddArg(name, defVal, argAbbrs...)
-	return name
+	return name, nil
 }
 
 func (self *ArgsAutoMapStatus) flushCacheEntry(owner *Cmd, entry Arg2EnvMappingEntry, isAutoMapAll bool) (argName string) {

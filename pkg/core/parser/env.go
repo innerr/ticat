@@ -139,7 +139,15 @@ func (self *EnvParser) TryParseRaw(
 	} else {
 		for ; i+2 < len(rest); i += 3 {
 			value := rest[i+2]
-			key, normalized := model.SysArgRealnameAndNormalizedValue(rest[i], self.sysArgPrefix, value)
+			key, normalized, err := model.SysArgRealnameAndNormalizedValue(rest[i], self.sysArgPrefix, value)
+			if err != nil {
+				key = args.Realname(rest[i])
+				if len(key) == 0 || rest[i+1] != self.kvSep {
+					return tryTrimParsedEnv(env), genResult(i)
+				}
+				env[key] = model.NewParsedEnvArgv(rest[i], value)
+				continue
+			}
 			if len(key) != 0 {
 				env[key] = model.NewParsedSysArgv(rest[i], normalized)
 				continue

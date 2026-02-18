@@ -203,7 +203,7 @@ func TestIntegrationFlowSerialization(t *testing.T) {
 	}
 
 	// Save flow to string
-	flowStr := model.SaveFlowToStr(flow, ".", "@", env)
+	flowStr, _ := model.SaveFlowToStr(flow, ".", "@", env)
 
 	// Verify the flow string contains expected commands
 	if !strings.Contains(flowStr, "build") {

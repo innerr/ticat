@@ -77,7 +77,7 @@ func DumpFlowEx(
 
 	if args.MonitorMode {
 		trivialMark := env.GetRaw("strs.trivial-mark")
-		flowStr := model.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
+		flowStr, _ := model.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 		cc.Screen.Print(ColorFlow(flowStr, env) + "\n")
 	}
 
@@ -132,7 +132,7 @@ func dumpFlow(
 		cmdUnRun := executedCmd != nil && (executedCmd.Result == model.ExecutedResultUnRun)
 		// cmdRunning := procRunning && executedCmd != nil && (executedCmd.Result == model.ExecutedResultIncompleted)
 
-		cmdInBg, ok := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, procRunning,
+		cmdInBg, ok, _ := dumpFlowCmd(cc, cc.Screen, env, envOpCmds, flow, fromCmdIdx+i, args, executedCmd, procRunning,
 			parentInBg, maxDepth, maxTrivial, depth, metFlows, writtenKeys, parentIncompleted)
 
 		if !ok {
@@ -163,19 +163,19 @@ func dumpFlowCmd(
 	depth int,
 	metFlows map[string]bool,
 	writtenKeys FlowWrittenKeys,
-	parentIncompleted bool) (cmdInBg bool, ok bool) {
+	parentIncompleted bool) (cmdInBg bool, ok bool, err error) {
 
 	parsedCmd := flow.Cmds[currCmdIdx]
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
-		return false, true
+		return false, true, nil
 	}
 	cic := cmd.Cmd()
 	if cic == nil {
-		return false, true
+		return false, true, nil
 	}
 	if cmd.IsQuiet() && !cmd.HasSubs() && !env.GetBool("display.mod.quiet") {
-		return false, true
+		return false, true, nil
 	}
 
 	// TODO: this is slow
@@ -232,9 +232,9 @@ func dumpFlowCmd(
 		subFlow, _, rendered := cic.Flow(argv, cc, cmdEnv, true, true)
 		if rendered {
 			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-			err := parsedFlow.FirstErr()
-			if err != nil {
-				panic(err.Error)
+			parseErr := parsedFlow.FirstErr()
+			if parseErr != nil {
+				return cmdInBg, false, parseErr.Error
 			}
 			parsedFlow.GlobalEnv.WriteNotArgTo(env, cc.Cmds.Strs.EnvValDelAllMark)
 			var executedFlow *model.ExecutedFlow
@@ -242,18 +242,21 @@ func dumpFlowCmd(
 				executedFlow = executedCmd.SubFlow
 			}
 			return cmdInBg, dumpFlow(cc, env, envOpCmds, parsedFlow, 0, args, executedFlow, procRunning,
-				cmdInBg, writtenKeys, maxDepth-1, maxTrivial-trivialDelta, depth+1, cmdFailed() || parentIncompleted)
+				cmdInBg, writtenKeys, maxDepth-1, maxTrivial-trivialDelta, depth+1, cmdFailed() || parentIncompleted), nil
 		}
-		return cmdInBg, !cmdFailed()
+		return cmdInBg, !cmdFailed(), nil
 	}
 
 	showTrivialMark := foldSubFlowByTrivial() && trivialDelta > 0
-	name, ok := dumpCmdDisplayName(cmdEnv, parsedCmd, args, executedCmd, procRunning, cmdInBg, showTrivialMark)
+	name, ok, err := dumpCmdDisplayName(cmdEnv, parsedCmd, args, executedCmd, procRunning, cmdInBg, showTrivialMark)
+	if err != nil {
+		return cmdInBg, false, err
+	}
 	if len(name) != 0 {
 		prt(0, name)
 	}
 	if !ok {
-		return cmdInBg, false
+		return cmdInBg, false, nil
 	}
 
 	dumpCmdHelp(cic.Help(), cmdEnv, args, prt)
@@ -280,13 +283,13 @@ func dumpFlowCmd(
 	dumpCmdExecutedErr(cmdEnv, args, executedCmd, prt)
 
 	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
-		dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, padLenCal, args, writtenKeys, lineLimit)
+		_ = dumpCmdEnvValues(cc, flow, parsedCmd, argv, cmdEnv, originEnv, prt, padLenCal, args, writtenKeys, lineLimit)
 	}
 	if !cmdSkipped() && cmdFailed() || executedCmd == nil || (!args.Skeleton && !args.Simple) {
 		dumpEnvOpsDefinition(cic, argv, cmdEnv, prt, args, executedCmd)
 	}
 	if !cmdSkipped() && cmdFailed() || executedCmd == nil {
-		dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
+		_ = dumpCmdTypeAndSource(cmd, cmdEnv, prt, args)
 	}
 
 	if !foldSubFlow() && !cic.IsBuiltinCmd() && (cic.HasCmdLine() || cic.HasSubFlow(false)) {
@@ -336,9 +339,9 @@ func dumpFlowCmd(
 						prt(2, ColorFlowing("--->>>"+depthMark, env))
 					}
 					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-					err := parsedFlow.FirstErr()
-					if err != nil {
-						panic(err.Error)
+					parseErr := parsedFlow.FirstErr()
+					if parseErr != nil {
+						return cmdInBg, false, parseErr.Error
 					}
 
 					subflowEnv := cmdEnv.NewLayer(model.EnvLayerSubFlow)
@@ -355,7 +358,7 @@ func dumpFlowCmd(
 					ok := dumpFlow(cc, subflowEnv, envOpCmds, parsedFlow, 0, args, executedFlow, procRunning,
 						cmdInBg, writtenKeys, newMaxDepth, maxTrivial-trivialDelta, depth+1, cmdFailed() || parentIncompleted)
 					if !ok {
-						return cmdInBg, false
+						return cmdInBg, false, nil
 					}
 					exeMark := ""
 					if cic.Type() == model.CmdTypeFileNFlow {
@@ -380,7 +383,7 @@ func dumpFlowCmd(
 		dumpExecutedModifiedEnv(env, prt, padLenCal, args, startEnv, executedCmd, lineLimit)
 	}
 
-	return cmdInBg, !cmdFailed()
+	return cmdInBg, !cmdFailed(), nil
 }
 
 func dumpCmdHelp(help string, env *model.Env, args *DumpFlowArgs, prt func(indentLvl int, msg string)) {
@@ -429,7 +432,7 @@ func dumpCmdExecutedLog(
 	if args.MonitorMode {
 		displayLogLines = 3
 	}
-	lines := utils.ReadLogFileLastLines(executedCmd.LogFilePath, 1024*16, displayLogLines)
+	lines, _ := utils.ReadLogFileLastLines(executedCmd.LogFilePath, 1024*16, displayLogLines)
 	//if len(lines) != 0 {
 	//	prt(2, ColorExplain("...", env))
 	//}
@@ -493,20 +496,20 @@ func dumpCmdDisplayName(
 	executedCmd *model.ExecutedCmd,
 	procRunning bool,
 	inBg bool,
-	showTrivialMark bool) (name string, ok bool) {
+	showTrivialMark bool) (name string, ok bool, err error) {
 
 	if args.MonitorMode &&
 		!(executedCmd != nil && (executedCmd.Result == model.ExecutedResultError || executedCmd.Result == model.ExecutedResultIncompleted)) {
-		return "", true
+		return "", true, nil
 	}
 
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
-		panic(fmt.Errorf("should never happen"))
+		return "", false, fmt.Errorf("should never happen")
 	}
 	cic := cmd.Cmd()
 	if cic == nil {
-		panic(fmt.Errorf("should never happen"))
+		return "", false, fmt.Errorf("should never happen")
 	}
 
 	sep := cmd.Strs.PathSep
@@ -542,7 +545,7 @@ func dumpCmdDisplayName(
 			// TODO: better display
 			name += ColorSymbol(" - ", env) + ColorError("flow not matched, origin cmd: ", env) +
 				ColorCmd("["+executedCmd.Cmd+"]", env)
-			return name, false
+			return name, false, nil
 		}
 
 		name += " " + ColorExplain(executedCmd.StartTs.Format(model.SessionTimeShortFormat), env) + " "
@@ -574,7 +577,7 @@ func dumpCmdDisplayName(
 			name += " " + ColorExplain(durStr, env)
 		}
 	}
-	return name, true
+	return name, true, nil
 }
 
 func dumpCmdExecutable(
@@ -609,15 +612,15 @@ func dumpCmdTypeAndSource(
 	cmd *model.CmdTree,
 	env *model.Env,
 	prt func(indentLvl int, msg string),
-	args *DumpFlowArgs) {
+	args *DumpFlowArgs) error {
 
 	cic := cmd.Cmd()
 	if cic == nil {
-		panic(fmt.Errorf("should never happen"))
+		return fmt.Errorf("should never happen")
 	}
 
 	if args.Simple || args.Skeleton {
-		return
+		return nil
 	}
 
 	/*
@@ -636,6 +639,7 @@ func dumpCmdTypeAndSource(
 		prt(1, ColorProp("- from:", env))
 		prt(2, cmd.Source())
 	}
+	return nil
 }
 
 func dumpCmdEnvValues(
@@ -649,15 +653,15 @@ func dumpCmdEnvValues(
 	padLenCal func(indentLvl int) int,
 	args *DumpFlowArgs,
 	writtenKeys FlowWrittenKeys,
-	lineLimit int) {
+	lineLimit int) error {
 
 	cmd := parsedCmd.Last().Matched.Cmd
 	if cmd == nil {
-		panic(fmt.Errorf("should never happen"))
+		return fmt.Errorf("should never happen")
 	}
 	cic := cmd.Cmd()
 	if cic == nil {
-		panic(fmt.Errorf("should never happen"))
+		return fmt.Errorf("should never happen")
 	}
 
 	padLen := padLenCal(2)
@@ -674,6 +678,7 @@ func dumpCmdEnvValues(
 		}
 	}
 	writtenKeys.AddCmd(argv, env, cic)
+	return nil
 }
 
 func dumpCmdArgv(
@@ -859,7 +864,8 @@ func dumpExecutedModifiedEnv(
 			op = ColorSymbol(" <- ", env) + ColorTip("(deleted)", env)
 		} else if afterV != v {
 			op = ColorSymbol(" <- ", env) + ColorTip("(modified to) ", env)
-			prefixLen += len(val) + len(op) - ColorExtraLen(env, "symbol", "tip")
+			extraLen, _ := ColorExtraLen(env, "symbol", "tip")
+			prefixLen += len(val) + len(op) - extraLen
 			op = op + normalizeValForDisplay(k, afterV, env, limit-prefixLen)
 		} else {
 			continue
@@ -873,7 +879,8 @@ func dumpExecutedModifiedEnv(
 			continue
 		}
 		op := ColorSymbol(" <- ", env) + ColorTip("(added)", env)
-		prefixLen := padLen + len(k) + 3 + len(op) - ColorExtraLen(env, "symbol", "tip")
+		extraLen, _ := ColorExtraLen(env, "symbol", "tip")
+		prefixLen := padLen + len(k) + 3 + len(op) - extraLen
 		lines = append(lines, ColorKey(k, env)+ColorSymbol(" = ", env)+normalizeValForDisplay(k, v, env, lineLimit-prefixLen)+op)
 	}
 
@@ -1085,7 +1092,8 @@ func executedCmdDurStr(executedCmd *model.ExecutedCmd, procRunning bool, env *mo
 	} else if (executedCmd.Result != model.ExecutedResultSucceeded) && executedCmd.StartTs == finishTs {
 		return "", 0
 	}
-	return ColorExplain(durStr, env), ColorExtraLen(env, "explain")
+	extraLen, _ := ColorExtraLen(env, "explain")
+	return ColorExplain(durStr, env), extraLen
 }
 
 func stripTermStyle(str string) string {

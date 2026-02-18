@@ -14,15 +14,17 @@ func SetSessionsKeepDur(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	env = env.GetLayer(model.EnvLayerSession)
 	key := "sys.sessions.keep-status-duration"
 	env.SetDur(key, argv.GetRaw("duration"))
 	display.PrintTipTitle(cc.Screen, env, "each session status will be kept for '"+env.GetRaw(key)+"'")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RemoveAllSessions(
@@ -30,9 +32,11 @@ func RemoveAllSessions(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cleaned, runnings := model.CleanSessions(env)
 
@@ -45,7 +49,7 @@ func RemoveAllSessions(
 		line = fmt.Sprintf("removed all %v sessions", cleaned)
 	}
 	display.PrintTipTitle(cc.Screen, env, line)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SessionStatus(
@@ -53,17 +57,22 @@ func SessionStatus(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	id, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 	dumpSession(sessions[0], env, cc.Screen, "")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ListSessions(
@@ -71,7 +80,7 @@ func ListSessions(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return listSessions(argv, cc, env, flow, currCmdIdx, true, true, true)
 }
@@ -81,7 +90,7 @@ func ListSessionsError(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return listSessions(argv, cc, env, flow, currCmdIdx, true, false, false)
 }
@@ -91,7 +100,7 @@ func ListSessionsDone(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return listSessions(argv, cc, env, flow, currCmdIdx, false, true, false)
 }
@@ -101,7 +110,7 @@ func ListSessionsRunning(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return listSessions(argv, cc, env, flow, currCmdIdx, false, false, true)
 }
@@ -114,7 +123,7 @@ func listSessions(
 	currCmdIdx int,
 	includeError bool,
 	includeDone bool,
-	includeRunning bool) (int, bool) {
+	includeRunning bool) (int, error) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	cntLimit := argv.GetInt("max-count")
@@ -160,14 +169,14 @@ func ErrorSessionDescLess(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, true, false, false)
 	if !ok {
-		panic(fmt.Errorf("no executed error sessions"))
+		return currCmdIdx, fmt.Errorf("no executed error sessions")
 	}
 	descSession(session, argv, cc, env, true, false, false, false)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ErrorSessionDescMore(
@@ -175,14 +184,14 @@ func ErrorSessionDescMore(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, true, false, false)
 	if !ok {
-		panic(fmt.Errorf("no executed error sessions"))
+		return currCmdIdx, fmt.Errorf("no executed error sessions")
 	}
 	descSession(session, argv, cc, env, true, false, true, false)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ErrorSessionDescFull(
@@ -190,14 +199,14 @@ func ErrorSessionDescFull(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, true, false, false)
 	if !ok {
-		panic(fmt.Errorf("no executed error sessions"))
+		return currCmdIdx, fmt.Errorf("no executed error sessions")
 	}
 	descSession(session, argv, cc, env, false, true, true, false)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RunningSessionDescLess(
@@ -205,7 +214,7 @@ func RunningSessionDescLess(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
@@ -213,7 +222,7 @@ func RunningSessionDescLess(
 	} else {
 		descSession(session, argv, cc, env, true, false, false, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DoneSessionDescLess(
@@ -221,7 +230,7 @@ func DoneSessionDescLess(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, false, true, false)
 	if !ok {
@@ -229,7 +238,7 @@ func DoneSessionDescLess(
 	} else {
 		descSession(session, argv, cc, env, true, false, false, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DoneSessionDescMore(
@@ -237,7 +246,7 @@ func DoneSessionDescMore(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, false, true, false)
 	if !ok {
@@ -245,7 +254,7 @@ func DoneSessionDescMore(
 	} else {
 		descSession(session, argv, cc, env, true, false, true, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DoneSessionDescFull(
@@ -253,7 +262,7 @@ func DoneSessionDescFull(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, false, true, false)
 	if !ok {
@@ -261,7 +270,7 @@ func DoneSessionDescFull(
 	} else {
 		descSession(session, argv, cc, env, false, true, true, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RunningSessionDescMore(
@@ -269,7 +278,7 @@ func RunningSessionDescMore(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
@@ -277,7 +286,7 @@ func RunningSessionDescMore(
 	} else {
 		descSession(session, argv, cc, env, true, false, true, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RunningSessionDescFull(
@@ -285,7 +294,7 @@ func RunningSessionDescFull(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
@@ -293,7 +302,7 @@ func RunningSessionDescFull(
 	} else {
 		descSession(session, argv, cc, env, false, true, true, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RunningSessionDescMonitor(
@@ -301,7 +310,7 @@ func RunningSessionDescMonitor(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
@@ -309,7 +318,7 @@ func RunningSessionDescMonitor(
 	} else {
 		descSession(session, argv, cc, env, true, false, false, true)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RemoveSession(
@@ -317,16 +326,19 @@ func RemoveSession(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	force := argv.GetBool("remove-running")
-	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	id, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 	removeAndDumpSession(sessions[0], cc.Screen, env, force)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func FindAndRemoveSessions(
@@ -334,14 +346,14 @@ func FindAndRemoveSessions(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	force := argv.GetBool("remove-running")
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	sessions, _ := findSessions(findStrs, "", cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 
 	cleaneds := 0
@@ -380,15 +392,18 @@ func SessionDescLess(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	id, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 	descSession(sessions[0], argv, cc, env, true, false, false, false)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SessionDescMore(
@@ -396,15 +411,18 @@ func SessionDescMore(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	id, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 	descSession(sessions[0], argv, cc, env, true, false, true, false)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SessionDescMonitor(
@@ -412,15 +430,18 @@ func SessionDescMonitor(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	id, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 	descSession(sessions[0], argv, cc, env, true, false, false, true)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SessionDescFull(
@@ -428,15 +449,18 @@ func SessionDescFull(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	id := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	id, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "session-id")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 	descSession(sessions[0], argv, cc, env, false, true, true, false)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func LastSession(
@@ -444,16 +468,18 @@ func LastSession(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
 	} else {
 		dumpSession(session, env, cc.Screen, "")
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func LastSessionDescLess(
@@ -461,16 +487,18 @@ func LastSessionDescLess(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
 	} else {
 		descSession(session, argv, cc, env, true, false, false, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func LastSessionDescMore(
@@ -478,16 +506,18 @@ func LastSessionDescMore(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
 	} else {
 		descSession(session, argv, cc, env, true, false, true, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func LastSessionDescFull(
@@ -495,45 +525,47 @@ func LastSessionDescFull(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
 		display.PrintTipTitle(cc.Screen, env, "no executed/running sessions")
 	} else {
 		descSession(session, argv, cc, env, false, true, true, false)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
-func SessionRetry(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, ok bool) {
+func SessionRetry(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, err error) {
 	id := argv.GetRaw("session-id")
 	if len(id) == 0 {
-		panic(fmt.Errorf("[SessionRetry] arg 'session-id' is empty"))
+		return nil, nil, fmt.Errorf("[SessionRetry] arg 'session-id' is empty")
 	}
 	sessions, _ := findSessions(nil, id, cc, env, 1, true, true, true)
 	if len(sessions) == 0 {
 		return
 	}
 	if len(sessions) > 1 {
-		panic(fmt.Errorf("[SessionRetry] should never happen"))
+		return nil, nil, fmt.Errorf("[SessionRetry] should never happen")
 	}
 	return retrySession(sessions[0], false)
 }
 
-func LastSessionRetry(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, ok bool) {
+func LastSessionRetry(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, err error) {
 	session, ok := getLastSession(cc, env, true, true, true)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		return nil, nil, fmt.Errorf("no executed sessions")
 	}
 	return retrySession(session, false)
 }
 
-func LastErrorSessionRetry(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, ok bool) {
+func LastErrorSessionRetry(argv model.ArgVals, cc *model.Cli, env *model.Env) (flow []string, masks []*model.ExecuteMask, err error) {
 	session, ok := getLastSession(cc, env, true, false, false)
 	if !ok {
-		panic(fmt.Errorf("no executed sessions"))
+		return nil, nil, fmt.Errorf("no executed sessions")
 	}
 	return retrySession(session, false)
 }
@@ -689,11 +721,11 @@ func isSessionShouldHideInLast(cc *model.Cli, session model.SessionStatus) bool 
 	return false
 }
 
-func retrySession(session model.SessionStatus, errSessionOnly bool) (flow []string, masks []*model.ExecuteMask, ok bool) {
+func retrySession(session model.SessionStatus, errSessionOnly bool) (flow []string, masks []*model.ExecuteMask, err error) {
 	if errSessionOnly && session.Status != nil && session.Status.Result == model.ExecutedResultSucceeded {
-		panic(fmt.Errorf("session [%s] had succeeded, nothing to retry", session.DirName))
+		return nil, nil, fmt.Errorf("session [%s] had succeeded, nothing to retry", session.DirName)
 	}
-	return []string{session.Status.Flow}, session.Status.GenExecMasks(), true
+	return []string{session.Status.Flow}, session.Status.GenExecMasks(), nil
 }
 
 func normalizeSid(id string) string {

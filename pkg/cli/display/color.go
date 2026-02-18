@@ -20,10 +20,10 @@ func ColorStrByName(str string, color string, env *model.Env) string {
 	return str
 }
 
-func ColorExtraLen(env *model.Env, types ...string) (res int) {
+func ColorExtraLen(env *model.Env, types ...string) (res int, err error) {
 	enabled := env.GetBool("display.color")
 	if !enabled {
-		return 0
+		return 0, nil
 	}
 	lens := map[string]int{
 		"hub":       3,
@@ -58,7 +58,7 @@ func ColorExtraLen(env *model.Env, types ...string) (res int) {
 	for _, it := range types {
 		extra, ok := lens[it]
 		if !ok {
-			panic(fmt.Errorf("unknown color class: %s", it))
+			return 0, fmt.Errorf("unknown color class: %s", it)
 		}
 		res += extra + colorExtraLenWithoutCode
 	}
@@ -196,7 +196,7 @@ func DecodeColor(text string, env *model.Env) string {
 		}
 		finish += suffix + len(colorEncodeSuffix)
 		rendering := text[suffix+len(colorEncodeSuffix) : finish]
-		color := fromColorName(text[prefix+len(colorEncodePrefix) : suffix])
+		color, _ := fromColorName(text[prefix+len(colorEncodePrefix) : suffix])
 		text = text[:prefix] + colorize(rendering, color, env) + text[finish+len(colorEncodeFinish):]
 	}
 }
@@ -263,15 +263,15 @@ func fromColor256(code uint8) string {
 	return "\033[38;5;" + fmt.Sprintf("%d", code) + "m"
 }
 
-func fromColorName(name string) string {
+func fromColorName(name string) (string, error) {
 	if strings.HasPrefix(name, color256Prefix) {
 		name = name[len(color256Prefix):]
 		var code uint8
 		scanned, err := fmt.Sscanf(name, "%d", &code)
 		if err != nil || scanned != 1 {
-			panic(fmt.Errorf("bad 256-color value '%v', err: %v", name, err))
+			return "", fmt.Errorf("bad 256-color value '%v', err: %v", name, err)
 		}
-		return fromColor256(code)
+		return fromColor256(code), nil
 	}
 
 	color, ok := map[string]string{
@@ -289,9 +289,9 @@ func fromColorName(name string) string {
 		"b-cyan":   colorBrightCyan,
 	}[name]
 	if !ok {
-		panic(fmt.Errorf("unknown color name '%s'", name))
+		return "", fmt.Errorf("unknown color name '%s'", name)
 	}
-	return color
+	return color, nil
 }
 
 const (

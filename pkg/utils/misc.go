@@ -17,17 +17,17 @@ import (
 	"unsafe"
 )
 
-func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []string) {
+func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return
+			return nil, nil
 		}
-		panic(fmt.Errorf("[ReadLastLines] %v", err))
+		return nil, fmt.Errorf("[ReadLastLines] %v", err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[ReadLogFileLastLines] close file '%s' failed: %v", path, err))
+		if cerr := file.Close(); cerr != nil {
+			err = fmt.Errorf("[ReadLogFileLastLines] close file '%s' failed: %v", path, cerr)
 		}
 	}()
 
@@ -43,7 +43,7 @@ func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []strin
 	}
 	_, err = file.ReadAt(buf, start)
 	if err != nil && !errors.Is(err, io.EOF) {
-		panic(fmt.Errorf("[ReadLastLines] %v", err))
+		return nil, fmt.Errorf("[ReadLastLines] %v", err)
 	}
 
 	for _, line := range strings.Split(string(buf), "\n") {
@@ -55,21 +55,20 @@ func ReadLogFileLastLines(path string, bufSize int, maxLines int) (lines []strin
 	if len(lines) > maxLines {
 		lines = lines[len(lines)-maxLines:]
 	}
-	return
+	return lines, nil
 }
 
-func UserConfirm() (yes bool) {
+func UserConfirm() (yes bool, err error) {
 	buf := bufio.NewReader(os.Stdin)
 	for {
 		line, err := buf.ReadBytes('\n')
 		if err != nil {
-			panic(fmt.Errorf("[readFromStdin] read from stdin failed: %v", err))
+			return false, fmt.Errorf("[readFromStdin] read from stdin failed: %v", err)
 		}
 		if len(line) > 0 && (line[0] == 'y' || line[0] == 'Y') {
-			return true
+			return true, nil
 		}
 	}
-	return
 }
 
 type TerminalSize struct {
@@ -110,19 +109,22 @@ func MoveFile(src string, dest string) error {
 	return err
 }
 
-func GoRoutineId() int {
+func GoRoutineId() (int, error) {
 	var buf [64]byte
 	n := runtime.Stack(buf[:], false)
 	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
 	id, err := strconv.Atoi(idField)
 	if err != nil {
-		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+		return 0, fmt.Errorf("cannot get goroutine id: %v", err)
 	}
-	return id
+	return id, nil
 }
 
 func GoRoutineIdStr() string {
-	id := GoRoutineId()
+	id, err := GoRoutineId()
+	if err != nil {
+		return "unknown"
+	}
 	if id == 1 {
 		return GoRoutineIdStrMain
 	}

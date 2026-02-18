@@ -124,21 +124,24 @@ func PrintSwitchingThreadDisplay(preTid string, info model.BgTaskInfo, env *mode
 				ColorThread(" ended, switch display to thread ", env) + info.Tid +
 				ColorThread(", command ", env) + ColorCmdDelay("["+info.Cmd+"]", env)
 		}
-		extraLen = ColorExtraLen(env, "thread", "thread", "thread", "cmd-delay")
+		extraLen, _ = ColorExtraLen(env, "thread", "thread", "thread", "cmd-delay")
 	} else {
 		title = ColorThread("switch display to thread ", env) + info.Tid +
 			ColorThread(", command ", env) + ColorCmdDelay("["+info.Cmd+"]", env)
-		extraLen = ColorExtraLen(env, "thread", "thread", "cmd-delay")
+		extraLen, _ = ColorExtraLen(env, "thread", "thread", "cmd-delay")
 	}
 	if !info.Started {
 		title += ColorThread(", not started yet", env)
-		extraLen += ColorExtraLen(env, "thread")
+		extra, _ := ColorExtraLen(env, "thread")
+		extraLen += extra
 	} else if info.Started && !info.Finished {
 		title += ColorThread(", still running", env)
-		extraLen += ColorExtraLen(env, "thread")
+		extra, _ := ColorExtraLen(env, "thread")
+		extraLen += extra
 	} else if info.Finished {
 		title += ColorThread(", already ended", env)
-		extraLen += ColorExtraLen(env, "thread")
+		extra, _ := ColorExtraLen(env, "thread")
+		extraLen += extra
 	}
 	titleLen := len(title) - extraLen
 

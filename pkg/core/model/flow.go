@@ -10,13 +10,13 @@ import (
 	"github.com/innerr/ticat/pkg/utils"
 )
 
-func SaveFlowToStr(flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) string {
+func SaveFlowToStr(flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) (string, error) {
 	w := bytes.NewBuffer(nil)
-	SaveFlow(w, flow, cmdPathSep, trivialMark, env)
-	return w.String()
+	err := SaveFlow(w, flow, cmdPathSep, trivialMark, env)
+	return w.String(), err
 }
 
-func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) {
+func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark string, env *Env) error {
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	bracketLeft := env.GetRaw("strs.env-bracket-left")
 	bracketRight := env.GetRaw("strs.env-bracket-right")
@@ -24,6 +24,7 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark stri
 	seqSep := env.GetRaw("strs.seq-sep")
 	if len(envPathSep) == 0 || len(bracketLeft) == 0 || len(bracketRight) == 0 ||
 		len(envKeyValSep) == 0 || len(seqSep) == 0 {
+		// PANIC: Programming error - required env strings not found
 		panic(fmt.Errorf("some predefined strs not found"))
 	}
 
@@ -32,19 +33,19 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark stri
 			if i == 0 {
 				if flow.GlobalCmdIdx < 0 {
 					if _, err := fmt.Fprint(w, seqSep+" "); err != nil {
-						panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+						return fmt.Errorf("[SaveFlow] write failed: %w", err)
 					}
 				}
 			} else {
 				if _, err := fmt.Fprint(w, " "+seqSep+" "); err != nil {
-					panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+					return fmt.Errorf("[SaveFlow] write failed: %w", err)
 				}
 			}
 		}
 
 		if cmd.ParseResult.Error != nil {
 			if _, err := fmt.Fprint(w, strings.Join(cmd.ParseResult.Input, " ")); err != nil {
-				panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+				return fmt.Errorf("[SaveFlow] write failed: %w", err)
 			}
 			continue
 		}
@@ -55,18 +56,18 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark stri
 
 		for i := 0; i < cmd.TrivialLvl; i++ {
 			if _, err := fmt.Fprint(w, trivialMark); err != nil {
-				panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+				return fmt.Errorf("[SaveFlow] write failed: %w", err)
 			}
 		}
 
 		for j, seg := range cmd.Segments {
 			if len(cmd.Segments) > 1 && j != 0 && !prevSegHasNoCmd {
 				if _, err := fmt.Fprint(w, cmdPathSep); err != nil {
-					panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+					return fmt.Errorf("[SaveFlow] write failed: %w", err)
 				}
 			}
 			if _, err := fmt.Fprint(w, seg.Matched.Name); err != nil {
-				panic(fmt.Errorf("[SaveFlow] write failed: %v", err))
+				return fmt.Errorf("[SaveFlow] write failed: %w", err)
 			}
 
 			if seg.Matched.Cmd != nil {
@@ -84,6 +85,7 @@ func SaveFlow(w io.Writer, flow *ParsedCmds, cmdPathSep string, trivialMark stri
 			cmdHasEnv = cmdHasEnv || savedEnv
 		}
 	}
+	return nil
 }
 
 func SaveFlowEnv(
@@ -129,7 +131,7 @@ func SaveFlowEnv(
 		format = " %s"
 	}
 	if _, err := fmt.Fprintf(w, format, strings.Join(kvs, " ")); err != nil {
-		panic(fmt.Errorf("[SaveFlowEnv] write failed: %v", err))
+		// Runtime error: write failed - ignore since this is a display function
 	}
 	return true
 }

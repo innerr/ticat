@@ -284,7 +284,10 @@ func checkEnvOps(
 			continue
 		}
 
-		parsedFlow, flowEnv := renderSubFlowOnChecking(last, cc, argv, cmdEnv)
+		parsedFlow, flowEnv, err := renderSubFlowOnChecking(last, cc, argv, cmdEnv)
+		if err != nil {
+			return
+		}
 		checkEnvOps(cc, parsedFlow, flowEnv, checker, ignoreMaybe, envOpCmds, result, arg2envs, depth+1)
 	}
 }
@@ -310,12 +313,12 @@ func TryExeEnvOpCmds(
 }
 
 // TODO: a bit messy
-func renderSubFlowOnChecking(last *Cmd, cc *Cli, argv ArgVals, cmdEnv *Env) (parsedFlow *ParsedCmds, flowEnv *Env) {
+func renderSubFlowOnChecking(last *Cmd, cc *Cli, argv ArgVals, cmdEnv *Env) (parsedFlow *ParsedCmds, flowEnv *Env, err error) {
 	subFlow, _, _ := last.Flow(argv, cc, cmdEnv, false, true)
 	parsedFlow = cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
-	err := parsedFlow.FirstErr()
-	if err != nil {
-		panic(err.Error)
+	parseErr := parsedFlow.FirstErr()
+	if parseErr != nil && parseErr.Error != nil {
+		return nil, nil, parseErr.Error
 	}
 	flowEnv = cmdEnv.NewLayer(EnvLayerSubFlow)
 	if parsedFlow.GlobalEnv != nil {

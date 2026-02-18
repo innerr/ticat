@@ -79,6 +79,7 @@ func (self *Env) NewLayers(ty ...EnvLayerType) *Env {
 func (self *Env) GetLayer(ty EnvLayerType) *Env {
 	env := self.getLayer(ty)
 	if env == nil {
+		// PANIC: should never happen - required env layer not found
 		panic(fmt.Errorf("[Env.GetLayer] env layer '%s' not found", ty))
 	}
 	return env
@@ -94,6 +95,7 @@ func (self *Env) GetOneOfLayers(tys ...EnvLayerType) (env *Env) {
 		names = append(names, string(ty))
 	}
 	if env == nil {
+		// PANIC: should never happen - required env layer not found
 		panic(fmt.Errorf("[Env.GetOneOfLayers] env layers '%s' not found", strings.Join(names, " ")))
 	}
 	return env

@@ -12,16 +12,18 @@ func LoadPlatformDisplay(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	env = env.GetLayer(model.EnvLayerDefault)
 	switch runtime.GOOS {
 	case "linux":
 		env.Set("display.utf8.symbols.tip", " ☻ ")
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SetDisplayStyle(
@@ -29,14 +31,16 @@ func SetDisplayStyle(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	style := argv.GetRaw("style")
 	env = env.GetLayer(model.EnvLayerSession)
 	env.Set("display.style", style)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SetDisplayWidth(
@@ -44,9 +48,11 @@ func SetDisplayWidth(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	width := argv.GetInt("width")
 	if width == 0 {
@@ -54,5 +60,5 @@ func SetDisplayWidth(
 	}
 	env = env.GetLayer(model.EnvLayerSession)
 	env.SetInt("display.width", width)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }

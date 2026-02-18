@@ -21,6 +21,7 @@ func (self *Val2Env) IsEmpty() bool {
 func (self *Val2Env) Add(envKey string, val string) {
 	_, ok := self.pairs[envKey]
 	if ok {
+		// PANIC: Programming error - duplicate key during val2env registration
 		panic(fmt.Errorf("[Val2Env.Add] duplicated key: %s", envKey))
 	}
 	self.orderedKeys = append(self.orderedKeys, envKey)
@@ -104,11 +105,13 @@ func newArg2Env() *Arg2Env {
 func (self *Arg2Env) Add(envKey string, argName string) {
 	old, ok := self.keyNames[envKey]
 	if ok {
+		// PANIC: Programming error - multiple args map to same env key during arg2env registration
 		panic(fmt.Errorf("[Arg2Env.Add] multi args map to env '%s', old '%s', new '%s'",
 			envKey, old, argName))
 	}
 	old, ok = self.nameKeys[argName]
 	if ok {
+		// PANIC: Programming error - duplicate arg name during arg2env registration
 		panic(fmt.Errorf("[Arg2Env.Add] duplicated arg name: '%s' (map to env: old '%s', new '%s')",
 			argName, old, envKey))
 	}
@@ -154,9 +157,9 @@ func (self *Arg2Env) GetArgName(cmd *Cmd, envKey string, allowError bool) string
 		msg := fmt.Sprintf("module '%s' error: no arg %s for key %s", cmd.Owner().DisplayPath(), argName, envKey)
 		if allowError {
 			return "(" + msg + ")"
-		} else {
-			panic(fmt.Errorf("[Arg2Env.GetArgName] %s", msg))
 		}
+		// PANIC: Programming error - arg2env references non-existent arg
+		panic(fmt.Errorf("[Arg2Env.GetArgName] %s", msg))
 	}
 	return argName
 }

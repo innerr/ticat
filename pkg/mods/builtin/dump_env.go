@@ -11,12 +11,14 @@ func DumpEnvTree(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	display.PrintTipTitle(cc.Screen, env, "all env key-values:")
 	display.DumpEnvTree(cc.Screen, env, 4)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DumpEnvAbbrs(
@@ -24,12 +26,14 @@ func DumpEnvAbbrs(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	display.PrintTipTitle(cc.Screen, env, "all env key abbrs:")
 	display.DumpEnvAbbrs(cc, env, 4)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DumpEnvFlattenVals(
@@ -37,7 +41,7 @@ func DumpEnvFlattenVals(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
@@ -57,7 +61,7 @@ func DumpEnvFlattenVals(
 			"",
 			display.SuggestFindEnv(env, ".ls"))
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DumpEssentialEnvFlattenVals(
@@ -65,7 +69,7 @@ func DumpEssentialEnvFlattenVals(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
@@ -101,5 +105,5 @@ func DumpEssentialEnvFlattenVals(
 			"",
 			display.SuggestFindEnv(env, ""))
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }

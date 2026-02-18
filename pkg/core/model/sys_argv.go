@@ -11,35 +11,34 @@ type SysArgVals map[string]string
 func SysArgRealnameAndNormalizedValue(
 	name string,
 	sysArgPrefix string,
-	value string) (realname string, normalizedValue string) {
+	value string) (realname string, normalizedValue string, err error) {
 
 	if len(name) < len(sysArgPrefix) || name[0:len(sysArgPrefix)] != sysArgPrefix {
 		return
 	}
 	raw := name[len(sysArgPrefix):]
 	if raw == SysArgNameDelay {
-		_, err := strconv.ParseFloat(value, 64)
-		if err == nil {
+		_, parseErr := strconv.ParseFloat(value, 64)
+		if parseErr == nil {
 			value += "s"
 		}
-		return name, value
+		return name, value, nil
 	} else if raw == SysArgNameDelayEnvApplyPolicy {
 		if value != SysArgValueDelayEnvApplyPolicyApply {
-			panic(fmt.Errorf("[Args.SysArgRealname] %s: the value of sys arg '%s' could only be '%s'",
-				name, SysArgNameDelayEnvApplyPolicy, SysArgValueDelayEnvApplyPolicyApply))
+			return "", "", fmt.Errorf("[Args.SysArgRealname] %s: the value of sys arg '%s' could only be '%s'",
+				name, SysArgNameDelayEnvApplyPolicy, SysArgValueDelayEnvApplyPolicyApply)
 		}
-		return name, value
+		return name, value, nil
 	} else if raw == SysArgNameError {
 		if value != SysArgValueOK {
-			panic(fmt.Errorf("[Args.SysArgRealname] %s: the value of sys arg '%s' could only be '%s'",
-				name, SysArgNameError, SysArgValueOK))
+			return "", "", fmt.Errorf("[Args.SysArgRealname] %s: the value of sys arg '%s' could only be '%s'",
+				name, SysArgNameError, SysArgValueOK)
 		}
-		return name, value
+		return name, value, nil
 	} else {
-		panic(fmt.Errorf("[Args.SysArgRealname] %s: only sys args could have '%s' prefix, '%s' is not sys arg",
-			name, sysArgPrefix, raw))
+		return "", "", fmt.Errorf("[Args.SysArgRealname] %s: only sys args could have '%s' prefix, '%s' is not sys arg",
+			name, sysArgPrefix, raw)
 	}
-	return
 }
 
 func (self SysArgVals) GetDelayStr() string {
@@ -50,16 +49,16 @@ func (self SysArgVals) IsDelay() bool {
 	return len(self[SysArgNameDelay]) != 0
 }
 
-func (self SysArgVals) GetDelayDuration() time.Duration {
+func (self SysArgVals) GetDelayDuration() (time.Duration, error) {
 	delayDur := self[SysArgNameDelay]
 	dur, err := time.ParseDuration(delayDur)
 	if err != nil {
-		panic(&ArgValErrWrongType{
-			fmt.Sprintf("[Cmd.AsyncExecute] sys arg '%s = %s' is valid not golang duration format", SysArgNameDelay, delayDur),
-			SysArgNameDelay, delayDur, "golan duration format", err,
-		})
+		return 0, &ArgValErrWrongType{
+			fmt.Sprintf("[Cmd.AsyncExecute] sys arg '%s = %s' is not valid golang duration format", SysArgNameDelay, delayDur),
+			SysArgNameDelay, delayDur, "golang duration format", err,
+		}
 	}
-	return dur
+	return dur, nil
 }
 
 func (self SysArgVals) IsDelayEnvEarlyApply() bool {

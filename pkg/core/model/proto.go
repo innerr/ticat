@@ -55,34 +55,35 @@ func EnvInput(env *Env, reader io.Reader, sep string, delMark string) error {
 	return nil
 }
 
-func saveEnvToFile(env *Env, path string, sep string, filtered []string, skipDefault bool) {
+func saveEnvToFile(env *Env, path string, sep string, filtered []string, skipDefault bool) error {
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToFile] open env file '%s' failed: %v", tmp, err))
+		return fmt.Errorf("[SaveEnvToFile] open env file '%s' failed: %v", tmp, err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[saveEnvToFile] close env file '%s' failed: %v", tmp, err))
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("[saveEnvToFile] close env file '%s' failed: %v", tmp, closeErr)
 		}
 	}()
 
 	err = EnvOutput(env, file, sep, filtered, skipDefault)
 	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToFile] write env file '%s' failed: %v", tmp, err))
+		return fmt.Errorf("[SaveEnvToFile] write env file '%s' failed: %v", tmp, err)
 	}
 	if err := file.Close(); err != nil {
-		panic(fmt.Errorf("[saveEnvToFile] close env file '%s' failed: %v", tmp, err))
+		return fmt.Errorf("[saveEnvToFile] close env file '%s' failed: %v", tmp, err)
 	}
 
 	err = os.Rename(tmp, path)
 	if err != nil {
-		panic(fmt.Errorf("[SaveEnvToFile] rename env file '%s' to '%s' failed: %v",
-			tmp, path, err))
+		return fmt.Errorf("[SaveEnvToFile] rename env file '%s' to '%s' failed: %v",
+			tmp, path, err)
 	}
+	return nil
 }
 
-func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
+func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) error {
 	// TODO: move to default config
 	filtered := []string{
 		"session",
@@ -99,41 +100,42 @@ func SaveEnvToFile(env *Env, path string, sep string, skipDefault bool) {
 		"sys.event.",
 		"sys.paths.",
 	}
-	saveEnvToFile(env, path, sep, filtered, skipDefault)
+	return saveEnvToFile(env, path, sep, filtered, skipDefault)
 }
 
-func LoadEnvFromFile(env *Env, path string, sep string, delMark string) {
+func LoadEnvFromFile(env *Env, path string, sep string, delMark string) error {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return
+			return nil
 		}
-		panic(fmt.Errorf("[LoadEnvFromFile] open local env file '%s' failed: %v",
-			path, err))
+		return fmt.Errorf("[LoadEnvFromFile] open local env file '%s' failed: %v",
+			path, err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[LoadEnvFromFile] close env file '%s' failed: %v", path, err))
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("[LoadEnvFromFile] close env file '%s' failed: %v", path, closeErr)
 		}
 	}()
 
 	err = EnvInput(env, file, sep, delMark)
 	if err != nil {
-		panic(fmt.Errorf("[LoadEnvFromFile] read local env file '%s' failed: %v",
-			path, err))
+		return fmt.Errorf("[LoadEnvFromFile] read local env file '%s' failed: %v",
+			path, err)
 	}
+	return nil
 }
 
-func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd, skipDefault bool) (sessionDir string, sessionPath string) {
+func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd, skipDefault bool) (sessionDir string, sessionPath string, err error) {
 	sep := cc.Cmds.Strs.EnvKeyValSep
 
 	sessionDir = env.GetRaw("session")
 	if len(sessionDir) == 0 {
-		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session dir not found in env"))
+		return "", "", NewCmdError(parsedCmd, "[Cmd.executeFile] session dir not found in env")
 	}
 	sessionFileName := env.GetRaw("strs.session-env-file")
 	if len(sessionFileName) == 0 {
-		panic(NewCmdError(parsedCmd, "[Cmd.executeFile] session env file name not found in env"))
+		return "", "", NewCmdError(parsedCmd, "[Cmd.executeFile] session env file name not found in env")
 	}
 	sessionPath = filepath.Join(sessionDir, sessionFileName)
 
@@ -144,6 +146,6 @@ func saveEnvToSessionFile(cc *Cli, env *Env, parsedCmd ParsedCmd, skipDefault bo
 		//"sys.session.",
 		//"sys.interact",
 	}
-	saveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep, filtered, skipDefault)
+	err = saveEnvToFile(env.GetLayer(EnvLayerSession), sessionPath, sep, filtered, skipDefault)
 	return
 }

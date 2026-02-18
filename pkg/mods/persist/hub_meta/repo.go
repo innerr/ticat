@@ -7,16 +7,20 @@ import (
 	"github.com/innerr/ticat/pkg/mods/persist/meta_file"
 )
 
-func ReadRepoListFromFile(selfName string, path string) (helpStr string, addrs []RepoAddr, helpStrs []string) {
-	metas, err := meta_file.NewMetaFileEx(path)
+func ReadRepoListFromFile(selfName string, path string) (helpStr string, addrs []RepoAddr, helpStrs []string, err error) {
+	var metas []meta_file.VirtualMetaFile
+	metas, err = meta_file.NewMetaFileEx(path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			err = nil
 			return
 		}
-		panic(fmt.Errorf("[ReadRepoListFromFile] read mod meta file '%s' failed: %v", path, err))
+		err = fmt.Errorf("[ReadRepoListFromFile] read mod meta file '%s' failed: %v", path, err)
+		return
 	}
 	if len(metas) != 1 {
-		panic(fmt.Errorf("[ReadRepoListFromFile] repo meta file '%s' should not be a combined file", path))
+		err = fmt.Errorf("[ReadRepoListFromFile] repo meta file '%s' should not be a combined file", path)
+		return
 	}
 	meta := metas[0].Meta
 

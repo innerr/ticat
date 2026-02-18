@@ -12,9 +12,11 @@ func ListTags(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	screen := display.NewCacheScreen()
 	display.ListTags(cc.Cmds, screen, env)
@@ -24,7 +26,7 @@ func ListTags(
 		display.PrintTipTitle(cc.Screen, env, "no command have tags")
 	}
 	screen.WriteTo(cc.Screen)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func FindByTags(
@@ -32,7 +34,7 @@ func FindByTags(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
 	return findByTags(argv, cc, env, flow, currCmdIdx, dumpArgs)
@@ -43,7 +45,7 @@ func FindByTagsWithUsage(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage()
 	return findByTags(argv, cc, env, flow, currCmdIdx, dumpArgs)
@@ -54,7 +56,7 @@ func FindByTagsWithDetails(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs()
 	return findByTags(argv, cc, env, flow, currCmdIdx, dumpArgs)
@@ -66,7 +68,7 @@ func findByTags(
 	env *model.Env,
 	flow *model.ParsedCmds,
 	currCmdIdx int,
-	dumpArgs *display.DumpCmdArgs) (int, bool) {
+	dumpArgs *display.DumpCmdArgs) (int, error) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	if len(findStrs) == 0 {
@@ -102,5 +104,5 @@ func findByTags(
 				"narrow down results by using less tags")
 		}
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }

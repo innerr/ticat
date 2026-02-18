@@ -40,6 +40,7 @@ func (self *Args) IsEmpty() bool {
 
 func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...string) {
 	if _, ok := self.names[name]; ok {
+		// PANIC: Programming error - duplicate arg name during registration
 		panic(fmt.Errorf("[Args.AddArg] %s: arg name conflicted: %s",
 			owner.DisplayPath(), name))
 	}
@@ -49,6 +50,7 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 			continue
 		}
 		if old, ok := self.abbrsRevIdx[abbr]; ok {
+			// PANIC: Programming error - duplicate abbreviation during registration
 			panic(fmt.Errorf("[Args.AddArg] %s: arg abbr name '%s' conflicted,"+
 				" old for '%s', new for '%s'",
 				owner.DisplayPath(), abbr, old, name))
@@ -63,10 +65,12 @@ func (self *Args) AddArg(owner *CmdTree, name string, defVal string, abbrs ...st
 
 func (self *Args) SetArgEnums(owner *CmdTree, name string, vals ...string) {
 	if _, ok := self.names[name]; !ok {
+		// PANIC: Programming error - arg not found during enum registration
 		panic(fmt.Errorf("[Args.AddArg] %s: arg name not exists: %s",
 			owner.DisplayPath(), name))
 	}
 	if _, ok := self.enums[name]; ok {
+		// PANIC: Programming error - enum already set for this arg
 		panic(fmt.Errorf("[Args.AddArg] %s: arg's enum list already exists: %s",
 			owner.DisplayPath(), strings.Join(vals, owner.Strs.ArgEnumSep)))
 	}
@@ -101,6 +105,7 @@ func (self *Args) Names() []string {
 
 func (self *Args) Reorder(owner *Cmd, names []string) {
 	changed := func() {
+		// PANIC: Programming error - args changed during reordering
 		panic(fmt.Errorf("[%s] args changed in reordering, origin: %s; new: %s",
 			owner.Owner().DisplayPath(), strings.Join(self.orderedList, ","), strings.Join(names, ",")))
 	}

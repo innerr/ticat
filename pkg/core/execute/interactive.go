@@ -2,7 +2,6 @@ package execute
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -160,7 +159,7 @@ func tryBreakAtEnd(cc *model.Cli, env *model.Env) {
 		env,
 		showEOF)
 	if bpa != BPAContinue {
-		panic(fmt.Errorf("[tryBreakAtEnd] should never happen"))
+		return
 	}
 }
 
@@ -238,7 +237,7 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 	for {
 		lineBytes, err := buf.ReadBytes('\n')
 		if err != nil {
-			panic(fmt.Errorf("[readFromStdin] read from stdin failed: %v", err))
+			return BPAQuit
 		}
 		if len(lineBytes) == 0 {
 			continue
@@ -249,6 +248,7 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 		}
 		if action, ok := actions[line]; ok {
 			if action == BPAQuit {
+				// PANIC: User requested quit - this is an intentional abort
 				panic(model.NewAbortByUserErr())
 			} else if action == BPAInteract {
 				cc.Screen.Print("\n")

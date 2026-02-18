@@ -87,7 +87,8 @@ func PrintCmdStack(
 				lineLen = 3 + bgCmdLen
 			} else {
 				line += ColorExplain("zZ ", env) + ColorExplain(bg.Cmd, env) + ColorExplain(" - "+bg.Tid, env)
-				lineLen = len(line) - ColorExtraLen(env, "explain")*3
+				extraLen, _ := ColorExtraLen(env, "explain")
+				lineLen = len(line) - extraLen*3
 			}
 			lines.Bg = append(lines.Bg, line)
 			lines.BgLen = append(lines.BgLen, lineLen)
@@ -100,13 +101,15 @@ func PrintCmdStack(
 		if len(stack) > 1 {
 			for i, frame := range stack {
 				line := rpt(" ", i*4+3) + ColorProp("+ ", env)
-				extraLen := ColorExtraLen(env, "prop")
+				extraLen, _ := ColorExtraLen(env, "prop")
 				if i == 0 {
 					line += ColorExplain(frame, env)
-					extraLen += ColorExtraLen(env, "explain")
+					extra, _ := ColorExtraLen(env, "explain")
+					extraLen += extra
 				} else {
 					line += ColorCmd(frame, env)
-					extraLen += ColorExtraLen(env, "cmd")
+					extra, _ := ColorExtraLen(env, "cmd")
+					extraLen += extra
 				}
 				lines.Stack = append(lines.Stack, line)
 				lines.StackLen = append(lines.StackLen, len(line)-extraLen)
@@ -133,7 +136,8 @@ func PrintCmdStack(
 		lines.TitleLen = len(lines.Title)
 	*/
 	lines.Title = ColorThread("thread: ", env) + utils.GoRoutineIdStr()
-	lines.TitleLen = len(lines.Title) - ColorExtraLen(env, "thread")
+	extraLen, _ := ColorExtraLen(env, "thread")
+	lines.TitleLen = len(lines.Title) - extraLen
 
 	lines.Time = time.Now().Format("01-02 15:04:05")
 	lines.TimeLen = len(lines.Time)
@@ -207,25 +211,31 @@ func PrintCmdStack(
 			if i == currCmdIdx {
 				if sysArgv.IsDelay() && !inBg {
 					line += ColorCmdCurr(">> "+name+" (schedule to bg in ", env) + sysArgv.GetDelayStr() + ColorCmdCurr(")", env)
-					lineExtraLen += ColorExtraLen(env, "cmd-curr", "cmd-curr")
+					extra, _ := ColorExtraLen(env, "cmd-curr", "cmd-curr")
+					lineExtraLen += extra
 				} else {
 					line += ColorCmdCurr(">> "+name, env)
-					lineExtraLen += ColorExtraLen(env, "cmd-curr")
+					extra, _ := ColorExtraLen(env, "cmd-curr")
+					lineExtraLen += extra
 				}
 				if mask != nil {
 					resultStr := string(mask.ResultIfExecuted)
 					if mask.ResultIfExecuted == model.ExecutedResultError {
 						line += ColorExplain(" - executed: ", env) + ColorError(resultStr, env)
-						lineExtraLen += ColorExtraLen(env, "explain", "error")
+						extra, _ := ColorExtraLen(env, "explain", "error")
+						lineExtraLen += extra
 					} else if mask.ResultIfExecuted == model.ExecutedResultSucceeded {
 						line += ColorExplain(" - executed: ", env) + ColorCmdDone(resultStr, env)
-						lineExtraLen += ColorExtraLen(env, "explain", "cmd-done")
+						extra, _ := ColorExtraLen(env, "explain", "cmd-done")
+						lineExtraLen += extra
 					} else if mask.ResultIfExecuted == model.ExecutedResultSkipped {
 						line += ColorExplain(" - executed: ", env) + ColorExplain(resultStr, env)
-						lineExtraLen += ColorExtraLen(env, "explain", "explain")
+						extra, _ := ColorExtraLen(env, "explain", "explain")
+						lineExtraLen += extra
 					} else if mask.ResultIfExecuted != model.ExecutedResultUnRun || mask.ResultIfExecuted == model.ExecutedResultIncompleted {
 						line += ColorExplain(" - executed: ", env) + ColorHighLight(resultStr, env)
-						lineExtraLen += ColorExtraLen(env, "explain", "highlight")
+						extra, _ := ColorExtraLen(env, "explain", "highlight")
+						lineExtraLen += extra
 					}
 					if mask.ResultIfExecuted != model.ExecutedResultSkipped && mask.ResultIfExecuted != model.ExecutedResultUnRun {
 						durStr, durExtraLen := executedCmdDurStr(mask.ExecutedCmd, false, env)
@@ -236,10 +246,12 @@ func PrintCmdStack(
 			} else if i < currCmdIdx {
 				if sysArgv.IsDelay() && !inBg {
 					line += "   " + ColorCmdDelay(name+" (scheduled to bg in ", env) + sysArgv.GetDelayStr() + ColorCmdDelay(")", env)
-					lineExtraLen += ColorExtraLen(env, "cmd-delay", "cmd-delay")
+					extra, _ := ColorExtraLen(env, "cmd-delay", "cmd-delay")
+					lineExtraLen += extra
 				} else {
 					line += "   " + ColorCmdDone(name, env)
-					lineExtraLen += ColorExtraLen(env, "cmd-done")
+					extra, _ := ColorExtraLen(env, "cmd-done")
+					lineExtraLen += extra
 				}
 			} else {
 				if sysArgv.IsDelay() && !inBg {
@@ -262,7 +274,8 @@ func PrintCmdStack(
 			line := strings.Repeat(" ", 3+4) + line
 			extraLen := 0
 			if colorizeArg {
-				extraLen += ColorExtraLen(env, "arg", "symbol")
+				extra, _ := ColorExtraLen(env, "arg", "symbol")
+				extraLen += extra
 			}
 			lines.Flow = append(lines.Flow, line)
 			lines.FlowLen = append(lines.FlowLen, len(line)-extraLen)
@@ -271,7 +284,8 @@ func PrintCmdStack(
 		//	line = strings.Repeat(" ", 3+4) + line
 		//	extraLen := 0
 		//	if colorizeArg {
-		//		extraLen += ColorExtraLen(env, "explain", "arg", "symbol")
+		//		extra, _ := ColorExtraLen(env, "explain", "arg", "symbol")
+		//		extraLen += extra
 		//	}
 		//	lines.Flow = append(lines.Flow, line)
 		//	lines.FlowLen = append(lines.FlowLen, len(line)-extraLen)
@@ -282,12 +296,14 @@ func PrintCmdStack(
 			if i < currCmdIdx || i == currCmdIdx {
 				line := ColorFlowing("       --->>>", env)
 				lines.Flow = append(lines.Flow, line)
-				lines.FlowLen = append(lines.FlowLen, len(line)-ColorExtraLen(env, "flowing"))
+				extra, _ := ColorExtraLen(env, "flowing")
+				lines.FlowLen = append(lines.FlowLen, len(line)-extra)
 			}
 			if i < currCmdIdx {
 				line := ColorFlowing("       <<<---", env)
 				lines.Flow = append(lines.Flow, line)
-				lines.FlowLen = append(lines.FlowLen, len(line)-ColorExtraLen(env, "flowing"))
+				extra, _ := ColorExtraLen(env, "flowing")
+				lines.FlowLen = append(lines.FlowLen, len(line)-extra)
 			}
 		}
 	}
@@ -365,7 +381,8 @@ func PrintCmdResult(
 	}
 
 	lines.Cmd = ColorCmdDone(cmd.DisplayPath(strs.PathSep, env.GetBool("display.mod.realname")), env)
-	lines.CmdLen = len(lines.Cmd) - ColorExtraLen(env, "cmd-done")
+	extra, _ := ColorExtraLen(env, "cmd-done")
+	lines.CmdLen = len(lines.Cmd) - extra
 
 	if currCmdIdx >= len(flow)-1 || !succeeded {
 		lines.Footer = time.Now().Format("01-02 15:04:05")

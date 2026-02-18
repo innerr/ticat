@@ -23,7 +23,8 @@ func (self *CmdIO) SetupForExec(cmd *exec.Cmd, logFilePath string) (logger io.Wr
 	if len(logFilePath) != 0 {
 		file, err := os.OpenFile(logFilePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL|os.O_SYNC, 0644)
 		if err != nil {
-			panic(fmt.Errorf("[CmdIO.SetupForExec] open log file failed: %v", err))
+			// Runtime error: cannot open log file - return nil logger
+			return nil
 		}
 		logger = file
 	}
@@ -71,7 +72,7 @@ func (self *BgStdout) BringToFront(fg io.Writer) {
 	defer self.lock.Unlock()
 	_, err := io.Copy(fg, self.bg)
 	if err != nil {
-		panic(err)
+		// Runtime error: cannot copy buffer to foreground - silently ignore
 	}
 	self.fg = fg
 	self.bg = nil
@@ -218,6 +219,7 @@ func (self *BgTasks) BringBgTaskToFront(tid string, stdout io.Writer) {
 	defer self.lock.Unlock()
 	task, ok := self.tasks[tid]
 	if !ok {
+		// PANIC: Programming error - task not found
 		panic(fmt.Errorf("[BgTasks.BringBgTaskToFront] task '%s' not found", tid))
 	}
 	task.stdout.BringToFront(stdout)
@@ -228,9 +230,11 @@ func (self *BgTasks) RemoveTask(tid string) {
 	defer self.lock.Unlock()
 	task, ok := self.tasks[tid]
 	if len(self.tids) == 0 || !ok {
+		// PANIC: Programming error - task not found or empty task list
 		panic(fmt.Errorf("[BgTasks.RemoveTask] task '%s' not found", tid))
 	}
 	if self.tids[0] != tid {
+		// PANIC: Programming error - trying to remove non-earliest task
 		panic(fmt.Errorf("[BgTasks.RemoveTask] removing task '%s' is not the earliest", tid))
 	}
 	self.tids = self.tids[1:]

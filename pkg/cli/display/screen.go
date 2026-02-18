@@ -43,9 +43,10 @@ func (self *CacheScreen) IsEmpty() bool {
 	return len(self.data) == 0
 }
 
-func (self *CacheScreen) Print(text string) {
+func (self *CacheScreen) Print(text string) error {
 	self.data = append(self.data, CachedOutput{text, false, len(text)})
 	self.outN += 1
+	return nil
 }
 
 func (self *CacheScreen) PrintEx(text string, textLen int) {
@@ -53,8 +54,9 @@ func (self *CacheScreen) PrintEx(text string, textLen int) {
 	self.outN += 1
 }
 
-func (self *CacheScreen) Error(text string) {
+func (self *CacheScreen) Error(text string) error {
 	self.data = append(self.data, CachedOutput{text, true, len(text)})
+	return nil
 }
 
 func (self *CacheScreen) OutputtedLines() int {

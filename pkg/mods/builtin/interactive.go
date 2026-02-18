@@ -12,7 +12,7 @@ import (
 	"github.com/innerr/ticat/pkg/core/model"
 )
 
-func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) {
+func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) error {
 	cc = cc.CopyForInteract()
 	sessionEnv := env.GetLayer(model.EnvLayerSession)
 	sessionEnv.SetBool("sys.interact.inside", true)
@@ -28,7 +28,7 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) {
 	lineReader := liner.NewLiner()
 	defer func() {
 		if err := lineReader.Close(); err != nil {
-			panic(fmt.Errorf("[RunInteractive] close line reader failed: %v", err))
+			fmt.Errorf("[RunInteractive] close line reader failed: %v", err)
 		}
 	}()
 
@@ -155,7 +155,7 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) {
 			break
 		}
 		if err != nil {
-			panic(fmt.Errorf("[InteractMode] read from stdin failed: %v", err))
+			return fmt.Errorf("[InteractMode] read from stdin failed: %v", err)
 		}
 
 		lineReader.AppendHistory(line)
@@ -167,10 +167,11 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) {
 
 	file, err := os.Create(historyDir)
 	if err != nil {
-		panic(fmt.Errorf("[InteractMode] error writing history file: %v", err))
+		return fmt.Errorf("[InteractMode] error writing history file: %v", err)
 	}
 	lineReader.WriteHistory(file)
 	file.Close()
+	return nil
 }
 
 func executorSafeExecute(caller string, cc *model.Cli, env *model.Env, masks []*model.ExecuteMask, input ...string) {

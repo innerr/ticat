@@ -9,11 +9,13 @@ type QuietScreen struct {
 	outN int
 }
 
-func (self *QuietScreen) Print(text string) {
+func (self *QuietScreen) Print(text string) error {
 	self.outN += 1
+	return nil
 }
 
-func (self *QuietScreen) Error(text string) {
+func (self *QuietScreen) Error(text string) error {
+	return nil
 }
 
 func (self *QuietScreen) OutputtedLines() int {
@@ -33,25 +35,21 @@ func NewStdScreen(stdout io.Writer, stderr io.Writer) *StdScreen {
 	}
 }
 
-func (self *StdScreen) Print(text string) {
+func (self *StdScreen) Print(text string) error {
 	self.outN += 1
 	if self.stdout == nil {
-		return
+		return nil
 	}
 	_, err := io.WriteString(self.stdout, text)
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
-func (self *StdScreen) Error(text string) {
+func (self *StdScreen) Error(text string) error {
 	if self.stderr == nil {
-		return
+		return nil
 	}
 	_, err := io.WriteString(self.stderr, text)
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
 func (self *StdScreen) OutputtedLines() int {
@@ -72,16 +70,16 @@ func NewBgTaskScreen() *BgTaskScreen {
 	}
 }
 
-func (self *BgTaskScreen) Print(text string) {
+func (self *BgTaskScreen) Print(text string) error {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	self.basic.Print(text)
+	return self.basic.Print(text)
 }
 
-func (self *BgTaskScreen) Error(text string) {
+func (self *BgTaskScreen) Error(text string) error {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	self.basic.Error(text)
+	return self.basic.Error(text)
 }
 
 func (self *BgTaskScreen) OutputtedLines() int {

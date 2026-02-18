@@ -14,10 +14,10 @@ func DumpCmdsWithTips(
 	args *DumpCmdArgs,
 	displayCmdPath string,
 	lessDetailCmd string,
-	moreDetailCmd string) (allShown bool) {
+	moreDetailCmd string) (allShown bool, err error) {
 
 	if !args.Recursive {
-		panic(fmt.Errorf("should never happen, this func is not for non-recursive dumping display"))
+		return false, fmt.Errorf("should never happen, this func is not for non-recursive dumping display")
 	}
 
 	prt := func(text ...interface{}) {
@@ -76,7 +76,7 @@ func DumpCmdsWithTips(
 		if len(filterLines) != 0 {
 			title = "no commands matched:"
 		} else {
-			panic(fmt.Errorf("should never happen, no loaded commands"))
+			return false, fmt.Errorf("should never happen, no loaded commands")
 		}
 	}
 
@@ -95,7 +95,7 @@ func DumpCmdsWithTips(
 			}
 		}
 	}
-	return
+	return allShown, nil
 }
 
 func DumpCmds(

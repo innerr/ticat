@@ -19,16 +19,12 @@ func NewHelps() *Helps {
 	return &Helps{nil}
 }
 
-func (self *Helps) RegHelpFile(path string) {
+func (self *Helps) RegHelpFile(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
-		panic(fmt.Errorf("read help file failed: %v", err))
+		return fmt.Errorf("read help file failed: %v", err)
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[RegHelpFile] close help file '%s' failed: %v", path, err))
-		}
-	}()
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
@@ -38,6 +34,7 @@ func (self *Helps) RegHelpFile(path string) {
 	}
 
 	self.RegHelp(lines[0], lines[1:])
+	return nil
 }
 
 func (self *Helps) RegHelp(title string, text []string) {

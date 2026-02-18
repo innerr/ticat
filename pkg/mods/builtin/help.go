@@ -12,9 +12,11 @@ func GlobalHelp(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	target := argv.GetRaw("target")
 	if len(target) != 0 {
@@ -28,7 +30,7 @@ func GlobalHelp(
 	} else {
 		display.PrintGlobalHelp(cc, env)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SelfHelp(
@@ -36,11 +38,13 @@ func SelfHelp(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	display.PrintSelfHelp(cc.Screen, env)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func GlobalFindCmds(
@@ -48,7 +52,7 @@ func GlobalFindCmds(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
 	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "", "find.more")
@@ -59,7 +63,7 @@ func GlobalFindCmdsWithUsage(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage()
 	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "find", "find.full")
@@ -70,7 +74,7 @@ func GlobalFindCmdsWithDetails(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs()
 	return globalFindCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "find.more", "")
@@ -84,7 +88,7 @@ func globalFindCmds(
 	currCmdIdx int,
 	dumpArgs *display.DumpCmdArgs,
 	lessDetailCmd string,
-	moreDetailCmd string) (int, bool) {
+	moreDetailCmd string) (int, error) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	if len(findStrs) != 0 {
@@ -99,9 +103,12 @@ func DumpCmdsWhoWriteKey(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	key := tailModeCallArg(flow, currCmdIdx, argv, "key")
+	key, err := tailModeCallArg(flow, currCmdIdx, argv, "key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetMatchWriteKey(key)
 
 	screen := display.NewCacheScreen()
@@ -113,7 +120,7 @@ func DumpCmdsWhoWriteKey(
 		display.PrintTipTitle(cc.Screen, env, "no command writes key '"+key+"':")
 	}
 	screen.WriteTo(cc.Screen)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DumpCmdsTree(
@@ -121,11 +128,11 @@ func DumpCmdsTree(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	err := flow.FirstErr()
-	if err != nil {
-		panic(err.Error)
+	firstErr := flow.FirstErr()
+	if firstErr != nil {
+		return currCmdIdx, firstErr.Error
 	}
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().NoFlatten()
@@ -133,7 +140,11 @@ func DumpCmdsTree(
 	cmdPath := ""
 	cmds := cc.Cmds
 	if len(argv.GetRaw("cmd-path")) != 0 {
-		cmdPath = tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+		var err error
+		cmdPath, err = tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+		if err != nil {
+			return currCmdIdx, err
+		}
 		cmds = cmds.GetSubByPath(cmdPath, true)
 	}
 

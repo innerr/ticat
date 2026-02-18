@@ -20,18 +20,27 @@ func UpdateRepoAndSubRepos(
 	repoExt string,
 	listFileName string,
 	selfName string,
-	cmd model.ParsedCmd) (topRepoHelpStr string, addrs []RepoAddr, helpStrs []string) {
+	cmd model.ParsedCmd) (topRepoHelpStr string, addrs []RepoAddr, helpStrs []string, err error) {
 
 	if finisheds[gitAddr.Str()] {
 		return
 	}
-	topRepoHelpStr, addrs, helpStrs = updateRepoAndReadSubList(
+	topRepoHelpStr, addrs, helpStrs, err = updateRepoAndReadSubList(
 		screen, env, hubPath, gitAddr, listFileName, selfName, cmd)
+	if err != nil {
+		return
+	}
 	finisheds[gitAddr.Str()] = true
 
 	for i, addr := range addrs {
-		subTopHelpStr, subAddrs, subHelpStrs := UpdateRepoAndSubRepos(
+		var subTopHelpStr string
+		var subAddrs []RepoAddr
+		var subHelpStrs []string
+		subTopHelpStr, subAddrs, subHelpStrs, err = UpdateRepoAndSubRepos(
 			screen, env, finisheds, hubPath, addr, repoExt, listFileName, selfName, cmd)
+		if err != nil {
+			return
+		}
 		// If a repo has no help-str from hub-repo list, try to get the title from it's README
 		if len(helpStrs[i]) == 0 && len(subTopHelpStr) != 0 {
 			helpStrs[i] = subTopHelpStr
@@ -40,7 +49,7 @@ func UpdateRepoAndSubRepos(
 		helpStrs = append(helpStrs, subHelpStrs...)
 	}
 
-	return topRepoHelpStr, addrs, helpStrs
+	return topRepoHelpStr, addrs, helpStrs, nil
 }
 
 func NormalizeGitAddr(addr string) string {
@@ -68,7 +77,7 @@ func AddrDisplayName(addr RepoAddr) string {
 	return RepoAddr{abbr, addr.Branch}.Str()
 }
 
-func GetRepoPath(hubPath string, originGitAddr RepoAddr) string {
+func GetRepoPath(hubPath string, originGitAddr RepoAddr) (string, error) {
 	addr := strings.ToLower(originGitAddr.Addr)
 	for _, prefix := range []string{"http://", "https://"} {
 		addr = strings.TrimPrefix(addr, prefix)
@@ -79,7 +88,7 @@ func GetRepoPath(hubPath string, originGitAddr RepoAddr) string {
 		addr = addr[symAt+1:]
 		symCl := strings.LastIndex(strings.ToLower(addr), ":")
 		if symCl <= 0 {
-			panic(fmt.Errorf("ill-format repo address '%v'", originGitAddr.Addr))
+			return "", fmt.Errorf("ill-format repo address '%v'", originGitAddr.Addr)
 		}
 		addr = addr[0:symCl] + "/" + addr[symCl+1:]
 	}
@@ -94,29 +103,32 @@ func GetRepoPath(hubPath string, originGitAddr RepoAddr) string {
 	return filepath.Join(hubPath,
 		filepath.Dir(author),
 		filepath.Base(author),
-		filepath.Base(addr))
+		filepath.Base(addr)), nil
 }
 
 func CheckRepoGitStatus(
 	screen model.Screen,
 	env *model.Env,
 	hubPath string,
-	gitAddr RepoAddr) {
+	gitAddr RepoAddr) error {
 
 	name := AddrDisplayName(gitAddr)
-	repoPath := GetRepoPath(hubPath, gitAddr)
+	repoPath, err := GetRepoPath(hubPath, gitAddr)
+	if err != nil {
+		return err
+	}
 	var cmdStrs []string
 
 	stat, err := os.Stat(repoPath)
 	if os.IsNotExist(err) {
 		screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorError("=> ", env)+
 			"repo dir not exists: %s\n", name, repoPath))
-		return
+		return nil
 	}
 	if !stat.IsDir() {
 		screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorError("=> ", env)+
 			"repo path exists but is not dir: %s\n", name, repoPath))
-		return
+		return nil
 	}
 	screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorSymbol("=> ", env)+"git status\n"+
 		display.ColorExplain("(%s)", env)+"\n", name, repoPath))
@@ -131,6 +143,7 @@ func CheckRepoGitStatus(
 		// Ignore errors intentionally
 		_ = err
 	}
+	return nil
 }
 
 func updateRepoAndReadSubList(
@@ -140,18 +153,22 @@ func updateRepoAndReadSubList(
 	gitAddr RepoAddr,
 	listFileName string,
 	selfName string,
-	cmd model.ParsedCmd) (helpStr string, addrs []RepoAddr, helpStrs []string) {
+	cmd model.ParsedCmd) (helpStr string, addrs []RepoAddr, helpStrs []string, err error) {
 
 	name := AddrDisplayName(gitAddr)
-	repoPath := GetRepoPath(hubPath, gitAddr)
+	repoPath, err := GetRepoPath(hubPath, gitAddr)
+	if err != nil {
+		return
+	}
 	var cmdStrs []string
 
-	stat, err := os.Stat(repoPath)
+	stat, statErr := os.Stat(repoPath)
 	var pwd string
-	if !os.IsNotExist(err) {
+	if !os.IsNotExist(statErr) {
 		if !stat.IsDir() {
-			panic(model.WrapCmdError(cmd, fmt.Errorf("repo path '%v' exists but is not dir",
-				repoPath)))
+			err = model.WrapCmdError(cmd, fmt.Errorf("repo path '%v' exists but is not dir",
+				repoPath))
+			return
 		}
 		screen.Print(fmt.Sprintf(display.ColorHub("[%s]", env)+display.ColorSymbol(" => ", env)+
 			"git update\n", name))
@@ -173,9 +190,10 @@ func updateRepoAndReadSubList(
 	}
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	err = c.Run()
-	if err != nil {
-		panic(model.WrapCmdError(cmd, fmt.Errorf("run '%v' failed: %v", cmdStrs, err)))
+	runErr := c.Run()
+	if runErr != nil {
+		err = model.WrapCmdError(cmd, fmt.Errorf("run '%v' failed: %v", cmdStrs, runErr))
+		return
 	}
 	listFilePath := filepath.Join(repoPath, listFileName)
 	return ReadRepoListFromFile(selfName, listFilePath)
