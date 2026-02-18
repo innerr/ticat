@@ -174,7 +174,7 @@ func TestMemFS_IsNotExist(t *testing.T) {
 func TestMemFS_OpenReader(t *testing.T) {
 	fs := NewMemFS()
 
-	fs.WriteFile("test.txt", []byte("hello"), 0644)
+	_ = fs.WriteFile("test.txt", []byte("hello"), 0644)
 
 	f, err := fs.Open("test.txt")
 	if err != nil {
@@ -205,9 +205,9 @@ func TestMemFS_Open_NonExistent(t *testing.T) {
 func TestMemFS_ListFiles(t *testing.T) {
 	fs := NewMemFS()
 
-	fs.WriteFile("a/1.txt", []byte("1"), 0644)
-	fs.WriteFile("a/2.txt", []byte("2"), 0644)
-	fs.WriteFile("b/3.txt", []byte("3"), 0644)
+	_ = fs.WriteFile("a/1.txt", []byte("1"), 0644)
+	_ = fs.WriteFile("a/2.txt", []byte("2"), 0644)
+	_ = fs.WriteFile("b/3.txt", []byte("3"), 0644)
 
 	files := fs.ListFiles("a/")
 	if len(files) != 2 {

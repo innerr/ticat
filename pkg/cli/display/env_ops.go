@@ -61,7 +61,7 @@ func DumpEnvOpsCheckResult(
 	if len(risks.Result) != 0 && len(fatals.Result) == 0 {
 		for i, it := range risks.Result {
 			if i != 0 {
-				screen.Print("\n")
+				_ = screen.Print("\n")
 			}
 			prt0(ColorWarn("<risk>", env) + "  " + ColorKey("'"+it.Key+"'", env))
 			if it.MayReadNotExist || it.MayReadMayWrite {
@@ -90,7 +90,7 @@ func DumpEnvOpsCheckResult(
 	if len(fatals.Result) != 0 {
 		for i, it := range fatals.Result {
 			if i != 0 {
-				screen.Print("\n")
+				_ = screen.Print("\n")
 			}
 			prt0(ColorError("<FATAL>", env) + ColorKey(" '"+it.Key+"'", env))
 			prti(prefix+"read by:", 7)

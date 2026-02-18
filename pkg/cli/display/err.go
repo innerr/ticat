@@ -123,7 +123,7 @@ func PrintError(cc *model.Cli, env *model.Env, err error) {
 
 func PrintSepTitle(screen model.Screen, env *model.Env, msg string) {
 	width := env.GetInt("display.width") - 3
-	screen.Print(rpt("-", width-len(msg)) + "<[" + msg + "]\n")
+	_ = screen.Print(rpt("-", width-len(msg)) + "<[" + msg + "]\n")
 }
 
 func PrintTolerableErrs(screen model.Screen, env *model.Env, errs *model.TolerableErrs) {

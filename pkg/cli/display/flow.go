@@ -67,7 +67,7 @@ func DumpFlowEx(
 			if len(ip) != 0 {
 				title += ColorExplain(" - "+ip, env)
 			}
-			cc.Screen.Print(title + "\n")
+			_ = cc.Screen.Print(title + "\n")
 		} else {
 			PrintTipTitle(cc.Screen, env, "session-id ["+executedFlow.DirName+"], flow executed status:")
 		}
@@ -78,12 +78,12 @@ func DumpFlowEx(
 	if args.MonitorMode {
 		trivialMark := env.GetRaw("strs.trivial-mark")
 		flowStr, _ := model.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
-		cc.Screen.Print(ColorFlow(flowStr, env) + "\n")
+		_ = cc.Screen.Print(ColorFlow(flowStr, env) + "\n")
 	}
 
 	// TODO: show executed status and duration here
 
-	cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
+	_ = cc.Screen.Print(ColorFlowing("--->>>", env) + "\n")
 	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, procRunning,
 		false, writtenKeys, args.MaxDepth, args.MaxTrivial, 0, false)
 	if ok {
