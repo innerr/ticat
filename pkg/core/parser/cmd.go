@@ -181,6 +181,13 @@ func (self *CmdParser) tokenizePlain(s string) []yyToken {
 			break
 		}
 
+		// If the string contains '=', treat it as a key=value pair and don't split by '.'
+		// This handles cases like "key=1.2.3.4" where dots are in the value
+		if strings.Contains(s, self.envParser.kvSep) {
+			tokens = append(tokens, yyToken{typ: WORD, str: s})
+			break
+		}
+
 		sepIdx := strings.IndexAny(s, self.cmdAlterSeps)
 		if sepIdx == 0 {
 			if self.isFakeSep(s) {
