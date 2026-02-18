@@ -30,9 +30,11 @@ func tryWaitSecAndBreakBefore(cc *model.Cli, env *model.Env, cmd model.ParsedCmd
 		return BPAContinue
 	}
 
-	// Not sure why we need to checke "sys.breakpoint.here.now" originally, it cause a bug
-	//if cmd.IsQuiet() && !env.GetBool("sys.breakpoint.here.now") {
-	if cmd.IsQuiet() {
+	stepIn := env.GetBool("sys.breakpoint.status.step-in")
+	stepOut := env.GetBool("sys.breakpoint.status.step-out")
+	breakByNext := breakByPrev || env.GetBool("sys.breakpoint.at-next")
+
+	if cmd.IsQuiet() && !stepIn && !stepOut && !breakByNext {
 		return BPAContinue
 	}
 
