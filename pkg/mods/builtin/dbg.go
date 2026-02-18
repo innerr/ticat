@@ -185,7 +185,7 @@ func DbgBreakStatus(
 	}
 
 	if len(bps.Befores) != 0 {
-		cc.Screen.Print(fmt.Sprintf(display.ColorTip("    break before one of the commands:\n", env)))
+		cc.Screen.Print(display.ColorTip("    break before one of the commands:\n", env))
 		for k := range bps.Befores {
 			k = display.ColorCmd("["+k+"]", env)
 			cc.Screen.Print(fmt.Sprintf("        %s\n", k))
@@ -193,7 +193,7 @@ func DbgBreakStatus(
 	}
 
 	if len(bps.Afters) != 0 {
-		cc.Screen.Print(fmt.Sprintf(display.ColorTip("    break when one of the commands finishs:\n", env)))
+		cc.Screen.Print(display.ColorTip("    break when one of the commands finishs:\n", env))
 		for k := range bps.Afters {
 			k = display.ColorCmd("["+k+"]", env)
 			cc.Screen.Print(fmt.Sprintf("        %s\n", k))
@@ -267,5 +267,125 @@ func SysSetExtExecutor(
 		return currCmdIdx, err
 	}
 	env.GetLayer(model.EnvLayerSession).Set("sys.ext.exec."+ext, exe)
+	return currCmdIdx, nil
+}
+
+func DbgArgs(
+	argv model.ArgVals,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
+	currCmdIdx int) (int, error) {
+
+	cmd := flow.Cmds[currCmdIdx]
+	tailMode := flow.TailModeCall && cmd.TailMode
+
+	cc.Screen.Print(fmt.Sprintf("=== DbgArgs Output ===\n"))
+	cc.Screen.Print(fmt.Sprintf("TailMode: %v\n", tailMode))
+	cc.Screen.Print(fmt.Sprintf("TailModeCall: %v\n", flow.TailModeCall))
+	cc.Screen.Print(fmt.Sprintf("HasTailMode: %v\n", flow.HasTailMode))
+	cc.Screen.Print(fmt.Sprintf("Cmd.TailMode: %v\n", cmd.TailMode))
+	cc.Screen.Print(fmt.Sprintf("--- Arguments (argv) ---\n"))
+
+	argNames := []string{
+		"arg1", "arg2", "arg3",
+		"str-val", "int-val", "bool-val",
+		"multi-abbr",
+	}
+
+	for _, name := range argNames {
+		val, ok := argv[name]
+		if !ok {
+			cc.Screen.Print(fmt.Sprintf("  %s: <not set>\n", name))
+			continue
+		}
+		cc.Screen.Print(fmt.Sprintf("  %s: raw=[%s] provided=%v\n", name, val.Raw, val.Provided))
+	}
+
+	cc.Screen.Print(fmt.Sprintf("--- Raw Input ---\n"))
+	for i, inp := range cmd.ParseResult.Input {
+		cc.Screen.Print(fmt.Sprintf("  [%d]: [%s]\n", i, inp))
+	}
+
+	cc.Screen.Print(fmt.Sprintf("--- Parsed Env ---\n"))
+	for _, seg := range cmd.Segments {
+		if seg.Env != nil {
+			for k, v := range seg.Env {
+				cc.Screen.Print(fmt.Sprintf("  env.%s: [%s] isArg=%v\n", k, v.Val, v.IsArg))
+			}
+		}
+	}
+
+	return currCmdIdx, nil
+}
+
+func DbgArgsTail(
+	argv model.ArgVals,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
+	currCmdIdx int) (int, error) {
+
+	cmd := flow.Cmds[currCmdIdx]
+	tailMode := flow.TailModeCall && cmd.TailMode
+
+	cc.Screen.Print(fmt.Sprintf("=== DbgArgsTail Output ===\n"))
+	cc.Screen.Print(fmt.Sprintf("TailMode: %v\n", tailMode))
+	cc.Screen.Print(fmt.Sprintf("TailModeCall: %v\n", flow.TailModeCall))
+	cc.Screen.Print(fmt.Sprintf("Cmd.TailMode: %v\n", cmd.TailMode))
+	cc.Screen.Print(fmt.Sprintf("--- Arguments ---\n"))
+
+	argNames := []string{
+		"arg1", "arg2", "arg3",
+	}
+
+	for _, name := range argNames {
+		val, ok := argv[name]
+		if !ok {
+			continue
+		}
+		cc.Screen.Print(fmt.Sprintf("  %s: [%s] (provided=%v)\n", name, val.Raw, val.Provided))
+	}
+
+	cc.Screen.Print(fmt.Sprintf("--- Raw Input ---\n"))
+	cc.Screen.Print(fmt.Sprintf("  Input: %v\n", cmd.ParseResult.Input))
+
+	return currCmdIdx, nil
+}
+
+func DbgArgsEnv(
+	argv model.ArgVals,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
+	currCmdIdx int) (int, error) {
+
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+
+	cc.Screen.Print(fmt.Sprintf("=== DbgArgsEnv Output ===\n"))
+	cc.Screen.Print(fmt.Sprintf("--- Arguments ---\n"))
+
+	argNames := []string{
+		"db", "host", "port", "user",
+	}
+
+	for _, name := range argNames {
+		val, ok := argv[name]
+		if !ok {
+			continue
+		}
+		cc.Screen.Print(fmt.Sprintf("  %s: [%s] (provided=%v)\n", name, val.Raw, val.Provided))
+	}
+
+	cc.Screen.Print(fmt.Sprintf("--- Env Values (if auto-mapped) ---\n"))
+	for _, name := range argNames {
+		envKey := "dbg.args.env." + name
+		if env.Has(envKey) {
+			cc.Screen.Print(fmt.Sprintf("  %s: [%s]\n", envKey, env.GetRaw(envKey)))
+		}
+	}
+
 	return currCmdIdx, nil
 }

@@ -836,3 +836,593 @@ func TestTiCatWithTestingHook(t *testing.T) {
 		t.Error("TestingHook should be set")
 	}
 }
+
+type argsCaptureScreen struct {
+	output bytes.Buffer
+}
+
+func (s *argsCaptureScreen) Print(text string) error {
+	s.output.WriteString(text)
+	return nil
+}
+
+func (s *argsCaptureScreen) Error(text string) error {
+	s.output.WriteString(text)
+	return nil
+}
+
+func (s *argsCaptureScreen) OutputtedLines() int {
+	return strings.Count(s.output.String(), "\n")
+}
+
+func (s *argsCaptureScreen) GetOutput() string {
+	return s.output.String()
+}
+
+func TestDbgArgsCommandParsing(t *testing.T) {
+	t.Run("simple args", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=value1", "arg2=value2")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[value1]") {
+			t.Errorf("expected arg1=value1 in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: raw=[value2]") {
+			t.Errorf("expected arg2=value2 in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("args with equals in value", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=db=test", "arg2=host=127.0.0.1")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[db=test]") {
+			t.Errorf("expected arg1=db=test in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: raw=[host=127.0.0.1]") {
+			t.Errorf("expected arg2=host=127.0.0.1 in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("args with dots", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=1.2.3.4", "arg2=file.conf")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[1.2.3.4]") {
+			t.Errorf("expected arg1=1.2.3.4 in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: raw=[file.conf]") {
+			t.Errorf("expected arg2=file.conf in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("abbreviation args", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "a1=abbr1", "str=string-val")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[abbr1]") {
+			t.Errorf("expected arg1=abbr1 (using a1 abbreviation) in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "str-val: raw=[string-val]") {
+			t.Errorf("expected str-val=string-val in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("default values", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "str-val: raw=[default-str]") {
+			t.Errorf("expected str-val with default value in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("env style args", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args.env", "db=mysql", "host=192.168.1.1", "port=3306")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "db: [mysql]") {
+			t.Errorf("expected db=mysql in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "host: [192.168.1.1]") {
+			t.Errorf("expected host=192.168.1.1 in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "port: [3306]") {
+			t.Errorf("expected port=3306 in output, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsTailModeParsing(t *testing.T) {
+	t.Run("tail mode with desc", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("desc", ":", "dbg.args.tail", "arg1=tail1", "arg2=tail2")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "TailMode: true") {
+			t.Errorf("expected TailMode=true in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: [tail1]") {
+			t.Errorf("expected arg1=tail1 in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: [tail2]") {
+			t.Errorf("expected arg2=tail2 in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("tail mode with env-style args", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("desc", ":", "dbg.args.tail", "db=x", "host=y")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: [db=x]") {
+			t.Errorf("expected arg1=db=x in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: [host=y]") {
+			t.Errorf("expected arg2=host=y in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("tail mode abbreviation", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("-", ":", "dbg.args.tail", "arg1=test")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: [test]") {
+			t.Errorf("expected arg1=test in output, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsSequenceParsing(t *testing.T) {
+	t.Run("sequence with args", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=first", ":", "dbg.args", "arg1=second")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[first]") {
+			t.Errorf("expected first command with arg1=first, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[second]") {
+			t.Errorf("expected second command with arg1=second, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsFlowParsing(t *testing.T) {
+	t.Run("three commands in flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=first", "arg2=A",
+			":", "dbg.args", "arg1=second", "arg2=B",
+			":", "dbg.args", "arg1=third", "arg2=C")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[first]") {
+			t.Errorf("expected first command with arg1=first, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: raw=[A]") {
+			t.Errorf("expected first command with arg2=A, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[second]") {
+			t.Errorf("expected second command with arg1=second, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: raw=[B]") {
+			t.Errorf("expected second command with arg2=B, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[third]") {
+			t.Errorf("expected third command with arg1=third, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: raw=[C]") {
+			t.Errorf("expected third command with arg2=C, got:\n%s", output)
+		}
+	})
+
+	t.Run("args with special values in flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=db=test", ":", "dbg.args", "arg1=host=127.0.0.1")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[db=test]") {
+			t.Errorf("expected first command with arg1=db=test, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[host=127.0.0.1]") {
+			t.Errorf("expected second command with arg1=host=127.0.0.1, got:\n%s", output)
+		}
+	})
+
+	t.Run("mixed arg types in flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=normal", ":",
+			"dbg.args.env", "db=mysql", "host=localhost", ":",
+			"dbg.args", "str-val=custom-string")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[normal]") {
+			t.Errorf("expected first command with arg1=normal, got:\n%s", output)
+		}
+		if !strings.Contains(output, "db: [mysql]") {
+			t.Errorf("expected second command with db=mysql, got:\n%s", output)
+		}
+		if !strings.Contains(output, "str-val: raw=[custom-string]") {
+			t.Errorf("expected third command with str-val=custom-string, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsPositionInFlow(t *testing.T) {
+	t.Run("first command in flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=pos1", ":", "dbg.args", "arg2=pos2")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[pos1]") {
+			t.Errorf("expected arg1=pos1, got:\n%s", output)
+		}
+	})
+
+	t.Run("last command in flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=start", ":", "dbg.args", "arg1=last")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[last]") {
+			t.Errorf("expected arg1=last, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsDescFlow(t *testing.T) {
+	t.Run("desc short flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("-", ":", "dbg.args.tail", "arg1=desc-test")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1") && !strings.Contains(output, "desc-test") {
+			t.Errorf("expected desc output with arg1, got:\n%s", output)
+		}
+	})
+
+	t.Run("desc with multiple args", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("-", ":", "dbg.args.tail", "arg1=val1", "arg2=val2", "arg3=val3")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1") {
+			t.Errorf("expected desc output with arg1, got:\n%s", output)
+		}
+	})
+
+	t.Run("desc long flow with args", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("-", ":", "dbg.args.tail", "arg1=step1",
+			":", "dbg.args.tail", "arg1=step2",
+			":", "dbg.args.tail", "arg1=step3",
+			":", "dbg.args.tail", "arg1=step4")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "step1") || !strings.Contains(output, "step4") {
+			t.Errorf("expected desc output with all steps, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsDescMore(t *testing.T) {
+	t.Run("desc more with flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("+", ":", "dbg.args.tail", "arg1=test")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1") && !strings.Contains(output, "test") {
+			t.Errorf("expected desc output with arg1, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsNestedCommands(t *testing.T) {
+	t.Run("args in simple flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=before", ":", "dbg.args", "arg1=after")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[before]") {
+			t.Errorf("expected arg1=before, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[after]") {
+			t.Errorf("expected arg1=after, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsEdgeCases(t *testing.T) {
+	t.Run("empty arg value", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[]") {
+			t.Errorf("expected empty arg1, got:\n%s", output)
+		}
+	})
+
+	t.Run("arg with spaces in value", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1={hello world}")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1:") {
+			t.Errorf("expected arg1 in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("arg value with url", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=http//localhost4000")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1:") {
+			t.Errorf("expected arg1 in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("arg value with path", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=/path/to/file.conf")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[/path/to/file.conf]") {
+			t.Errorf("expected arg1 with path, got:\n%s", output)
+		}
+	})
+
+	t.Run("multiple dots in value", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=a.b.c.d.e")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[a.b.c.d.e]") {
+			t.Errorf("expected arg1 with multiple dots, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsTailModeWithFlow(t *testing.T) {
+	t.Run("tail mode with desc", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("-", ":", "dbg.args.tail", "arg1=tail-val")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1") && !strings.Contains(output, "tail-val") {
+			t.Errorf("expected tail mode output, got:\n%s", output)
+		}
+	})
+}
+
+func TestDbgArgsAbbreviationInFlow(t *testing.T) {
+	t.Run("arg abbreviation in flow", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "a1=val1", ":", "dbg.args", "a2=val2")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[val1]") {
+			t.Errorf("expected arg1=val1 (using a1 abbreviation), got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: raw=[val2]") {
+			t.Errorf("expected arg2=val2 (using a2 abbreviation), got:\n%s", output)
+		}
+	})
+
+	t.Run("str-val abbreviation", func(t *testing.T) {
+		tc := NewTiCat()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "str=hello", ":", "dbg.args", "s=world")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "str-val: raw=[hello]") {
+			t.Errorf("expected str-val=hello, got:\n%s", output)
+		}
+		if !strings.Contains(output, "str-val: raw=[world]") {
+			t.Errorf("expected str-val=world, got:\n%s", output)
+		}
+	})
+}
