@@ -9,7 +9,31 @@ import (
 	"time"
 )
 
-// TODO: this session status file format (and code) is bad and dirty, rewrite it
+type StatusFileOpener func(path string, content string)
+
+var statusFileOpener StatusFileOpener = defaultStatusFileOpener
+
+func defaultStatusFileOpener(path string, content string) {
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+		}
+	}()
+	_, err = file.Write([]byte(content))
+	if err != nil {
+	}
+}
+
+func SetStatusFileOpener(opener StatusFileOpener) {
+	statusFileOpener = opener
+}
+
+func ResetStatusFileOpener() {
+	statusFileOpener = defaultStatusFileOpener
+}
 
 type ExecutingFlow struct {
 	path  string
@@ -216,20 +240,7 @@ func writeMarkedContent(path string, mark string, level int, lines ...string) {
 }
 
 func writeStatusContent(path string, content string) {
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		// Runtime error: cannot open status file - silently ignore
-		return
-	}
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			// Runtime error: cannot close status file - silently ignore
-		}
-	}()
-	_, err = file.Write([]byte(content))
-	if err != nil {
-		// Runtime error: cannot write to status file - silently ignore
-	}
+	statusFileOpener(path, content)
 }
 
 func fprintf(w io.Writer, format string, a ...interface{}) {
