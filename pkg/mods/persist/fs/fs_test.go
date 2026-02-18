@@ -86,7 +86,7 @@ func TestMemFS_RemoveAll(t *testing.T) {
 func TestMemFS_Rename(t *testing.T) {
 	fs := NewMemFS()
 
-	fs.WriteFile("old.txt", []byte("data"), 0644)
+	_ = fs.WriteFile("old.txt", []byte("data"), 0644)
 
 	err := fs.Rename("old.txt", "new.txt")
 	if err != nil {
@@ -109,7 +109,7 @@ func TestMemFS_Rename(t *testing.T) {
 func TestMemFS_OpenFile_Truncate(t *testing.T) {
 	fs := NewMemFS()
 
-	fs.WriteFile("test.txt", []byte("old content"), 0644)
+	_ = fs.WriteFile("test.txt", []byte("old content"), 0644)
 
 	f, err := fs.OpenFile("test.txt", os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
@@ -127,7 +127,7 @@ func TestMemFS_OpenFile_Truncate(t *testing.T) {
 func TestMemFS_Stat(t *testing.T) {
 	fs := NewMemFS()
 
-	fs.WriteFile("test.txt", []byte("hello"), 0644)
+	_ = fs.WriteFile("test.txt", []byte("hello"), 0644)
 
 	info, err := fs.Stat("test.txt")
 	if err != nil {

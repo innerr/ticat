@@ -1,6 +1,6 @@
 module github.com/innerr/ticat
 
-go 1.24
+go 1.21
 
 require (
 	github.com/mattn/go-shellwords v1.0.11

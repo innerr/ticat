@@ -50,10 +50,10 @@ func DumpEnvOpsCheckResult(
 	}
 
 	prt0 := func(msg string) {
-		screen.Print(msg + "\n")
+		_ = screen.Print(msg + "\n")
 	}
 	prti := func(msg string, indent int) {
-		screen.Print(strings.Repeat(" ", indent) + msg + "\n")
+		_ = screen.Print(strings.Repeat(" ", indent) + msg + "\n")
 	}
 
 	prefix := ColorProp("- ", env)

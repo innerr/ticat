@@ -10,7 +10,7 @@ import (
 func DumpEnvTree(screen model.Screen, env *model.Env, indentSize int) {
 	lines, _ := dumpEnv(env, nil, true, true, true, true, nil, indentSize)
 	for _, line := range lines {
-		screen.Print(line + "\n")
+		_ = screen.Print(line + "\n")
 	}
 }
 
@@ -72,7 +72,7 @@ func dumpEnvFlattenVals(screen model.Screen, env *model.Env, flatten map[string]
 				continue
 			}
 		}
-		screen.Print(KeyValueDisplayStr(k, v, env) + "\n")
+		_ = screen.Print(KeyValueDisplayStr(k, v, env) + "\n")
 	}
 }
 
