@@ -532,6 +532,159 @@ func TestCheckTailModeCalls(t *testing.T) {
 	})
 }
 
+func TestCheckTailModeCalls_WithNilCmdNode(t *testing.T) {
+	t.Run("attempt tail mode with nil cmd node should panic with CmdError", func(t *testing.T) {
+		flow := &model.ParsedCmds{
+			Cmds: []model.ParsedCmd{
+				{
+					Segments: []model.ParsedCmdSeg{
+						{
+							Matched: model.MatchedCmd{
+								Name: "nilcmd",
+								Cmd:  nil,
+							},
+						},
+					},
+					ParseResult: model.ParseResult{Input: []string{"nilcmd"}},
+				},
+			},
+			TailModeCall:       false,
+			AttempTailModeCall: true,
+		}
+
+		defer func() {
+			r := recover()
+			if r == nil {
+				t.Error("should panic for unsupported tail mode call with nil cmd node")
+				return
+			}
+			cmdErr, ok := r.(*model.CmdError)
+			if !ok {
+				t.Errorf("expected *model.CmdError, got %T", r)
+				return
+			}
+			if cmdErr.Error() != "tail-mode call not support" {
+				t.Errorf("expected 'tail-mode call not support', got '%s'", cmdErr.Error())
+			}
+		}()
+		checkTailModeCalls(flow)
+	})
+
+	t.Run("attempt tail mode with empty segments should panic with CmdError", func(t *testing.T) {
+		flow := &model.ParsedCmds{
+			Cmds: []model.ParsedCmd{
+				{
+					Segments:    []model.ParsedCmdSeg{},
+					ParseResult: model.ParseResult{Input: []string{}},
+				},
+			},
+			TailModeCall:       false,
+			AttempTailModeCall: true,
+		}
+
+		defer func() {
+			r := recover()
+			if r == nil {
+				t.Error("should panic for unsupported tail mode call with empty segments")
+				return
+			}
+			cmdErr, ok := r.(*model.CmdError)
+			if !ok {
+				t.Errorf("expected *model.CmdError, got %T", r)
+				return
+			}
+			if cmdErr.Error() != "tail-mode call not support" {
+				t.Errorf("expected 'tail-mode call not support', got '%s'", cmdErr.Error())
+			}
+		}()
+		checkTailModeCalls(flow)
+	})
+
+	t.Run("CmdError with nil cmd node should work correctly", func(t *testing.T) {
+		parsedCmd := model.ParsedCmd{
+			Segments: []model.ParsedCmdSeg{
+				{
+					Matched: model.MatchedCmd{
+						Name: "testcmd",
+						Cmd:  nil,
+					},
+				},
+			},
+			ParseResult: model.ParseResult{Input: []string{"testcmd"}},
+		}
+
+		cmdErr := model.NewCmdError(parsedCmd, "test error")
+		if cmdErr.Error() != "test error" {
+			t.Errorf("expected 'test error', got '%s'", cmdErr.Error())
+		}
+
+		path := cmdErr.Cmd.MatchedPath()
+		if len(path) != 0 {
+			t.Errorf("expected empty path for nil cmd node, got %v", path)
+		}
+
+		last := cmdErr.Cmd.Last()
+		if last.Matched.Name != "testcmd" {
+			t.Errorf("expected 'testcmd', got '%s'", last.Matched.Name)
+		}
+		if last.Matched.Cmd != nil {
+			t.Error("expected nil Cmd")
+		}
+	})
+
+	t.Run("ParsedCmd.Last with empty segments should return empty ParsedCmdSeg", func(t *testing.T) {
+		parsedCmd := model.ParsedCmd{
+			Segments:    []model.ParsedCmdSeg{},
+			ParseResult: model.ParseResult{Input: []string{}},
+		}
+
+		last := parsedCmd.Last()
+		if last.Matched.Name != "" {
+			t.Errorf("expected empty name, got '%s'", last.Matched.Name)
+		}
+		if last.Matched.Cmd != nil {
+			t.Error("expected nil Cmd")
+		}
+	})
+
+	t.Run("ParsedCmd.LastCmdNode with nil cmd should return nil", func(t *testing.T) {
+		parsedCmd := model.ParsedCmd{
+			Segments: []model.ParsedCmdSeg{
+				{
+					Matched: model.MatchedCmd{
+						Name: "testcmd",
+						Cmd:  nil,
+					},
+				},
+			},
+			ParseResult: model.ParseResult{Input: []string{"testcmd"}},
+		}
+
+		cmdNode := parsedCmd.LastCmdNode()
+		if cmdNode != nil {
+			t.Error("expected nil LastCmdNode")
+		}
+	})
+
+	t.Run("ParsedCmd.AllowTailModeCall with nil cmd should return false", func(t *testing.T) {
+		parsedCmd := model.ParsedCmd{
+			Segments: []model.ParsedCmdSeg{
+				{
+					Matched: model.MatchedCmd{
+						Name: "testcmd",
+						Cmd:  nil,
+					},
+				},
+			},
+			ParseResult: model.ParseResult{Input: []string{"testcmd"}},
+		}
+
+		if parsedCmd.AllowTailModeCall() {
+			t.Error("expected AllowTailModeCall to return false for nil cmd")
+		}
+	})
+}
+
 func TestMoveLastPriorityCmdToFront_ConditionCombinations(t *testing.T) {
 	t.Run("no sep + no priority + no tail mode support = no tail mode", func(t *testing.T) {
 		tree := newTestCmdTree()

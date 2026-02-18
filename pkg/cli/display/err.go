@@ -76,7 +76,10 @@ func PrintError(cc *model.Cli, env *model.Env, err error) {
 			printer.PrintWrap("[" + cmdName + "] failed: " + e.Error() + ".")
 			printer.Prints("", "command detail:")
 			printer.Finish()
-			DumpCmds(e.Cmd.Last().Matched.Cmd, cc.Screen, env, NewDumpCmdArgs().NoRecursive())
+			cmdNode := e.Cmd.Last().Matched.Cmd
+			if cmdNode != nil {
+				DumpCmds(cmdNode, cc.Screen, env, NewDumpCmdArgs().NoRecursive())
+			}
 		} else if len(cmdName) == 0 {
 			if e.Cmd.ParseResult.Error != nil {
 				printer.PrintWrap(e.Cmd.ParseResult.Error.Error() + ".")
@@ -108,7 +111,10 @@ func PrintError(cc *model.Cli, env *model.Env, err error) {
 		}
 		printer.Prints("", "command detail:")
 		printer.Finish()
-		DumpCmds(e.Cmd.Last().Matched.Cmd, cc.Screen, env, NewDumpCmdArgs().NoRecursive())
+		cmdNode := e.Cmd.Last().Matched.Cmd
+		if cmdNode != nil {
+			DumpCmds(cmdNode, cc.Screen, env, NewDumpCmdArgs().NoRecursive())
+		}
 
 	default:
 		PrintErrTitle(cc.Screen, env, err.Error())
