@@ -294,7 +294,12 @@ func ApplyArg2Env(env *Env, cmd *Cmd, argv ArgVals) {
 		if !val.Provided && inEnv {
 			continue
 		}
-		env.Set(key, val.Raw)
+		renderedLines, _ := renderTemplateStr(val.Raw, "arg2env", cmd, argv, env, true)
+		renderedVal := renderedLines[0]
+		if len(renderedLines) > 1 {
+			renderedVal = strings.Join(renderedLines, "\n")
+		}
+		env.Set(key, renderedVal)
 	}
 }
 
