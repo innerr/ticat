@@ -1126,6 +1126,34 @@ func RegisterDbgCmds(cmds *model.CmdTree) {
 	interact.AddSub("leave", "l").
 		RegPowerCmd(DbgInteractLeave,
 			"leave interact mode and continue to run")
+
+	args := cmds.AddSub("args").
+		RegPowerCmd(DbgArgs,
+			"debug command for testing argument passing in various modes").
+		AddArg("arg1", "", "a1").
+		AddArg("arg2", "", "a2").
+		AddArg("arg3", "", "a3").
+		AddArg("str-val", "default-str", "str", "s").
+		AddArg("int-val", "0", "i").
+		AddArg("bool-val", "false", "b").
+		AddArg("multi-abbr", "", "m", "multi", "abbr")
+
+	args.AddSub("tail", "t").
+		RegPowerCmd(DbgArgsTail,
+			"debug command for testing tail-mode argument passing").
+		SetAllowTailModeCall().
+		SetPriority().
+		AddArg("arg1", "", "a1").
+		AddArg("arg2", "", "a2").
+		AddArg("arg3", "", "a3")
+
+	args.AddSub("env", "e").
+		RegPowerCmd(DbgArgsEnv,
+			"debug command for testing env-style argument passing like db=x").
+		AddArg("db", "", "database", "d").
+		AddArg("host", "localhost", "h").
+		AddArg("port", "4000", "p").
+		AddArg("user", "root", "u")
 }
 
 func RegisterDisplayCmds(cmds *model.CmdTree) {

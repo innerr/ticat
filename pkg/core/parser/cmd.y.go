@@ -151,7 +151,21 @@ func (l *yyLex) tryParseAsArg(word string) model.ParsedEnv {
 			nextTok := l.tokens[l.pos]
 			if nextTok.typ == WORD {
 				l.pos++
-				env[realName] = model.NewParsedEnvArgv(word, nextTok.str)
+				env[realName] = model.NewParsedEnvArgv(realName, nextTok.str)
+				return env
+			}
+		}
+	}
+
+	kvSep := ctx.cmdParser.envParser.kvSep
+	if strings.Contains(word, kvSep) {
+		kv := strings.SplitN(word, kvSep, 2)
+		if len(kv) == 2 {
+			key := kv[0]
+			val := kv[1]
+			realName := args.Realname(key)
+			if len(realName) > 0 {
+				env[realName] = model.NewParsedEnvArgv(realName, val)
 				return env
 			}
 		}
@@ -160,12 +174,9 @@ func (l *yyLex) tryParseAsArg(word string) model.ParsedEnv {
 	names := args.Names()
 	if len(names) > ctx.argIdx {
 		name := names[ctx.argIdx]
-		// Collect tokens that form a dotted path (e.g., "bench.workload" from "bench", ".", "workload")
-		// This handles cases where a value contains dots that were tokenized as separators
 		value := word
 		for l.pos < len(l.tokens) {
 			tok := l.tokens[l.pos]
-			// Only merge if it's a dot separator followed by a word
 			if tok.typ == SEP && tok.str == "." {
 				if l.pos+1 < len(l.tokens) && l.tokens[l.pos+1].typ == WORD {
 					value += tok.str + l.tokens[l.pos+1].str
