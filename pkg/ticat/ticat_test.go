@@ -2374,3 +2374,123 @@ func TestEnvDeepNestingIntegrity(t *testing.T) {
 		}
 	})
 }
+
+func TestSubflowEnvIsolation(t *testing.T) {
+	t.Run("subflow creates separate env layer", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		tc.Env.Set("test.original", "original-value")
+
+		ok := tc.RunCli("env.set", "key=test.new", "value=new-value", ":", "env.assert.equal", "key=test.original", "value=original-value")
+		if !ok {
+			t.Error("flow should succeed")
+		}
+
+		if tc.Env.Get("test.new").Raw != "new-value" {
+			t.Error("new key should be set in session layer")
+		}
+	})
+
+	t.Run("env changes persist across flow commands", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=persist.a", "value=1",
+			":", "noop",
+			":", "env.update", "key=persist.a", "value=2",
+			":", "noop",
+			":", "env.assert.equal", "key=persist.a", "value=2")
+		if !ok {
+			t.Error("env changes should persist through flow")
+		}
+	})
+}
+
+func TestNestedSubflowEnv(t *testing.T) {
+	t.Run("deeply nested flow maintains env integrity", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		args := []string{"env.set", "key=nested.counter", "value=0", ":"}
+		for i := 1; i <= 5; i++ {
+			args = append(args, "env.update", "key=nested.counter", fmt.Sprintf("value=%d", i))
+			if i < 5 {
+				args = append(args, ":")
+			}
+		}
+
+		ok := tc.RunCli(args...)
+		if !ok {
+			t.Error("nested flow should succeed")
+		}
+
+		if tc.Env.Get("nested.counter").Raw != "5" {
+			t.Errorf("counter should be 5, got %s", tc.Env.Get("nested.counter").Raw)
+		}
+	})
+}
+
+func TestForestModeEnvReset(t *testing.T) {
+	t.Run("forest mode isolates command env", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+		tc.Env.SetBool("sys.forest-mode", true)
+
+		tc.Env.Set("forest.base", "base-value")
+
+		ok := tc.RunCli(
+			"noop",
+			":", "noop",
+			":", "env.assert.equal", "key=forest.base", "value=base-value")
+		if !ok {
+			t.Error("forest mode flow should succeed")
+		}
+	})
+}
+
+func TestSubflowFailureEnvHandling(t *testing.T) {
+	t.Run("env integrity after multiple operations", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=integrity.a", "value=1",
+			":", "env.set", "key=integrity.b", "value=2",
+			":", "env.update", "key=integrity.a", "value=1-modified",
+			":", "env.assert.equal", "key=integrity.a", "value=1-modified",
+			":", "env.assert.equal", "key=integrity.b", "value=2")
+		if !ok {
+			t.Error("env integrity should be maintained")
+		}
+	})
+
+	t.Run("flow continues after successful operations", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=flow.step1", "value=a",
+			":", "env.set", "key=flow.step2", "value=b",
+			":", "env.set", "key=flow.step3", "value=c",
+			":", "env.assert.equal", "key=flow.step1", "value=a",
+			":", "env.assert.equal", "key=flow.step2", "value=b",
+			":", "env.assert.equal", "key=flow.step3", "value=c")
+		if !ok {
+			t.Error("all flow steps should complete successfully")
+		}
+	})
+}

@@ -985,59 +985,10 @@ func RegisterBlenderCmds(cmds *model.CmdTree) {
 		AddArg("dest", "")
 
 	// TODO: disable blenders now, too many bugs
-	return
-
-	remove := cmds.AddSub("remove", "rm", "delete", "del").
-		RegPowerCmd(BlenderRemoveOnce,
-			"during executing, remove a command in flow (only remove once)").
-		SetQuiet().
-		SetIsBlenderCmd().
-		AddArg("target", "")
-
-	remove.AddSub("all").
-		RegPowerCmd(BlenderRemoveForAll,
-			"during executing, remove a command in flow (remove all)").
-		SetQuiet().
-		SetIsBlenderCmd().
-		AddArg("target", "")
-
-	insert := cmds.AddSub("insert", "ins").
-		RegPowerCmd(BlenderInsertOnce,
-			"during executing, insert a command before another matched one (insert once)").
-		SetQuiet().
-		SetIsBlenderCmd().
-		AddArg("target", "").
-		AddArg("new", "")
-
-	insert.AddSub("all").
-		RegPowerCmd(BlenderInsertForAll,
-			"during executing, insert a command before another matched one (insert for all matched)").
-		SetQuiet().
-		SetIsBlenderCmd().
-		AddArg("target", "").
-		AddArg("new", "")
-
-	after := insert.AddSub("after").
-		RegPowerCmd(BlenderInsertAfterOnce,
-			"during executing, insert a command after another matched one (insert once)").
-		SetQuiet().
-		SetIsBlenderCmd().
-		AddArg("target", "").
-		AddArg("new", "")
-
-	after.AddSub("all").
-		RegPowerCmd(BlenderInsertAfterForAll,
-			"during executing, insert a command after another matched one (insert for all matched)").
-		SetQuiet().
-		SetIsBlenderCmd().
-		AddArg("target", "").
-		AddArg("new", "")
-
-	cmds.AddSub("clear", "clean", "reset").
-		RegPowerCmd(BlenderClear,
-			"clear all flow modification schedulings").
-		SetQuiet().
-		SetIsBlenderCmd()
+	// The following blender commands are temporarily disabled:
+	// - blender.remove, blender.remove.all
+	// - blender.insert, blender.insert.all, blender.insert.after, blender.insert.after.all
+	// - blender.clear
 }
 
 func RegisterCtrlCmds(cmds *model.CmdTree) {
