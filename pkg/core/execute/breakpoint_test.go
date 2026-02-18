@@ -373,6 +373,68 @@ func TestBreakPointQuietCommand(t *testing.T) {
 	}
 }
 
+func TestBreakPointQuietCommandWithStepOver(t *testing.T) {
+	hook := &mockTestingHook{actions: []string{"c"}}
+	cc := newTestCliWithHook(hook)
+	env := newTestEnv()
+
+	tree := model.NewCmdTree(model.CmdTreeStrsForTest())
+	sub := tree.GetOrAddSub("quietcmd")
+	sub.RegEmptyCmd("quiet command").SetQuiet()
+
+	cmd := model.ParsedCmd{
+		Segments: []model.ParsedCmdSeg{
+			{
+				Matched: model.MatchedCmd{
+					Name: "quietcmd",
+					Cmd:  sub,
+				},
+			},
+		},
+	}
+
+	env.SetBool("sys.breakpoint.at-next", true)
+
+	bpa := tryWaitSecAndBreakBefore(cc, env, cmd, nil, false, false, false, func() {})
+
+	if bpa != BPAContinue {
+		t.Errorf("expected BPAContinue after user choice, got %s", bpa)
+	}
+	if len(hook.recordReason) != 1 {
+		t.Errorf("expected breakpoint to trigger for quiet command when stepping over, got %d triggers", len(hook.recordReason))
+	}
+}
+
+func TestBreakPointQuietCommandWithBreakByPrev(t *testing.T) {
+	hook := &mockTestingHook{actions: []string{"c"}}
+	cc := newTestCliWithHook(hook)
+	env := newTestEnv()
+
+	tree := model.NewCmdTree(model.CmdTreeStrsForTest())
+	sub := tree.GetOrAddSub("quietcmd")
+	sub.RegEmptyCmd("quiet command").SetQuiet()
+
+	cmd := model.ParsedCmd{
+		Segments: []model.ParsedCmdSeg{
+			{
+				Matched: model.MatchedCmd{
+					Name: "quietcmd",
+					Cmd:  sub,
+				},
+			},
+		},
+	}
+
+	bpa := tryWaitSecAndBreakBefore(cc, env, cmd, nil, true, false, false, func() {})
+
+	if bpa != BPAContinue {
+		t.Errorf("expected BPAContinue after user choice, got %s", bpa)
+	}
+	if len(hook.recordReason) != 1 {
+		t.Errorf("expected breakpoint to trigger for quiet command with breakByPrev, got %d triggers", len(hook.recordReason))
+	}
+}
+
 func TestMultipleBreakPoints(t *testing.T) {
 	hook := &mockTestingHook{actions: []string{"c", "c", "c"}}
 	cc := newTestCliWithHook(hook)
