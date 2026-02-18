@@ -1,9 +1,11 @@
 package meta_file
 
 import (
-	"os"
-	"path/filepath"
+	"bytes"
+	"strings"
 	"testing"
+
+	"github.com/innerr/ticat/pkg/mods/persist/fs"
 )
 
 func TestMetaFileParse(t *testing.T) {
@@ -69,15 +71,9 @@ func TestMetaFileParse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tmpDir := t.TempDir()
-			tmpFile := filepath.Join(tmpDir, "test.meta")
-			if err := os.WriteFile(tmpFile, []byte(tt.content), 0644); err != nil {
-				t.Fatalf("failed to write temp file: %v", err)
-			}
-
-			metas, err := NewMetaFileEx(tmpFile)
+			metas, err := ParseMetaFile("test.meta", strings.NewReader(tt.content))
 			if err != nil {
-				t.Fatalf("NewMetaFileEx failed: %v", err)
+				t.Fatalf("ParseMetaFile failed: %v", err)
 			}
 
 			if len(metas) != 1 {
@@ -115,15 +111,9 @@ func TestMetaFileMultiLine(t *testing.T) {
     line2 \
     line3`
 
-	tmpDir := t.TempDir()
-	tmpFile := filepath.Join(tmpDir, "test.meta")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
-		t.Fatalf("failed to write temp file: %v", err)
-	}
-
-	metas, err := NewMetaFileEx(tmpFile)
+	metas, err := ParseMetaFile("test.meta", strings.NewReader(content))
 	if err != nil {
-		t.Fatalf("NewMetaFileEx failed: %v", err)
+		t.Fatalf("ParseMetaFile failed: %v", err)
 	}
 
 	meta := metas[0].Meta
@@ -141,15 +131,9 @@ line1
 line2
 [/]`
 
-	tmpDir := t.TempDir()
-	tmpFile := filepath.Join(tmpDir, "test.meta")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
-		t.Fatalf("failed to write temp file: %v", err)
-	}
-
-	metas, err := NewMetaFileEx(tmpFile)
+	metas, err := ParseMetaFile("test.meta", strings.NewReader(content))
 	if err != nil {
-		t.Fatalf("NewMetaFileEx failed: %v", err)
+		t.Fatalf("ParseMetaFile failed: %v", err)
 	}
 
 	meta := metas[0].Meta
@@ -176,15 +160,9 @@ key1 = val1
 key2 = val2
 key3 = val3`
 
-	tmpDir := t.TempDir()
-	tmpFile := filepath.Join(tmpDir, "combined.meta")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
-		t.Fatalf("failed to write temp file: %v", err)
-	}
-
-	metas, err := NewMetaFileEx(tmpFile)
+	metas, err := ParseMetaFile("combined.meta", strings.NewReader(content))
 	if err != nil {
-		t.Fatalf("NewMetaFileEx failed: %v", err)
+		t.Fatalf("ParseMetaFile failed: %v", err)
 	}
 
 	if len(metas) != 3 {
@@ -218,15 +196,9 @@ db.port = 3306
 db.user = root
 other.key = val`
 
-	tmpDir := t.TempDir()
-	tmpFile := filepath.Join(tmpDir, "test.meta")
-	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
-		t.Fatalf("failed to write temp file: %v", err)
-	}
-
-	metas, err := NewMetaFileEx(tmpFile)
+	metas, err := ParseMetaFile("test.meta", strings.NewReader(content))
 	if err != nil {
-		t.Fatalf("NewMetaFileEx failed: %v", err)
+		t.Fatalf("ParseMetaFile failed: %v", err)
 	}
 
 	meta := metas[0].Meta
@@ -241,5 +213,103 @@ func TestMetaFileNotExists(t *testing.T) {
 	_, err := NewMetaFileEx("/nonexistent/path/file.meta")
 	if err == nil {
 		t.Error("expected error for non-existent file")
+	}
+}
+
+func TestMetaFileWithMemFS(t *testing.T) {
+	memFS := fs.NewMemFS()
+
+	content := `key1 = value1
+key2 = value2
+[section1]
+sec_key = sec_val`
+
+	err := memFS.WriteFile("test.meta", []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("WriteFile failed: %v", err)
+	}
+
+	metas, err := NewMetaFileWithFS(memFS, "test.meta")
+	if err != nil {
+		t.Fatalf("NewMetaFileWithFS failed: %v", err)
+	}
+
+	if len(metas) != 1 {
+		t.Fatalf("expected 1 meta file, got %d", len(metas))
+	}
+
+	meta := metas[0].Meta
+	if meta.Get("key1") != "value1" {
+		t.Errorf("expected key1=value1, got %q", meta.Get("key1"))
+	}
+	if meta.Get("key2") != "value2" {
+		t.Errorf("expected key2=value2, got %q", meta.Get("key2"))
+	}
+
+	section := meta.GetSection("section1")
+	if section == nil {
+		t.Fatal("section1 not found")
+	}
+	if section.Get("sec_key") != "sec_val" {
+		t.Errorf("expected sec_key=sec_val, got %q", section.Get("sec_key"))
+	}
+}
+
+func TestMetaFileSaveWithMemFS(t *testing.T) {
+	memFS := fs.NewMemFS()
+
+	meta := CreateMetaFileWithFS(memFS, "test.meta")
+	meta.GetGlobalSection().Set("key1", "value1")
+	meta.GetGlobalSection().Set("key2", "value2")
+	meta.NewOrGetSection("section1").Set("sec_key", "sec_val")
+
+	err := meta.Save()
+	if err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	data, err := memFS.ReadFile("test.meta")
+	if err != nil {
+		t.Fatalf("ReadFile failed: %v", err)
+	}
+
+	metas, err := NewMetaFileWithFS(memFS, "test.meta")
+	if err != nil {
+		t.Fatalf("NewMetaFileWithFS failed: %v", err)
+	}
+
+	loaded := metas[0].Meta
+	if loaded.Get("key1") != "value1" {
+		t.Errorf("expected key1=value1, got %q", loaded.Get("key1"))
+	}
+	if loaded.Get("key2") != "value2" {
+		t.Errorf("expected key2=value2, got %q", loaded.Get("key2"))
+	}
+
+	section := loaded.GetSection("section1")
+	if section == nil {
+		t.Fatal("section1 not found")
+	}
+	if section.Get("sec_key") != "sec_val" {
+		t.Errorf("expected sec_key=sec_val, got %q", section.Get("sec_key"))
+	}
+
+	_ = data
+}
+
+func TestMetaFileWriteTo(t *testing.T) {
+	meta := CreateMetaFile("test.meta")
+	meta.GetGlobalSection().Set("key1", "value1")
+	meta.GetGlobalSection().Set("key2", "value2")
+
+	var buf bytes.Buffer
+	err := meta.WriteTo(&buf)
+	if err != nil {
+		t.Fatalf("WriteTo failed: %v", err)
+	}
+
+	expected := "key1 = value1\nkey2 = value2\n"
+	if buf.String() != expected {
+		t.Errorf("expected %q, got %q", expected, buf.String())
 	}
 }
