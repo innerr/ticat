@@ -233,6 +233,39 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 
 	showTitle()
 
+	if cc.TestingHook != nil {
+		actionMap := make(map[string]string)
+		for k, v := range actions {
+			actionMap[k] = string(v)
+		}
+		choice := cc.TestingHook.OnBreakPoint(reason, choices, actionMap)
+		if lowerInput {
+			choice = strings.ToLower(choice)
+		}
+		if action, ok := actions[choice]; ok {
+			if action == BPAQuit {
+				panic(model.NewAbortByUserErr())
+			} else if action == BPAInteract {
+				cc.Screen.Print("\n")
+				builtin.InteractiveMode(cc, env, "e")
+				if env.GetBool("sys.interact.leaving") {
+					env.GetLayer(model.EnvLayerSession).Delete("sys.interact.leaving")
+					return BPAContinue
+				}
+				cc.Screen.Print("\n")
+				if showStack != nil {
+					showStack()
+				}
+				showTitle()
+			} else if action == BPAContinue {
+				env.GetLayer(model.EnvLayerSession).SetBool("sys.breakpoint.at-next", false)
+			}
+			return action
+		}
+		cc.Screen.Print(display.ColorExplain("(not valid input: "+choice+")\n", env))
+		return BPAContinue
+	}
+
 	buf := bufio.NewReader(os.Stdin)
 	for {
 		lineBytes, err := buf.ReadBytes('\n')

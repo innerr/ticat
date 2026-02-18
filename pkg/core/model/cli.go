@@ -77,6 +77,7 @@ type Cli struct {
 	Blender            *Blender
 	Arg2EnvAutoMapCmds Arg2EnvAutoMapCmds
 	EnvKeysInfo        *EnvKeysInfo
+	TestingHook        TestingHook
 }
 
 func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmdIO *CmdIO,
@@ -99,6 +100,7 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 		NewBlender(),
 		Arg2EnvAutoMapCmds{},
 		envKeysInfo,
+		nil,
 	}
 }
 
@@ -129,6 +131,7 @@ func (self *Cli) CopyForInteract() *Cli {
 		self.Blender,
 		Arg2EnvAutoMapCmds{},
 		self.EnvKeysInfo,
+		self.TestingHook,
 	}
 }
 
@@ -152,6 +155,7 @@ func (self *Cli) CloneForAsyncExecuting(env *Env) *Cli {
 		self.Blender.Clone(),
 		Arg2EnvAutoMapCmds{},
 		self.EnvKeysInfo,
+		self.TestingHook,
 	}
 }
 
@@ -173,6 +177,7 @@ func (self *Cli) CloneForChecking() *Cli {
 		self.Blender.Clone(),
 		Arg2EnvAutoMapCmds{},
 		self.EnvKeysInfo,
+		self.TestingHook,
 	}
 }
 

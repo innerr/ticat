@@ -54,6 +54,11 @@ func DbgExecBash(
 		return currCmdIdx, err
 	}
 
+	if cc.TestingHook != nil && cc.TestingHook.ShouldSkipBash() {
+		cc.Screen.Print("(skipping interactive bash in test mode)\n")
+		return currCmdIdx, nil
+	}
+
 	cmd := exec.Command("bash")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
