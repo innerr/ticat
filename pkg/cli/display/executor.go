@@ -413,19 +413,24 @@ func filterQuietCmds(env *model.Env, flow []model.ParsedCmd, currCmdIdx int) ([]
 	}
 
 	var newCmds []model.ParsedCmd
-	newIdx := currCmdIdx
+	newIdx := 0
 	for i, cmd := range flow {
 		if cmd.IsEmpty() {
 			continue
 		}
 		last := cmd.LastCmd()
 		if last == nil || last.IsQuiet() {
-			if i < currCmdIdx {
-				newIdx -= 1
-			}
 			continue
 		}
+		if i == currCmdIdx {
+			newIdx = len(newCmds)
+		}
 		newCmds = append(newCmds, cmd)
+	}
+	if len(newCmds) == 0 {
+		newIdx = 0
+	} else if newIdx >= len(newCmds) {
+		newIdx = len(newCmds) - 1
 	}
 	return newCmds, newIdx
 }
