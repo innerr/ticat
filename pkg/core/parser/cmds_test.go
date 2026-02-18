@@ -186,3 +186,191 @@ func TestParserGlobalEnvParsedCmdsStructure(t *testing.T) {
 		}
 	})
 }
+
+func TestParserTailModeSequence(t *testing.T) {
+	root := newCmdTree()
+
+	tailModeCmd := root.AddSub("find")
+	tailModeCmd.RegEmptyCmd("find command").SetAllowTailModeCall().SetPriority()
+
+	normalCmd := root.AddSub("cmd1")
+	normalCmd.RegEmptyCmd("normal command")
+
+	seqParser := NewSequenceParser(":", []string{"http", "HTTP"}, []string{"/"})
+	envParser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"}
+	cmdParser := NewCmdParser(envParser, ".", "./", "\t ", "<root>", "^", "/\\")
+
+	parser := NewParser(seqParser, cmdParser)
+
+	t.Run("double colon creates empty command in sequence", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, "cmd1", ":", ":", "find")
+
+		if len(parsed.Cmds) < 2 {
+			t.Fatalf("expected at least 2 cmds, got %d", len(parsed.Cmds))
+		}
+	})
+
+	t.Run("tail mode command with arg before double colon", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, "cmd1", ":", ":", "find")
+
+		if len(parsed.Cmds) < 2 {
+			t.Fatalf("expected at least 2 cmds, got %d", len(parsed.Cmds))
+		}
+	})
+
+	t.Run("single colon followed by command is normal sequence", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, "cmd1", ":", "find")
+
+		if parsed.HasTailMode {
+			t.Error("HasTailMode should be false for single colon sequence")
+		}
+		if len(parsed.Cmds) != 2 {
+			t.Fatalf("expected 2 cmds, got %d", len(parsed.Cmds))
+		}
+	})
+
+	t.Run("global env with tail mode syntax", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, "{key=val}", "cmd1", ":", ":", "find")
+
+		if parsed.GlobalEnv == nil {
+			t.Fatal("GlobalEnv should not be nil")
+		}
+		if parsed.GlobalEnv["key"].Val != "val" {
+			t.Errorf("GlobalEnv should have key=val, got %v", parsed.GlobalEnv["key"])
+		}
+	})
+
+	t.Run("multiple args before double colon", func(t *testing.T) {
+		arg1 := root.AddSub("arg1")
+		arg1.RegEmptyCmd("arg1 command")
+		arg2 := root.AddSub("arg2")
+		arg2.RegEmptyCmd("arg2 command")
+
+		parsed := parser.Parse(root, nil, "arg1", "arg2", ":", ":", "find")
+
+		if len(parsed.Cmds) < 3 {
+			t.Fatalf("expected at least 3 cmds, got %d", len(parsed.Cmds))
+		}
+	})
+}
+
+func TestParserTailModeWithEnv(t *testing.T) {
+	root := newCmdTree()
+
+	tailModeCmd := root.AddSub("find")
+	tailModeCmd.RegEmptyCmd("find command").SetAllowTailModeCall().SetPriority()
+
+	normalCmd := root.AddSub("cmd1")
+	normalCmd.RegEmptyCmd("normal command")
+
+	seqParser := NewSequenceParser(":", []string{"http", "HTTP"}, []string{"/"})
+	envParser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"}
+	cmdParser := NewCmdParser(envParser, ".", "./", "\t ", "<root>", "^", "/\\")
+
+	parser := NewParser(seqParser, cmdParser)
+
+	t.Run("env before double colon should be in global env", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, "{global=val}", "cmd1", ":", ":", "find")
+
+		if parsed.GlobalEnv == nil {
+			t.Fatal("GlobalEnv should not be nil")
+		}
+		if parsed.GlobalEnv["global"].Val != "val" {
+			t.Errorf("GlobalEnv should have global=val, got %v", parsed.GlobalEnv["global"])
+		}
+	})
+
+	t.Run("env with cmd-specific args and tail mode", func(t *testing.T) {
+		cmdWithArgs := root.AddSub("cmdargs")
+		cmdWithArgs.RegEmptyCmd("command with args").AddArg("message", "", "m")
+
+		parsed := parser.Parse(root, nil, "{key=val}", "cmdargs", "hello", ":", ":", "find")
+
+		if parsed.GlobalEnv == nil {
+			t.Fatal("GlobalEnv should not be nil")
+		}
+		if parsed.GlobalEnv["key"].Val != "val" {
+			t.Errorf("GlobalEnv should have key=val, got %v", parsed.GlobalEnv["key"])
+		}
+	})
+}
+
+func TestParserTailModeShortcuts(t *testing.T) {
+	root := newCmdTree()
+
+	shortcuts := []struct {
+		name string
+	}{
+		{"/"},
+		{"//"},
+		{"///"},
+		{"~"},
+		{"~~"},
+		{"~~~"},
+		{"="},
+		{"=="},
+		{"-"},
+		{"--"},
+		{"+"},
+		{"++"},
+	}
+
+	for _, sc := range shortcuts {
+		cmd := root.AddSub(sc.name)
+		cmd.RegEmptyCmd("shortcut command").SetAllowTailModeCall().SetPriority()
+	}
+
+	seqParser := NewSequenceParser(":", []string{"http", "HTTP"}, []string{"/"})
+	envParser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"}
+	cmdParser := NewCmdParser(envParser, ".", "./", "\t ", "<root>", "^", "/\\")
+
+	parser := NewParser(seqParser, cmdParser)
+
+	for _, sc := range shortcuts {
+		t.Run("shortcut "+sc.name+" should be parseable in tail mode", func(t *testing.T) {
+			argCmd := root.AddSub("arg_for_" + sc.name)
+			argCmd.RegEmptyCmd("arg command")
+
+			parsed := parser.Parse(root, nil, "arg_for_"+sc.name, ":", ":", sc.name)
+
+			if len(parsed.Cmds) < 2 {
+				t.Fatalf("expected at least 2 cmds for %s, got %d", sc.name, len(parsed.Cmds))
+			}
+		})
+	}
+}
+
+func TestParserTailModeWithMultipleColons(t *testing.T) {
+	root := newCmdTree()
+
+	cmd1 := root.AddSub("cmd1")
+	cmd1.RegEmptyCmd("command 1")
+
+	cmd2 := root.AddSub("cmd2")
+	cmd2.RegEmptyCmd("command 2")
+
+	tailModeCmd := root.AddSub("find")
+	tailModeCmd.RegEmptyCmd("find command").SetAllowTailModeCall().SetPriority()
+
+	seqParser := NewSequenceParser(":", []string{"http", "HTTP"}, []string{"/"})
+	envParser := &EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"}
+	cmdParser := NewCmdParser(envParser, ".", "./", "\t ", "<root>", "^", "/\\")
+
+	parser := NewParser(seqParser, cmdParser)
+
+	t.Run("triple colons should create two empty commands", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, "cmd1", ":", ":", ":", "find")
+
+		if len(parsed.Cmds) < 3 {
+			t.Fatalf("expected at least 3 cmds, got %d", len(parsed.Cmds))
+		}
+	})
+
+	t.Run("alternating commands and colons", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, "cmd1", ":", "cmd2", ":", ":", "find")
+
+		if len(parsed.Cmds) < 3 {
+			t.Fatalf("expected at least 3 cmds, got %d", len(parsed.Cmds))
+		}
+	})
+}
