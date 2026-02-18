@@ -27,7 +27,7 @@ func ListFlows(
 	screen := display.NewCacheScreen()
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 
-	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+	_ = filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if path == root {
 			return nil
 		}
@@ -59,20 +59,20 @@ func ListFlows(
 			return nil
 		}
 
-		screen.Print(fmt.Sprintf(display.ColorCmd("[%s]\n", env), cmdPath))
+		_ = screen.Print(fmt.Sprintf(display.ColorCmd("[%s]\n", env), cmdPath))
 		if len(help) != 0 {
-			screen.Print("     " + display.ColorHelp("'"+help+"'", env) + "\n")
+			_ = screen.Print("     " + display.ColorHelp("'"+help+"'", env) + "\n")
 		}
 		if len(abbrsStr) != 0 {
-			screen.Print("    " + display.ColorProp("- abbrs:", env) + "\n")
-			screen.Print(fmt.Sprintf("        %s\n", abbrsStr))
+			_ = screen.Print("    " + display.ColorProp("- abbrs:", env) + "\n")
+			_ = screen.Print(fmt.Sprintf("        %s\n", abbrsStr))
 		}
-		screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
+		_ = screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
 		for _, flowStr := range flowStrs {
-			screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
+			_ = screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
 		}
-		screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
-		screen.Print(fmt.Sprintf("        %s\n", path))
+		_ = screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
+		_ = screen.Print(fmt.Sprintf("        %s\n", path))
 		return nil
 	})
 
@@ -129,7 +129,7 @@ func RenameFlow(
 	if argDestCmdPath != destCmdPath {
 		realDestCmdStr = display.ColorExplain("("+destCmdPath+")", env)
 	}
-	cc.Screen.Print(display.ColorCmd("["+argSrcCmdPath+"]", env) + realSrcCmdStr +
+	_ = cc.Screen.Print(display.ColorCmd("["+argSrcCmdPath+"]", env) + realSrcCmdStr +
 		display.ColorSymbol(" -> ", env) + display.ColorCmd("["+argDestCmdPath+"]", env) + realDestCmdStr + "\n")
 	return currCmdIdx, nil
 }
@@ -159,9 +159,9 @@ func RemoveFlow(
 	}
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+argCmdPath+"'"+realCmdStr+"  is removed")
-	cc.Screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
+	_ = cc.Screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
 		display.ColorDisabled(" (removed)", env)+"\n", cmdPath))
-	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
+	_ = cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
 	return currCmdIdx, nil
 }
 
@@ -181,7 +181,7 @@ func RemoveAllFlows(
 	screen := display.NewCacheScreen()
 
 	var walkErr error
-	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+	_ = filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if path != root && strings.HasSuffix(path, flowExt) {
 			err = os.Remove(path)
 			if err != nil {
@@ -190,9 +190,9 @@ func RemoveAllFlows(
 				return err
 			}
 			cmdPath, _ := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
-			screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
+			_ = screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
 				display.ColorDisabled(" (removed)", env)+"\n", cmdPath))
-			screen.Print(fmt.Sprintf("    %s\n", path))
+			_ = screen.Print(fmt.Sprintf("    %s\n", path))
 		}
 		return nil
 	})
@@ -245,11 +245,11 @@ func SaveFlow(
 				return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
 					fmt.Sprintf("path '%s' exists", filePath))
 			} else {
-				cc.Screen.Print(fmt.Sprintf(display.ColorTip("[confirm]", env)+
+				_ = cc.Screen.Print(fmt.Sprintf(display.ColorTip("[confirm]", env)+
 					" flow file of '%s'"+realCmdStr+" exists, "+
 					"type "+display.ColorWarn("'y'", env)+" and press enter to "+
 					display.ColorWarn("overwrite:", env)+"\n", argCmdPath))
-				utils.UserConfirm()
+				_, _ = utils.UserConfirm()
 			}
 		}
 	} else if cmdExists {
@@ -270,14 +270,14 @@ func SaveFlow(
 	// TODO: wrap line if too long
 	flowStr, _ := model.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 
-	screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+"\n", cmdPath))
-	screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
-	screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
-	screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
-	screen.Print(fmt.Sprintf("        %s\n", filePath))
+	_ = screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+"\n", cmdPath))
+	_ = screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
+	_ = screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
+	_ = screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
+	_ = screen.Print(fmt.Sprintf("        %s\n", filePath))
 
 	dirPath := filepath.Dir(filePath)
-	os.MkdirAll(dirPath, os.ModePerm)
+	_ = os.MkdirAll(dirPath, os.ModePerm)
 
 	if err := flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLvl, autoArgs, packSub); err != nil {
 		return currCmdIdx, err
@@ -317,17 +317,17 @@ func SetFlowHelpStr(
 	display.PrintTipTitle(cc.Screen, env,
 		"help string of flow '"+argCmdPath+"'"+realCmdStr+" is saved")
 
-	cc.Screen.Print(display.ColorCmd(fmt.Sprintf("[%s]", cmdPath), env) + "\n")
-	cc.Screen.Print("     " + display.ColorHelp("'"+help+"'", env) + "\n")
-	cc.Screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
+	_ = cc.Screen.Print(display.ColorCmd(fmt.Sprintf("[%s]", cmdPath), env) + "\n")
+	_ = cc.Screen.Print("     " + display.ColorHelp("'"+help+"'", env) + "\n")
+	_ = cc.Screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
 	for _, flowStr := range flowStrs {
-		cc.Screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
+		_ = cc.Screen.Print("        " + display.ColorFlow(flowStr, env) + "\n")
 	}
-	cc.Screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
-	cc.Screen.Print(fmt.Sprintf("        %s\n", filePath))
+	_ = cc.Screen.Print("    " + display.ColorProp("- executable:", env) + "\n")
+	_ = cc.Screen.Print(fmt.Sprintf("        %s\n", filePath))
 	if len(oldHelp) != 0 {
-		cc.Screen.Print("    " + display.ColorProp("- old-help:", env) + "\n")
-		cc.Screen.Print("       " + display.ColorHelp("'"+help+"'", env) + "\n")
+		_ = cc.Screen.Print("    " + display.ColorProp("- old-help:", env) + "\n")
+		_ = cc.Screen.Print("       " + display.ColorHelp("'"+help+"'", env) + "\n")
 	}
 	return currCmdIdx, nil
 }
@@ -343,7 +343,7 @@ func LoadFlows(
 		return currCmdIdx, err
 	}
 	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
-	loadFlowsFromDir(flow, currCmdIdx, root, cc, env, root)
+	_ = loadFlowsFromDir(flow, currCmdIdx, root, cc, env, root)
 	return currCmdIdx, nil
 }
 
@@ -358,7 +358,7 @@ func LoadFlowsFromDir(
 	if err != nil {
 		return currCmdIdx, err
 	}
-	loadFlowsFromDir(flow, currCmdIdx, path, cc, env, path)
+	_ = loadFlowsFromDir(flow, currCmdIdx, path, cc, env, path)
 	display.PrintTipTitle(cc.Screen, env,
 		"flows from '"+path+"' is loaded")
 	return currCmdIdx, nil
@@ -392,7 +392,7 @@ func loadFlowsFromDir(
 	envPathSep := env.GetRaw("strs.env-path-sep")
 	panicRecover := env.GetBool("sys.panic.recover")
 
-	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+	_ = filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -514,9 +514,9 @@ func checkAndConfirmIfFlowHasParseError(screen model.Screen, flow *model.ParsedC
 		if cmd.ParseResult.Error == nil {
 			continue
 		}
-		screen.Print(display.ColorTip("[confirm]", env) + " flow has parse error, " +
+		_ = screen.Print(display.ColorTip("[confirm]", env) + " flow has parse error, " +
 			"type " + display.ColorWarn("'y'", env) + " and press enter to force save:\n")
-		utils.UserConfirm()
+		_, _ = utils.UserConfirm()
 		break
 	}
 	return true

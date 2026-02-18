@@ -28,7 +28,7 @@ func DbgEcho(
 	str := rendered[0]
 	str = display.ColorStrByName(str, color, env)
 
-	cc.Screen.Print(fmt.Sprintf("%v\n", str))
+	_ = cc.Screen.Print(fmt.Sprintf("%v\n", str))
 	return currCmdIdx, nil
 }
 
@@ -39,7 +39,7 @@ func DbgEchoLn(
 	flow *model.ParsedCmds,
 	currCmdIdx int) (int, error) {
 
-	cc.Screen.Print("\n")
+	_ = cc.Screen.Print("\n")
 	return currCmdIdx, nil
 }
 
@@ -55,7 +55,7 @@ func DbgExecBash(
 	}
 
 	if cc.TestingHook != nil && cc.TestingHook.ShouldSkipBash() {
-		cc.Screen.Print("(skipping interactive bash in test mode)\n")
+		_ = cc.Screen.Print("(skipping interactive bash in test mode)\n")
 		return currCmdIdx, nil
 	}
 
@@ -175,32 +175,32 @@ func DbgBreakStatus(
 
 	bps := cc.BreakPoints
 
-	cc.Screen.Print(display.ColorHelp("settings:", env) + "\n")
+	_ = cc.Screen.Print(display.ColorHelp("settings:", env) + "\n")
 	if bps.IsEmpty() {
-		cc.Screen.Print("    (none)\n")
+		_ = cc.Screen.Print("    (none)\n")
 	}
 
 	if bps.AtEnd {
-		cc.Screen.Print(fmt.Sprintf(display.ColorTip("    break at end:\n", env)+"        %v\n", bps.AtEnd))
+		_ = cc.Screen.Print(fmt.Sprintf(display.ColorTip("    break at end:\n", env)+"        %v\n", bps.AtEnd))
 	}
 
 	if len(bps.Befores) != 0 {
-		cc.Screen.Print(display.ColorTip("    break before one of the commands:\n", env))
+		_ = cc.Screen.Print(display.ColorTip("    break before one of the commands:\n", env))
 		for k := range bps.Befores {
 			k = display.ColorCmd("["+k+"]", env)
-			cc.Screen.Print(fmt.Sprintf("        %s\n", k))
+			_ = cc.Screen.Print(fmt.Sprintf("        %s\n", k))
 		}
 	}
 
 	if len(bps.Afters) != 0 {
-		cc.Screen.Print(display.ColorTip("    break when one of the commands finishs:\n", env))
+		_ = cc.Screen.Print(display.ColorTip("    break when one of the commands finishs:\n", env))
 		for k := range bps.Afters {
 			k = display.ColorCmd("["+k+"]", env)
-			cc.Screen.Print(fmt.Sprintf("        %s\n", k))
+			_ = cc.Screen.Print(fmt.Sprintf("        %s\n", k))
 		}
 	}
 
-	cc.Screen.Print(display.ColorHelp("status:", env) + "\n")
+	_ = cc.Screen.Print(display.ColorHelp("status:", env) + "\n")
 	keys := []string{
 		"sys.breakpoint.here.now",
 		"sys.breakpoint.status.step-in",
@@ -209,7 +209,7 @@ func DbgBreakStatus(
 		"sys.interact.inside",
 	}
 	for _, k := range keys {
-		cc.Screen.Print(fmt.Sprintf("    %s %s %v\n",
+		_ = cc.Screen.Print(fmt.Sprintf("    %s %s %v\n",
 			display.ColorKey(k, env), display.ColorSymbol("=", env), env.GetBool(k)))
 	}
 
@@ -243,7 +243,7 @@ func DbgInteract(
 		return currCmdIdx, err
 	}
 
-	InteractiveMode(cc, env, "e")
+	_ = InteractiveMode(cc, env, "e")
 	return currCmdIdx, nil
 }
 
@@ -280,12 +280,12 @@ func DbgArgs(
 	cmd := flow.Cmds[currCmdIdx]
 	tailMode := flow.TailModeCall && cmd.TailMode
 
-	cc.Screen.Print(fmt.Sprintf("=== DbgArgs Output ===\n"))
-	cc.Screen.Print(fmt.Sprintf("TailMode: %v\n", tailMode))
-	cc.Screen.Print(fmt.Sprintf("TailModeCall: %v\n", flow.TailModeCall))
-	cc.Screen.Print(fmt.Sprintf("HasTailMode: %v\n", flow.HasTailMode))
-	cc.Screen.Print(fmt.Sprintf("Cmd.TailMode: %v\n", cmd.TailMode))
-	cc.Screen.Print(fmt.Sprintf("--- Arguments (argv) ---\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("=== DbgArgs Output ===\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("TailMode: %v\n", tailMode))
+	_ = cc.Screen.Print(fmt.Sprintf("TailModeCall: %v\n", flow.TailModeCall))
+	_ = cc.Screen.Print(fmt.Sprintf("HasTailMode: %v\n", flow.HasTailMode))
+	_ = cc.Screen.Print(fmt.Sprintf("Cmd.TailMode: %v\n", cmd.TailMode))
+	_ = cc.Screen.Print(fmt.Sprintf("--- Arguments (argv) ---\n"))
 
 	argNames := []string{
 		"arg1", "arg2", "arg3",
@@ -296,22 +296,22 @@ func DbgArgs(
 	for _, name := range argNames {
 		val, ok := argv[name]
 		if !ok {
-			cc.Screen.Print(fmt.Sprintf("  %s: <not set>\n", name))
+			_ = cc.Screen.Print(fmt.Sprintf("  %s: <not set>\n", name))
 			continue
 		}
-		cc.Screen.Print(fmt.Sprintf("  %s: raw=[%s] provided=%v\n", name, val.Raw, val.Provided))
+		_ = cc.Screen.Print(fmt.Sprintf("  %s: raw=[%s] provided=%v\n", name, val.Raw, val.Provided))
 	}
 
-	cc.Screen.Print(fmt.Sprintf("--- Raw Input ---\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("--- Raw Input ---\n"))
 	for i, inp := range cmd.ParseResult.Input {
-		cc.Screen.Print(fmt.Sprintf("  [%d]: [%s]\n", i, inp))
+		_ = cc.Screen.Print(fmt.Sprintf("  [%d]: [%s]\n", i, inp))
 	}
 
-	cc.Screen.Print(fmt.Sprintf("--- Parsed Env ---\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("--- Parsed Env ---\n"))
 	for _, seg := range cmd.Segments {
 		if seg.Env != nil {
 			for k, v := range seg.Env {
-				cc.Screen.Print(fmt.Sprintf("  env.%s: [%s] isArg=%v\n", k, v.Val, v.IsArg))
+				_ = cc.Screen.Print(fmt.Sprintf("  env.%s: [%s] isArg=%v\n", k, v.Val, v.IsArg))
 			}
 		}
 	}
@@ -329,11 +329,11 @@ func DbgArgsTail(
 	cmd := flow.Cmds[currCmdIdx]
 	tailMode := flow.TailModeCall && cmd.TailMode
 
-	cc.Screen.Print(fmt.Sprintf("=== DbgArgsTail Output ===\n"))
-	cc.Screen.Print(fmt.Sprintf("TailMode: %v\n", tailMode))
-	cc.Screen.Print(fmt.Sprintf("TailModeCall: %v\n", flow.TailModeCall))
-	cc.Screen.Print(fmt.Sprintf("Cmd.TailMode: %v\n", cmd.TailMode))
-	cc.Screen.Print(fmt.Sprintf("--- Arguments ---\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("=== DbgArgsTail Output ===\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("TailMode: %v\n", tailMode))
+	_ = cc.Screen.Print(fmt.Sprintf("TailModeCall: %v\n", flow.TailModeCall))
+	_ = cc.Screen.Print(fmt.Sprintf("Cmd.TailMode: %v\n", cmd.TailMode))
+	_ = cc.Screen.Print(fmt.Sprintf("--- Arguments ---\n"))
 
 	argNames := []string{
 		"arg1", "arg2", "arg3",
@@ -344,11 +344,11 @@ func DbgArgsTail(
 		if !ok {
 			continue
 		}
-		cc.Screen.Print(fmt.Sprintf("  %s: [%s] (provided=%v)\n", name, val.Raw, val.Provided))
+		_ = cc.Screen.Print(fmt.Sprintf("  %s: [%s] (provided=%v)\n", name, val.Raw, val.Provided))
 	}
 
-	cc.Screen.Print(fmt.Sprintf("--- Raw Input ---\n"))
-	cc.Screen.Print(fmt.Sprintf("  Input: %v\n", cmd.ParseResult.Input))
+	_ = cc.Screen.Print(fmt.Sprintf("--- Raw Input ---\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("  Input: %v\n", cmd.ParseResult.Input))
 
 	return currCmdIdx, nil
 }
@@ -364,8 +364,8 @@ func DbgArgsEnv(
 		return currCmdIdx, err
 	}
 
-	cc.Screen.Print(fmt.Sprintf("=== DbgArgsEnv Output ===\n"))
-	cc.Screen.Print(fmt.Sprintf("--- Arguments ---\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("=== DbgArgsEnv Output ===\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("--- Arguments ---\n"))
 
 	argNames := []string{
 		"db", "host", "port", "user",
@@ -376,14 +376,14 @@ func DbgArgsEnv(
 		if !ok {
 			continue
 		}
-		cc.Screen.Print(fmt.Sprintf("  %s: [%s] (provided=%v)\n", name, val.Raw, val.Provided))
+		_ = cc.Screen.Print(fmt.Sprintf("  %s: [%s] (provided=%v)\n", name, val.Raw, val.Provided))
 	}
 
-	cc.Screen.Print(fmt.Sprintf("--- Env Values (if auto-mapped) ---\n"))
+	_ = cc.Screen.Print(fmt.Sprintf("--- Env Values (if auto-mapped) ---\n"))
 	for _, name := range argNames {
 		envKey := "dbg.args.env." + name
 		if env.Has(envKey) {
-			cc.Screen.Print(fmt.Sprintf("  %s: [%s]\n", envKey, env.GetRaw(envKey)))
+			_ = cc.Screen.Print(fmt.Sprintf("  %s: [%s]\n", envKey, env.GetRaw(envKey)))
 		}
 	}
 

@@ -110,10 +110,10 @@ func printFatalRiskMark(
 	errs := missedOsCmds + len(fatals.Result)
 	if errs > 0 {
 		errStr := adds(errs, "fatal")
-		cc.Screen.Print(display.ColorError(fmt.Sprintf("(%s:%d)", errStr, errs), env) + "\n")
+		_ = cc.Screen.Print(display.ColorError(fmt.Sprintf("(%s:%d)", errStr, errs), env) + "\n")
 	} else if len(risks.Result) > 0 {
 		riskStr := adds(errs, "risk")
-		cc.Screen.Print(display.ColorWarn(fmt.Sprintf("(%s:%d)", riskStr, len(risks.Result)), env) + "\n")
+		_ = cc.Screen.Print(display.ColorWarn(fmt.Sprintf("(%s:%d)", riskStr, len(risks.Result)), env) + "\n")
 	}
 }
 
@@ -190,7 +190,7 @@ func dumpFlowAll(
 	model.CollectDepends(cc, env, flow, currCmdIdx+1, deps, false, EnvOpCmds())
 
 	if len(deps) != 0 {
-		cc.Screen.Print("\n")
+		_ = cc.Screen.Print("\n")
 		display.DumpDepends(cc.Screen, env, deps)
 	}
 
@@ -199,7 +199,7 @@ func dumpFlowAll(
 	model.CheckEnvOps(cc, flow, env, checker, false, EnvOpCmds(), &result)
 
 	if len(result) != 0 {
-		cc.Screen.Print("\n")
+		_ = cc.Screen.Print("\n")
 		display.DumpEnvOpsCheckResult(cc.Screen, flow.Cmds[currCmdIdx+1:], env, result, cc.Cmds.Strs.PathSep)
 	}
 

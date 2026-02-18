@@ -17,21 +17,21 @@ func Version(
 	flow *model.ParsedCmds,
 	currCmdIdx int) (int, error) {
 
-	cc.Screen.Print(env.GetRaw("sys.version") + " " + env.GetRaw("sys.dev.name") + "\n")
+	_ = cc.Screen.Print(env.GetRaw("sys.version") + " " + env.GetRaw("sys.dev.name") + "\n")
 
 	sep := cc.Cmds.Strs.ListSep
 
 	init := env.GetRaw("sys.hub.init-repo")
 	if len(init) != 0 {
 		for _, it := range strings.Split(init, sep) {
-			cc.Screen.Print("- init mod repo: " + it + "\n")
+			_ = cc.Screen.Print("- init mod repo: " + it + "\n")
 		}
 	}
 
 	integrated := env.GetRaw("sys.mods.integrated")
 	if len(integrated) != 0 {
 		for _, it := range strings.Split(integrated, sep) {
-			cc.Screen.Print("- integrated: " + it + "\n")
+			_ = cc.Screen.Print("- integrated: " + it + "\n")
 		}
 	}
 
@@ -57,15 +57,15 @@ func Sleep(
 
 	for i := 0; i < secs; i++ {
 		if i%60 == 0 && i != 0 && i+1 != secs {
-			cc.Screen.Print("\n")
+			_ = cc.Screen.Print("\n")
 		}
 		if i%60 == 0 && i+1 != secs {
-			cc.Screen.Print(".zzZZ ")
+			_ = cc.Screen.Print(".zzZZ ")
 		}
-		cc.Screen.Print(".")
+		_ = cc.Screen.Print(".")
 		time.Sleep(time.Second)
 	}
-	cc.Screen.Print("\n")
+	_ = cc.Screen.Print("\n")
 	return currCmdIdx, nil
 }
 
@@ -86,7 +86,7 @@ func MarkTime(
 	env = env.GetLayer(model.EnvLayerSession)
 	val := fmt.Sprintf("%d", int(time.Now().Unix()))
 	env.Set(key, val)
-	cc.Screen.Print(display.ColorKey(key, env) + display.ColorSymbol(" = ", env) + val + "\n")
+	_ = cc.Screen.Print(display.ColorKey(key, env) + display.ColorSymbol(" = ", env) + val + "\n")
 	return currCmdIdx, nil
 }
 
@@ -107,7 +107,7 @@ func TimerBegin(
 	env = env.GetLayer(model.EnvLayerSession)
 	val := fmt.Sprintf("%d", int(time.Now().Unix()))
 	env.Set(begin, val)
-	cc.Screen.Print(display.ColorKey(begin, env) + display.ColorSymbol(" = ", env) + val + "\n")
+	_ = cc.Screen.Print(display.ColorKey(begin, env) + display.ColorSymbol(" = ", env) + val + "\n")
 	return currCmdIdx, nil
 }
 
@@ -136,7 +136,7 @@ func TimerElapsed(
 	env = env.GetLayer(model.EnvLayerSession)
 	elapsed := now - begin
 	env.SetInt(elapsedKey, elapsed)
-	cc.Screen.Print(display.ColorKey(elapsedKey, env) + display.ColorSymbol(" = ", env) +
+	_ = cc.Screen.Print(display.ColorKey(elapsedKey, env) + display.ColorSymbol(" = ", env) +
 		fmt.Sprintf("%d\n", elapsed))
 	return currCmdIdx, nil
 }
@@ -197,7 +197,7 @@ func Dummy(
 	flow *model.ParsedCmds,
 	currCmdIdx int) (int, error) {
 
-	cc.Screen.Print("dummy command here\n")
+	_ = cc.Screen.Print("dummy command here\n")
 	return currCmdIdx, nil
 }
 
@@ -307,7 +307,7 @@ func opCheckEnvLoadFromSnapshot(checker *model.EnvOpsChecker, argv model.ArgVals
 	delMark := env.GetRaw("strs.env-del-all-mark")
 
 	loaded := model.NewEnv()
-	model.LoadEnvFromFile(loaded, path, sep, delMark)
+	_ = model.LoadEnvFromFile(loaded, path, sep, delMark)
 
 	env = env.GetLayer(model.EnvLayerSession)
 	for key := range loaded.FlattenAll() {

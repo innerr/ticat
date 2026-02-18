@@ -109,7 +109,7 @@ func dumpCmds(
 		dumpArgs.SetMaxDepth(argv.GetInt("depth"))
 	}
 
-	display.DumpCmdsWithTips(cmds, cc.Screen, env, dumpArgs, cmdPath, lessDetailCmd, moreDetailCmd)
+	_, _ = display.DumpCmdsWithTips(cmds, cc.Screen, env, dumpArgs, cmdPath, lessDetailCmd, moreDetailCmd)
 	return clearFlow(flow)
 }
 
@@ -148,6 +148,6 @@ func dumpTailCmdSub(
 		cmds = cmds.GetSubByPath(cmdPath, true)
 	}
 
-	display.DumpCmdsWithTips(cmds, cc.Screen, env, dumpArgs, cmdPath, lessDetailCmd, moreDetailCmd)
+	_, _ = display.DumpCmdsWithTips(cmds, cc.Screen, env, dumpArgs, cmdPath, lessDetailCmd, moreDetailCmd)
 	return clearFlow(flow)
 }

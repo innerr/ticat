@@ -596,7 +596,7 @@ func asyncExecute(
 	}(dur, argv, cc, env, flow, currCmdIdx)
 
 	tid = <-tidChan
-	screen.Print(display.ColorExplain("(current command scheduled to thread "+tid+")\n", env))
+	_ = screen.Print(display.ColorExplain("(current command scheduled to thread "+tid+")\n", env))
 	return tid, true
 }
 

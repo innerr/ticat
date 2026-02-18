@@ -94,7 +94,7 @@ func globalFindCmds(
 	if len(findStrs) != 0 {
 		dumpArgs.AddFindStrs(findStrs...)
 	}
-	display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", lessDetailCmd, moreDetailCmd)
+	_, _ = display.DumpCmdsWithTips(cc.Cmds, cc.Screen, env, dumpArgs, "", lessDetailCmd, moreDetailCmd)
 	return clearFlow(flow)
 }
 

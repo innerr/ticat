@@ -26,7 +26,7 @@ func ApiCmdType(
 	node := cmd.LastCmdNode()
 	if node != nil {
 		if node.Cmd() != nil {
-			fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().Type())
+			_, _ = fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().Type())
 		}
 	}
 	return currCmdIdx, nil
@@ -50,7 +50,7 @@ func ApiCmdMeta(
 	node := cmd.LastCmdNode()
 	if node != nil {
 		if node.Cmd() != nil {
-			fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().MetaFile())
+			_, _ = fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().MetaFile())
 		}
 	}
 	return currCmdIdx, nil
@@ -77,7 +77,7 @@ func ApiCmdPath(
 		if cic != nil {
 			line := cic.CmdLine()
 			if len(line) != 0 && cic.Type() != model.CmdTypeEmptyDir {
-				fmt.Fprintf(os.Stdout, "%s\n", line)
+				_, _ = fmt.Fprintf(os.Stdout, "%s\n", line)
 			}
 		}
 	}
@@ -104,10 +104,10 @@ func ApiCmdDir(
 		cic := node.Cmd()
 		if cic != nil {
 			if cic.Type() == model.CmdTypeEmptyDir {
-				fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().CmdLine())
+				_, _ = fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().CmdLine())
 			} else {
 				dir := filepath.Dir(node.Cmd().MetaFile())
-				fmt.Fprintf(os.Stdout, "%s\n", dir)
+				_, _ = fmt.Fprintf(os.Stdout, "%s\n", dir)
 			}
 		}
 	}
@@ -130,7 +130,7 @@ func ApiCmdListAll(
 
 func cmdDumpName(cmd *model.CmdTree, screen model.Screen) {
 	if !cmd.IsEmpty() {
-		screen.Print(cmd.DisplayPath() + "\n")
+		_ = screen.Print(cmd.DisplayPath() + "\n")
 	}
 	for _, name := range cmd.SubNames() {
 		cmdDumpName(cmd.GetSub(name), screen)

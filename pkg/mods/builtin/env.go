@@ -168,7 +168,7 @@ func LoadLocalEnv(
 	delMark := cc.Cmds.Strs.EnvValDelAllMark
 
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
-	model.LoadEnvFromFile(env.GetLayer(model.EnvLayerPersisted), path, kvSep, delMark)
+	_ = model.LoadEnvFromFile(env.GetLayer(model.EnvLayerPersisted), path, kvSep, delMark)
 	env.GetLayer(model.EnvLayerPersisted).DeleteInSelfLayer("sys.stack-depth")
 	env.GetLayer(model.EnvLayerPersisted).Deduplicate()
 	env.GetLayer(model.EnvLayerSession).Deduplicate()
@@ -192,7 +192,7 @@ func SaveEnvToLocal(
 	}
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
-	model.SaveEnvToFile(env, path, kvSep, true)
+	_ = model.SaveEnvToFile(env, path, kvSep, true)
 	display.PrintTipTitle(cc.Screen, env,
 		"changes of env are saved, could be listed by:",
 		"",
@@ -233,7 +233,7 @@ func RemoveEnvValHavePrefixNotSave(
 		}
 		keyStr := display.ColorKey("'"+key+"'", env)
 		env.DeleteEx(key, model.EnvLayerDefault)
-		cc.Screen.Print(keyStr + " deleted\n")
+		_ = cc.Screen.Print(keyStr + " deleted\n")
 	}
 	return currCmdIdx, nil
 }
@@ -279,16 +279,16 @@ func removeEnvVal(
 		if env.Has(key) {
 			env.DeleteEx(key, model.EnvLayerDefault)
 			deleted += 1
-			cc.Screen.Print(keyStr + " deleted\n")
+			_ = cc.Screen.Print(keyStr + " deleted\n")
 		} else {
-			cc.Screen.Print(keyStr + " not exist, skipped deleting\n")
+			_ = cc.Screen.Print(keyStr + " not exist, skipped deleting\n")
 		}
 	}
 
 	if deleted != 0 && saveToLocal {
 		kvSep := env.GetRaw("strs.env-kv-sep")
 		path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
-		model.SaveEnvToFile(env.GetLayer(model.EnvLayerSession), path, kvSep, true)
+		_ = model.SaveEnvToFile(env.GetLayer(model.EnvLayerSession), path, kvSep, true)
 		display.PrintTipTitle(cc.Screen, env, "changes of env are saved")
 	}
 	return currCmdIdx, nil
@@ -379,7 +379,7 @@ func EnvAssertEqual(
 	if val != envVal {
 		return currCmdIdx, fmt.Errorf("assert env '%s' = '%s' failed, is '%s'", key, val, envVal)
 	}
-	cc.Screen.Print(display.KeyValueDisplayStr(key, val, env) + "\n")
+	_ = cc.Screen.Print(display.KeyValueDisplayStr(key, val, env) + "\n")
 	return currCmdIdx, nil
 }
 
@@ -429,7 +429,7 @@ func MapEnvKeyValueToAnotherKey(
 	value := env.GetRaw(src)
 	env.Set(dest, value)
 
-	cc.Screen.Print(display.KeyValueDisplayStr(dest, value, env) + "\n")
+	_ = cc.Screen.Print(display.KeyValueDisplayStr(dest, value, env) + "\n")
 	return currCmdIdx, nil
 }
 
@@ -456,7 +456,7 @@ func SetEnvKeyValue(
 	env = env.GetLayer(model.EnvLayerSession)
 	env.Set(key, value)
 
-	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
+	_ = cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
 	return currCmdIdx, nil
 }
 
@@ -483,12 +483,12 @@ func UpdateEnvKeyValue(
 	env = env.GetLayer(model.EnvLayerSession)
 	_, ok := env.GetEx(key)
 	if !ok {
-		cc.Screen.Print(display.ColorError(fmt.Sprintf("env key '%s' not exists\n", key), env))
+		_ = cc.Screen.Print(display.ColorError(fmt.Sprintf("env key '%s' not exists\n", key), env))
 		return currCmdIdx, fmt.Errorf("env key '%s' not exists", key)
 	}
 	env.Set(key, value)
 
-	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
+	_ = cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
 	return currCmdIdx, nil
 }
 
@@ -515,12 +515,12 @@ func AddEnvKeyValue(
 	env = env.GetLayer(model.EnvLayerSession)
 	_, ok := env.GetEx(key)
 	if ok {
-		cc.Screen.Print(display.ColorError(fmt.Sprintf("env key '%s' already exists\n", key), env))
+		_ = cc.Screen.Print(display.ColorError(fmt.Sprintf("env key '%s' already exists\n", key), env))
 		return currCmdIdx, fmt.Errorf("env key '%s' already exists", key)
 	}
 	env.Set(key, value)
 
-	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
+	_ = cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
 	return currCmdIdx, nil
 }
 
@@ -535,7 +535,7 @@ func DisplayEnvVal(
 	if err != nil {
 		return currCmdIdx, err
 	}
-	cc.Screen.Print(env.GetRaw(key) + "\n")
+	_ = cc.Screen.Print(env.GetRaw(key) + "\n")
 	return currCmdIdx, nil
 }
 

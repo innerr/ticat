@@ -145,7 +145,7 @@ func tryBreakAtEnd(cc *model.Cli, env *model.Env) {
 	env.GetLayer(model.EnvLayerSession).Delete(breakHereKey)
 
 	showEOF := func() {
-		cc.Screen.Print(display.ColorExplain("(end of flow)\n", env))
+		_ = cc.Screen.Print(display.ColorExplain("(end of flow)\n", env))
 	}
 	showEOF()
 
@@ -168,9 +168,9 @@ func tryWaitSec(cc *model.Cli, env *model.Env, waitSecKey string) {
 	if waitSec > 0 {
 		for i := 0; i < waitSec; i++ {
 			time.Sleep(time.Second)
-			cc.Screen.Print(".")
+			_ = cc.Screen.Print(".")
 		}
-		cc.Screen.Print("\n")
+		_ = cc.Screen.Print("\n")
 	}
 }
 
@@ -223,11 +223,11 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 	cc *model.Cli, env *model.Env, showStack func()) BreakPointAction {
 
 	showTitle := func() {
-		cc.Screen.Print(display.ColorTip("[actions]", env) + " paused by '" + reason +
+		_ = cc.Screen.Print(display.ColorTip("[actions]", env) + " paused by '" + reason +
 			"', choose one and press enter:\n")
 		for _, choice := range choices {
 			action := actions[choice]
-			cc.Screen.Print(display.ColorWarn(choice, env) + ": " + string(action) + "\n")
+			_ = cc.Screen.Print(display.ColorWarn(choice, env) + ": " + string(action) + "\n")
 		}
 	}
 

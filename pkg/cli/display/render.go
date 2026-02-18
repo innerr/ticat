@@ -13,7 +13,7 @@ func RenderCmdStack(l CmdStackLines, env *model.Env, screen model.Screen) (rende
 	}
 
 	pln := func(text string) {
-		screen.Print(text + "\n")
+		_ = screen.Print(text + "\n")
 	}
 
 	meow := "   (=`ω´=)   "
@@ -89,7 +89,7 @@ func RenderCmdResult(l CmdResultLines, env *model.Env, screen model.Screen, widt
 	}
 
 	pln := func(text string) {
-		screen.Print(text + "\n")
+		_ = screen.Print(text + "\n")
 	}
 
 	width -= 2
@@ -150,7 +150,7 @@ func PrintSwitchingThreadDisplay(preTid string, info model.BgTaskInfo, env *mode
 	c := getFrameCharsByName(env, "heavy")
 
 	pln := func(text string) {
-		screen.Print(text + "\n")
+		_ = screen.Print(text + "\n")
 	}
 
 	pln(ColorTip(c.P1+rpt(c.H, width)+c.P3, env))

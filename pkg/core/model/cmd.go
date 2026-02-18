@@ -306,7 +306,7 @@ func (self *Cmd) executeByType(
 
 	if !shouldExecByMask(mask) {
 		// TODO: print this outside core pkg, so it can be colorize
-		cc.Screen.Print("(skipped executing)\n")
+		_ = cc.Screen.Print("(skipped executing)\n")
 		return currCmdIdx, nil
 	}
 
@@ -956,7 +956,7 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 		}
 	} else {
 		// TODO: print this outside core pkg, so it can be colorize
-		cc.Screen.Print("(skipped subflow\n")
+		_ = cc.Screen.Print("(skipped subflow\n")
 		skipped = !executedAndSucceeded(mask)
 	}
 	return
@@ -978,7 +978,7 @@ func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, allowError bo
 	}
 
 	// TODO: print this outside core pkg, so it can be colorize
-	cc.Screen.Print("(skipped executing after subflow)\n")
+	_ = cc.Screen.Print("(skipped executing after subflow)\n")
 	return nil
 }
 

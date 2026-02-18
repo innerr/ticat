@@ -46,7 +46,7 @@ func loadLocalMods(
 	}
 
 	// TODO: return filepath.SkipDir to avoid some non-sense scanning
-	filepath.Walk(root, func(metaPath string, info fs.FileInfo, err error) error {
+	_ = filepath.Walk(root, func(metaPath string, info fs.FileInfo, err error) error {
 		if info != nil && info.IsDir() {
 			// Skip hidden file or dir
 			base := filepath.Base(metaPath)
@@ -60,7 +60,7 @@ func loadLocalMods(
 		}
 
 		if strings.HasSuffix(metaPath, helpExt) {
-			cc.Helps.RegHelpFile(metaPath)
+			_ = cc.Helps.RegHelpFile(metaPath)
 			return nil
 		}
 

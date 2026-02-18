@@ -27,7 +27,7 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) error {
 
 	if cc.TestingHook != nil {
 		for {
-			cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
+			_ = cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
 
 			if env.GetBool("sys.interact.leaving") {
 				break
@@ -160,12 +160,12 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) error {
 
 	historyDir := filepath.Join(os.TempDir(), ".ticat_interact_mode_cmds_history")
 	if file, err := os.Open(historyDir); err == nil {
-		lineReader.ReadHistory(file)
-		file.Close()
+		_, _ = lineReader.ReadHistory(file)
+		_ = file.Close()
 	}
 
 	for {
-		cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
+		_ = cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
 
 		if env.GetBool("sys.interact.leaving") {
 			break
@@ -180,7 +180,7 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) error {
 
 		lineReader.AppendHistory(line)
 		executorSafeExecute("(interact)", cc, env, nil, model.FlowStrToStrs(line)...)
-		//cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
+		//_ = cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
 	}
 
 	sessionEnv.GetLayer(model.EnvLayerSession).Delete("sys.interact.inside")
@@ -189,8 +189,8 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) error {
 	if err != nil {
 		return fmt.Errorf("[InteractMode] error writing history file: %v", err)
 	}
-	lineReader.WriteHistory(file)
-	file.Close()
+	_, _ = lineReader.WriteHistory(file)
+	_ = file.Close()
 	return nil
 }
 
