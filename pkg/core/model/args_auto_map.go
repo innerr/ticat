@@ -30,7 +30,7 @@ func autoMapArg2EnvForCmd(
 	targetCmd *Cmd,
 	stackDepth int) (done bool) {
 
-	targetCmd.GetArgsAutoMapStatus().MarkMet(srcCmd)
+	targetCmd.GetArgsAutoMapStatus().MarkMetWithArgv(srcCmd, argv)
 	if !srcCmd.HasSubFlow(true) {
 		return false
 	}
@@ -49,6 +49,10 @@ func autoMapArg2EnvForCmd(
 	parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
 	parsedFlow.GlobalEnv.WriteNotArgTo(flowEnv, cc.Cmds.Strs.EnvValDelAllMark)
+
+	for key := range parsedFlow.GlobalEnv {
+		targetCmd.GetArgsAutoMapStatus().RecordGlobalEnvKey(key)
+	}
 
 	return autoMapArg2EnvForCmdsInFlow(cc, flowEnv, parsedFlow, 0, envOpCmds, targetCmd, stackDepth)
 }
@@ -83,8 +87,14 @@ func autoMapArg2EnvForCmdsInFlow(
 			return true
 		}
 
-		TryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, nil,
+		var checker EnvOpsChecker
+		checker = EnvOpsChecker{}
+		TryExeEnvOpCmds(argv, cc, cmdEnv, flow, i, envOpCmds, &checker,
 			"failed to execute env op-cmd in depends collecting")
+
+		for key := range checker {
+			targetCmd.GetArgsAutoMapStatus().RecordGlobalEnvKey(key)
+		}
 
 		//println(cic.Owner().DisplayPath(), " (arg2env) =>", targetCmd.Owner().DisplayPath())
 		targetCmd.AddArg2EnvFromAnotherCmd(cic)
@@ -214,6 +224,14 @@ func (self *ArgsAutoMapStatus) MarkMet(srcCmd *Cmd) {
 	}
 	self.metCmds[srcCmd] = true
 	self.recordProvidedKeys(srcCmd)
+}
+
+func (self *ArgsAutoMapStatus) MarkMetWithArgv(srcCmd *Cmd, argv ArgVals) {
+	if _, ok := self.metCmds[srcCmd]; ok {
+		return
+	}
+	self.metCmds[srcCmd] = true
+	self.recordProvidedKeysWithArgv(srcCmd, argv)
 }
 
 func (self *ArgsAutoMapStatus) FullyMappedOrMapAll() bool {
@@ -373,4 +391,33 @@ func (self *ArgsAutoMapStatus) recordProvidedKeys(srcCmd *Cmd) {
 	for _, key := range envOps.AllWriteKeys() {
 		self.providedKeys[key] = true
 	}
+
+	val2env := srcCmd.GetVal2Env()
+	for _, key := range val2env.EnvKeys() {
+		self.providedKeys[key] = true
+	}
+}
+
+func (self *ArgsAutoMapStatus) recordProvidedKeysWithArgv(srcCmd *Cmd, argv ArgVals) {
+	envOps := srcCmd.EnvOps()
+	for _, key := range envOps.AllWriteKeys() {
+		self.providedKeys[key] = true
+	}
+
+	val2env := srcCmd.GetVal2Env()
+	for _, key := range val2env.EnvKeys() {
+		self.providedKeys[key] = true
+	}
+
+	arg2env := srcCmd.GetArg2Env()
+	for _, envKey := range arg2env.EnvKeys() {
+		argName := arg2env.GetArgName(srcCmd, envKey, true)
+		if val, ok := argv[argName]; ok && val.Provided {
+			self.providedKeys[envKey] = true
+		}
+	}
+}
+
+func (self *ArgsAutoMapStatus) RecordGlobalEnvKey(key string) {
+	self.providedKeys[key] = true
 }
