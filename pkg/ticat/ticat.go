@@ -152,6 +152,16 @@ func NewTiCat() *TiCat {
 	}
 }
 
+func NewTiCatForTest() *TiCat {
+	tc := NewTiCat()
+	tc.Bootstrap = []string{
+		"builtin.env.load.runtime",
+		"builtin.env.load.local",
+		"builtin.display.load.platform",
+	}
+	return tc
+}
+
 func (ticat *TiCat) SetScreen(screen model.Screen) {
 	ticat.cc.Screen = screen
 }

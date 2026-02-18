@@ -806,7 +806,7 @@ func TestTestingHook(t *testing.T) {
 // TestTiCatWithTestingHook demonstrates how to create a TiCat instance
 // configured for testing with breakpoint simulation
 func TestTiCatWithTestingHook(t *testing.T) {
-	tc := NewTiCat()
+	tc := NewTiCatForTest()
 	tc.SetScreen(&model.QuietScreen{})
 
 	breakPointCalls := 0
@@ -861,7 +861,7 @@ func (s *argsCaptureScreen) GetOutput() string {
 
 func TestDbgArgsCommandParsing(t *testing.T) {
 	t.Run("simple args", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -881,7 +881,7 @@ func TestDbgArgsCommandParsing(t *testing.T) {
 	})
 
 	t.Run("args with equals in value", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -901,7 +901,7 @@ func TestDbgArgsCommandParsing(t *testing.T) {
 	})
 
 	t.Run("args with dots", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -921,7 +921,7 @@ func TestDbgArgsCommandParsing(t *testing.T) {
 	})
 
 	t.Run("abbreviation args", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -941,7 +941,7 @@ func TestDbgArgsCommandParsing(t *testing.T) {
 	})
 
 	t.Run("default values", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -958,7 +958,7 @@ func TestDbgArgsCommandParsing(t *testing.T) {
 	})
 
 	t.Run("env style args", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -983,7 +983,7 @@ func TestDbgArgsCommandParsing(t *testing.T) {
 
 func TestDbgArgsTailModeParsing(t *testing.T) {
 	t.Run("tail mode with desc", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1006,7 +1006,7 @@ func TestDbgArgsTailModeParsing(t *testing.T) {
 	})
 
 	t.Run("tail mode with env-style args", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1026,7 +1026,7 @@ func TestDbgArgsTailModeParsing(t *testing.T) {
 	})
 
 	t.Run("tail mode abbreviation", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1045,7 +1045,7 @@ func TestDbgArgsTailModeParsing(t *testing.T) {
 
 func TestDbgArgsSequenceParsing(t *testing.T) {
 	t.Run("sequence with args", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1067,7 +1067,7 @@ func TestDbgArgsSequenceParsing(t *testing.T) {
 
 func TestDbgArgsFlowParsing(t *testing.T) {
 	t.Run("three commands in flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1101,7 +1101,7 @@ func TestDbgArgsFlowParsing(t *testing.T) {
 	})
 
 	t.Run("args with special values in flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1121,7 +1121,7 @@ func TestDbgArgsFlowParsing(t *testing.T) {
 	})
 
 	t.Run("mixed arg types in flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1148,7 +1148,7 @@ func TestDbgArgsFlowParsing(t *testing.T) {
 
 func TestDbgArgsPositionInFlow(t *testing.T) {
 	t.Run("first command in flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1165,7 +1165,7 @@ func TestDbgArgsPositionInFlow(t *testing.T) {
 	})
 
 	t.Run("last command in flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1184,7 +1184,7 @@ func TestDbgArgsPositionInFlow(t *testing.T) {
 
 func TestDbgArgsDescFlow(t *testing.T) {
 	t.Run("desc short flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1201,7 +1201,7 @@ func TestDbgArgsDescFlow(t *testing.T) {
 	})
 
 	t.Run("desc with multiple args", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1218,7 +1218,7 @@ func TestDbgArgsDescFlow(t *testing.T) {
 	})
 
 	t.Run("desc long flow with args", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1240,7 +1240,7 @@ func TestDbgArgsDescFlow(t *testing.T) {
 
 func TestDbgArgsDescMore(t *testing.T) {
 	t.Run("desc more with flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1259,7 +1259,7 @@ func TestDbgArgsDescMore(t *testing.T) {
 
 func TestDbgArgsNestedCommands(t *testing.T) {
 	t.Run("args in simple flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1281,7 +1281,7 @@ func TestDbgArgsNestedCommands(t *testing.T) {
 
 func TestDbgArgsEdgeCases(t *testing.T) {
 	t.Run("empty arg value", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1298,7 +1298,7 @@ func TestDbgArgsEdgeCases(t *testing.T) {
 	})
 
 	t.Run("arg with spaces in value", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1315,7 +1315,7 @@ func TestDbgArgsEdgeCases(t *testing.T) {
 	})
 
 	t.Run("arg value with url", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1332,7 +1332,7 @@ func TestDbgArgsEdgeCases(t *testing.T) {
 	})
 
 	t.Run("arg value with path", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1349,7 +1349,7 @@ func TestDbgArgsEdgeCases(t *testing.T) {
 	})
 
 	t.Run("multiple dots in value", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1368,7 +1368,7 @@ func TestDbgArgsEdgeCases(t *testing.T) {
 
 func TestDbgArgsTailModeWithFlow(t *testing.T) {
 	t.Run("tail mode with desc", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1387,7 +1387,7 @@ func TestDbgArgsTailModeWithFlow(t *testing.T) {
 
 func TestDbgArgsAbbreviationInFlow(t *testing.T) {
 	t.Run("arg abbreviation in flow", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
@@ -1407,7 +1407,7 @@ func TestDbgArgsAbbreviationInFlow(t *testing.T) {
 	})
 
 	t.Run("str-val abbreviation", func(t *testing.T) {
-		tc := NewTiCat()
+		tc := NewTiCatForTest()
 		screen := &argsCaptureScreen{}
 		tc.SetScreen(screen)
 		tc.Env.SetBool("sys.panic.recover", false)
