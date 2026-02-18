@@ -25,6 +25,26 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) error {
 	abbrCompletion := env.GetBool("display.completion.abbr")
 	shortcutCompletion := env.GetBool("display.completion.shortcut")
 
+	if cc.TestingHook != nil {
+		for {
+			cc.Screen.Print(display.ColorExplain("(ctl-c to leave)\n", env))
+
+			if env.GetBool("sys.interact.leaving") {
+				break
+			}
+
+			line, hasInput := cc.TestingHook.OnInteractPrompt(selfName + "> ")
+			if !hasInput {
+				break
+			}
+
+			executorSafeExecute("(interact)", cc, env, nil, model.FlowStrToStrs(line)...)
+		}
+
+		sessionEnv.GetLayer(model.EnvLayerSession).Delete("sys.interact.inside")
+		return nil
+	}
+
 	lineReader := liner.NewLiner()
 	defer func() {
 		if err := lineReader.Close(); err != nil {

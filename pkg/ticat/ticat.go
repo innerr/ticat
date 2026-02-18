@@ -156,6 +156,14 @@ func (ticat *TiCat) SetScreen(screen model.Screen) {
 	ticat.cc.Screen = screen
 }
 
+func (ticat *TiCat) SetTestingHook(hook model.TestingHook) {
+	ticat.cc.TestingHook = hook
+}
+
+func (ticat *TiCat) GetCli() *model.Cli {
+	return ticat.cc
+}
+
 func (ticat *TiCat) AddIntegratedModVersion(ver string) {
 	env := ticat.Env.GetLayer(model.EnvLayerDefault)
 	strs := strings.Split(env.GetRaw("sys.mods.integrated"), ListSep)

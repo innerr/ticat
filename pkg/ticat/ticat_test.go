@@ -736,3 +736,103 @@ func TestIntegrationGlobalEnvWithCommandArgs(t *testing.T) {
 		}
 	})
 }
+
+// TestTestingHook demonstrates how to use TestingHook for unit testing
+// with breakpoint and interactive mode support
+func TestTestingHook(t *testing.T) {
+	t.Run("TestingHook interface methods", func(t *testing.T) {
+		hook := &model.TestingHookFuncs{
+			BreakPointAction: func(reason string, choices []string, actions map[string]string) string {
+				return "c"
+			},
+			InteractPrompt: func(prompt string) (string, bool) {
+				return "dbg.interact.leave", true
+			},
+			SkipBash: true,
+		}
+
+		choice := hook.OnBreakPoint("test reason", []string{"c", "s", "d"}, map[string]string{"c": "continue"})
+		if choice != "c" {
+			t.Errorf("expected 'c', got %q", choice)
+		}
+
+		line, ok := hook.OnInteractPrompt("test> ")
+		if !ok || line != "dbg.interact.leave" {
+			t.Errorf("expected ('dbg.interact.leave', true), got (%q, %v)", line, ok)
+		}
+
+		if !hook.ShouldSkipBash() {
+			t.Error("expected SkipBash to be true")
+		}
+	})
+
+	t.Run("DefaultTestingHook", func(t *testing.T) {
+		hook := &model.DefaultTestingHook{}
+
+		choice := hook.OnBreakPoint("test", nil, nil)
+		if choice != "c" {
+			t.Errorf("expected 'c', got %q", choice)
+		}
+
+		line, ok := hook.OnInteractPrompt("test> ")
+		if ok || line != "" {
+			t.Errorf("expected ('', false), got (%q, %v)", line, ok)
+		}
+
+		if hook.ShouldSkipBash() {
+			t.Error("expected SkipBash to be false")
+		}
+	})
+
+	t.Run("TestingHookFuncs defaults", func(t *testing.T) {
+		hook := &model.TestingHookFuncs{}
+
+		choice := hook.OnBreakPoint("test", nil, nil)
+		if choice != "c" {
+			t.Errorf("expected default 'c', got %q", choice)
+		}
+
+		line, ok := hook.OnInteractPrompt("test> ")
+		if ok || line != "" {
+			t.Errorf("expected default ('', false), got (%q, %v)", line, ok)
+		}
+
+		if hook.ShouldSkipBash() {
+			t.Error("expected default SkipBash to be false")
+		}
+	})
+}
+
+// TestTiCatWithTestingHook demonstrates how to create a TiCat instance
+// configured for testing with breakpoint simulation
+func TestTiCatWithTestingHook(t *testing.T) {
+	tc := NewTiCat()
+	tc.SetScreen(&model.QuietScreen{})
+
+	breakPointCalls := 0
+	expectedActions := []string{"c", "c", "c"}
+
+	hook := &model.TestingHookFuncs{
+		BreakPointAction: func(reason string, choices []string, actions map[string]string) string {
+			idx := breakPointCalls
+			breakPointCalls++
+			if idx < len(expectedActions) {
+				return expectedActions[idx]
+			}
+			return "c"
+		},
+		InteractPrompt: func(prompt string) (string, bool) {
+			return "dbg.interact.leave", true
+		},
+		SkipBash: true,
+	}
+
+	tc.SetTestingHook(hook)
+
+	if tc.GetCli() == nil {
+		t.Error("GetCli should not return nil")
+	}
+	if tc.GetCli().TestingHook == nil {
+		t.Error("TestingHook should be set")
+	}
+}
