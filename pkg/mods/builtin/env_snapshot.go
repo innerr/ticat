@@ -16,18 +16,23 @@ func EnvSaveToSnapshot(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	kvSep := env.GetRaw("strs.env-kv-sep")
 
 	cmd := flow.Cmds[currCmdIdx]
-	name := getAndCheckArg(argv, cmd, "snapshot-name")
+	name, err := getAndCheckArg(argv, cmd, "snapshot-name")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	path := getEnvSnapshotPath(env, name)
 
 	overwrite := argv.GetBool("overwrite")
 	if !overwrite && fileExists(path) {
-		panic(model.NewCmdError(cmd, "env snapshot '"+name+"' already exists"))
+		return currCmdIdx, model.NewCmdError(cmd, "env snapshot '"+name+"' already exists")
 	}
 
 	model.SaveEnvToFile(env, path, kvSep, true)
@@ -36,7 +41,7 @@ func EnvSaveToSnapshot(
 		"",
 		display.SuggestLoadEnvSnapshot(env))
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnvRemoveSnapshot(
@@ -44,29 +49,34 @@ func EnvRemoveSnapshot(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cmd := flow.Cmds[currCmdIdx]
-	name := getAndCheckArg(argv, cmd, "snapshot-name")
+	name, err := getAndCheckArg(argv, cmd, "snapshot-name")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	path := getEnvSnapshotPath(env, name)
 
-	err := os.Remove(path)
+	err = os.Remove(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			display.PrintTipTitle(cc.Screen, env,
 				fmt.Sprintf("env snapshot '%s' not exists\n", name))
 		} else {
-			panic(model.NewCmdError(cmd,
-				fmt.Sprintf("remove env snapshot file '%s' failed: %v", path, err)))
+			return currCmdIdx, model.NewCmdError(cmd,
+				fmt.Sprintf("remove env snapshot file '%s' failed: %v", path, err))
 		}
 	} else {
 		display.PrintTipTitle(cc.Screen, env,
 			"env snapshot '"+name+"' is removed")
 	}
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnvListSnapshots(
@@ -74,14 +84,16 @@ func EnvListSnapshots(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cmd := flow.Cmds[currCmdIdx]
 	ext := env.GetRaw("strs.env-snapshot-ext")
 	if len(ext) == 0 {
-		panic(model.NewCmdError(cmd, "env value 'strs.env-snapshot-ext' is empty"))
+		return currCmdIdx, model.NewCmdError(cmd, "env value 'strs.env-snapshot-ext' is empty")
 	}
 
 	root := getEnvSnapshotDir(env)
@@ -118,7 +130,7 @@ func EnvListSnapshots(
 		}
 	}
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnvLoadFromSnapshot(
@@ -126,12 +138,17 @@ func EnvLoadFromSnapshot(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cmd := flow.Cmds[currCmdIdx]
-	name := getAndCheckArg(argv, cmd, "snapshot-name")
+	name, err := getAndCheckArg(argv, cmd, "snapshot-name")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	path := getEnvSnapshotPath(env, name)
 
 	sep := cc.Cmds.Strs.EnvKeyValSep
@@ -141,7 +158,7 @@ func EnvLoadFromSnapshot(
 	model.LoadEnvFromFile(loaded, path, sep, delMark)
 	loaded.WriteCurrLayerTo(env.GetLayer(model.EnvLayerSession))
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnvLoadNonExistFromSnapshot(
@@ -149,12 +166,17 @@ func EnvLoadNonExistFromSnapshot(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cmd := flow.Cmds[currCmdIdx]
-	name := getAndCheckArg(argv, cmd, "snapshot-name")
+	name, err := getAndCheckArg(argv, cmd, "snapshot-name")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	path := getEnvSnapshotPath(env, name)
 
 	sep := cc.Cmds.Strs.EnvKeyValSep
@@ -170,13 +192,13 @@ func EnvLoadNonExistFromSnapshot(
 		}
 	}
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func getEnvSnapshotDir(env *model.Env) string {
 	dir := env.GetRaw("sys.paths.env.snapshot")
 	if len(dir) == 0 {
-		panic(fmt.Errorf("env value 'sys.paths.env.snapshot' is empty"))
+		return ""
 	}
 	os.MkdirAll(dir, os.ModePerm)
 	return dir
@@ -185,7 +207,7 @@ func getEnvSnapshotDir(env *model.Env) string {
 func getEnvSnapshotPath(env *model.Env, name string) string {
 	ext := env.GetRaw("strs.env-snapshot-ext")
 	if len(ext) == 0 {
-		panic(fmt.Errorf("env value 'strs.env-snapshot-ext' is empty"))
+		return ""
 	}
 	dir := getEnvSnapshotDir(env)
 	return filepath.Join(dir, name) + ext

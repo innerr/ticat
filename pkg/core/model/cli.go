@@ -6,8 +6,8 @@ import (
 )
 
 type Screen interface {
-	Print(text string)
-	Error(text string)
+	Print(text string) error
+	Error(text string) error
 	// Same as line-number, but it's the count of 'Print'
 	OutputtedLines() int
 }
@@ -104,7 +104,8 @@ func NewCli(screen Screen, cmds *CmdTree, parser CliParser, abbrs *EnvAbbrs, cmd
 
 func (self *Cli) SetFlowStatusWriter(status *ExecutingFlow) {
 	if self.FlowStatus != nil {
-		panic(fmt.Errorf("[SetFlowStatusWriter] should never happen"))
+		// PANIC: should never happen - FlowStatus can only be set once
+		panic(fmt.Errorf("[SetFlowStatusWriter] should never happen: FlowStatus already set"))
 	}
 	self.FlowStatus = status
 }
@@ -182,12 +183,15 @@ func (self *Cli) ParseCmd(panicOnError bool, cmdAndArgs ...string) (parsedCmd Pa
 		if panicOnError {
 			cmdStr := strings.Join(cmdAndArgs, " ")
 			if err != nil {
+				// PANIC: Parse error - caller requested panic on error
 				panic(err.Error)
 			}
 			if len(parsed.Cmds) > 1 {
+				// PANIC: Parse error - too many result commands
 				panic(fmt.Errorf("[Cli.ParseCmd] too many result commands by parsing '%s': %d",
 					cmdStr, len(parsed.Cmds)))
 			} else {
+				// PANIC: Parse error - no result command
 				panic(fmt.Errorf("[Cli.ParseCmd] no result command by parsing '%s'", cmdStr))
 			}
 		} else {

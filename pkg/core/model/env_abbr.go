@@ -30,6 +30,7 @@ func NewEnvAbbrs(rootDisplayName string) *EnvAbbrs {
 
 func (self *EnvAbbrs) AddSub(name string, abbrs ...string) *EnvAbbrs {
 	if old, ok := self.subs[name]; ok && old.name != name {
+		// PANIC: Programming error - duplicate sub-node name during env abbreviation registration
 		panic(fmt.Errorf("[EnvAbbrs.AddSub] %s: sub-node name conflicted: %s",
 			self.DisplayPath(), name))
 	}
@@ -53,6 +54,7 @@ func (self *EnvAbbrs) AddSubAbbrs(name string, abbrs ...string) {
 			continue
 		}
 		if ok {
+			// PANIC: Programming error - duplicate abbreviation during env abbreviation registration
 			panic(fmt.Errorf(
 				"[EnvAbbrs.AddSubAbbrs] %s: command abbr name '%s' conflicted, "+
 					"old for '%s', new for '%s'",
@@ -65,6 +67,7 @@ func (self *EnvAbbrs) AddSubAbbrs(name string, abbrs ...string) {
 
 func (self *EnvAbbrs) AddAbbrs(abbrs ...string) *EnvAbbrs {
 	if self.parent == nil {
+		// PANIC: Programming error - cannot add abbreviations to root node
 		panic(fmt.Errorf("[EnvAbbrs.AddAbbr] can't add abbrs %v to root", abbrs))
 	}
 	self.parent.AddSubAbbrs(self.name, abbrs...)

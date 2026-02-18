@@ -11,13 +11,15 @@ func WaitForLatestBgTaskFinish(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	if utils.GoRoutineIdStr() != utils.GoRoutineIdStrMain {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			"must be in main thread to wait for other threads to finish"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			"must be in main thread to wait for other threads to finish")
 	}
 
 	tid, task, ok := cc.BgTasks.GetLatestTask()
@@ -27,7 +29,7 @@ func WaitForLatestBgTaskFinish(
 			display.PrintError(cc, env, err)
 		}
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func WaitForBgTaskFinishByName(
@@ -35,15 +37,20 @@ func WaitForBgTaskFinishByName(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	bgCmd := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "command")
+	bgCmd, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "command")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	if utils.GoRoutineIdStr() != utils.GoRoutineIdStrMain {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			"must be in main thread to wait for other threads to finish"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			"must be in main thread to wait for other threads to finish")
 	}
 
 	verifiedCmd := cc.NormalizeCmd(true, bgCmd)
@@ -56,7 +63,7 @@ func WaitForBgTaskFinishByName(
 			display.PrintError(cc, env, err)
 		}
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func WaitForAllBgTasksFinish(
@@ -64,19 +71,21 @@ func WaitForAllBgTasksFinish(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	if utils.GoRoutineIdStr() != utils.GoRoutineIdStrMain {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			"must be in main thread to wait for other threads to finish"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			"must be in main thread to wait for other threads to finish")
 	}
 	errs := WaitBgTasks(cc, env, true)
 	for _, err := range errs {
 		display.PrintError(cc, env, err)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func WaitBgTask(cc *model.Cli, env *model.Env, tid string, task *model.BgTask) (errs []error) {

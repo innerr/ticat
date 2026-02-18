@@ -7,7 +7,8 @@ import (
 func GlobalSuggestExeCmds(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	sep := ColorProp("-", env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	return []string{
 		padCmdR(selfName+" cmd1 : cmd2 : cmd3", indent, env) + sep +
 			" execute commands one by one,",
@@ -18,7 +19,8 @@ func GlobalSuggestExeCmds(env *model.Env) []string {
 func GlobalSuggestExeCmdsWithArgs(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	sep := ColorProp("-", env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	return []string{
 		padCmdR(selfName+" echo msg=hi : sleep 1s", indent, env) + sep +
 			" an example of executing commands",
@@ -28,7 +30,8 @@ func GlobalSuggestExeCmdsWithArgs(env *model.Env) []string {
 func GlobalSuggestShowCmdInfo(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
 	sep := ColorProp("-", env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	return []string{
 		padCmdR(selfName+" cmd      echo", indent, env) + sep + " show usage of command 'echo'",
 		padCmdR(selfName+" cmd.full echo", indent, env) + sep + " show full details of command 'echo'",
@@ -37,7 +40,8 @@ func GlobalSuggestShowCmdInfo(env *model.Env) []string {
 
 func GlobalSuggestCmdTree(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" cmds.tree foo", indent, env) + sep +
@@ -54,7 +58,8 @@ func GlobalSuggestCmdTree(env *model.Env) []string {
 
 func GlobalSuggestListCmds(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" cmds path=foo src=git-addr", indent, env) + sep +
@@ -66,7 +71,8 @@ func GlobalSuggestListCmds(env *model.Env) []string {
 
 func GlobalSuggestFindCmds(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" find      str1 str2", indent, env) + sep + " search commands",
@@ -76,7 +82,8 @@ func GlobalSuggestFindCmds(env *model.Env) []string {
 
 func GlobalSuggestHubAdd(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" hub.init", indent, env) + sep +
@@ -89,7 +96,8 @@ func GlobalSuggestHubAdd(env *model.Env) []string {
 
 func GlobalSuggestFlowAdd(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" echo hi : sleep 1s :flow.save foo", indent, env) + sep +
@@ -100,7 +108,8 @@ func GlobalSuggestFlowAdd(env *model.Env) []string {
 
 func GlobalSuggestDesc(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" foo :desc", indent, env) + sep +
@@ -111,7 +120,8 @@ func GlobalSuggestDesc(env *model.Env) []string {
 
 func GlobalSuggestSessions(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" sessions.last", indent, env) + sep + " show the status of last execution",
@@ -122,7 +132,8 @@ func GlobalSuggestSessions(env *model.Env) []string {
 
 func GlobalSuggestAdvance(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" cmds.tree desc", indent, env) + sep + " explore the branch 'desc'",
@@ -138,7 +149,8 @@ func GlobalSuggestAdvance(env *model.Env) []string {
 
 func GlobalSuggestShortcut(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" find shortcut", indent, env) + sep + " show(find) shortcut commands",
@@ -147,7 +159,8 @@ func GlobalSuggestShortcut(env *model.Env) []string {
 
 func GlobalSuggestInteract(env *model.Env) []string {
 	selfName, indent := getSuggestArgs(env)
-	indent += ColorExtraLen(env, "cmd")
+	extra, _ := ColorExtraLen(env, "cmd")
+	indent += extra
 	sep := ColorProp("-", env)
 	return []string{
 		padCmdR(selfName+" dbg.interact", indent, env) + sep + " enter interact-mode",

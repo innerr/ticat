@@ -18,22 +18,27 @@ func LoadModsFromHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	metaPath := getReposInfoPath(env, flow.Cmds[currCmdIdx])
 	fieldSep := env.GetRaw("strs.proto-sep")
 
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
 	for _, info := range infos {
 		if info.OnOff != "on" {
 			continue
 		}
 		loadRepoMods(cc, env, info)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func AddGitRepoToHub(
@@ -41,25 +46,32 @@ func AddGitRepoToHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	addr := tailModeCallArg(flow, currCmdIdx, argv, "git-address")
+	addr, err := tailModeCallArg(flow, currCmdIdx, argv, "git-address")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	branch := argv.GetRaw("git-branch")
-	addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: branch},
-		argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+	if _, _, err := addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: branch},
+		argv, cc.Screen, env, flow.Cmds[currCmdIdx]); err != nil {
+		return currCmdIdx, err
+	}
 
 	initAddr := env.GetRaw("sys.hub.init-repo")
 	if len(initAddr) != 0 {
 		sep := env.GetRaw("strs.list-sep")
 		addrs := strings.Split(initAddr, sep)
 		for _, addr := range addrs {
-			addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: ""},
-				argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+			if _, _, err := addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: ""},
+				argv, cc.Screen, env, flow.Cmds[currCmdIdx]); err != nil {
+				return currCmdIdx, err
+			}
 		}
 	}
 
 	showHubFindTip(cc.Screen, env)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnsureDefaultGitRepoInHub(
@@ -67,21 +79,21 @@ func EnsureDefaultGitRepoInHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	hubDir := env.GetRaw("sys.paths.hub")
 	if dirExists(hubDir) {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 	display.PrintTipTitle(cc.Screen, env,
 		"do 'hub.init' for the first time running")
 	argv["show-tip"] = model.ArgVal{Raw: "false", Provided: true, Index: 0}
-	newCurrCmdIdx, ok := AddDefaultGitRepoToHub(argv, cc, env, flow, currCmdIdx)
-	if ok {
+	newCurrCmdIdx, err := AddDefaultGitRepoToHub(argv, cc, env, flow, currCmdIdx)
+	if err == nil {
 		display.PrintTipTitle(cc.Screen, env,
 			"init for the first time running: done")
 	}
-	return newCurrCmdIdx, ok
+	return newCurrCmdIdx, err
 }
 
 func AddDefaultGitRepoToHub(
@@ -89,25 +101,29 @@ func AddDefaultGitRepoToHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	addr := env.GetRaw("sys.hub.init-repo")
 	if len(addr) == 0 {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			"cant't get init-repo address from env, 'sys.hub.init-repo' is empty"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			"cant't get init-repo address from env, 'sys.hub.init-repo' is empty")
 	}
 	sep := env.GetRaw("strs.list-sep")
 	addrs := strings.Split(addr, sep)
 	for _, addr := range addrs {
-		addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: ""},
-			argv, cc.Screen, env, flow.Cmds[currCmdIdx])
+		if _, _, err := addRepoToHubAndLoadMods(cc, meta.RepoAddr{Addr: addr, Branch: ""},
+			argv, cc.Screen, env, flow.Cmds[currCmdIdx]); err != nil {
+			return currCmdIdx, err
+		}
 	}
-	if argv.GetBool("show-tip") {
+	if showTip := argv.GetBool("show-tip"); showTip {
 		showHubFindTip(cc.Screen, env)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ListHub(
@@ -115,7 +131,7 @@ func ListHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	cmd := flow.Cmds[currCmdIdx]
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
@@ -123,7 +139,10 @@ func ListHub(
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
 	screen := display.NewCacheScreen()
 
 	listHub(screen, env, infos, findStrs...)
@@ -155,7 +174,7 @@ func ListHub(
 			"",
 			display.SuggestHubBranch(env))
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RemoveAllFromHub(
@@ -163,15 +182,20 @@ func RemoveAllFromHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	cmd := flow.Cmds[currCmdIdx]
 
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	for _, info := range infos {
 		if !info.IsLocal() {
@@ -181,7 +205,7 @@ func RemoveAllFromHub(
 		printInfoProps(cc.Screen, env, info)
 	}
 
-	err := os.Remove(metaPath)
+	err = os.Remove(metaPath)
 	if err != nil {
 		if os.IsNotExist(err) && len(infos) == 0 {
 			display.PrintTipTitle(cc.Screen, env,
@@ -190,9 +214,9 @@ func RemoveAllFromHub(
 				"add more git repos to get more avaialable commands:",
 				"",
 				display.SuggestHubAddShort(env))
-			return currCmdIdx, true
+			return currCmdIdx, nil
 		}
-		panic(model.NewCmdError(cmd, fmt.Sprintf("remove '%s' failed: %v", metaPath, err)))
+		return currCmdIdx, model.NewCmdError(cmd, fmt.Sprintf("remove '%s' failed: %v", metaPath, err))
 	}
 
 	display.PrintTipTitle(cc.Screen, env,
@@ -202,7 +226,7 @@ func RemoveAllFromHub(
 		"",
 		display.SuggestHubAddShort(env))
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func PurgeAllInactiveReposFromHub(
@@ -210,11 +234,15 @@ func PurgeAllInactiveReposFromHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	purgeInactiveRepoFromHub("", cc, env, flow.Cmds[currCmdIdx])
-	return currCmdIdx, true
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	if err := purgeInactiveRepoFromHub("", cc, env, flow.Cmds[currCmdIdx]); err != nil {
+		return currCmdIdx, err
+	}
+	return currCmdIdx, nil
 }
 
 func PurgeInactiveRepoFromHub(
@@ -222,11 +250,16 @@ func PurgeInactiveRepoFromHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
-	purgeInactiveRepoFromHub(findStr, cc, env, flow.Cmds[currCmdIdx])
-	return currCmdIdx, true
+	findStr, err := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	if err := purgeInactiveRepoFromHub(findStr, cc, env, flow.Cmds[currCmdIdx]); err != nil {
+		return currCmdIdx, err
+	}
+	return currCmdIdx, nil
 }
 
 func CheckGitRepoStatus(
@@ -234,13 +267,15 @@ func CheckGitRepoStatus(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cmd := flow.Cmds[currCmdIdx]
 	if !isOsCmdExists("git") {
-		panic(model.NewCmdError(cmd, "cant't find 'git'"))
+		return currCmdIdx, model.NewCmdError(cmd, "cant't find 'git'")
 	}
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
@@ -250,7 +285,10 @@ func CheckGitRepoStatus(
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	// Do not do exactl-match for readonly commands
 
@@ -270,10 +308,12 @@ func CheckGitRepoStatus(
 				continue
 			}
 		}
-		meta.CheckRepoGitStatus(cc.Screen, env, path, info.Addr)
+		if err := meta.CheckRepoGitStatus(cc.Screen, env, path, info.Addr); err != nil {
+			return currCmdIdx, err
+		}
 	}
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func UpdateHub(
@@ -281,9 +321,11 @@ func UpdateHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cmd := flow.Cmds[currCmdIdx]
 	metaPath := getReposInfoPath(env, cmd)
@@ -293,7 +335,10 @@ func UpdateHub(
 	path := getHubPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	oldInfos, oldList := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	oldInfos, oldList, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
 	finisheds := map[string]bool{}
 	for _, info := range oldInfos {
 		if info.OnOff != "on" {
@@ -308,28 +353,36 @@ func UpdateHub(
 		if len(info.Addr.Str()) == 0 {
 			continue
 		}
-		_, addrs, helpStrs := meta.UpdateRepoAndSubRepos(
+		_, addrs, helpStrs, err := meta.UpdateRepoAndSubRepos(
 			cc.Screen, env, finisheds, path, info.Addr, repoExt, listFileName, selfName, cmd)
+		if err != nil {
+			return currCmdIdx, err
+		}
 		for i, addr := range addrs {
 			if oldList[addr.Str()] {
 				continue
 			}
-			repoPath := meta.GetRepoPath(path, addr)
+			repoPath, err := meta.GetRepoPath(path, addr)
+			if err != nil {
+				return currCmdIdx, err
+			}
 			infos = append(infos, meta.RepoInfo{Addr: addr, AddReason: info.Addr.Str(), Path: repoPath, HelpStr: helpStrs[i], OnOff: "on"})
 		}
 	}
 
 	infos = append(oldInfos, infos...)
 	if len(infos) != len(oldInfos) {
-		meta.WriteReposInfoFile(hubDir, metaPath, infos, fieldSep)
+		if err := meta.WriteReposInfoFile(hubDir, metaPath, infos, fieldSep); err != nil {
+			return currCmdIdx, err
+		}
 	}
 
-	if argv.GetBool("show-tip") {
+	if showTip := argv.GetBool("show-tip"); showTip {
 		display.PrintTipTitle(cc.Screen, env, fmt.Sprintf(
 			"local dir could also add to %s, use command 'hub.add.local'",
 			env.GetRaw("strs.self-name")))
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnableRepoInHub(
@@ -337,14 +390,20 @@ func EnableRepoInHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	cmd := flow.Cmds[currCmdIdx]
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
-	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
+	findStr, err := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
 	checkFoundRepos(env, cmd, extracted, findStr, true)
@@ -361,7 +420,9 @@ func EnableRepoInHub(
 		extracted[i] = info
 	}
 
-	meta.WriteReposInfoFile(hubDir, metaPath, append(rest, extracted...), fieldSep)
+	if err := meta.WriteReposInfoFile(hubDir, metaPath, append(rest, extracted...), fieldSep); err != nil {
+		return currCmdIdx, err
+	}
 
 	if count > 0 {
 		display.PrintTipTitle(cc.Screen, env,
@@ -370,7 +431,7 @@ func EnableRepoInHub(
 		display.PrintTipTitle(cc.Screen, env,
 			"no disabled repo matched find string '"+findStr+"'")
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DisableRepoInHub(
@@ -378,14 +439,20 @@ func DisableRepoInHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	cmd := flow.Cmds[currCmdIdx]
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
-	findStr := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
+	findStr, err := tailModeCallArg(flow, currCmdIdx, argv, "find-str")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	extracted, rest := meta.ExtractAddrFromList(infos, findStr)
 	checkFoundRepos(env, cmd, extracted, findStr, false)
@@ -412,7 +479,7 @@ func DisableRepoInHub(
 		display.PrintTipTitle(cc.Screen, env,
 			"no enabled repo matched find string '"+findStr+"'")
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func AddLocalDirToHub(
@@ -420,9 +487,12 @@ func AddLocalDirToHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	path := tailModeCallArg(flow, currCmdIdx, argv, "path")
+	path, err := tailModeCallArg(flow, currCmdIdx, argv, "path")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	return addLocalDirToHub(argv, cc, env, flow, currCmdIdx, path)
 }
 
@@ -431,7 +501,7 @@ func AddPwdToHub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return addLocalDirToHub(argv, cc, env, flow, currCmdIdx, ".")
 }
@@ -442,21 +512,21 @@ func addLocalDirToHub(
 	env *model.Env,
 	flow *model.ParsedCmds,
 	currCmdIdx int,
-	path string) (int, bool) {
+	path string) (int, error) {
 
 	cmd := flow.Cmds[currCmdIdx]
 
 	stat, err := os.Stat(path)
 	if err != nil {
-		panic(model.NewCmdError(cmd, fmt.Sprintf("access path '%v' failed: %v", path, err)))
+		return currCmdIdx, model.NewCmdError(cmd, fmt.Sprintf("access path '%v' failed: %v", path, err))
 	}
 	if !stat.IsDir() {
-		panic(model.NewCmdError(cmd, fmt.Sprintf("path '%v' is not dir", path)))
+		return currCmdIdx, model.NewCmdError(cmd, fmt.Sprintf("path '%v' is not dir", path))
 	}
 
 	path, err = filepath.Abs(path)
 	if err != nil {
-		panic(model.NewCmdError(cmd, fmt.Sprintf("get abs path of '%v' failed: %v", path, err)))
+		return currCmdIdx, model.NewCmdError(cmd, fmt.Sprintf("get abs path of '%v' failed: %v", path, err))
 	}
 
 	screen := display.NewCacheScreen()
@@ -464,7 +534,10 @@ func addLocalDirToHub(
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
 	found := false
 	for i, info := range infos {
 		if info.Path == path {
@@ -473,7 +546,7 @@ func addLocalDirToHub(
 				printInfoProps(screen, env, info)
 				display.PrintTipTitle(cc.Screen, env,
 					"local dir already in hub, nothing to do")
-				return currCmdIdx, true
+				return currCmdIdx, nil
 			}
 			info.OnOff = "on"
 			infos[i] = info
@@ -487,13 +560,15 @@ func addLocalDirToHub(
 	if !found {
 		listFileName := env.GetRaw("strs.repos-file-name")
 		listFilePath := filepath.Join(path, listFileName)
-		helpStr, _, _ := meta.ReadRepoListFromFile(env.GetRaw("strs.self-name"), listFilePath)
+		helpStr, _, _, _ := meta.ReadRepoListFromFile(env.GetRaw("strs.self-name"), listFilePath)
 		info := meta.RepoInfo{Addr: meta.RepoAddr{Addr: "", Branch: ""}, AddReason: "<local>", Path: path, HelpStr: helpStr, OnOff: "on"}
 		infos = append(infos, info)
 		screen.Print(fmt.Sprintf("%s\n", repoDisplayName(info, env)))
 		printInfoProps(screen, env, info)
 	}
-	meta.WriteReposInfoFile(hubDir, metaPath, infos, fieldSep)
+	if err := meta.WriteReposInfoFile(hubDir, metaPath, infos, fieldSep); err != nil {
+		return currCmdIdx, err
+	}
 
 	if !found {
 		display.PrintTipTitle(cc.Screen, env,
@@ -505,7 +580,7 @@ func addLocalDirToHub(
 	screen.WriteTo(cc.Screen)
 
 	// TODO: load mods now?
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func MoveSavedFlowsToPwd(
@@ -513,7 +588,7 @@ func MoveSavedFlowsToPwd(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return cmdMoveSavedFlowsToLocalDir(argv, cc, env, flow, currCmdIdx, ".")
 }
@@ -523,7 +598,7 @@ func MoveSavedFlowsToLocalDir(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return cmdMoveSavedFlowsToLocalDir(argv, cc, env, flow, currCmdIdx, "")
 }
@@ -534,7 +609,7 @@ func cmdMoveSavedFlowsToLocalDir(
 	env *model.Env,
 	flow *model.ParsedCmds,
 	currCmdIdx int,
-	defaultDir string) (int, bool) {
+	defaultDir string) (int, error) {
 
 	// TODO: do accurate matching before search
 	cmd := flow.Cmds[currCmdIdx]
@@ -542,7 +617,7 @@ func cmdMoveSavedFlowsToLocalDir(
 	if len(path) == 0 {
 		args := tailModeGetInput(flow, currCmdIdx, false)
 		if len(args) > 1 {
-			panic(model.NewCmdError(cmd, "too many input of arg 'path' in tail-mode"))
+			return currCmdIdx, model.NewCmdError(cmd, "too many input of arg 'path' in tail-mode")
 		} else if len(args) == 1 {
 			path = args[0]
 		}
@@ -551,24 +626,27 @@ func cmdMoveSavedFlowsToLocalDir(
 	if len(path) != 0 {
 		stat, err := os.Stat(path)
 		if err != nil && !os.IsNotExist(err) {
-			panic(model.NewCmdError(cmd, fmt.Sprintf("access path '%v' failed: %v", path, err)))
+			return currCmdIdx, model.NewCmdError(cmd, fmt.Sprintf("access path '%v' failed: %v", path, err))
 		}
 
 		if !os.IsNotExist(err) {
 			if !stat.IsDir() {
-				panic(model.NewCmdError(cmd, fmt.Sprintf("path '%v' exists but is not a dir", path)))
+				return currCmdIdx, model.NewCmdError(cmd, fmt.Sprintf("path '%v' exists but is not a dir", path))
 			}
 			moveSavedFlowsToLocalDir(path, cc, env, cmd)
 			display.PrintTipTitle(cc.Screen, env,
 				"all saved flow moved to '"+path+"'")
-			return currCmdIdx, true
+			return currCmdIdx, nil
 		}
 	}
 
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	var locals []meta.RepoInfo
 	for _, info := range infos {
@@ -600,7 +678,7 @@ func cmdMoveSavedFlowsToLocalDir(
 				"no local dirs to move flows into.",
 				"notice this command only search added local dirs, not repos")
 		}
-		return currCmdIdx, false
+		return currCmdIdx, fmt.Errorf("no local dirs found")
 	}
 	if len(locals) > 1 {
 		if len(path) != 0 {
@@ -618,7 +696,7 @@ func cmdMoveSavedFlowsToLocalDir(
 				"", "current matcheds:")
 		}
 		listHub(cc.Screen, env, locals)
-		return currCmdIdx, false
+		return currCmdIdx, fmt.Errorf("multiple local dirs matched")
 	}
 
 	cnt := moveSavedFlowsToLocalDir(locals[0].Path, cc, env, cmd)
@@ -630,7 +708,7 @@ func cmdMoveSavedFlowsToLocalDir(
 		display.PrintTipTitle(cc.Screen, env,
 			"not saved flow to move")
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func exactMatchHubRepo(infos []meta.RepoInfo, findStrs ...string) (info meta.RepoInfo,
@@ -692,11 +770,14 @@ func displayHubRepo(screen model.Screen, env *model.Env, info meta.RepoInfo) {
 	screen.Print(fmt.Sprintf(display.ColorProp("    - path:    ", env)+"%s\n", info.Path))
 }
 
-func purgeInactiveRepoFromHub(findStr string, cc *model.Cli, env *model.Env, cmd model.ParsedCmd) {
+func purgeInactiveRepoFromHub(findStr string, cc *model.Cli, env *model.Env, cmd model.ParsedCmd) error {
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	infos, _ := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	infos, _, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return err
+	}
 
 	var extracted []meta.RepoInfo
 	var rest []meta.RepoInfo
@@ -730,10 +811,12 @@ func purgeInactiveRepoFromHub(findStr string, cc *model.Cli, env *model.Env, cmd
 	}
 
 	if len(extracted) <= 0 {
-		return
+		return nil
 	}
 
-	meta.WriteReposInfoFile(hubDir, metaPath, rest, fieldSep)
+	if err := meta.WriteReposInfoFile(hubDir, metaPath, rest, fieldSep); err != nil {
+		return err
+	}
 
 	var helpStr []string
 	if removeds > 0 {
@@ -744,6 +827,7 @@ func purgeInactiveRepoFromHub(findStr string, cc *model.Cli, env *model.Env, cmd
 			unlinkeds, env.GetRaw("strs.self-name")))
 	}
 	display.PrintTipTitle(cc.Screen, env, helpStr)
+	return nil
 }
 
 func moveSavedFlowsToLocalDir(toDir string, cc *model.Cli, env *model.Env, cmd model.ParsedCmd) int {
@@ -767,10 +851,10 @@ func moveSavedFlowsToLocalDir(toDir string, cc *model.Cli, env *model.Env, cmd m
 
 		err = utils.MoveFile(path, destPath)
 		if err != nil {
-			panic(model.NewCmdError(cmd, fmt.Sprintf("rename file '%s' to '%s' failed: %v",
-				path, destPath, err)))
+			return model.NewCmdError(cmd, fmt.Sprintf("rename file '%s' to '%s' failed: %v",
+				path, destPath, err))
 		}
-		cmdPath := getCmdPath(path, flowExt, cmd)
+		cmdPath, _ := getCmdPath(path, flowExt, cmd)
 		cc.Screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env), cmdPath))
 		cc.Screen.Print(fmt.Sprintf(display.ColorProp("    - from:", env)+" %s\n", path))
 		cc.Screen.Print(fmt.Sprintf(display.ColorProp("    - to: ", env)+"%s\n", destPath))
@@ -786,7 +870,7 @@ func addRepoToHubAndLoadMods(
 	argv model.ArgVals,
 	screen model.Screen,
 	env *model.Env,
-	cmd model.ParsedCmd) (addrs []meta.RepoAddr, helpStrs []string) {
+	cmd model.ParsedCmd) (addrs []meta.RepoAddr, helpStrs []string, err error) {
 
 	// A repo with this suffix should be a well controlled one, that we could assume some things
 	repoExt := env.GetRaw("strs.mods-repo-ext")
@@ -794,19 +878,22 @@ func addRepoToHubAndLoadMods(
 	gitAddr.Addr = meta.NormalizeGitAddr(gitAddr.Addr)
 
 	if !isOsCmdExists("git") {
-		panic(model.NewCmdError(cmd, "cant't find 'git'"))
+		return nil, nil, model.NewCmdError(cmd, "cant't find 'git'")
 	}
 
 	path := getHubPath(env, cmd)
-	err := os.MkdirAll(path, os.ModePerm)
-	if err != nil && !os.IsExist(err) {
-		panic(model.NewCmdError(cmd, fmt.Sprintf("create hub path '%s' failed: %v", path, err)))
+	mkdirErr := os.MkdirAll(path, os.ModePerm)
+	if mkdirErr != nil && !os.IsExist(mkdirErr) {
+		return nil, nil, model.NewCmdError(cmd, fmt.Sprintf("create hub path '%s' failed: %v", path, mkdirErr))
 	}
 
 	metaPath := getReposInfoPath(env, cmd)
 	fieldSep := env.GetRaw("strs.proto-sep")
 	hubDir := env.GetRaw("sys.paths.hub")
-	oldInfos, oldList := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	oldInfos, oldList, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return nil, nil, err
+	}
 	finisheds := map[string]bool{}
 	for i, info := range oldInfos {
 		if info.Addr == gitAddr {
@@ -821,8 +908,11 @@ func addRepoToHubAndLoadMods(
 	selfName := env.GetRaw("strs.self-name")
 	listFileName := env.GetRaw("strs.repos-file-name")
 	var topRepoHelpStr string
-	topRepoHelpStr, addrs, helpStrs = meta.UpdateRepoAndSubRepos(
+	topRepoHelpStr, addrs, helpStrs, err = meta.UpdateRepoAndSubRepos(
 		screen, env, finisheds, path, gitAddr, repoExt, listFileName, selfName, cmd)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	addrs = append([]meta.RepoAddr{gitAddr}, addrs...)
 	helpStrs = append([]string{topRepoHelpStr}, helpStrs...)
@@ -832,15 +922,21 @@ func addRepoToHubAndLoadMods(
 		if oldList[addr.Str()] {
 			continue
 		}
-		repoPath := meta.GetRepoPath(path, addr)
+		var repoPath string
+		repoPath, err = meta.GetRepoPath(path, addr)
+		if err != nil {
+			return nil, nil, err
+		}
 		info := meta.RepoInfo{Addr: addr, AddReason: gitAddr.Str(), Path: repoPath, HelpStr: helpStrs[i], OnOff: "on"}
 		loadRepoMods(cc, env, info)
 		infos = append(infos, info)
 	}
 
 	infos = append(oldInfos, infos...)
-	meta.WriteReposInfoFile(hubDir, metaPath, infos, fieldSep)
-	return
+	if err = meta.WriteReposInfoFile(hubDir, metaPath, infos, fieldSep); err != nil {
+		return nil, nil, err
+	}
+	return addrs, helpStrs, nil
 }
 
 func loadRepoMods(cc *model.Cli, env *model.Env, info meta.RepoInfo) {
@@ -891,6 +987,7 @@ func checkFoundRepos(
 		status = "disabled"
 	}
 	if len(infos) == 0 {
+		// PANIC: Runtime error - no repo matched
 		panic(model.NewCmdError(cmd, fmt.Sprintf("no %s repo matched find string '%s'", status, findStr)))
 	}
 }
@@ -898,6 +995,7 @@ func checkFoundRepos(
 func getHubPath(env *model.Env, cmd model.ParsedCmd) string {
 	path := env.GetRaw("sys.paths.hub")
 	if len(path) == 0 {
+		// PANIC: Programming error - hub path not configured
 		panic(model.NewCmdError(cmd, "cant't get hub path from env, 'sys.paths.hub' is empty"))
 	}
 	return path
@@ -941,6 +1039,7 @@ func getReposInfoPath(env *model.Env, cmd model.ParsedCmd) string {
 	path := getHubPath(env, cmd)
 	reposInfoFileName := env.GetRaw("strs.hub-file-name")
 	if len(reposInfoFileName) == 0 {
+		// PANIC: Programming error - hub meta file name not configured
 		panic(model.NewCmdError(cmd, "cant't hub meta file name"))
 	}
 	return filepath.Join(path, reposInfoFileName)

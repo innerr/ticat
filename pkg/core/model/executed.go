@@ -91,28 +91,23 @@ func (self ExecutedStatusFilePath) Short() string {
 }
 
 func SafeParseExecutedFlow(path ExecutedStatusFilePath) (executed *ExecutedFlow) {
-	defer func() {
-		if r := recover(); r != nil {
-			println(r.(error).Error())
-		}
-	}()
-	_, executed = ParseExecutedFlow(path)
+	_, executed, _ = ParseExecutedFlow(path)
 	return
 }
 
-func ParseExecutedFlow(path ExecutedStatusFilePath) (lastActiveTs time.Time, executed *ExecutedFlow) {
+func ParseExecutedFlow(path ExecutedStatusFilePath) (lastActiveTs time.Time, executed *ExecutedFlow, err error) {
 	file, err := os.Open(path.Full())
 	if err != nil {
-		panic(fmt.Errorf("[ParseExecutedFlow] open executed status file '%s' failed: %v", path.Short(), err))
+		return lastActiveTs, nil, fmt.Errorf("[ParseExecutedFlow] open executed status file '%s' failed: %v", path.Short(), err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[ParseExecutedFlow] close status file '%s' failed: %v", path.Short(), err))
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("[ParseExecutedFlow] close status file '%s' failed: %v", path.Short(), closeErr)
 		}
 	}()
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		panic(fmt.Errorf("[ParseExecutedFlow] read executed status file '%s' failed: %v", path.Short(), err))
+		return lastActiveTs, nil, fmt.Errorf("[ParseExecutedFlow] read executed status file '%s' failed: %v", path.Short(), err)
 	}
 
 	lines := strings.Split(string(data), "\n")
@@ -125,11 +120,9 @@ func ParseExecutedFlow(path ExecutedStatusFilePath) (lastActiveTs time.Time, exe
 	if !ok && len(lines) != 0 {
 		// Tolerent the corrupted (by bug) status file
 		sample := getSampleLines(lines)
-		//panic(fmt.Errorf("[ParseExecutedFlow] bad executed status file '%s', has %v lines unparsed: %s",
-		//	path.Short(), len(lines), sample))
 		executed.Corrupted = sample
 	}
-	return lastActiveTs, executed
+	return lastActiveTs, executed, nil
 }
 
 func (self *ExecutedFlow) GenExecMasks() (masks []*ExecuteMask) {
@@ -372,12 +365,13 @@ func tryParseScheduledCmd(cmd *ExecutedCmd, path ExecutedStatusFilePath,
 		return lines, lastActiveTs, false
 	}
 	bgSessionPath := ExecutedStatusFilePath{path.RootPath, filepath.Join(path.DirName, tid), path.FileName}
-	lastActiveTs, subflow := ParseExecutedFlow(bgSessionPath)
+	lastActiveTs, subflow, _ := ParseExecutedFlow(bgSessionPath)
 	if len(subflow.Cmds) == 0 {
 		executedCmd := NewExecutedCmd(cmd.Cmd)
 		executedCmd.Result = ExecutedResultIncompleted
 		subflow.Cmds = append(subflow.Cmds, executedCmd)
 	} else if len(subflow.Cmds) != 1 {
+		// PANIC: should never happen - delayed task should have exactly one command
 		panic(fmt.Errorf("[ParseExecutedFlow] expect only one cmd in delayed task"))
 	}
 	cmd.IsDelay = true
@@ -402,11 +396,13 @@ func parseEnvLines(path ExecutedStatusFilePath, lines []string, level int) (env 
 	indent := strings.Repeat(StatusFileIndent, level)
 	for _, line := range lines {
 		if !strings.HasPrefix(line, indent) {
+			// PANIC: File format error - bad indent in status file
 			panic(fmt.Errorf("[ParseExecutedFlow] bad indent of env line '%s' in status file '%s'", line, path.Short()))
 		}
 		line = line[len(indent):]
 		i := strings.Index(line, "=")
 		if i <= 0 {
+			// PANIC: File format error - bad format in status file
 			panic(fmt.Errorf("[ParseExecutedFlow] bad format of env line '%s' in status file '%s'", line, path.Short()))
 		}
 		env.Set(line[0:i], line[i+1:])
@@ -423,6 +419,7 @@ func parseMarkedTime(path ExecutedStatusFilePath, lines []string, mark string, l
 	var err error
 	ts, err = time.ParseInLocation(SessionTimeFormat, tsStr, time.Local)
 	if err != nil {
+		// PANIC: File format error - bad timestamp format in status file
 		panic(fmt.Errorf("[ParseExecutedFlow] bad ts format '%s' with mark '%s' in status file '%s', err: %s",
 			tsStr, mark, path.Short(), err))
 	}
@@ -437,6 +434,7 @@ func parseMarkedOneLineContent(path ExecutedStatusFilePath, lines []string,
 		return
 	}
 	if len(res) != 1 {
+		// PANIC: File format error - expected single line content in status file
 		panic(fmt.Errorf("[ParseExecutedFlow] expect only one line for mark '%s' in status file '%s'", mark, path.Short()))
 	}
 	return res[0], remain, ok
@@ -472,6 +470,7 @@ func parseMarkedContent(path ExecutedStatusFilePath, lines []string,
 			} else {
 				depth -= 1
 				if depth < 0 {
+					// PANIC: File format error - bad recursive mark in status file
 					panic(fmt.Errorf("[ParseExecutedFlow] bad recusive mark '%s' in status file '%s'", mark, path.Short()))
 				}
 			}

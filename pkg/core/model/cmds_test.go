@@ -153,8 +153,8 @@ func TestCmdTreeRegCmd(t *testing.T) {
 
 	sub := tree.GetOrAddSubEx("test-source", "testcmd")
 
-	dummyFunc := func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) bool {
-		return true
+	dummyFunc := func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) error {
+		return nil
 	}
 
 	cmd := sub.RegCmd(dummyFunc, "test command", "test-source")
@@ -190,8 +190,8 @@ func TestCmdTreeRegPowerCmd(t *testing.T) {
 
 	sub := tree.AddSub("powercmd")
 
-	powerFunc := func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds, currCmdIdx int) (int, bool) {
-		return currCmdIdx, true
+	powerFunc := func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds, currCmdIdx int) (int, error) {
+		return currCmdIdx, nil
 	}
 
 	cmd := sub.RegPowerCmd(powerFunc, "power command")
@@ -234,8 +234,8 @@ func TestCmdTreeIsQuiet(t *testing.T) {
 		t.Error("Tree without cmd should not be quiet")
 	}
 
-	dummyFunc := func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) bool {
-		return true
+	dummyFunc := func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) error {
+		return nil
 	}
 
 	cmd := sub.RegCmd(dummyFunc, "test", "")
@@ -255,8 +255,8 @@ func TestCmdTreeIsPowerCmd(t *testing.T) {
 		t.Error("Tree without cmd should not be power cmd")
 	}
 
-	powerFunc := func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds, currCmdIdx int) (int, bool) {
-		return currCmdIdx, true
+	powerFunc := func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds, currCmdIdx int) (int, error) {
+		return currCmdIdx, nil
 	}
 
 	sub.RegPowerCmd(powerFunc, "power")
@@ -545,8 +545,8 @@ func TestCmdTreeArgs(t *testing.T) {
 		t.Error("Tree without cmd should have empty args")
 	}
 
-	dummyFunc := func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) bool {
-		return true
+	dummyFunc := func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) error {
+		return nil
 	}
 
 	cmd := sub.RegCmd(dummyFunc, "test", "")

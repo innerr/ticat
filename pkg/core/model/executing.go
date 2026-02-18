@@ -18,6 +18,7 @@ type ExecutingFlow struct {
 
 func NewExecutingFlow(path string, flow *ParsedCmds, env *Env) *ExecutingFlow {
 	if len(path) > 0 && path[0] != '/' && path[0] != '\\' {
+		// PANIC: Programming error - invalid status file path
 		panic(fmt.Errorf("[ExecutingFlow] status file '%s' invalid path", path))
 	}
 
@@ -38,7 +39,7 @@ func (self *ExecutingFlow) onFlowStart(flow *ParsedCmds, env *Env) {
 
 	trivialMark := env.GetRaw("strs.trivial-mark")
 	cmdPathSep := env.GetRaw("strs.cmd-path-sep")
-	flowStr := SaveFlowToStr(flow, cmdPathSep, trivialMark, env)
+	flowStr, _ := SaveFlowToStr(flow, cmdPathSep, trivialMark, env)
 	buf.Write([]byte(markedContent("flow", 0, flowStr)))
 
 	now := time.Now().Format(SessionTimeFormat)
@@ -217,23 +218,24 @@ func writeMarkedContent(path string, mark string, level int, lines ...string) {
 func writeStatusContent(path string, content string) {
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		panic(fmt.Errorf("[ExecutingFlow] open executing status file '%s' failed: %v", path, err))
+		// Runtime error: cannot open status file - silently ignore
+		return
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[writeStatusContent] close status file '%s' failed: %v", path, err))
+		if closeErr := file.Close(); closeErr != nil {
+			// Runtime error: cannot close status file - silently ignore
 		}
 	}()
 	_, err = file.Write([]byte(content))
 	if err != nil {
-		panic(fmt.Errorf("[ExecutingFlow] write executing status file '%s' failed: %v", path, err))
+		// Runtime error: cannot write to status file - silently ignore
 	}
 }
 
 func fprintf(w io.Writer, format string, a ...interface{}) {
 	_, err := fmt.Fprintf(w, format, a...)
 	if err != nil {
-		panic(err)
+		// Runtime error: write failed - silently ignore
 	}
 }
 

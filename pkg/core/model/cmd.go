@@ -29,12 +29,12 @@ const (
 	CmdTypeAdHotFlow  CmdType = "adhot-flow"
 )
 
-type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) (succeeded bool)
+type NormalCmd func(argv ArgVals, cc *Cli, env *Env, flow []ParsedCmd) error
 
 type PowerCmd func(argv ArgVals, cc *Cli, env *Env, flow *ParsedCmds,
-	currCmdIdx int) (newCurrCmdIdx int, succeeded bool)
+	currCmdIdx int) (newCurrCmdIdx int, err error)
 
-type AdHotFlowCmd func(argv ArgVals, cc *Cli, env *Env) (flow []string, masks []*ExecuteMask, succeeded bool)
+type AdHotFlowCmd func(argv ArgVals, cc *Cli, env *Env) (flow []string, masks []*ExecuteMask, err error)
 
 type Depend struct {
 	OsCmd  string
@@ -190,7 +190,7 @@ func (self *Cmd) Execute(
 	flow *ParsedCmds,
 	allowError bool,
 	currCmdIdx int,
-	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, ok bool) {
+	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, err error) {
 
 	if self.MustExeInExecuted() {
 		mask = NewExecuteMask(self.owner.DisplayPath())
@@ -201,12 +201,7 @@ func (self *Cmd) Execute(
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Begin, int(begin.Unix()))
 	}
 
-	newCurrCmdIdx, ok = self.execute(argv, cc, env, mask, flow, allowError, currCmdIdx, tryBreakInsideFileNFlow)
-	if !ok {
-		// Normally the command should print info before return false, so no need to panic
-		// panic(NewCmdError(flow.Cmds[currCmdIdx], "command failed without detail info"))
-		_ = ok
-	}
+	newCurrCmdIdx, err = self.execute(argv, cc, env, mask, flow, allowError, currCmdIdx, tryBreakInsideFileNFlow)
 
 	end := time.Now()
 	if len(self.autoTimerKeys.End) != 0 {
@@ -216,7 +211,10 @@ func (self *Cmd) Execute(
 		env.GetLayer(EnvLayerSession).SetInt(self.autoTimerKeys.Dur, int(end.Sub(begin)/time.Second))
 	}
 
-	return newCurrCmdIdx, ok || allowError
+	if err != nil && allowError {
+		return newCurrCmdIdx, nil
+	}
+	return
 }
 
 func (self *Cmd) execute(
@@ -227,7 +225,7 @@ func (self *Cmd) execute(
 	flow *ParsedCmds,
 	allowError bool,
 	currCmdIdx int,
-	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, succeeded bool) {
+	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (newCurrCmdIdx int, err error) {
 
 	// TODO: this logic should be in upper layer
 	if mask != nil && mask.OverWriteStartEnv != nil {
@@ -248,16 +246,17 @@ func (self *Cmd) execute(
 		defer func() {
 			r := recover()
 			handledErr := false
-			var err error
+			var recoveredErr error
 			isAbort := false
 			if r != nil {
 				handledErr = cc.HandledErrors[r]
-				err = r.(error)
-				_, isAbort = err.(*AbortByUserErr)
+				recoveredErr = r.(error)
+				_, isAbort = recoveredErr.(*AbortByUserErr)
 			}
 
+			succeeded := err == nil && r == nil
 			if (r == nil || !handledErr) && !isAbort {
-				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, err, !shouldExecByMask(mask) && !executedAndSucceeded(mask))
+				cc.FlowStatus.OnCmdFinish(flow, currCmdIdx, env, succeeded, recoveredErr, !shouldExecByMask(mask) && !executedAndSucceeded(mask))
 				cc.HandledErrors[r] = true
 			}
 			if r != nil && !self.flags.quietError && !allowError {
@@ -285,7 +284,7 @@ func (self *Cmd) execute(
 		envSession.SetBool(disableQuietKey, false)
 	}
 
-	newCurrCmdIdx, succeeded = self.executeByType(argv, cc, env, mask, flow,
+	newCurrCmdIdx, err = self.executeByType(argv, cc, env, mask, flow,
 		allowError, currCmdIdx, logFilePath, tryBreakInsideFileNFlow)
 
 	if shouldQuietSubFlow {
@@ -303,12 +302,12 @@ func (self *Cmd) executeByType(
 	allowError bool,
 	currCmdIdx int,
 	logFilePath string,
-	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (int, bool) {
+	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (int, error) {
 
 	if !shouldExecByMask(mask) {
 		// TODO: print this outside core pkg, so it can be colorize
 		cc.Screen.Print("(skipped executing)\n")
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	}
 
 	switch self.ty {
@@ -319,7 +318,7 @@ func (self *Cmd) executeByType(
 	case CmdTypeFile:
 		return currCmdIdx, self.executeFile(argv, cc, env, allowError, flow.Cmds[currCmdIdx], logFilePath)
 	case CmdTypeEmptyDir:
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	case CmdTypeDirWithCmd:
 		return currCmdIdx, self.executeFile(argv, cc, env, allowError, flow.Cmds[currCmdIdx], logFilePath)
 	case CmdTypeFlow:
@@ -329,12 +328,12 @@ func (self *Cmd) executeByType(
 	case CmdTypeAdHotFlow:
 		return currCmdIdx, self.executeFlow(argv, cc, env, mask)
 	case CmdTypeEmpty:
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	case CmdTypeMetaOnly:
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	default:
-		panic(NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("[Cmd.Execute] unknown cmd executable type: %v", self.ty)))
+		return currCmdIdx, NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("[Cmd.Execute] unknown cmd executable type: %v", self.ty))
 	}
 }
 
@@ -510,9 +509,9 @@ func (self *Cmd) SetIsBlenderCmd() *Cmd {
 	return self
 }
 
-func (self *Cmd) SetArg2EnvAutoMap(names []string) *Cmd {
-	self.argsAutoMap.AddDefinitions(self, names...)
-	return self
+func (self *Cmd) SetArg2EnvAutoMap(names []string) (*Cmd, error) {
+	err := self.argsAutoMap.AddDefinitions(self, names...)
+	return self, err
 }
 
 func (self *Cmd) GetArgsAutoMapStatus() *ArgsAutoMapStatus {
@@ -584,7 +583,11 @@ func (self *Cmd) AddArg2EnvFromAnotherCmd(src *Cmd) {
 }
 
 func (self *Cmd) FinishArg2EnvAutoMap(cc *Cli) {
-	self.argsAutoMap.FlushCache(self)
+	err := self.argsAutoMap.FlushCache(self)
+	if err != nil {
+		cc.TolerableErrs.OnErr(err, self.owner.Source(), self.metaFilePath, "arg2env auto mapping failed")
+		return
+	}
 	if !self.argsAutoMap.FullyMappedOrMapAll() {
 		err := fmt.Errorf("args of cmd '%s' can't be fully mapped: %s",
 			self.owner.DisplayPath(), strings.Join(self.argsAutoMap.GetUnmappedArgs(), ","))
@@ -748,6 +751,7 @@ func (self *Cmd) genLogFilePath(env *Env) string {
 	}
 	sessionDir := env.GetRaw("session")
 	if len(sessionDir) == 0 {
+		// PANIC: should never happen - session dir should always be set before executing commands
 		panic(fmt.Errorf("[Cmd.genLogFilePath] session dir not found in env"))
 	}
 	fileName := self.genLogFileName()
@@ -806,7 +810,8 @@ func (self *Cmd) RenderedFlowStrs(
 	flowStrs := self.flow
 	if self.ty == CmdTypeAdHotFlow {
 		if len(flowStrs) != 0 {
-			panic(fmt.Errorf("[Cmd.RenderedFlowStrs] should never happend: ad-hot flow has fixed flow-strings"))
+			// PANIC: should never happen - ad-hot flow should not have pre-defined flow strings
+			panic(fmt.Errorf("[Cmd.RenderedFlowStrs] should never happen: ad-hot flow has fixed flow-strings"))
 		}
 		flowStrs, masks, _ = self.adhotFlow(argv, cc, env)
 	}
@@ -815,6 +820,7 @@ func (self *Cmd) RenderedFlowStrs(
 	fullyRendered = macrosFullyRendered && flowFullyRendered
 	if fullyRendered {
 		if masks != nil && !cc.Blender.IsEmpty() {
+			// PANIC: Programming error - cannot use blender with masked flow
 			panic(fmt.Errorf("[Cmd.RenderedFlowStrs] can't use blender on a masked flow"))
 		}
 		flow = self.invokeBlender(cc, env, flow)
@@ -828,7 +834,7 @@ func (self *Cmd) invokeBlender(cc *Cli, env *Env, input []string) []string {
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
 	cc.Blender.Invoke(cc, env, flow)
 	trivialMark := env.GetRaw("strs.trivial-mark")
-	flowStr := SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
+	flowStr, _ := SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 	return []string{flowStr}
 }
 
@@ -887,7 +893,7 @@ func (self *Cmd) Flow(argv ArgVals, cc *Cli, env *Env,
 func FlowStrToStrs(flowStr string) []string {
 	flowStrs, err := shellwords.Parse(flowStr)
 	if err != nil {
-		// TODO: better display
+		// PANIC: Runtime error - flow string parsing failed
 		panic(fmt.Errorf("[shellwords] parse '%s' failed: %v",
 			flowStr, err))
 	}
@@ -903,20 +909,21 @@ func (self *Cmd) executePowerCmd(
 	cc *Cli,
 	env *Env,
 	flow *ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	currCmdIdx, succeeded := self.power(argv, cc, env, flow, currCmdIdx)
+	var err error
+	currCmdIdx, err = self.power(argv, cc, env, flow, currCmdIdx)
 	// Let commands manually clear it when it's tail-mode flow(not call),
 	// in that we could run tail-mode recursively
 	if flow.TailModeCall {
 		currCmdIdx = 0
 		flow.Cmds = nil
 	}
-	return currCmdIdx, succeeded
+	return currCmdIdx, err
 }
 
 // TODO: flow must not have argv, is it OK?
-func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask) (succeeded bool) {
+func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask) (err error) {
 	flow, masks, _ := self.Flow(argv, cc, env, false, false)
 	flowStr := FlowStrsToStr(flow)
 	flowEnv := env.NewLayer(EnvLayerSubFlow)
@@ -932,8 +939,8 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 	if cc.FlowStatus != nil {
 		cc.FlowStatus.OnSubFlowStart(flowEnv, flowStr)
 		defer func() {
-			if succeeded {
-				cc.FlowStatus.OnSubFlowFinish(flowEnv, succeeded, skipped)
+			if err == nil {
+				cc.FlowStatus.OnSubFlowFinish(flowEnv, true, skipped)
 			}
 		}()
 	}
@@ -944,22 +951,23 @@ func (self *Cmd) executeFlow(argv ArgVals, cc *Cli, env *Env, mask *ExecuteMask)
 		masks = mask.SubFlow
 	}
 	if shouldExecByMask(mask) {
-		succeeded = cc.Executor.Execute(self.owner.DisplayPath(), true, cc, flowEnv, masks, flow...)
+		if !cc.Executor.Execute(self.owner.DisplayPath(), true, cc, flowEnv, masks, flow...) {
+			err = fmt.Errorf("subflow execution failed")
+		}
 	} else {
 		// TODO: print this outside core pkg, so it can be colorize
 		cc.Screen.Print("(skipped subflow\n")
-		succeeded = true
 		skipped = !executedAndSucceeded(mask)
 	}
 	return
 }
 
 func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, allowError bool, parsedCmd ParsedCmd,
-	logFilePath string, mask *ExecuteMask, tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (succeeded bool) {
+	logFilePath string, mask *ExecuteMask, tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (err error) {
 
-	succeeded = self.executeFlow(argv, cc, env, mask)
-	if !succeeded {
-		return false
+	err = self.executeFlow(argv, cc, env, mask)
+	if err != nil {
+		return
 	}
 
 	// TODO: user will feel a bit weird when FileNFlowExecPolicy is skip
@@ -971,20 +979,19 @@ func (self *Cmd) executeFileNFlow(argv ArgVals, cc *Cli, env *Env, allowError bo
 
 	// TODO: print this outside core pkg, so it can be colorize
 	cc.Screen.Print("(skipped executing after subflow)\n")
-	return true
+	return nil
 }
 
-func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, parsedCmd ParsedCmd, logFilePath string) bool {
+func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, parsedCmd ParsedCmd, logFilePath string) error {
 	if len(self.cmdLine) == 0 {
-		return true
+		return nil
 	}
 
 	for _, dep := range self.depends {
 		_, err := exec.LookPath(dep.OsCmd)
 		if err != nil {
-			// TODO: better display
-			panic(NewCmdError(parsedCmd,
-				fmt.Sprintf("[Cmd.executeFile] %s", err)))
+			return NewCmdError(parsedCmd,
+				fmt.Sprintf("[Cmd.executeFile] %s", err))
 		}
 	}
 
@@ -1012,7 +1019,11 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, p
 	var sessionDir string
 	var sessionPath string
 	if !self.flags.noSession {
-		sessionDir, sessionPath = saveEnvToSessionFile(cc, env, parsedCmd, false)
+		var sessionErr error
+		sessionDir, sessionPath, sessionErr = saveEnvToSessionFile(cc, env, parsedCmd, false)
+		if sessionErr != nil {
+			return sessionErr
+		}
 	}
 
 	args = append(args, self.cmdLine)
@@ -1026,15 +1037,15 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, p
 	logger := cc.CmdIO.SetupForExec(cmd, logFilePath)
 	if logger != nil {
 		defer func() {
-			if err := logger.Close(); err != nil {
-				panic(fmt.Errorf("[executeFile] close logger failed: %v", err))
+			if closeErr := logger.Close(); closeErr != nil {
+				// Log error but don't override the main error
 			}
 		}()
 	}
 
 	err := cmd.Run()
 	if err != nil && !allowError {
-		err = &RunCmdFileFailed{
+		runErr := &RunCmdFileFailed{
 			err.Error(),
 			parsedCmd,
 			argv,
@@ -1043,17 +1054,15 @@ func (self *Cmd) executeFile(argv ArgVals, cc *Cli, env *Env, allowError bool, p
 			logFilePath,
 		}
 		if logger != nil {
-			if err := logger.Close(); err != nil {
-				panic(fmt.Errorf("[executeFile] close logger failed: %v", err))
-			}
+			_ = logger.Close()
 		}
-		panic(err)
+		return runErr
 	}
 
 	if len(sessionPath) != 0 {
-		LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep, delMark)
+		_ = LoadEnvFromFile(env.GetLayer(EnvLayerSession), sessionPath, sep, delMark)
 	}
-	return true
+	return nil
 }
 
 func (self *Cmd) checkCanAddArgFromAnotherArg(srcArgs Args, name string) (defVal string, abbrs []string, ok bool) {

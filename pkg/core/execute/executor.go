@@ -193,7 +193,7 @@ func (self *Executor) executeFlow(
 	breakAtNext := false
 	for i := 0; i < len(flow.Cmds); i++ {
 		cmd := flow.Cmds[i]
-		var succeeded bool
+		var err error
 		var mask *model.ExecuteMask
 		if i < len(masks) {
 			mask = masks[i]
@@ -202,9 +202,9 @@ func (self *Executor) executeFlow(
 		if cc.ForestMode.AtForestTopLvl(env) {
 			cmdEnv = env.Clone()
 		}
-		i, succeeded, breakAtNext = self.executeCmd(cc, bootstrap, cmd, cmdEnv, mask, flow, i,
+		i, err, breakAtNext = self.executeCmd(cc, bootstrap, cmd, cmdEnv, mask, flow, i,
 			breakAtNext, i+1 == len(flow.Cmds))
-		if !succeeded {
+		if err != nil {
 			return false
 		}
 	}
@@ -223,7 +223,7 @@ func (self *Executor) executeCmd(
 	flow *model.ParsedCmds,
 	currCmdIdx int,
 	breakByPrev bool,
-	lastCmdInFlow bool) (newCurrCmdIdx int, succeeded bool, breakAtNext bool) {
+	lastCmdInFlow bool) (newCurrCmdIdx int, err error, breakAtNext bool) {
 
 	// This is a fake apply just for calculate sys args, the env is a clone
 	cmdEnv, argv := cmd.ApplyMappingGenEnvAndArgv(
@@ -269,7 +269,7 @@ func (self *Executor) executeCmd(
 	if last != nil {
 		if last.IsNoExecutableCmd() {
 			display.PrintEmptyDirCmdHint(cc.Screen, env, cmd)
-			newCurrCmdIdx, succeeded = currCmdIdx, true
+			newCurrCmdIdx, err = currCmdIdx, nil
 		} else {
 			if !sysArgv.IsDelay() {
 				// This cmdEnv is different from env, it included values from 'val2env' and 'arg2env'
@@ -281,33 +281,42 @@ func (self *Executor) executeCmd(
 				tryBreakInsideFileNFlowWrap := func(cc *model.Cli, env *model.Env, cmd *model.Cmd) bool {
 					return tryBreakInsideFileNFlow(cc, env, cmd, breakByPrev, showStack)
 				}
-				newCurrCmdIdx, succeeded = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx, tryBreakInsideFileNFlowWrap)
+				newCurrCmdIdx, err = last.Execute(argv, sysArgv, cc, cmdEnv, mask, flow, currCmdIdx, tryBreakInsideFileNFlowWrap)
 				cmdEnv.SetInt("display.executor.displayed", 0)
 			} else {
 				if sysArgv.IsDelayEnvEarlyApply() {
 					cmd.ApplyMappingGenEnvAndArgv(
 						env, cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, cmdEnv.GetInt("sys.stack-depth"))
 				}
-				dur := sysArgv.GetDelayDuration()
-				asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
-				var tid string
-				tid, succeeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(), sysArgv.AllowError(),
-					dur, last.Cmd(), argv, asyncCC, cmdEnv.Clone(), mask, flow.CloneOne(currCmdIdx), 0)
-				if cc.FlowStatus != nil {
-					cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env, tid)
+				dur, durErr := sysArgv.GetDelayDuration()
+				if durErr != nil {
+					err = durErr
+					newCurrCmdIdx = currCmdIdx
+				} else {
+					asyncCC := cc.CloneForAsyncExecuting(cmdEnv)
+					var tid string
+					var asyncSucceeded bool
+					tid, asyncSucceeded = asyncExecute(cc.Screen, sysArgv.GetDelayStr(), sysArgv.AllowError(),
+						dur, last.Cmd(), argv, asyncCC, cmdEnv.Clone(), mask, flow.CloneOne(currCmdIdx), 0)
+					if !asyncSucceeded {
+						err = fmt.Errorf("async execute failed")
+					}
+					if cc.FlowStatus != nil {
+						cc.FlowStatus.OnAsyncTaskSchedule(flow, currCmdIdx, env, tid)
+					}
+					newCurrCmdIdx = currCmdIdx
 				}
-				newCurrCmdIdx = currCmdIdx
 			}
 		}
 	} else {
 		// Maybe it's an empty global-env definition
-		newCurrCmdIdx, succeeded = currCmdIdx, true
+		newCurrCmdIdx, err = currCmdIdx, nil
 	}
 	elapsed := time.Since(start)
 
 	if stackLines.Display {
 		resultLines := display.PrintCmdResult(cc, bootstrap, cc.Screen, cmd,
-			cmdEnv, succeeded, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
+			cmdEnv, err == nil, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 		display.RenderCmdResult(resultLines, cmdEnv, cc.Screen, width)
 	} else if currCmdIdx < len(flow.Cmds)-1 && ln != cc.Screen.OutputtedLines() {
 		last := flow.Cmds[len(flow.Cmds)-1]
@@ -342,6 +351,7 @@ func removeEmptyCmds(flow *model.ParsedCmds) {
 
 func checkTailModeCalls(flow *model.ParsedCmds) {
 	if !flow.TailModeCall && flow.AttempTailModeCall && len(flow.Cmds) > 0 {
+		// PANIC: Runtime error - tail-mode call not supported
 		panic(model.NewCmdError(flow.Cmds[0], "tail-mode call not support"))
 	}
 }
@@ -469,6 +479,7 @@ func stackStepOut(caller string, callerNameEntry string, env *model.Env) {
 		} else {
 			fields := strings.Split(stack, sep)
 			if len(fields) != 1 || fields[0] != caller {
+				// PANIC: Programming error - stack string not match when stepping out
 				panic(fmt.Errorf("stack string not match when stepping out from '%s', stack: '%s'",
 					caller, stack))
 			}
@@ -494,6 +505,7 @@ func asyncExecute(
 
 	if env.GetBool("sys.in-bg-task") {
 		tid := utils.GoRoutineIdStr()
+		// PANIC: Runtime error - can't delay a command when not in main thread
 		panic(fmt.Errorf("can't delay a command when not in main thread, current thread: %s", tid))
 	}
 
@@ -517,6 +529,7 @@ func asyncExecute(
 		sessionDir = filepath.Join(sessionDir, tid)
 		err := os.MkdirAll(sessionDir, os.ModePerm)
 		if err != nil {
+			// PANIC: Runtime error - could not create session dir for bg task
 			panic(fmt.Errorf("could not create session dir '%s' for bg task: %w", sessionDir, err))
 		}
 
@@ -565,20 +578,20 @@ func asyncExecute(
 			env.SetInt("display.executor.displayed", env.GetInt("sys.stack-depth"))
 		}
 		start := time.Now()
-		_, ok := cic.Execute(argv, cc, env, mask, flow, allowError, currCmdIdx, nil)
+		_, asyncErr := cic.Execute(argv, cc, env, mask, flow, allowError, currCmdIdx, nil)
 		elapsed := time.Since(start)
 		env.SetInt("display.executor.displayed", 0)
-		if !ok {
-			// Should already panic inside cmd.Execute
-			panic(fmt.Errorf("delay-command fail, thread: %s", tid))
+		if asyncErr != nil {
+			// PANIC: Runtime error - delay-command failed
+			panic(fmt.Errorf("delay-command fail, thread: %s: %w", tid, asyncErr))
 		}
 
 		if stackLines.Display {
 			resultLines := display.PrintCmdResult(cc, false, cc.Screen, cmd,
-				env, ok, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
+				env, asyncErr == nil, elapsed, flow.Cmds, currCmdIdx, cc.Cmds.Strs)
 			display.RenderCmdResult(resultLines, env, cc.Screen, width)
 		}
-		cc.FlowStatus.OnFlowFinish(env, ok)
+		cc.FlowStatus.OnFlowFinish(env, asyncErr == nil)
 
 	}(dur, argv, cc, env, flow, currCmdIdx)
 

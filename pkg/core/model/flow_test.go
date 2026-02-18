@@ -26,7 +26,10 @@ func TestSaveFlowToStr(t *testing.T) {
 	env.Set("strs.env-kv-sep", "=")
 	env.Set("strs.seq-sep", ":")
 
-	result := SaveFlowToStr(flow, ".", "@", env)
+	result, err := SaveFlowToStr(flow, ".", "@", env)
+	if err != nil {
+		t.Errorf("SaveFlowToStr returned error: %v", err)
+	}
 	if !strings.Contains(result, "cmd1") {
 		t.Errorf("Expected flow string to contain 'cmd1', got: %s", result)
 	}
@@ -56,7 +59,10 @@ func TestSaveFlow(t *testing.T) {
 	env.Set("strs.seq-sep", ":")
 
 	w := bytes.NewBuffer(nil)
-	SaveFlow(w, flow, ".", "@", env)
+	err := SaveFlow(w, flow, ".", "@", env)
+	if err != nil {
+		t.Errorf("SaveFlow returned error: %v", err)
+	}
 
 	result := w.String()
 	if !strings.Contains(result, "cmd1") || !strings.Contains(result, "cmd2") {
@@ -90,7 +96,7 @@ func TestSaveFlowWithEnv(t *testing.T) {
 	}
 
 	w := bytes.NewBuffer(nil)
-	SaveFlow(w, flow, ".", "@", env)
+	_ = SaveFlow(w, flow, ".", "@", env)
 
 	result := w.String()
 	if !strings.Contains(result, "key1") || !strings.Contains(result, "value1") {
@@ -126,7 +132,7 @@ func TestSaveFlowMultipleCmds(t *testing.T) {
 	env.Set("strs.seq-sep", ":")
 
 	w := bytes.NewBuffer(nil)
-	SaveFlow(w, flow, ".", "@", env)
+	_ = SaveFlow(w, flow, ".", "@", env)
 
 	result := w.String()
 	expectedSubstr := "cmd1" + " " + ":" + " " + "cmd2"
@@ -381,7 +387,7 @@ func TestSaveFlowWithTrivialLevel(t *testing.T) {
 	env.Set("strs.seq-sep", ":")
 
 	w := bytes.NewBuffer(nil)
-	SaveFlow(w, flow, ".", "@", env)
+	_ = SaveFlow(w, flow, ".", "@", env)
 
 	result := w.String()
 	if !strings.Contains(result, "@@") {
@@ -414,7 +420,7 @@ func TestSaveFlowWithParseError(t *testing.T) {
 	env.Set("strs.seq-sep", ":")
 
 	w := bytes.NewBuffer(nil)
-	SaveFlow(w, flow, ".", "@", env)
+	_ = SaveFlow(w, flow, ".", "@", env)
 
 	result := w.String()
 	if !strings.Contains(result, "cmd1") {
@@ -435,7 +441,7 @@ func TestSaveFlowEmptyCmds(t *testing.T) {
 	env.Set("strs.seq-sep", ":")
 
 	w := bytes.NewBuffer(nil)
-	SaveFlow(w, flow, ".", "@", env)
+	_ = SaveFlow(w, flow, ".", "@", env)
 
 	result := w.String()
 	if result != "" {

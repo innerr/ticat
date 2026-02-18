@@ -23,12 +23,8 @@ type MetaFile struct {
 	kvSep       string
 }
 
-func NewMetaFile(path string) []VirtualMetaFile {
-	metas, err := NewMetaFileEx(path)
-	if err != nil {
-		panic(fmt.Errorf("[NewMetaFile] open mod meta file '%s' failed: %v", path, err))
-	}
-	return metas
+func NewMetaFile(path string) ([]VirtualMetaFile, error) {
+	return NewMetaFileEx(path)
 }
 
 func NewMetaFileEx(path string) (metas []VirtualMetaFile, err error) {
@@ -40,7 +36,9 @@ func NewMetaFileEx(path string) (metas []VirtualMetaFile, err error) {
 	paths, contents, notVirtuals := parseCombinedFile(path, content, LineSep)
 	for i, it := range contents {
 		meta := CreateMetaFile(paths[i])
-		meta.parse(it)
+		if err = meta.parse(it); err != nil {
+			return
+		}
 		metas = append(metas, VirtualMetaFile{meta, paths[i], notVirtuals[i]})
 	}
 	return
@@ -136,7 +134,7 @@ func (self *MetaFile) GetAll() SectionMap {
 	return self.sections
 }
 
-func (self *MetaFile) parse(lines []string) {
+func (self *MetaFile) parse(lines []string) error {
 	var sectionName string
 	section := NewSection()
 	global := section
@@ -234,7 +232,7 @@ func (self *MetaFile) parse(lines []string) {
 
 		pos := strings.Index(line, self.kvSep)
 		if pos < 0 {
-			panic(fmt.Errorf("[MetaFile.parse] bad kv format: %s", line))
+			return fmt.Errorf("[MetaFile.parse] bad kv format: %s", line)
 		}
 
 		k := strings.TrimSpace(line[0:pos])
@@ -244,48 +242,56 @@ func (self *MetaFile) parse(lines []string) {
 		}
 		section.Set(k, v)
 	}
+	return nil
 }
 
-func (self *MetaFile) Save() {
+func (self *MetaFile) Save() error {
 	file, err := os.OpenFile(self.path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		panic(fmt.Errorf("[MetaFile.Save] open mod meta file '%s' for save failed: %v",
-			self.path, err))
+		return fmt.Errorf("[MetaFile.Save] open mod meta file '%s' for save failed: %v",
+			self.path, err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[MetaFile.Save] close mod meta file '%s' failed: %v",
-				self.path, err))
+		if file != nil {
+			_ = file.Close()
 		}
 	}()
-	self.save(file)
+	if err := self.save(file); err != nil {
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("[MetaFile.Save] close mod meta file '%s' failed: %v",
+			self.path, err)
+	}
+	file = nil
+	return nil
 }
 
-func (self *MetaFile) save(w io.Writer) {
-	saveKey := func(key string, val string) (multiLine bool) {
+func (self *MetaFile) save(w io.Writer) error {
+	saveKey := func(key string, val string) (multiLine bool, err error) {
 		lines := strings.Split(val, self.lineSep)
 		if len(lines) == 1 {
-			if _, err := fmt.Fprintf(w, "%s %s %s\n", key, self.kvSep, val); err != nil {
-				panic(fmt.Errorf("[MetaFile.save] write failed: %v", err))
+			if _, err = fmt.Fprintf(w, "%s %s %s\n", key, self.kvSep, val); err != nil {
+				return false, fmt.Errorf("[MetaFile.save] write failed: %v", err)
 			}
-			return false
+			return false, nil
 		} else {
-			if _, err := fmt.Fprintf(w, "%s %s %s %c\n", key, self.kvSep, lines[0], MultiLineBreaker); err != nil {
-				panic(fmt.Errorf("[MetaFile.save] write failed: %v", err))
+			if _, err = fmt.Fprintf(w, "%s %s %s %c\n", key, self.kvSep, lines[0], MultiLineBreaker); err != nil {
+				return false, fmt.Errorf("[MetaFile.save] write failed: %v", err)
 			}
 			lines = lines[1:]
 			for i, line := range lines {
 				if i != len(lines)-1 {
-					if _, err := fmt.Fprintf(w, "    %s %c\n", line, MultiLineBreaker); err != nil {
-						panic(fmt.Errorf("[MetaFile.save] write failed: %v", err))
+					if _, err = fmt.Fprintf(w, "    %s %c\n", line, MultiLineBreaker); err != nil {
+						return false, fmt.Errorf("[MetaFile.save] write failed: %v", err)
 					}
 				} else {
-					if _, err := fmt.Fprintf(w, "    %s\n", line); err != nil {
-						panic(fmt.Errorf("[MetaFile.save] write failed: %v", err))
+					if _, err = fmt.Fprintf(w, "    %s\n", line); err != nil {
+						return false, fmt.Errorf("[MetaFile.save] write failed: %v", err)
 					}
 				}
 			}
-			return true
+			return true, nil
 		}
 	}
 
@@ -294,23 +300,27 @@ func (self *MetaFile) save(w io.Writer) {
 		keys := section.Keys()
 		if len(name) != 0 {
 			if _, err := fmt.Fprintf(w, "%c%s%c\n", SectionBracketLeft, name, SectionBracketRight); err != nil {
-				panic(fmt.Errorf("[MetaFile.save] write failed: %v", err))
+				return fmt.Errorf("[MetaFile.save] write failed: %v", err)
 			}
 		}
 		for j, key := range keys {
-			multiLine := saveKey(key, section.GetUnTrim(key))
+			multiLine, err := saveKey(key, section.GetUnTrim(key))
+			if err != nil {
+				return err
+			}
 			if multiLine && j != len(keys)-1 {
 				if _, err := fmt.Fprintf(w, "\n"); err != nil {
-					panic(fmt.Errorf("[MetaFile.save] write failed: %v", err))
+					return fmt.Errorf("[MetaFile.save] write failed: %v", err)
 				}
 			}
 		}
 		if i != len(self.orderedKeys)-1 {
 			if _, err := fmt.Fprintf(w, "\n"); err != nil {
-				panic(fmt.Errorf("[MetaFile.save] write failed: %v", err))
+				return fmt.Errorf("[MetaFile.save] write failed: %v", err)
 			}
 		}
 	}
+	return nil
 }
 
 type SectionMap map[string]*Section

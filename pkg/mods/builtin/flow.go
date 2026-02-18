@@ -19,7 +19,7 @@ func ListFlows(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
@@ -35,8 +35,11 @@ func ListFlows(
 			return nil
 		}
 
-		cmdPath := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
-		flowStrs, help, abbrsStr, _, _, _ := flow_file.LoadFlowFile(path)
+		cmdPath, _ := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
+		flowStrs, help, abbrsStr, _, _, _, err := flow_file.LoadFlowFile(path)
+		if err != nil {
+			return nil
+		}
 		flowStr := strings.Join(flowStrs, " ")
 
 		matched := true
@@ -89,7 +92,7 @@ func ListFlows(
 			"",
 			display.SuggestFlowsFilter(env))
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RenameFlow(
@@ -97,23 +100,25 @@ func RenameFlow(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	argSrcCmdPath, srcCmdPath, srcFilePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, true, "src")
 	argDestCmdPath, destCmdPath, destFilePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, false, "dest")
 
 	_, err := os.Stat(srcFilePath)
 	if os.IsNotExist(err) {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("path '%s' does not exist", srcFilePath)))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("path '%s' does not exist", srcFilePath))
 	}
 
 	err = os.Rename(srcFilePath, destFilePath)
 	if err != nil {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("move flow file '%s' to '%s' failed: %v", srcFilePath, destFilePath, err)))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("move flow file '%s' to '%s' failed: %v", srcFilePath, destFilePath, err))
 	}
 
 	realSrcCmdStr := ""
@@ -126,7 +131,7 @@ func RenameFlow(
 	}
 	cc.Screen.Print(display.ColorCmd("["+argSrcCmdPath+"]", env) + realSrcCmdStr +
 		display.ColorSymbol(" -> ", env) + display.ColorCmd("["+argDestCmdPath+"]", env) + realDestCmdStr + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RemoveFlow(
@@ -134,18 +139,18 @@ func RemoveFlow(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	argCmdPath, cmdPath, filePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, true, "cmd-path")
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("path '%s' does not exist", filePath)))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("path '%s' does not exist", filePath))
 	}
 	err = os.Remove(filePath)
 	if err != nil {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("remove flow file '%s' failed: %v", filePath, err)))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("remove flow file '%s' failed: %v", filePath, err))
 	}
 
 	realCmdStr := ""
@@ -157,7 +162,7 @@ func RemoveFlow(
 	cc.Screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
 		display.ColorDisabled(" (removed)", env)+"\n", cmdPath))
 	cc.Screen.Print(fmt.Sprintf("    %s\n", filePath))
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RemoveAllFlows(
@@ -165,28 +170,36 @@ func RemoveAllFlows(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	flowExt := env.GetRaw("strs.flow-ext")
 	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
 	screen := display.NewCacheScreen()
 
+	var walkErr error
 	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if path != root && strings.HasSuffix(path, flowExt) {
 			err = os.Remove(path)
 			if err != nil {
-				panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-					fmt.Sprintf("remove flow file '%s' failed: %v", path, err)))
+				walkErr = model.NewCmdError(flow.Cmds[currCmdIdx],
+					fmt.Sprintf("remove flow file '%s' failed: %v", path, err))
+				return err
 			}
-			cmdPath := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
+			cmdPath, _ := getCmdPath(path, flowExt, flow.Cmds[currCmdIdx])
 			screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+
 				display.ColorDisabled(" (removed)", env)+"\n", cmdPath))
 			screen.Print(fmt.Sprintf("    %s\n", path))
 		}
 		return nil
 	})
+
+	if walkErr != nil {
+		return currCmdIdx, walkErr
+	}
 
 	if screen.OutputtedLines() > 0 {
 		display.PrintTipTitle(cc.Screen, env, "all saved flows are removed")
@@ -199,7 +212,7 @@ func RemoveAllFlows(
 			display.SuggestFlowAdd(env))
 	}
 	screen.WriteTo(cc.Screen)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SaveFlow(
@@ -207,7 +220,7 @@ func SaveFlow(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	quietOverwrite := argv.GetBool("quiet-overwrite")
 	help := argv.GetRaw("help-str")
@@ -229,8 +242,8 @@ func SaveFlow(
 			// do nothing
 		} else {
 			if !env.GetBool("sys.confirm.ask") {
-				panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-					fmt.Sprintf("path '%s' exists", filePath)))
+				return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+					fmt.Sprintf("path '%s' exists", filePath))
 			} else {
 				cc.Screen.Print(fmt.Sprintf(display.ColorTip("[confirm]", env)+
 					" flow file of '%s'"+realCmdStr+" exists, "+
@@ -243,19 +256,19 @@ func SaveFlow(
 		display.PrintErrTitle(cc.Screen, env,
 			"cmd '"+argCmdPath+"'"+realCmdStr+" exists but it is not a saved flow in default place.",
 			"", "so can not be overwrited by 'flow.save', recommand to use 'cmd.edit' to modify it")
-		return currCmdIdx, false
+		return currCmdIdx, fmt.Errorf("cmd '%s' exists but is not a saved flow", argCmdPath)
 	}
 
 	flow.RemoveLeadingCmds(1)
 
 	if !checkAndConfirmIfFlowHasParseError(cc.Screen, flow, env) {
-		return currCmdIdx, false
+		return currCmdIdx, fmt.Errorf("flow has parse error")
 	}
 
 	trivialMark := env.GetRaw("strs.trivial-mark")
 
 	// TODO: wrap line if too long
-	flowStr := model.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
+	flowStr, _ := model.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 
 	screen.Print(fmt.Sprintf(display.ColorCmd("[%s]", env)+"\n", cmdPath))
 	screen.Print("    " + display.ColorProp("- flow:", env) + "\n")
@@ -266,7 +279,9 @@ func SaveFlow(
 	dirPath := filepath.Dir(filePath)
 	os.MkdirAll(dirPath, os.ModePerm)
 
-	flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLvl, autoArgs, packSub)
+	if err := flow_file.SaveFlowFile(filePath, []string{flowStr}, help, "", trivialLvl, autoArgs, packSub); err != nil {
+		return currCmdIdx, err
+	}
 
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+argCmdPath+"'"+realCmdStr+" is saved, can be used as a command")
@@ -279,14 +294,21 @@ func SetFlowHelpStr(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	help := argv.GetRaw("help-str")
 	argCmdPath, cmdPath, filePath, _ := getFlowCmdPath(flow, currCmdIdx, true, "", argv, cc, env, true, "cmd-path")
-	flowStrs, oldHelp, abbrsStr, trivial, autoArgs, packSub := flow_file.LoadFlowFile(filePath)
-	flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr, trivial, autoArgs, packSub)
+	flowStrs, oldHelp, abbrsStr, trivial, autoArgs, packSub, err := flow_file.LoadFlowFile(filePath)
+	if err != nil {
+		return currCmdIdx, err
+	}
+	if err := flow_file.SaveFlowFile(filePath, flowStrs, help, abbrsStr, trivial, autoArgs, packSub); err != nil {
+		return currCmdIdx, err
+	}
 
 	realCmdStr := ""
 	if argCmdPath != cmdPath {
@@ -307,7 +329,7 @@ func SetFlowHelpStr(
 		cc.Screen.Print("    " + display.ColorProp("- old-help:", env) + "\n")
 		cc.Screen.Print("       " + display.ColorHelp("'"+help+"'", env) + "\n")
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func LoadFlows(
@@ -315,12 +337,14 @@ func LoadFlows(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	root := getFlowRoot(env, flow.Cmds[currCmdIdx])
 	loadFlowsFromDir(flow, currCmdIdx, root, cc, env, root)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func LoadFlowsFromDir(
@@ -328,13 +352,16 @@ func LoadFlowsFromDir(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	path := tailModeCallArg(flow, currCmdIdx, argv, "path")
+	path, err := tailModeCallArg(flow, currCmdIdx, argv, "path")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	loadFlowsFromDir(flow, currCmdIdx, path, cc, env, path)
 	display.PrintTipTitle(cc.Screen, env,
 		"flows from '"+path+"' is loaded")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func loadFlowsFromDir(
@@ -343,7 +370,7 @@ func loadFlowsFromDir(
 	root string,
 	cc *model.Cli,
 	env *model.Env,
-	source string) bool {
+	source string) error {
 
 	if len(root) > 0 && root[len(root)-1] == filepath.Separator {
 		root = root[:len(root)-1]
@@ -351,14 +378,14 @@ func loadFlowsFromDir(
 	info, err := os.Stat(root)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return true
+			return nil
 		}
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("access flows dir '%s' failed: %v", root, err)))
+		return model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("access flows dir '%s' failed: %v", root, err))
 	}
 	if !info.IsDir() {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("flows dir '%s' is not dir", root)))
+		return model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("flows dir '%s' is not dir", root))
 	}
 
 	flowExt := env.GetRaw("strs.flow-ext")
@@ -377,21 +404,26 @@ func loadFlowsFromDir(
 		}
 		cmdPath := filepath.Base(path[0 : len(path)-len(flowExt)])
 		cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
-		mod_meta.RegMod(cc, path, "", false, true, cmdPaths, flowExt,
-			cc.Cmds.Strs.AbbrsSep, envPathSep, source, panicRecover)
+		if err := mod_meta.RegMod(cc, path, "", false, true, cmdPaths, flowExt,
+			cc.Cmds.Strs.AbbrsSep, envPathSep, source, panicRecover); err != nil {
+			if panicRecover {
+				return nil
+			}
+			return err
+		}
 		return nil
 	})
-	return true
+	return nil
 }
 
 func getCmdRealPath(
 	flow *model.ParsedCmds,
 	currCmdIdx int,
 	cc *model.Cli,
-	cmdPath string) (newCmdPath string, exists bool) {
+	cmdPath string) (newCmdPath string, exists bool, err error) {
 
 	if len(cmdPath) == 0 {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx], "cmd path is empty"))
+		return "", false, model.NewCmdError(flow.Cmds[currCmdIdx], "cmd path is empty")
 	}
 
 	var realSegs []string
@@ -410,7 +442,7 @@ func getCmdRealPath(
 		currNode = sub
 	}
 
-	return strings.Join(realSegs, sep), exists
+	return strings.Join(realSegs, sep), exists, nil
 }
 
 func getFlowCmdPath(
@@ -425,39 +457,30 @@ func getFlowCmdPath(
 	argName string) (originCmd string, cmdPath string, filePath string, cmdExists bool) {
 
 	var arg string
+	var err error
 	if !getArgFromFlow {
 		arg = argv.GetRaw(argName)
 		if len(arg) == 0 {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty"))
+			return "", "", "", false
 		}
 	} else {
-		arg = tailModeCallArg(flow, currCmdIdx, argv, argName)
+		arg, err = tailModeCallArg(flow, currCmdIdx, argv, argName)
+		if err != nil {
+			return "", "", "", false
+		}
 	}
 	originCmd = arg
 
 	cmdPath = normalizeCmdPath(arg,
 		cc.Cmds.Strs.PathSep, cc.Cmds.Strs.PathAlterSeps)
-	cmdPath, cmdExists = getCmdRealPath(flow, currCmdIdx, cc, cmdPath)
+	cmdPath, cmdExists, _ = getCmdRealPath(flow, currCmdIdx, cc, cmdPath)
 
 	if len(cmdPath) == 0 {
-		if len(originCmd) == 0 {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("arg '%s' is empty", argName)))
-		} else {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("arg '%s' is empty after normalizing: %s -> %s",
-					argName, originCmd, cmdPath)))
-		}
+		return "", "", "", false
 	}
 
 	if expectExists && !cmdExists {
-		if originCmd == cmdPath {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("cmd '%s' not exists", originCmd)))
-		} else {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("cmd '%s' (%s) not exists", originCmd, cmdPath)))
-		}
+		return "", "", "", false
 	}
 
 	var root string
@@ -465,8 +488,7 @@ func getFlowCmdPath(
 		root = getFlowRoot(env, flow.Cmds[currCmdIdx])
 	} else {
 		if !dirExists(inDir) {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("dir '%s' not exists", inDir)))
+			return "", "", "", false
 		}
 		root = inDir
 	}
@@ -476,15 +498,13 @@ func getFlowCmdPath(
 	filePath = filepath.Join(root, cmdPath) + flowExt
 	if !expectExists && fileExists(filePath) {
 		if !env.GetBool("sys.confirm.ask") {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("flow '%s' file '%s' exists", cmdPath, filePath)))
+			return "", "", "", false
 		} else {
 			return
 		}
 	}
 	if expectExists && !fileExists(filePath) {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("flow '%s' file '%s' not exists", cmdPath, filePath)))
+		return "", "", "", false
 	}
 	return
 }
@@ -505,7 +525,7 @@ func checkAndConfirmIfFlowHasParseError(screen model.Screen, flow *model.ParsedC
 func getFlowRoot(env *model.Env, cmd model.ParsedCmd) string {
 	root := env.GetRaw("sys.paths.flows")
 	if len(root) == 0 {
-		panic(model.NewCmdError(cmd, "env 'sys.paths.flows' is empty"))
+		return ""
 	}
 	return root
 }

@@ -13,10 +13,15 @@ func ApiCmdType(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	cmdStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "cmd")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	cmdStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "cmd")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	cmd, _ := cc.ParseCmd(true, cmdStr)
 	node := cmd.LastCmdNode()
 	if node != nil {
@@ -24,7 +29,7 @@ func ApiCmdType(
 			fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().Type())
 		}
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ApiCmdMeta(
@@ -32,10 +37,15 @@ func ApiCmdMeta(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	cmdStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "cmd")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	cmdStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "cmd")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	cmd, _ := cc.ParseCmd(true, cmdStr)
 	node := cmd.LastCmdNode()
 	if node != nil {
@@ -43,7 +53,7 @@ func ApiCmdMeta(
 			fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().MetaFile())
 		}
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ApiCmdPath(
@@ -51,10 +61,15 @@ func ApiCmdPath(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	cmdStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "cmd")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	cmdStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "cmd")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	cmd, _ := cc.ParseCmd(true, cmdStr)
 	node := cmd.LastCmdNode()
 	if node != nil {
@@ -66,7 +81,7 @@ func ApiCmdPath(
 			}
 		}
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ApiCmdDir(
@@ -74,10 +89,15 @@ func ApiCmdDir(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	cmdStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "cmd")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	cmdStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "cmd")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	cmd, _ := cc.ParseCmd(true, cmdStr)
 	node := cmd.LastCmdNode()
 	if node != nil {
@@ -91,7 +111,7 @@ func ApiCmdDir(
 			}
 		}
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ApiCmdListAll(
@@ -99,11 +119,13 @@ func ApiCmdListAll(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	cmdDumpName(cc.Cmds, cc.Screen)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func cmdDumpName(cmd *model.CmdTree, screen model.Screen) {

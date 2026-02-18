@@ -9,14 +9,16 @@ func SetForestMode(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	if !cc.ForestMode.AtForestTopLvl(env) {
 		cc.ForestMode.Push(model.GetLastStackFrame(env))
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderReplaceOnce(
@@ -24,17 +26,25 @@ func BlenderReplaceOnce(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src")
-	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest")
+	src, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	dest, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	srcCmd, _ := cc.ParseCmd(true, src)
 	destCmd, _ := cc.ParseCmd(true, model.FlowStrToStrs(dest)...)
 	cc.Blender.AddReplace(srcCmd, destCmd, 1)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderReplaceForAll(
@@ -42,17 +52,25 @@ func BlenderReplaceForAll(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src")
-	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest")
+	src, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	dest, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	srcCmd, _ := cc.ParseCmd(true, src)
 	destCmd, _ := cc.ParseCmd(true, model.FlowStrToStrs(dest)...)
 	cc.Blender.AddReplace(srcCmd, destCmd, -1)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderRemoveOnce(
@@ -60,13 +78,18 @@ func BlenderRemoveOnce(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	targetStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	targetStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	target, _ := cc.ParseCmd(true, targetStr)
 	cc.Blender.AddRemove(target, 1)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderRemoveForAll(
@@ -74,13 +97,18 @@ func BlenderRemoveForAll(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	targetStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	targetStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	target, _ := cc.ParseCmd(true, targetStr)
 	cc.Blender.AddRemove(target, -1)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderInsertOnce(
@@ -88,16 +116,24 @@ func BlenderInsertOnce(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	targetStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
-	newStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "new")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	targetStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	newStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "new")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	target, _ := cc.ParseCmd(true, targetStr)
 	newCmd, _ := cc.ParseCmd(true, model.FlowStrToStrs(newStr)...)
 	cc.Blender.AddInsert(target, newCmd, 1)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderInsertForAll(
@@ -105,16 +141,24 @@ func BlenderInsertForAll(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	targetStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
-	newStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "new")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	targetStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	newStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "new")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	target, _ := cc.ParseCmd(true, targetStr)
 	newCmd, _ := cc.ParseCmd(true, model.FlowStrToStrs(newStr)...)
 	cc.Blender.AddInsert(target, newCmd, -1)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderInsertAfterOnce(
@@ -122,16 +166,24 @@ func BlenderInsertAfterOnce(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	targetStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
-	newStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "new")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	targetStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	newStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "new")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	target, _ := cc.ParseCmd(true, targetStr)
 	newCmd, _ := cc.ParseCmd(true, model.FlowStrToStrs(newStr)...)
 	cc.Blender.AddInsertAfter(target, newCmd, 1)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderInsertAfterForAll(
@@ -139,16 +191,24 @@ func BlenderInsertAfterForAll(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
-	targetStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
-	newStr := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "new")
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	targetStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "target")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	newStr, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "new")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	target, _ := cc.ParseCmd(true, targetStr)
 	newCmd, _ := cc.ParseCmd(true, model.FlowStrToStrs(newStr)...)
 	cc.Blender.AddInsertAfter(target, newCmd, -1)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func BlenderClear(
@@ -156,9 +216,11 @@ func BlenderClear(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	cc.Blender.Clear()
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }

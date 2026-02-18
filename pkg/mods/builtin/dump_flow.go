@@ -12,7 +12,7 @@ func DumpFlowAll(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return dumpFlowAll(argv, cc, env, flow, currCmdIdx, false)
 }
@@ -22,7 +22,7 @@ func DumpFlowAllSimple(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return dumpFlowAll(argv, cc, env, flow, currCmdIdx, true)
 }
@@ -32,11 +32,11 @@ func DumpFlow(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
@@ -51,11 +51,11 @@ func DumpFlowSimple(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).
@@ -70,11 +70,11 @@ func DumpFlowSkeleton(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).
@@ -122,11 +122,11 @@ func DumpFlowDepends(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	env = env.Clone()
@@ -146,11 +146,11 @@ func DumpFlowEnvOpsCheckResult(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	checker := &model.EnvOpsChecker{}
@@ -174,11 +174,11 @@ func dumpFlowAll(
 	env *model.Env,
 	flow *model.ParsedCmds,
 	currCmdIdx int,
-	simple bool) (int, bool) {
+	simple bool) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).

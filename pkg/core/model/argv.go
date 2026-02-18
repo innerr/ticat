@@ -32,6 +32,7 @@ func (self ArgVals) GetRawEx(name string, defVal string) (raw string) {
 func (self ArgVals) GetUint64(name string) uint64 {
 	val, ok := self[name]
 	if !ok {
+		// PANIC: Programming error - arg not found, caller should use GetUint64Ex if arg might not exist
 		panic(&ArgValErrNotFound{
 			fmt.Sprintf("[ArgVals.GetUint64] arg '%s' not found", name),
 			name,
@@ -42,6 +43,7 @@ func (self ArgVals) GetUint64(name string) uint64 {
 	}
 	intVal, err := strconv.ParseUint(val.Raw, 10, 64)
 	if err != nil {
+		// PANIC: Runtime error - value cannot be converted to uint64
 		panic(&ArgValErrWrongType{
 			fmt.Sprintf("[ArgVals.GetUint64] arg '%s' = '%s' is not uint64: %v", name, val.Raw, err),
 			name, val.Raw, "uint64", err,
@@ -61,6 +63,7 @@ func (self ArgVals) GetUint64Ex(name string, defVal uint64) uint64 {
 func (self ArgVals) GetInt(name string) int {
 	val, ok := self[name]
 	if !ok {
+		// PANIC: Programming error - arg not found, caller should use GetIntEx if arg might not exist
 		panic(&ArgValErrNotFound{
 			fmt.Sprintf("[ArgVals.GetInt] arg '%s' not found", name),
 			name,
@@ -71,6 +74,7 @@ func (self ArgVals) GetInt(name string) int {
 	}
 	intVal, err := strconv.Atoi(val.Raw)
 	if err != nil {
+		// PANIC: Runtime error - value cannot be converted to int
 		panic(&ArgValErrWrongType{
 			fmt.Sprintf("[ArgVals.GetInt] arg '%s' = '%s' is not int: %v", name, val.Raw, err),
 			name, val.Raw, "int", err,
@@ -90,6 +94,7 @@ func (self ArgVals) GetIntEx(name string, defVal int) int {
 func (self ArgVals) GetBool(name string) bool {
 	val, ok := self[name]
 	if !ok {
+		// PANIC: Programming error - arg not found, caller should use GetBoolEx if arg might not exist
 		panic(&ArgValErrNotFound{
 			fmt.Sprintf("[ArgVals.GetBool] arg '%s' not found", name),
 			name,

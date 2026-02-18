@@ -27,6 +27,7 @@ func (self Env) GetInt(name string) int {
 	}
 	intVal, err := strconv.Atoi(val)
 	if err != nil {
+		// PANIC: Runtime error - env value cannot be converted to int
 		panic(&EnvValErrWrongType{
 			fmt.Sprintf("[EnvVal.GetInt] key '%s' = '%s' is not int: %v", name, val, err),
 			name, val, "int", err,
@@ -42,6 +43,7 @@ func (self Env) GetUint64(name string) uint64 {
 	}
 	intVal, err := strconv.ParseUint(val, 10, 64)
 	if err != nil {
+		// PANIC: Runtime error - env value cannot be converted to uint64
 		panic(&EnvValErrWrongType{
 			fmt.Sprintf("[EnvVal.GetUint64] key '%s' = '%s' is not uint64: %v", name, val, err),
 			name, val, "uint64", err,
@@ -53,6 +55,7 @@ func (self Env) GetUint64(name string) uint64 {
 func (self Env) GetDur(name string) time.Duration {
 	_, ok := self.GetEx(name)
 	if !ok {
+		// PANIC: Programming error - required env key not found
 		panic(&EnvValErrNotFound{
 			fmt.Sprintf("[EnvVal.GetDur] key '%s' not found in env", name),
 			name,
@@ -61,6 +64,7 @@ func (self Env) GetDur(name string) time.Duration {
 	val := utils.NormalizeDurStr(self.Get(name).Raw)
 	dur, err := time.ParseDuration(val)
 	if err != nil {
+		// PANIC: Runtime error - env value cannot be converted to duration
 		panic(&EnvValErrWrongType{
 			fmt.Sprintf("[EnvVal.GetDur] key '%s' = '%s' is not duration format: %v", name, val, err),
 			name, val, "Golang: time.Duration", err,
@@ -73,6 +77,7 @@ func (self Env) SetDur(name string, val string) {
 	val = utils.NormalizeDurStr(val)
 	_, err := time.ParseDuration(val)
 	if err != nil {
+		// PANIC: Runtime error - value cannot be converted to duration
 		panic(&EnvValErrWrongType{
 			fmt.Sprintf("[EnvVal.SetDur] key '%s' = '%s' is not duration format: %v", name, val, err),
 			name, val, "Golang: time.Duration", err,

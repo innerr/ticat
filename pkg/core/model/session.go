@@ -38,11 +38,13 @@ func ListSessions(
 
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
+		// PANIC: Programming error - sessions root path not configured
 		panic(fmt.Errorf("[ListSessions] can't get sessions' root path\n"))
 	}
 
 	entrys, err := os.ReadDir(sessionsRoot)
 	if err != nil {
+		// PANIC: Runtime error - cannot read sessions directory
 		panic(fmt.Sprintf("[ListSessions] can't read sessions' root path '%s'\n", sessionsRoot))
 	}
 	dirs := make([]string, len(entrys))
@@ -111,11 +113,13 @@ func ListSessions(
 func CleanSessions(env *Env) (cleaned uint, runnings uint) {
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
+		// PANIC: Programming error - sessions root path not configured
 		panic(fmt.Errorf("[ListSessions] can't get sessions' root path\n"))
 	}
 
 	dirs, err := os.ReadDir(sessionsRoot)
 	if err != nil {
+		// PANIC: Runtime error - cannot read sessions directory
 		panic(fmt.Sprintf("[ListSessions] can't read sessions' root path '%s'\n", sessionsRoot))
 	}
 
@@ -140,6 +144,7 @@ func CleanSessions(env *Env) (cleaned uint, runnings uint) {
 func CleanSession(session SessionStatus, env *Env, force bool) (cleaned bool, running bool) {
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
+		// PANIC: Programming error - sessions root path not configured
 		panic(fmt.Errorf("[CleanSession] can't get sessions' root path"))
 	}
 
@@ -177,7 +182,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 
 	sessionPath := filepath.Join(sessionDir, sessionFileName)
 	if len(sessionDir) != 0 {
-		LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep, cc.Cmds.Strs.EnvValDelAllMark)
+		_ = LoadEnvFromFile(env, sessionPath, cc.Cmds.Strs.EnvKeyValSep, cc.Cmds.Strs.EnvValDelAllMark)
 		// NOTE: treat recursive ticat call as non-ticat scripts, not record the executing status
 		//statusPath := filepath.Join(sessionDir, statusFileName)
 		//return NewExecutingFlow(statusPath, flow, env), true

@@ -23,16 +23,18 @@ func JoinNew(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	key := argv.GetRaw("key")
 	val := argv.GetRaw("value")
 
 	if key == "" || val == "" {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			"need key or values"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			"need key or values")
 	}
 
 	vals := []string{}
@@ -76,18 +78,18 @@ func JoinNew(
 	kvs := []joinKv{}
 	if kvsStr != "" {
 		if err := json.Unmarshal([]byte(kvsStr), &kvs); err != nil {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("parse argument '%s' failed: %s", kvsStr, err.Error())))
+			return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("parse argument '%s' failed: %s", kvsStr, err.Error()))
 		}
 	}
 	kvs = append(kvs, kv)
 	data, err := json.Marshal(kvs)
 	if err != nil {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("encode argument '%s' failed: %s", kvsStr, err.Error())))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("encode argument '%s' failed: %s", kvsStr, err.Error()))
 	}
 	env.GetLayer(model.EnvLayerSession).Set(joinKvName, string(data))
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func JoinRun(
@@ -95,20 +97,22 @@ func JoinRun(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	kvs := []joinKv{}
 	kvsStr := env.GetRaw(joinKvName)
 	if err := json.Unmarshal([]byte(kvsStr), &kvs); err != nil {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("parse argument '%s' failed: %s", kvsStr, err.Error())))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("parse argument '%s' failed: %s", kvsStr, err.Error()))
 	}
 	cmd := argv.GetRaw("cmd")
 	if cmd == "" {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			"can't execute null ticat command"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			"can't execute null ticat command")
 	}
 	iter := newJoinKvsIter(kvs)
 	for {
@@ -123,7 +127,7 @@ func JoinRun(
 			break
 		}
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 type joinKvsIter struct {

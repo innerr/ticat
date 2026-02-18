@@ -117,7 +117,7 @@ func (self *Blender) IsEmpty() bool {
 	return len(self.invokers) == 0
 }
 
-func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) {
+func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (err error) {
 	result := []ParsedCmd{}
 	stackDepth := env.GetInt("sys.stack-depth")
 
@@ -125,7 +125,7 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 		parsedCmd := flow.Cmds[i]
 		// Parsing error will be checked after blender invoked in executor
 		//if parsedCmd.ParseResult.Error != nil {
-		//	panic(parsedCmd.ParseResult.Error)
+		//	return parsedCmd.ParseResult.Error
 		//}
 		cmd := parsedCmd.LastCmdNode()
 		if cmd == nil {
@@ -136,10 +136,10 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 		cic := parsedCmd.LastCmd()
 		if cmd != nil && cic != nil && cic.IsBlenderCmd() {
 			cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(
-				env.Clone(), cc.Cmds.Strs.EnvValDelAllMark, cc.Cmds.Strs.PathSep, stackDepth)
-			_, ok := cic.executeByType(argv, cc, cmdEnv, nil, flow, false, i, "", nil)
-			if !ok {
-				panic(fmt.Errorf("[Blender.Invoke] blender '%s' invoke failed", cmd.DisplayPath()))
+				env.Clone(), cc.Cmds.Strs.EnvKeyValSep, cc.Cmds.Strs.PathSep, stackDepth)
+			_, err = cic.executeByType(argv, cc, cmdEnv, nil, flow, false, i, "", nil)
+			if err != nil {
+				return fmt.Errorf("[Blender.Invoke] blender '%s' invoke failed: %w", cmd.DisplayPath(), err)
 			}
 			continue
 		}
@@ -177,7 +177,7 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 		}
 
 		if originDeleted || originPosDelta != 0 {
-			changed = true
+			// changed = true (no longer used)
 		}
 		if i == flow.GlobalCmdIdx {
 			if originDeleted {
@@ -198,7 +198,8 @@ func (self *Blender) Invoke(cc *Cli, env *Env, flow *ParsedCmds) (changed bool) 
 func GetLastStackFrame(env *Env) string {
 	stackStr := env.GetRaw("sys.stack")
 	if len(stackStr) == 0 {
-		panic(fmt.Errorf("[BlenderForestMode] should never happen"))
+		// PANIC: should never happen - sys.stack is always set when executing commands
+		panic(fmt.Errorf("[BlenderForestMode] should never happen: sys.stack is empty"))
 	}
 	listSep := env.GetRaw("strs.list-sep")
 	stack := strings.Split(stackStr, listSep)

@@ -39,7 +39,7 @@ func TestWriteReposInfoFile_DoubleCloseFix(t *testing.T) {
 		t.Fatal("expected repos.hub file to be created")
 	}
 
-	readInfos, _ := ReadReposInfoFile(hubDir, metaPath, false, "|")
+	readInfos, _, _ := ReadReposInfoFile(hubDir, metaPath, false, "|")
 
 	if len(readInfos) != len(infos) {
 		t.Errorf("expected %d infos, got %d", len(infos), len(readInfos))
@@ -73,7 +73,7 @@ func TestWriteReposInfoFile_EmptyList(t *testing.T) {
 
 	WriteReposInfoFile(hubDir, metaPath, []RepoInfo{}, "|")
 
-	readInfos, _ := ReadReposInfoFile(hubDir, metaPath, false, "|")
+	readInfos, _, _ := ReadReposInfoFile(hubDir, metaPath, false, "|")
 
 	if len(readInfos) != 0 {
 		t.Errorf("expected 0 infos, got %d", len(readInfos))
@@ -114,7 +114,7 @@ func TestWriteReposInfoFile_Overwrite(t *testing.T) {
 
 	WriteReposInfoFile(hubDir, metaPath, infos2, "|")
 
-	readInfos, _ := ReadReposInfoFile(hubDir, metaPath, false, "|")
+	readInfos, _, _ := ReadReposInfoFile(hubDir, metaPath, false, "|")
 
 	if len(readInfos) != 1 {
 		t.Fatalf("expected 1 info, got %d", len(readInfos))
@@ -135,14 +135,14 @@ func TestReadReposInfoFile_NotExist(t *testing.T) {
 	hubDir := filepath.Join(tmpDir, "hub")
 	metaPath := filepath.Join(hubDir, "repos.hub")
 
-	infos, _ := ReadReposInfoFile(hubDir, metaPath, true, "|")
+	infos, _, _ := ReadReposInfoFile(hubDir, metaPath, true, "|")
 
 	if len(infos) != 0 {
 		t.Errorf("expected 0 infos for non-existent file, got %d", len(infos))
 	}
 }
 
-func TestReadReposInfoFile_NotExistPanic(t *testing.T) {
+func TestReadReposInfoFile_NotExistError(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "hub_meta_test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -152,11 +152,8 @@ func TestReadReposInfoFile_NotExistPanic(t *testing.T) {
 	hubDir := filepath.Join(tmpDir, "hub")
 	metaPath := filepath.Join(hubDir, "repos.hub")
 
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic for non-existent file when allowNotExist is false")
-		}
-	}()
-
-	ReadReposInfoFile(hubDir, metaPath, false, "|")
+	_, _, err = ReadReposInfoFile(hubDir, metaPath, false, "|")
+	if err == nil {
+		t.Error("expected error for non-existent file when allowNotExist is false")
+	}
 }

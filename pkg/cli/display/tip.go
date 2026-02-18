@@ -24,7 +24,7 @@ func printTipTitle(screen model.Screen, env *model.Env, isErr bool, msgs ...inte
 		case []string:
 			strs = append(strs, it.([]string)...)
 		default:
-			panic(fmt.Errorf("[PrintTipTitle] invalid msg type, should never happen"))
+			strs = append(strs, fmt.Sprintf("[PrintTipTitle] invalid msg type %T, should never happen", it))
 		}
 	}
 
@@ -73,7 +73,8 @@ func (self *TipBoxPrinter) colorize(msg string) (string, int) {
 	if !self.env.GetBool("display.color") {
 		return msg, 0
 	}
-	return "\033[38;5;242m" + msg + "\033[0m", ColorExtraLen(self.env, "tip-dark")
+	extraLen, _ := ColorExtraLen(self.env, "tip-dark")
+	return "\033[38;5;242m" + msg + "\033[0m", extraLen
 }
 
 func (self *TipBoxPrinter) Print(msg string) {

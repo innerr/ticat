@@ -10,7 +10,7 @@ func DumpCmds(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
 	return dumpCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "", "cmds.more")
@@ -21,7 +21,7 @@ func DumpCmdsWithUsage(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage()
 	return dumpCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "cmds", "cmds.full")
@@ -32,7 +32,7 @@ func DumpCmdsWithDetails(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs()
 	return dumpCmds(argv, cc, env, flow, currCmdIdx, dumpArgs, "cmds.more", "")
@@ -43,7 +43,7 @@ func DumpTailCmdSub(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton()
 	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, dumpArgs, "", "tail-sub.more")
@@ -54,7 +54,7 @@ func DumpTailCmdSubWithUsage(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage()
 	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, dumpArgs, "tail-sub", "tail-sub.full")
@@ -65,7 +65,7 @@ func DumpTailCmdSubWithDetails(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	dumpArgs := display.NewDumpCmdArgs()
 	return dumpTailCmdSub(argv, cc, env, flow, currCmdIdx, dumpArgs, "tail-sub.more", "")
@@ -79,7 +79,7 @@ func dumpCmds(
 	currCmdIdx int,
 	dumpArgs *display.DumpCmdArgs,
 	lessDetailCmd string,
-	moreDetailCmd string) (int, bool) {
+	moreDetailCmd string) (int, error) {
 
 	findStrs := getFindStrsFromArgvAndFlow(flow, currCmdIdx, argv)
 	if len(findStrs) != 0 {
@@ -95,7 +95,7 @@ func dumpCmds(
 	tag := argv.GetRaw("tag")
 	if len(tag) != 0 {
 		if len(findStrs) != 0 {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx], "not support mix-search with tag and keywords now"))
+			return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx], "not support mix-search with tag and keywords now")
 		}
 		dumpArgs.AddFindStrs(tag).SetFindByTags()
 	}
@@ -121,11 +121,11 @@ func dumpTailCmdSub(
 	currCmdIdx int,
 	dumpArgs *display.DumpCmdArgs,
 	lessDetailCmd string,
-	moreDetailCmd string) (int, bool) {
+	moreDetailCmd string) (int, error) {
 
 	err := flow.FirstErr()
 	if err != nil {
-		panic(err.Error)
+		return currCmdIdx, err.Error
 	}
 
 	findStrs := getFindStrsFromArgv(argv)

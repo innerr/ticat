@@ -36,7 +36,7 @@ func KeyValueDisplayStr(key string, value string, env *model.Env) string {
 }
 
 func KeyValueDisplayStrEx(key string, value string, env *model.Env, envKeysInfo *model.EnvKeysInfo) (string, int) {
-	extraLen := ColorExtraLen(env, "symbol", "key")
+	extraLen, _ := ColorExtraLen(env, "symbol", "key")
 	if envKeysInfo != nil {
 		keyInfo := envKeysInfo.Get(key)
 		if keyInfo != nil {
@@ -106,7 +106,8 @@ func dumpEnv(
 		for _, k := range keys {
 			v := mayMaskSensitiveVal(env, k, flatten[k])
 			res = append(res, ColorKey(k, env)+ColorSymbol(" = ", env)+v)
-			extraLens = append(extraLens, ColorExtraLen(env, "key", "symbol"))
+			extra, _ := ColorExtraLen(env, "key", "symbol")
+			extraLens = append(extraLens, extra)
 		}
 	} else {
 		dumpEnvLayer(env, env, envKeysInfo, printEnvLayer, printDefEnv, filterPrefixs, &res, &extraLens, indentSize, 0)
@@ -156,7 +157,8 @@ func dumpEnvLayer(
 	}
 	if len(output) != 0 {
 		*res = append(*res, indent+ColorSymbol("["+env.LayerTypeName()+"]", topEnv))
-		*extraLens = append(*extraLens, ColorExtraLen(topEnv, "symbol"))
+		extra, _ := ColorExtraLen(topEnv, "symbol")
+		*extraLens = append(*extraLens, extra)
 		*res = append(*res, output...)
 		*extraLens = append(*extraLens, outputExtraLens...)
 	}

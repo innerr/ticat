@@ -10,23 +10,26 @@ import (
 	"github.com/innerr/ticat/pkg/core/model"
 )
 
-func assertNotTailMode(flow *model.ParsedCmds, currCmdIdx int) {
+func assertNotTailMode(flow *model.ParsedCmds, currCmdIdx int) error {
 	if flow.HasTailMode && !flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode && len(flow.Cmds) > 1 {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support"))
+		return model.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode not support")
 	}
+	return nil
 }
 
 /*
-func assertNotTailModeFlow(flow *model.ParsedCmds, currCmdIdx int) {
+func assertNotTailModeFlow(flow *model.ParsedCmds, currCmdIdx int) error {
 	if flow.HasTailMode && !flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode && len(flow.Cmds) > 1 {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode flow not support"))
+		return model.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode flow not support")
 	}
+	return nil
 }
 
-func assertNotTailModeCall(flow *model.ParsedCmds, currCmdIdx int) {
+func assertNotTailModeCall(flow *model.ParsedCmds, currCmdIdx int) error {
 	if flow.TailModeCall {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode call not support"))
+		return model.NewCmdError(flow.Cmds[currCmdIdx], "tail-mode call not support")
 	}
+	return nil
 }
 */
 
@@ -34,10 +37,13 @@ func tailModeCallArg(
 	flow *model.ParsedCmds,
 	currCmdIdx int,
 	argv model.ArgVals,
-	arg string) string {
+	arg string) (string, error) {
 
-	args := tailModeCallArgs(flow, currCmdIdx, argv, arg, false)
-	return args[0]
+	args, err := tailModeCallArgs(flow, currCmdIdx, argv, arg, false)
+	if err != nil {
+		return "", err
+	}
+	return args[0], nil
 }
 
 func tailModeCallArgs(
@@ -45,18 +51,18 @@ func tailModeCallArgs(
 	currCmdIdx int,
 	argv model.ArgVals,
 	arg string,
-	allowMultiArgs bool) []string {
+	allowMultiArgs bool) ([]string, error) {
 
 	val := argv.GetRaw(arg)
 	if flow.TailModeCall && !flow.Cmds[currCmdIdx].TailMode {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			"should not happen: wrong command tail-mode flag"))
+		return nil, model.NewCmdError(flow.Cmds[currCmdIdx],
+			"should not happen: wrong command tail-mode flag")
 	}
 	if !flow.TailModeCall {
 		if len(val) == 0 {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty"))
+			return nil, model.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty")
 		}
-		return []string{val}
+		return []string{val}, nil
 	}
 
 	args := tailModeGetInput(flow, currCmdIdx, false)
@@ -65,19 +71,19 @@ func tailModeCallArgs(
 		args = append(args, val)
 	} else {
 		if len(args) == 0 {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty"))
+			return nil, model.NewCmdError(flow.Cmds[currCmdIdx], "arg '"+arg+"' is empty")
 		}
 	}
 	if !allowMultiArgs && len(args) > 1 {
 		if flowInputN > 0 && len(val) != 0 {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				"mixed usage of arg '"+arg+"' and tail-mode call"))
+			return nil, model.NewCmdError(flow.Cmds[currCmdIdx],
+				"mixed usage of arg '"+arg+"' and tail-mode call")
 		} else {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				"too many input of arg '"+arg+"' in tail-mode call"))
+			return nil, model.NewCmdError(flow.Cmds[currCmdIdx],
+				"too many input of arg '"+arg+"' in tail-mode call")
 		}
 	}
-	return args
+	return args, nil
 }
 
 func tailModeGetInput(flow *model.ParsedCmds, currCmdIdx int, allowMultiCmds bool) (input []string) {
@@ -98,9 +104,9 @@ func tailModeGetInput(flow *model.ParsedCmds, currCmdIdx int, allowMultiCmds boo
 	return
 }
 
-func clearFlow(flow *model.ParsedCmds) (int, bool) {
+func clearFlow(flow *model.ParsedCmds) (int, error) {
 	flow.Cmds = nil
-	return 0, true
+	return 0, nil
 }
 
 func getFindStrsFromArgvAndFlow(flow *model.ParsedCmds, currCmdIdx int, argv model.ArgVals) (findStrs []string) {
@@ -151,20 +157,20 @@ func normalizeCmdPath(path string, sep string, alterSeps string) string {
 	return strings.Join(segs, sep)
 }
 
-func getCmdPath(path string, flowExt string, cmd model.ParsedCmd) string {
+func getCmdPath(path string, flowExt string, cmd model.ParsedCmd) (string, error) {
 	base := filepath.Base(path)
 	if !strings.HasSuffix(base, flowExt) {
-		panic(model.NewCmdError(cmd, fmt.Sprintf("flow file '%s' ext not match '%s'", path, flowExt)))
+		return "", model.NewCmdError(cmd, fmt.Sprintf("flow file '%s' ext not match '%s'", path, flowExt))
 	}
-	return base[:len(base)-len(flowExt)]
+	return base[:len(base)-len(flowExt)], nil
 }
 
-func getAndCheckArg(argv model.ArgVals, cmd model.ParsedCmd, arg string) string {
+func getAndCheckArg(argv model.ArgVals, cmd model.ParsedCmd, arg string) (string, error) {
 	val := argv.GetRaw(arg)
 	if len(val) == 0 {
-		panic(model.NewCmdError(cmd, "arg '"+arg+"' is empty"))
+		return "", model.NewCmdError(cmd, "arg '"+arg+"' is empty")
 	}
-	return val
+	return val, nil
 }
 
 func isOsCmdExists(cmd string) bool {
@@ -172,18 +178,19 @@ func isOsCmdExists(cmd string) bool {
 	return err == nil && len(path) > 0
 }
 
-func osRemoveDir(path string, cmd model.ParsedCmd) {
+func osRemoveDir(path string, cmd model.ParsedCmd) error {
 	path = strings.TrimSpace(path)
 	if len(path) <= 1 {
-		panic(model.NewCmdError(cmd, fmt.Sprintf("removing path '%v', looks not right", path)))
+		return model.NewCmdError(cmd, fmt.Sprintf("removing path '%v', looks not right", path))
 	}
 	err := os.RemoveAll(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return
+			return nil
 		}
-		panic(model.NewCmdError(cmd, fmt.Sprintf("remove repo '%s' failed: %v", path, err)))
+		return model.NewCmdError(cmd, fmt.Sprintf("remove repo '%s' failed: %v", path, err))
 	}
+	return nil
 }
 
 func fileExists(path string) bool {

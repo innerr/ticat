@@ -48,21 +48,19 @@ func (self RepoInfo) IsLocal() bool {
 func WriteReposInfoFile(
 	hubRootPath string,
 	path string,
-	infos []RepoInfo, sep string) {
+	infos []RepoInfo, sep string) error {
 
 	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-		panic(fmt.Errorf("[WriteReposInfoFile] create dir for file '%s' failed: %v", path, err))
+		return fmt.Errorf("[WriteReposInfoFile] create dir for file '%s' failed: %v", path, err)
 	}
 	tmp := path + ".tmp"
 	file, err := os.OpenFile(tmp, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		panic(fmt.Errorf("[WriteReposInfoFile] open file '%s' failed: %v", tmp, err))
+		return fmt.Errorf("[WriteReposInfoFile] open file '%s' failed: %v", tmp, err)
 	}
 	defer func() {
 		if file != nil {
-			if err := file.Close(); err != nil {
-				panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
-			}
+			_ = file.Close()
 		}
 	}()
 
@@ -70,39 +68,43 @@ func WriteReposInfoFile(
 		_, err = fmt.Fprintf(file, "%s%s%s%s%s%s%s%s%s\n", info.Addr.Str(), sep, info.AddReason, sep,
 			tryConvAbsPathToRelPath(hubRootPath, info.Path), sep, info.HelpStr, sep, info.OnOff)
 		if err != nil {
-			panic(fmt.Errorf("[WriteReposInfoFile] write file '%s' failed: %v", tmp, err))
+			return fmt.Errorf("[WriteReposInfoFile] write file '%s' failed: %v", tmp, err)
 		}
 	}
 	if err := file.Close(); err != nil {
-		panic(fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err))
+		return fmt.Errorf("[WriteReposInfoFile] close file '%s' failed: %v", tmp, err)
 	}
 	file = nil
 
 	err = os.Rename(tmp, path)
 	if err != nil {
-		panic(fmt.Errorf("[WriteReposInfoFile] rename file '%s' to '%s' failed: %v",
-			tmp, path, err))
+		return fmt.Errorf("[WriteReposInfoFile] rename file '%s' to '%s' failed: %v",
+			tmp, path, err)
 	}
+	return nil
 }
 
 func ReadReposInfoFile(
 	hubRootPath string,
 	path string,
 	allowNotExist bool,
-	sep string) (infos []RepoInfo, list map[string]bool) {
+	sep string) (infos []RepoInfo, list map[string]bool, err error) {
 
 	list = map[string]bool{}
 
-	file, err := os.Open(path)
+	var file *os.File
+	file, err = os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) && allowNotExist {
+			err = nil
 			return
 		}
-		panic(fmt.Errorf("[ReadReposInfoFile] open file '%s' failed: %v", path, err))
+		err = fmt.Errorf("[ReadReposInfoFile] open file '%s' failed: %v", path, err)
+		return
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			panic(fmt.Errorf("[ReadReposInfoFile] close file '%s' failed: %v", path, err))
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("[ReadReposInfoFile] close file '%s' failed: %v", path, closeErr)
 		}
 	}()
 
@@ -112,8 +114,9 @@ func ReadReposInfoFile(
 		line := strings.Trim(scanner.Text(), "\n\r")
 		fields := strings.Split(line, sep)
 		if len(fields) != 5 {
-			panic(fmt.Errorf("[ReadReposInfoFile] file '%s' line '%s' can't be parsed",
-				path, line))
+			err = fmt.Errorf("[ReadReposInfoFile] file '%s' line '%s' can't be parsed",
+				path, line)
+			return
 		}
 		info := RepoInfo{
 			ParseRepoAddr(fields[0]),

@@ -13,22 +13,24 @@ func ExecCmds(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	cmdStr := argv.GetRaw("command")
 	if cmdStr == "" {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			"can't execute null os command"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			"can't execute null os command")
 	}
 	cmd := exec.Command("bash", "-c", cmdStr)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("execute os command '%s' failed: %s", cmdStr, err.Error())))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("execute os command '%s' failed: %s", cmdStr, err.Error()))
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }

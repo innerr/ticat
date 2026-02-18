@@ -99,23 +99,25 @@ func LoadRuntimeEnv(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	env = env.GetLayer(model.EnvLayerSession)
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("get current work dir fail: %v", err)))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("get current work dir fail: %v", err))
 	}
 	env.Set("sys.paths.work-dir", pwd)
 
 	path, err := os.Executable()
 	if err != nil {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-			fmt.Sprintf("get abs self-path fail: %v", err)))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+			fmt.Sprintf("get abs self-path fail: %v", err))
 	}
 	pathWithoutLinks, err := filepath.EvalSymlinks(path)
 	if err == nil {
@@ -148,7 +150,7 @@ func LoadRuntimeEnv(
 	ip := utils.IpId()
 	env.Set("sys.session.id.ip", ip)
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func LoadLocalEnv(
@@ -156,9 +158,11 @@ func LoadLocalEnv(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	kvSep := cc.Cmds.Strs.EnvKeyValSep
 	delMark := cc.Cmds.Strs.EnvValDelAllMark
@@ -173,7 +177,7 @@ func LoadLocalEnv(
 		env.GetLayer(model.EnvLayerDefault).SetBool("display.color", !utils.StdoutIsPipe())
 	}
 
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SaveEnvToLocal(
@@ -181,9 +185,11 @@ func SaveEnvToLocal(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	kvSep := env.GetRaw("strs.env-kv-sep")
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
 	model.SaveEnvToFile(env, path, kvSep, true)
@@ -191,7 +197,7 @@ func SaveEnvToLocal(
 		"changes of env are saved, could be listed by:",
 		"",
 		display.SuggestListEnv(env))
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RemoveEnvValNotSave(
@@ -199,7 +205,7 @@ func RemoveEnvValNotSave(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return removeEnvVal(argv, cc, env, flow, currCmdIdx, false)
 }
@@ -209,11 +215,16 @@ func RemoveEnvValHavePrefixNotSave(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	prefix := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "prefix")
+	prefix, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "prefix")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	keyVals := env.FlattenAll()
 	for key := range keyVals {
@@ -224,7 +235,7 @@ func RemoveEnvValHavePrefixNotSave(
 		env.DeleteEx(key, model.EnvLayerDefault)
 		cc.Screen.Print(keyStr + " deleted\n")
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func RemoveEnvValAndSaveToLocal(
@@ -232,7 +243,7 @@ func RemoveEnvValAndSaveToLocal(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
 	return removeEnvVal(argv, cc, env, flow, currCmdIdx, true)
 }
@@ -244,7 +255,7 @@ func removeEnvVal(
 	env *model.Env,
 	flow *model.ParsedCmds,
 	currCmdIdx int,
-	saveToLocal bool) (int, bool) {
+	saveToLocal bool) (int, error) {
 
 	tailMode := flow.TailModeCall && flow.Cmds[currCmdIdx].TailMode
 
@@ -256,10 +267,10 @@ func removeEnvVal(
 	if len(key) != 0 {
 		keys = append(keys, key)
 	} else if !tailMode {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx], "arg 'key' is empty"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx], "arg 'key' is empty")
 	}
 	if len(keys) == 0 {
-		panic(model.NewCmdError(flow.Cmds[currCmdIdx], "no specified key to remove"))
+		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx], "no specified key to remove")
 	}
 
 	deleted := 0
@@ -280,7 +291,7 @@ func removeEnvVal(
 		model.SaveEnvToFile(env.GetLayer(model.EnvLayerSession), path, kvSep, true)
 		display.PrintTipTitle(cc.Screen, env, "changes of env are saved")
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ResetLocalEnv(
@@ -288,23 +299,25 @@ func ResetLocalEnv(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	path := getEnvLocalFilePath(env, flow.Cmds[currCmdIdx])
 	err := os.Remove(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			display.PrintTipTitle(cc.Screen, env, "there is no saved env changes, nothing to do")
-			return currCmdIdx, true
+			return currCmdIdx, nil
 		} else {
-			panic(model.NewCmdError(flow.Cmds[currCmdIdx],
-				fmt.Sprintf("remove env file '%s' failed: %v", path, err)))
+			return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
+				fmt.Sprintf("remove env file '%s' failed: %v", path, err))
 		}
 	}
 	display.PrintTipTitle(cc.Screen, env, "all saved env changes are removed")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func ResetSessionEnv(
@@ -312,9 +325,11 @@ func ResetSessionEnv(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
 	excludes := map[string]string{}
 	excludeStr := argv.GetRaw("exclude-keys")
@@ -340,7 +355,7 @@ func ResetSessionEnv(
 		title += fmt.Sprintf(", exclude %d key%s by demand", len(excludes), plural)
 	}
 	display.PrintTipTitle(cc.Screen, env, title)
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnvAssertEqual(
@@ -348,19 +363,24 @@ func EnvAssertEqual(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	key, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	val := argv.GetRaw("value")
 	envVal := env.GetRaw(key)
 
 	if val != envVal {
-		panic(fmt.Errorf("assert env '%s' = '%s' failed, is '%s'", key, val, envVal))
+		return currCmdIdx, fmt.Errorf("assert env '%s' = '%s' failed, is '%s'", key, val, envVal)
 	}
 	cc.Screen.Print(display.KeyValueDisplayStr(key, val, env) + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func EnvAssertNotExists(
@@ -368,16 +388,21 @@ func EnvAssertNotExists(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	key, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	if env.Has(key) {
-		panic(fmt.Errorf("assert key '%s' not in env failed", key))
+		return currCmdIdx, fmt.Errorf("assert key '%s' not in env failed", key)
 	}
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func MapEnvKeyValueToAnotherKey(
@@ -385,19 +410,27 @@ func MapEnvKeyValueToAnotherKey(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	src := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src-key")
-	dest := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest-key")
+	src, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "src-key")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	dest, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "dest-key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	env = env.GetLayer(model.EnvLayerSession)
 	value := env.GetRaw(src)
 	env.Set(dest, value)
 
 	cc.Screen.Print(display.KeyValueDisplayStr(dest, value, env) + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func SetEnvKeyValue(
@@ -405,18 +438,26 @@ func SetEnvKeyValue(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
-	value := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+	key, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	value, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	env = env.GetLayer(model.EnvLayerSession)
 	env.Set(key, value)
 
 	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func UpdateEnvKeyValue(
@@ -424,23 +465,31 @@ func UpdateEnvKeyValue(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
-	value := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+	key, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	value, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	env = env.GetLayer(model.EnvLayerSession)
 	_, ok := env.GetEx(key)
 	if !ok {
 		cc.Screen.Print(display.ColorError(fmt.Sprintf("env key '%s' not exists\n", key), env))
-		return currCmdIdx, false
+		return currCmdIdx, fmt.Errorf("env key '%s' not exists", key)
 	}
 	env.Set(key, value)
 
 	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func AddEnvKeyValue(
@@ -448,23 +497,31 @@ func AddEnvKeyValue(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
-	value := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+	key, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	if err != nil {
+		return currCmdIdx, err
+	}
+	value, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "value")
+	if err != nil {
+		return currCmdIdx, err
+	}
 
 	env = env.GetLayer(model.EnvLayerSession)
 	_, ok := env.GetEx(key)
 	if ok {
 		cc.Screen.Print(display.ColorError(fmt.Sprintf("env key '%s' already exists\n", key), env))
-		return currCmdIdx, false
+		return currCmdIdx, fmt.Errorf("env key '%s' already exists", key)
 	}
 	env.Set(key, value)
 
 	cc.Screen.Print(display.KeyValueDisplayStr(key, value, env) + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func DisplayEnvVal(
@@ -472,18 +529,21 @@ func DisplayEnvVal(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	key := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	key, err := getAndCheckArg(argv, flow.Cmds[currCmdIdx], "key")
+	if err != nil {
+		return currCmdIdx, err
+	}
 	cc.Screen.Print(env.GetRaw(key) + "\n")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func getEnvLocalFilePath(env *model.Env, cmd model.ParsedCmd) string {
 	path := env.GetRaw("sys.paths.data")
 	file := env.GetRaw("strs.env-file-name")
 	if len(path) == 0 || len(file) == 0 {
-		panic(model.NewCmdError(cmd, fmt.Sprintf("can't find local data path")))
+		return ""
 	}
 	return filepath.Join(path, file)
 }

@@ -16,15 +16,17 @@ func SetExtExec(
 	cc *model.Cli,
 	env *model.Env,
 	flow *model.ParsedCmds,
-	currCmdIdx int) (int, bool) {
+	currCmdIdx int) (int, error) {
 
-	assertNotTailMode(flow, currCmdIdx)
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
 	env = env.GetLayer(model.EnvLayerDefault)
 	env.Set("sys.ext.exec.bash", "bash")
 	env.Set("sys.ext.exec.sh", "sh")
 	env.Set("sys.ext.exec.py", utils.FindPython())
 	env.Set("sys.ext.exec.go", "go run")
-	return currCmdIdx, true
+	return currCmdIdx, nil
 }
 
 func loadLocalMods(
@@ -65,8 +67,13 @@ func loadLocalMods(
 		if strings.HasSuffix(metaPath, flowExt) {
 			cmdPath := filepath.Base(metaPath[0 : len(metaPath)-len(flowExt)])
 			cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
-			mod_meta.RegMod(cc, metaPath, "", false, true, cmdPaths,
-				flowExt, abbrsSep, envPathSep, source, panicRecover)
+			if err := mod_meta.RegMod(cc, metaPath, "", false, true, cmdPaths,
+				flowExt, abbrsSep, envPathSep, source, panicRecover); err != nil {
+				if panicRecover {
+					return nil
+				}
+				return err
+			}
 			return nil
 		}
 
@@ -96,8 +103,13 @@ func loadLocalMods(
 		}
 
 		cmdPaths := strings.Split(cmdPath, string(filepath.Separator))
-		mod_meta.RegMod(cc, metaPath, targetPath, isDir, false, cmdPaths,
-			flowExt, abbrsSep, envPathSep, source, panicRecover)
+		if err := mod_meta.RegMod(cc, metaPath, targetPath, isDir, false, cmdPaths,
+			flowExt, abbrsSep, envPathSep, source, panicRecover); err != nil {
+			if panicRecover {
+				return nil
+			}
+			return err
+		}
 		return nil
 	})
 }

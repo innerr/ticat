@@ -75,10 +75,10 @@ func (self *CmdTree) Execute(
 	mask *ExecuteMask,
 	flow *ParsedCmds,
 	currCmdIdx int,
-	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (int, bool) {
+	tryBreakInsideFileNFlow func(*Cli, *Env, *Cmd) bool) (int, error) {
 
 	if self.cmd == nil {
-		return currCmdIdx, true
+		return currCmdIdx, nil
 	} else {
 		return self.cmd.Execute(argv, cc, env, mask, flow, sysArgv.AllowError(), currCmdIdx, tryBreakInsideFileNFlow)
 	}
@@ -107,6 +107,7 @@ func (self *CmdTree) cmdConflictCheck(help string, funName string, source string
 		self.Path(),
 		self.Source(),
 	}
+	// PANIC: Programming error - command registration conflict
 	panic(err)
 }
 
@@ -255,6 +256,7 @@ func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 			name,
 			old.Source(),
 		}
+		// PANIC: Programming error - duplicate sub-command name during registration
 		panic(err)
 	}
 	sub := NewCmdTree(self.Strs)
@@ -269,6 +271,7 @@ func (self *CmdTree) AddSub(name string, abbrs ...string) *CmdTree {
 
 func (self *CmdTree) AddAbbrs(abbrs ...string) {
 	if self.parent == nil {
+		// PANIC: Programming error - cannot add abbreviations to root node
 		panic(fmt.Errorf("[CmdTree.AddAbbrs] can't add abbrs %v to root", abbrs))
 	}
 	self.parent.addSubAbbrs(self.name, abbrs...)
@@ -293,6 +296,7 @@ func (self *CmdTree) GetSub(path ...string) *CmdTree {
 func (self *CmdTree) GetSubByPath(path string, panicOnNotFound bool) *CmdTree {
 	cmds := self.GetSub(strings.Split(path, self.Strs.PathSep)...)
 	if cmds == nil && panicOnNotFound {
+		// PANIC: Programming error - cmd path not found
 		panic(fmt.Errorf("can't find cmd by path '%s'", path))
 	}
 	return cmds
@@ -504,6 +508,7 @@ func (self *CmdTree) addSubAbbrs(name string, abbrs ...string) {
 				name,
 				self.GetSub(old).Source(),
 			}
+			// PANIC: Programming error - duplicate abbreviation during registration
 			panic(err)
 		}
 		self.subAbbrsRevIdx[abbr] = name

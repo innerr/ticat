@@ -177,6 +177,7 @@ func (ticat *TiCat) InjectBootstrap(cmds ...string) {
 func (ticat *TiCat) ReplaceCmd(cmd model.PowerCmd, path ...string) {
 	old := ticat.cc.Cmds.GetSub(path...)
 	if old == nil {
+		// PANIC: Programming error - cmd not found for replacement
 		panic(fmt.Errorf("failed to replace cmd `%s`: not existed",
 			strings.Join(path, ticat.cc.Cmds.Strs.PathSep)))
 	}
@@ -262,7 +263,7 @@ func (ticat *TiCat) exitEventHook(hookKeyName string) (ok bool) {
 
 	succeeded := ticat.executor.Execute(hookKeyName, true, ticat.cc, env, nil, hookFlow...)
 	if !succeeded {
-		// TODO: better error handle
+		// PANIC: Runtime error - failed to execute exit-hook
 		panic(fmt.Errorf("failed to execute exit-hook ('%s'): %s", hookKeyName, hookFlow))
 	}
 
