@@ -199,9 +199,9 @@ func RemoveAllFromHub(
 
 	for _, info := range infos {
 		if !info.IsLocal() {
-			osRemoveDir(info.Path, cmd)
+			_ = osRemoveDir(info.Path, cmd)
 		}
-		cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), purgedStr(env, info.IsLocal())))
+		_ = cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), purgedStr(env, info.IsLocal())))
 		printInfoProps(cc.Screen, env, info)
 	}
 
@@ -414,7 +414,7 @@ func EnableRepoInHub(
 			continue
 		}
 		count += 1
-		cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), enabledStr(env, true)))
+		_ = cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), enabledStr(env, true)))
 		printInfoProps(cc.Screen, env, info)
 		info.OnOff = "on"
 		extracted[i] = info
@@ -460,7 +460,7 @@ func DisableRepoInHub(
 	var count int
 	for i, info := range extracted {
 		if info.OnOff == "on" {
-			cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), disabledStr(env)))
+			_ = cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), disabledStr(env)))
 			printInfoProps(cc.Screen, env, info)
 			if info.OnOff != "disabled" {
 				count += 1
@@ -470,7 +470,7 @@ func DisableRepoInHub(
 		}
 	}
 
-	meta.WriteReposInfoFile(hubDir, metaPath, append(rest, extracted...), fieldSep)
+	_ = meta.WriteReposInfoFile(hubDir, metaPath, append(rest, extracted...), fieldSep)
 
 	if count > 0 {
 		display.PrintTipTitle(cc.Screen, env,
@@ -542,7 +542,7 @@ func addLocalDirToHub(
 	for i, info := range infos {
 		if info.Path == path {
 			if info.OnOff == "on" {
-				screen.Print(fmt.Sprintf("%s (exists)\n", repoDisplayName(info, env)))
+				_ = screen.Print(fmt.Sprintf("%s (exists)\n", repoDisplayName(info, env)))
 				printInfoProps(screen, env, info)
 				display.PrintTipTitle(cc.Screen, env,
 					"local dir already in hub, nothing to do")
@@ -550,7 +550,7 @@ func addLocalDirToHub(
 			}
 			info.OnOff = "on"
 			infos[i] = info
-			screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), enabledStr(env, true)))
+			_ = screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), enabledStr(env, true)))
 			printInfoProps(screen, env, info)
 			found = true
 			break
@@ -563,7 +563,7 @@ func addLocalDirToHub(
 		helpStr, _, _, _ := meta.ReadRepoListFromFile(env.GetRaw("strs.self-name"), listFilePath)
 		info := meta.RepoInfo{Addr: meta.RepoAddr{Addr: "", Branch: ""}, AddReason: "<local>", Path: path, HelpStr: helpStr, OnOff: "on"}
 		infos = append(infos, info)
-		screen.Print(fmt.Sprintf("%s\n", repoDisplayName(info, env)))
+		_ = screen.Print(fmt.Sprintf("%s\n", repoDisplayName(info, env)))
 		printInfoProps(screen, env, info)
 	}
 	if err := meta.WriteReposInfoFile(hubDir, metaPath, infos, fieldSep); err != nil {
@@ -750,24 +750,24 @@ func listHub(screen model.Screen, env *model.Env, infos []meta.RepoInfo, findStr
 
 func displayHubRepo(screen model.Screen, env *model.Env, info meta.RepoInfo) {
 	name := repoDisplayName(info, env)
-	screen.Print(name)
+	_ = screen.Print(name)
 	if info.OnOff != "on" {
-		screen.Print(disabledStr(env))
+		_ = screen.Print(disabledStr(env))
 	} else {
-		screen.Print(enabledStr(env, false))
+		_ = screen.Print(enabledStr(env, false))
 	}
-	screen.Print("\n")
+	_ = screen.Print("\n")
 	if len(info.HelpStr) > 0 {
-		screen.Print(fmt.Sprintf(display.ColorHelp("     '%s'\n", env), info.HelpStr))
+		_ = screen.Print(fmt.Sprintf(display.ColorHelp("     '%s'\n", env), info.HelpStr))
 	}
 	if len(info.Addr.Addr) != 0 {
-		screen.Print(fmt.Sprintf(display.ColorProp("    - address: ", env)+"%s\n", info.Addr.Addr))
+		_ = screen.Print(fmt.Sprintf(display.ColorProp("    - address: ", env)+"%s\n", info.Addr.Addr))
 		if len(info.Addr.Branch) != 0 {
-			screen.Print(fmt.Sprintf(display.ColorProp("    - branch:  ", env)+"%s\n", info.Addr.Branch))
+			_ = screen.Print(fmt.Sprintf(display.ColorProp("    - branch:  ", env)+"%s\n", info.Addr.Branch))
 		}
 	}
-	screen.Print(fmt.Sprintf(display.ColorProp("    - from:    ", env)+"%s\n", getDisplayReason(info)))
-	screen.Print(fmt.Sprintf(display.ColorProp("    - path:    ", env)+"%s\n", info.Path))
+	_ = screen.Print(fmt.Sprintf(display.ColorProp("    - from:    ", env)+"%s\n", getDisplayReason(info)))
+	_ = screen.Print(fmt.Sprintf(display.ColorProp("    - path:    ", env)+"%s\n", info.Path))
 }
 
 func purgeInactiveRepoFromHub(findStr string, cc *model.Cli, env *model.Env, cmd model.ParsedCmd) error {
@@ -801,12 +801,12 @@ func purgeInactiveRepoFromHub(findStr string, cc *model.Cli, env *model.Env, cmd
 
 	for _, info := range extracted {
 		if !info.IsLocal() {
-			osRemoveDir(info.Path, cmd)
+			_ = osRemoveDir(info.Path, cmd)
 			removeds += 1
 		} else {
 			unlinkeds += 1
 		}
-		cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), purgedStr(env, info.IsLocal())))
+		_ = cc.Screen.Print(fmt.Sprintf("%s%s\n", repoDisplayName(info, env), purgedStr(env, info.IsLocal())))
 		printInfoProps(cc.Screen, env, info)
 	}
 
@@ -835,7 +835,7 @@ func moveSavedFlowsToLocalDir(toDir string, cc *model.Cli, env *model.Env, cmd m
 	root := getFlowRoot(env, cmd)
 
 	var count int
-	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+	_ = filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -855,9 +855,9 @@ func moveSavedFlowsToLocalDir(toDir string, cc *model.Cli, env *model.Env, cmd m
 				path, destPath, err))
 		}
 		cmdPath, _ := getCmdPath(path, flowExt, cmd)
-		cc.Screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env), cmdPath))
-		cc.Screen.Print(fmt.Sprintf(display.ColorProp("    - from:", env)+" %s\n", path))
-		cc.Screen.Print(fmt.Sprintf(display.ColorProp("    - to: ", env)+"%s\n", destPath))
+		_ = cc.Screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env), cmdPath))
+		_ = cc.Screen.Print(fmt.Sprintf(display.ColorProp("    - from:", env)+" %s\n", path))
+		_ = cc.Screen.Print(fmt.Sprintf(display.ColorProp("    - to: ", env)+"%s\n", destPath))
 		count += 1
 		return nil
 	})
@@ -960,10 +960,10 @@ func loadRepoMods(cc *model.Cli, env *model.Env, info meta.RepoInfo) {
 
 func printInfoProps(screen model.Screen, env *model.Env, info meta.RepoInfo) {
 	if len(info.HelpStr) > 0 {
-		screen.Print(fmt.Sprintf(display.ColorHelp("     '%s'\n", env), info.HelpStr))
+		_ = screen.Print(fmt.Sprintf(display.ColorHelp("     '%s'\n", env), info.HelpStr))
 	}
-	screen.Print(fmt.Sprintf(display.ColorProp("    - from: ", env)+"%s\n", getDisplayReason(info)))
-	screen.Print(fmt.Sprintf(display.ColorProp("    - path: ", env)+"%s\n", info.Path))
+	_ = screen.Print(fmt.Sprintf(display.ColorProp("    - from: ", env)+"%s\n", getDisplayReason(info)))
+	_ = screen.Print(fmt.Sprintf(display.ColorProp("    - path: ", env)+"%s\n", info.Path))
 }
 
 func getDisplayReason(info meta.RepoInfo) string {

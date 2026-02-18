@@ -121,16 +121,16 @@ func CheckRepoGitStatus(
 
 	stat, err := os.Stat(repoPath)
 	if os.IsNotExist(err) {
-		screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorError("=> ", env)+
+		_ = screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorError("=> ", env)+
 			"repo dir not exists: %s\n", name, repoPath))
 		return nil
 	}
 	if !stat.IsDir() {
-		screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorError("=> ", env)+
+		_ = screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorError("=> ", env)+
 			"repo path exists but is not dir: %s\n", name, repoPath))
 		return nil
 	}
-	screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorSymbol("=> ", env)+"git status\n"+
+	_ = screen.Print(fmt.Sprintf(display.ColorHub("[%s]\n", env)+display.ColorSymbol("=> ", env)+"git status\n"+
 		display.ColorExplain("(%s)", env)+"\n", name, repoPath))
 	cmdStrs = []string{"git", "status"}
 
@@ -170,12 +170,12 @@ func updateRepoAndReadSubList(
 				repoPath))
 			return
 		}
-		screen.Print(fmt.Sprintf(display.ColorHub("[%s]", env)+display.ColorSymbol(" => ", env)+
+		_ = screen.Print(fmt.Sprintf(display.ColorHub("[%s]", env)+display.ColorSymbol(" => ", env)+
 			"git update\n", name))
 		cmdStrs = []string{"git", "pull", "--recurse-submodules"}
 		pwd = repoPath
 	} else {
-		screen.Print(fmt.Sprintf(display.ColorHub("[%s]", env)+display.ColorSymbol(" => ", env)+
+		_ = screen.Print(fmt.Sprintf(display.ColorHub("[%s]", env)+display.ColorSymbol(" => ", env)+
 			"git clone\n", name))
 		cmdStrs = []string{"git", "clone", "--recursive", gitAddr.Addr}
 		if len(gitAddr.Branch) != 0 {

@@ -174,7 +174,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 
 	sessionsRoot := env.GetRaw("sys.paths.sessions")
 	if len(sessionsRoot) == 0 {
-		cc.Screen.Print("[sessionInit] can't get sessions' root path\n")
+		_ = cc.Screen.Print("[sessionInit] can't get sessions' root path\n")
 		return nil, false, false
 	}
 
@@ -192,13 +192,13 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 	keepDur := env.GetDur("sys.sessions.keep-status-duration")
 
 	if err := os.MkdirAll(sessionsRoot, os.ModePerm); err != nil {
-		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create sessions root path '%s': %v\n",
+		_ = cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create sessions root path '%s': %v\n",
 			sessionsRoot, err))
 		return nil, false, false
 	}
 	dirs, err := os.ReadDir(sessionsRoot)
 	if err != nil {
-		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't read sessions' root path '%s'\n",
+		_ = cc.Screen.Print(fmt.Sprintf("[sessionInit] can't read sessions' root path '%s'\n",
 			sessionsRoot))
 		return nil, false, false
 	}
@@ -220,7 +220,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 		added := oldSessionStartTs.Add(keepDur)
 		if added.Before(now) {
 			if err := os.RemoveAll(filepath.Join(sessionsRoot, dir.Name())); err != nil {
-				cc.Screen.Print(fmt.Sprintf("[sessionInit] can't remove old session '%s': %v\n",
+				_ = cc.Screen.Print(fmt.Sprintf("[sessionInit] can't remove old session '%s': %v\n",
 					dir.Name(), err))
 			}
 		}
@@ -229,7 +229,7 @@ func SessionInit(cc *Cli, flow *ParsedCmds, env *Env, sessionFileName string,
 	sessionDir = filepath.Join(sessionsRoot, dirName)
 	err = os.MkdirAll(sessionDir, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
-		cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create session dir '%s'\n",
+		_ = cc.Screen.Print(fmt.Sprintf("[sessionInit] can't create session dir '%s'\n",
 			sessionDir))
 		return nil, false, false
 	}

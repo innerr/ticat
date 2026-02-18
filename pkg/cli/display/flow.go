@@ -87,7 +87,7 @@ func DumpFlowEx(
 	ok := dumpFlow(cc, env, envOpCmds, flow, fromCmdIdx, args, executedFlow, procRunning,
 		false, writtenKeys, args.MaxDepth, args.MaxTrivial, 0, false)
 	if ok {
-		cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
+		_ = cc.Screen.Print(ColorFlowing("<<<---", env) + "\n")
 	}
 }
 
@@ -193,7 +193,7 @@ func dumpFlowCmd(
 			padding = rpt(" ", padLenCal(indentLvl))
 			msg = autoPadNewLine(padding, msg)
 		}
-		screen.Print(padding + msg + "\n")
+		_ = screen.Print(padding + msg + "\n")
 	}
 
 	trivialDelta := getCmdTrivial(parsedCmd)

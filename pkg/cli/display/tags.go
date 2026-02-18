@@ -19,7 +19,7 @@ func ListTags(
 	sort.Strings(names)
 	tagMark := env.GetRaw("strs.tag-mark")
 	for _, name := range names {
-		screen.Print(ColorTag(tagMark+name, env) + "\n")
+		_ = screen.Print(ColorTag(tagMark+name, env) + "\n")
 	}
 }
 

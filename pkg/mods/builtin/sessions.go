@@ -314,7 +314,7 @@ func RunningSessionDescMonitor(
 
 	session, ok := getLastSession(cc, env, false, false, true)
 	if !ok {
-		cc.Screen.Print(display.ColorTip("no running sessions", env) + "\n")
+		_ = cc.Screen.Print(display.ColorTip("no running sessions", env) + "\n")
 	} else {
 		descSession(session, argv, cc, env, true, false, false, true)
 	}
@@ -605,52 +605,52 @@ func findSessions(
 func dumpSession(session model.SessionStatus, env *model.Env, screen model.Screen, status string) {
 	selfName := env.GetRaw("strs.self-name")
 
-	screen.Print(display.ColorSession("["+session.DirName+"]", env) + " " + display.ColorExplain(status, env) + "\n")
+	_ = screen.Print(display.ColorSession("["+session.DirName+"]", env) + " " + display.ColorExplain(status, env) + "\n")
 
-	screen.Print(display.ColorProp("    cmd:\n", env))
-	screen.Print(display.ColorFlow(fmt.Sprintf("        %s %s\n", selfName, session.Status.Flow), env))
+	_ = screen.Print(display.ColorProp("    cmd:\n", env))
+	_ = screen.Print(display.ColorFlow(fmt.Sprintf("        %s %s\n", selfName, session.Status.Flow), env))
 
 	if len(session.Status.Corrupted) != 0 {
-		screen.Print(display.ColorProp("    corrupted-status:\n", env))
-		screen.Print(display.ColorError("        [FOR DEBUG]\n", env))
+		_ = screen.Print(display.ColorProp("    corrupted-status:\n", env))
+		_ = screen.Print(display.ColorError("        [FOR DEBUG]\n", env))
 		for _, line := range session.Status.Corrupted {
-			screen.Print("        " + display.ColorExplain(line, env) + "\n")
+			_ = screen.Print("        " + display.ColorExplain(line, env) + "\n")
 		}
 	}
 
-	screen.Print(display.ColorProp("    start-at:\n", env))
-	screen.Print(fmt.Sprintf("        %s\n", session.StartTs.Format(model.SessionTimeFormat)))
-	screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago\n", env),
+	_ = screen.Print(display.ColorProp("    start-at:\n", env))
+	_ = screen.Print(fmt.Sprintf("        %s\n", session.StartTs.Format(model.SessionTimeFormat)))
+	_ = screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s ago\n", env),
 		time.Now().Sub(session.StartTs).Round(time.Second).String()))
 
 	if !session.Status.FinishTs.IsZero() {
 		if !session.Running {
-			screen.Print(display.ColorProp("    finish-at:\n", env))
-			screen.Print(fmt.Sprintf("        %s\n", session.Status.FinishTs.Format(model.SessionTimeFormat)))
+			_ = screen.Print(display.ColorProp("    finish-at:\n", env))
+			_ = screen.Print(fmt.Sprintf("        %s\n", session.Status.FinishTs.Format(model.SessionTimeFormat)))
 			incompletedDurStr := ""
 			if !session.Running && session.Status.Result == model.ExecutedResultIncompleted {
 				incompletedDurStr = "+?"
 			}
-			screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s"+
+			_ = screen.Print(fmt.Sprintf("        "+display.ColorExplain("%s"+
 				incompletedDurStr+" ago, elapsed %s"+incompletedDurStr, env)+"\n",
 				time.Now().Sub(session.Status.FinishTs).Round(time.Second),
 				session.Status.FinishTs.Sub(session.StartTs).Round(time.Second)))
 		}
 	}
 
-	screen.Print(display.ColorProp("    status:\n", env))
+	_ = screen.Print(display.ColorProp("    status:\n", env))
 	if session.Running {
-		screen.Print("        " + display.ColorCmdCurr("running", env) + "\n")
-		screen.Print(display.ColorProp("    pid:\n", env))
-		screen.Print(fmt.Sprintf("        %v\n", session.Pid))
+		_ = screen.Print("        " + display.ColorCmdCurr("running", env) + "\n")
+		_ = screen.Print(display.ColorProp("    pid:\n", env))
+		_ = screen.Print(fmt.Sprintf("        %v\n", session.Pid))
 	} else if session.Status.Result == model.ExecutedResultSucceeded {
-		screen.Print("        " + display.ColorCmdDone(string(session.Status.Result), env) + "\n")
+		_ = screen.Print("        " + display.ColorCmdDone(string(session.Status.Result), env) + "\n")
 	} else if session.Status.Result == model.ExecutedResultError {
-		screen.Print("        " + display.ColorError(string(session.Status.Result), env) + "\n")
+		_ = screen.Print("        " + display.ColorError(string(session.Status.Result), env) + "\n")
 	} else if session.Status.Result == model.ExecutedResultIncompleted {
-		screen.Print("        " + display.ColorWarn("failed\n", env))
+		_ = screen.Print("        " + display.ColorWarn("failed\n", env))
 	} else {
-		screen.Print("        " + string(session.Status.Result) + "\n")
+		_ = screen.Print("        " + string(session.Status.Result) + "\n")
 	}
 }
 

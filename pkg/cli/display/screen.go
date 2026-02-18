@@ -12,7 +12,7 @@ func PrintFramedLines(screen model.Screen, env *model.Env, buf *CacheScreen, c *
 	if c == nil {
 		c = getFrameChars(env)
 	}
-	screen.Print(c.P1 + rpt(c.H, width) + c.P3 + "\n")
+	_ = screen.Print(c.P1 + rpt(c.H, width) + c.P3 + "\n")
 	buf.WriteToEx(screen, func(line string, isError bool, lineLen int) (string, bool) {
 		rightV := c.V
 		if lineLen > width {
@@ -21,7 +21,7 @@ func PrintFramedLines(screen model.Screen, env *model.Env, buf *CacheScreen, c *
 		line = c.V + line + rpt(" ", width-lineLen) + rightV + "\n"
 		return line, isError
 	})
-	screen.Print(c.P7 + rpt(c.H, width) + c.P9 + "\n")
+	_ = screen.Print(c.P7 + rpt(c.H, width) + c.P9 + "\n")
 }
 
 type CacheScreen struct {

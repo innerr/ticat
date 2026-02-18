@@ -35,7 +35,7 @@ func EnvSaveToSnapshot(
 		return currCmdIdx, model.NewCmdError(cmd, "env snapshot '"+name+"' already exists")
 	}
 
-	model.SaveEnvToFile(env, path, kvSep, true)
+	_ = model.SaveEnvToFile(env, path, kvSep, true)
 	display.PrintTipTitle(cc.Screen, env,
 		"session env are saved to snapshot '"+name+"', could be use by:",
 		"",
@@ -99,7 +99,7 @@ func EnvListSnapshots(
 	root := getEnvSnapshotDir(env)
 	var names []string
 
-	filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+	_ = filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if path == root {
 			return nil
 		}
@@ -155,7 +155,7 @@ func EnvLoadFromSnapshot(
 	delMark := cc.Cmds.Strs.EnvValDelAllMark
 
 	loaded := model.NewEnv()
-	model.LoadEnvFromFile(loaded, path, sep, delMark)
+	_ = model.LoadEnvFromFile(loaded, path, sep, delMark)
 	loaded.WriteCurrLayerTo(env.GetLayer(model.EnvLayerSession))
 
 	return currCmdIdx, nil
@@ -183,7 +183,7 @@ func EnvLoadNonExistFromSnapshot(
 	delMark := cc.Cmds.Strs.EnvValDelAllMark
 
 	loaded := model.NewEnv()
-	model.LoadEnvFromFile(loaded, path, sep, delMark)
+	_ = model.LoadEnvFromFile(loaded, path, sep, delMark)
 
 	envSession := env.GetLayer(model.EnvLayerSession)
 	for k, v := range loaded.FlattenAll() {
@@ -200,7 +200,7 @@ func getEnvSnapshotDir(env *model.Env) string {
 	if len(dir) == 0 {
 		return ""
 	}
-	os.MkdirAll(dir, os.ModePerm)
+	_ = os.MkdirAll(dir, os.ModePerm)
 	return dir
 }
 

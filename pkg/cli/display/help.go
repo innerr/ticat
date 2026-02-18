@@ -24,7 +24,7 @@ func PrintGlobalHelp(cc *model.Cli, env *model.Env) {
 	pln := func(line string) {
 		line = DecodeColor(line, env)
 		if len(line) <= width {
-			cc.Screen.Print(line + "\n")
+			_ = cc.Screen.Print(line + "\n")
 			return
 		}
 
@@ -39,10 +39,10 @@ func PrintGlobalHelp(cc *model.Cli, env *model.Env) {
 
 		printWithPrefix := func(printed bool, line string) {
 			if printed {
-				cc.Screen.Print(prefix)
-				cc.Screen.Print(strings.TrimLeft(line, " \t") + "\n")
+				_ = cc.Screen.Print(prefix)
+				_ = cc.Screen.Print(strings.TrimLeft(line, " \t") + "\n")
 			} else {
-				cc.Screen.Print(line + "\n")
+				_ = cc.Screen.Print(line + "\n")
 			}
 		}
 
@@ -72,9 +72,9 @@ func PrintSelfHelp(screen model.Screen, env *model.Env) {
 	pln := func(texts ...string) {
 		for _, text := range texts {
 			if len(text) == 0 {
-				screen.Print("\n")
+				_ = screen.Print("\n")
 			} else {
-				screen.Print("    " + text + "\n")
+				_ = screen.Print("    " + text + "\n")
 			}
 		}
 	}
@@ -84,7 +84,7 @@ func PrintSelfHelp(screen model.Screen, env *model.Env) {
 		selfName+": workflow automating in unix-pipe style")
 
 	pln("")
-	screen.Print(ColorHelp("usage:\n", env))
+	_ = screen.Print(ColorHelp("usage:\n", env))
 
 	list := []func(*model.Env) []string{
 		GlobalSuggestExeCmds,
