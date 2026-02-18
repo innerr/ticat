@@ -222,7 +222,7 @@ func dumpCmd(
 		}
 		padding := rpt(" ", args.IndentSize*indentLvl)
 		msg = autoPadNewLine(padding, msg)
-		screen.Print(padding + msg + "\n")
+		_ = screen.Print(padding + msg + "\n")
 	}
 
 	if cmd.Parent() == nil || args.MatchFind(cmd) {

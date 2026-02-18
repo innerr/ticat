@@ -127,7 +127,7 @@ func (self *Executor) execute(caller string, cc *model.Cli, env *model.Env, mask
 	}
 
 	if !innerCall {
-		cc.Blender.Invoke(cc, env, flow)
+		_ = cc.Blender.Invoke(cc, env, flow)
 	}
 
 	if !allowParseError(flow) {

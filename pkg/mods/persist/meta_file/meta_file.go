@@ -282,7 +282,7 @@ func (self *MetaFile) Save() error {
 			_ = file.Close()
 		}
 	}()
-	if err := self.WriteTo(file); err != nil {
+	if _, err := self.SaveTo(file); err != nil {
 		return err
 	}
 	if err := file.Close(); err != nil {
@@ -293,27 +293,38 @@ func (self *MetaFile) Save() error {
 	return nil
 }
 
-func (self *MetaFile) WriteTo(w io.Writer) error {
+func (self *MetaFile) SaveTo(w io.Writer) (int64, error) {
+	var total int64
 	saveKey := func(key string, val string) (multiLine bool, err error) {
 		lines := strings.Split(val, self.lineSep)
 		if len(lines) == 1 {
-			if _, err = fmt.Fprintf(w, "%s %s %s\n", key, self.kvSep, val); err != nil {
-				return false, fmt.Errorf("[MetaFile.WriteTo] write failed: %v", err)
+			var n int
+			n, err = fmt.Fprintf(w, "%s %s %s\n", key, self.kvSep, val)
+			total += int64(n)
+			if err != nil {
+				return false, fmt.Errorf("[MetaFile.SaveTo] write failed: %v", err)
 			}
 			return false, nil
 		} else {
-			if _, err = fmt.Fprintf(w, "%s %s %s %c\n", key, self.kvSep, lines[0], MultiLineBreaker); err != nil {
-				return false, fmt.Errorf("[MetaFile.WriteTo] write failed: %v", err)
+			var n int
+			n, err = fmt.Fprintf(w, "%s %s %s %c\n", key, self.kvSep, lines[0], MultiLineBreaker)
+			total += int64(n)
+			if err != nil {
+				return false, fmt.Errorf("[MetaFile.SaveTo] write failed: %v", err)
 			}
 			lines = lines[1:]
 			for i, line := range lines {
 				if i != len(lines)-1 {
-					if _, err = fmt.Fprintf(w, "    %s %c\n", line, MultiLineBreaker); err != nil {
-						return false, fmt.Errorf("[MetaFile.WriteTo] write failed: %v", err)
+					n, err = fmt.Fprintf(w, "    %s %c\n", line, MultiLineBreaker)
+					total += int64(n)
+					if err != nil {
+						return false, fmt.Errorf("[MetaFile.SaveTo] write failed: %v", err)
 					}
 				} else {
-					if _, err = fmt.Fprintf(w, "    %s\n", line); err != nil {
-						return false, fmt.Errorf("[MetaFile.WriteTo] write failed: %v", err)
+					n, err = fmt.Fprintf(w, "    %s\n", line)
+					total += int64(n)
+					if err != nil {
+						return false, fmt.Errorf("[MetaFile.SaveTo] write failed: %v", err)
 					}
 				}
 			}
@@ -325,28 +336,34 @@ func (self *MetaFile) WriteTo(w io.Writer) error {
 		section := self.sections[name]
 		keys := section.Keys()
 		if len(name) != 0 {
-			if _, err := fmt.Fprintf(w, "%c%s%c\n", SectionBracketLeft, name, SectionBracketRight); err != nil {
-				return fmt.Errorf("[MetaFile.WriteTo] write failed: %v", err)
+			n, err := fmt.Fprintf(w, "%c%s%c\n", SectionBracketLeft, name, SectionBracketRight)
+			total += int64(n)
+			if err != nil {
+				return total, fmt.Errorf("[MetaFile.SaveTo] write failed: %v", err)
 			}
 		}
 		for j, key := range keys {
 			multiLine, err := saveKey(key, section.GetUnTrim(key))
 			if err != nil {
-				return err
+				return total, err
 			}
 			if multiLine && j != len(keys)-1 {
-				if _, err := fmt.Fprintf(w, "\n"); err != nil {
-					return fmt.Errorf("[MetaFile.WriteTo] write failed: %v", err)
+				n, err := fmt.Fprintf(w, "\n")
+				total += int64(n)
+				if err != nil {
+					return total, fmt.Errorf("[MetaFile.SaveTo] write failed: %v", err)
 				}
 			}
 		}
 		if i != len(self.orderedKeys)-1 {
-			if _, err := fmt.Fprintf(w, "\n"); err != nil {
-				return fmt.Errorf("[MetaFile.WriteTo] write failed: %v", err)
+			n, err := fmt.Fprintf(w, "\n")
+			total += int64(n)
+			if err != nil {
+				return total, fmt.Errorf("[MetaFile.SaveTo] write failed: %v", err)
 			}
 		}
 	}
-	return nil
+	return total, nil
 }
 
 type SectionMap map[string]*Section

@@ -832,7 +832,7 @@ func (self *Cmd) RenderedFlowStrs(
 func (self *Cmd) invokeBlender(cc *Cli, env *Env, input []string) []string {
 	input = normalizeInput(input, env.GetRaw("strs.seq-sep"))
 	flow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, input...)
-	cc.Blender.Invoke(cc, env, flow)
+	_ = cc.Blender.Invoke(cc, env, flow)
 	trivialMark := env.GetRaw("strs.trivial-mark")
 	flowStr, _ := SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 	return []string{flowStr}

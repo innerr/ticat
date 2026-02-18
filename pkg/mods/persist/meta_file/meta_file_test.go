@@ -297,15 +297,15 @@ func TestMetaFileSaveWithMemFS(t *testing.T) {
 	_ = data
 }
 
-func TestMetaFileWriteTo(t *testing.T) {
+func TestMetaFileSaveTo(t *testing.T) {
 	meta := CreateMetaFile("test.meta")
 	meta.GetGlobalSection().Set("key1", "value1")
 	meta.GetGlobalSection().Set("key2", "value2")
 
 	var buf bytes.Buffer
-	err := meta.WriteTo(&buf)
+	_, err := meta.SaveTo(&buf)
 	if err != nil {
-		t.Fatalf("WriteTo failed: %v", err)
+		t.Fatalf("SaveTo failed: %v", err)
 	}
 
 	expected := "key1 = value1\nkey2 = value2\n"

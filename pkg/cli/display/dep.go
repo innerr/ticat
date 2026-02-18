@@ -52,12 +52,12 @@ func DumpDepends(
 			continue
 		}
 		cmds := deps[osCmd]
-		screen.Print(ColorCmd(fmt.Sprintf("[%s]\n", osCmd), env))
+		_ = screen.Print(ColorCmd(fmt.Sprintf("[%s]\n", osCmd), env))
 
 		// TODO: sort cmds
 		for _, info := range cmds {
-			screen.Print("        " + ColorHelp(fmt.Sprintf("'%s'\n", info.Reason), env))
-			screen.Print("            " + ColorCmd(fmt.Sprintf("[%s]\n", info.Cmd.DisplayPath(sep, true)), env))
+			_ = screen.Print("        " + ColorHelp(fmt.Sprintf("'%s'\n", info.Reason), env))
+			_ = screen.Print("            " + ColorCmd(fmt.Sprintf("[%s]\n", info.Cmd.DisplayPath(sep, true)), env))
 		}
 	}
 

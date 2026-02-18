@@ -52,7 +52,7 @@ func TestMemFS_WriteFileCreatesDirs(t *testing.T) {
 func TestMemFS_Remove(t *testing.T) {
 	fs := NewMemFS()
 
-	fs.WriteFile("test.txt", []byte("data"), 0644)
+	_ = fs.WriteFile("test.txt", []byte("data"), 0644)
 
 	err := fs.Remove("test.txt")
 	if err != nil {
@@ -67,8 +67,8 @@ func TestMemFS_Remove(t *testing.T) {
 func TestMemFS_RemoveAll(t *testing.T) {
 	fs := NewMemFS()
 
-	fs.WriteFile("a/b/c/test.txt", []byte("data"), 0644)
-	fs.WriteFile("a/b/d/test.txt", []byte("data"), 0644)
+	_ = fs.WriteFile("a/b/c/test.txt", []byte("data"), 0644)
+	_ = fs.WriteFile("a/b/d/test.txt", []byte("data"), 0644)
 
 	err := fs.RemoveAll("a/b")
 	if err != nil {
@@ -115,8 +115,8 @@ func TestMemFS_OpenFile_Truncate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenFile failed: %v", err)
 	}
-	f.Write([]byte("new"))
-	f.Close()
+	_, _ = f.Write([]byte("new"))
+	_ = f.Close()
 
 	data, _ := fs.ReadFile("test.txt")
 	if string(data) != "new" {
@@ -150,7 +150,7 @@ func TestMemFS_Stat(t *testing.T) {
 func TestMemFS_StatDir(t *testing.T) {
 	fs := NewMemFS()
 
-	fs.MkdirAll("a/b/c", 0755)
+	_ = fs.MkdirAll("a/b/c", 0755)
 
 	info, err := fs.Stat("a/b/c")
 	if err != nil {
@@ -180,7 +180,7 @@ func TestMemFS_OpenReader(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	buf := make([]byte, 5)
 	n, err := f.Read(buf)
