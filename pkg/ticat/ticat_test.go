@@ -2,6 +2,7 @@ package ticat
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -1423,6 +1424,953 @@ func TestDbgArgsAbbreviationInFlow(t *testing.T) {
 		}
 		if !strings.Contains(output, "str-val: raw=[world]") {
 			t.Errorf("expected str-val=world, got:\n%s", output)
+		}
+	})
+}
+
+func TestNestedFlowStackExecution(t *testing.T) {
+	t.Run("simple two-level flow stack", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=level1", ":", "dbg.args", "arg1=level2")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[level1]") {
+			t.Errorf("expected first cmd with arg1=level1, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[level2]") {
+			t.Errorf("expected second cmd with arg1=level2, got:\n%s", output)
+		}
+	})
+
+	t.Run("three-level flow stack", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=L1",
+			":", "dbg.args", "arg1=L2",
+			":", "dbg.args", "arg1=L3")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[L1]") {
+			t.Errorf("expected L1, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[L2]") {
+			t.Errorf("expected L2, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[L3]") {
+			t.Errorf("expected L3, got:\n%s", output)
+		}
+	})
+
+	t.Run("five-level deep flow stack", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("dbg.args", "arg1=step1",
+			":", "dbg.args", "arg1=step2",
+			":", "dbg.args", "arg1=step3",
+			":", "dbg.args", "arg1=step4",
+			":", "dbg.args", "arg1=step5")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		for i := 1; i <= 5; i++ {
+			expected := fmt.Sprintf("arg1: raw=[step%d]", i)
+			if !strings.Contains(output, expected) {
+				t.Errorf("expected %s, got:\n%s", expected, output)
+			}
+		}
+	})
+}
+
+func TestNestedFlowStackEnvPropagation(t *testing.T) {
+	t.Run("env propagation through flow stack", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("env.set", "key=test-key", "value=test-value", ":", "env", "test-key")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "test-value") {
+			t.Errorf("expected test-value in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("multiple env values in flow stack", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=multi.key1", "value=val1",
+			":", "env.set", "key=multi.key2", "value=val2",
+			":", "env.set", "key=multi.key3", "value=val3",
+			":", "env", "multi")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "val1") {
+			t.Errorf("expected val1 in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "val2") {
+			t.Errorf("expected val2 in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "val3") {
+			t.Errorf("expected val3 in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("env override in flow stack", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=override.test", "value=first",
+			":", "env.update", "key=override.test", "value=second",
+			":", "env", "override.test")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "second") {
+			t.Errorf("expected second (overridden) value, got:\n%s", output)
+		}
+	})
+}
+
+func TestNestedFlowStackArgsAndEnvMixed(t *testing.T) {
+	t.Run("args and env mixed in flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=shared.test", "value=env-value",
+			":", "dbg.args", "arg1=cmd1-arg",
+			":", "dbg.args", "arg1=cmd2-arg",
+			":", "env", "shared.test")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "cmd1-arg") {
+			t.Errorf("expected cmd1-arg, got:\n%s", output)
+		}
+		if !strings.Contains(output, "cmd2-arg") {
+			t.Errorf("expected cmd2-arg, got:\n%s", output)
+		}
+		if !strings.Contains(output, "env-value") {
+			t.Errorf("expected env-value, got:\n%s", output)
+		}
+	})
+
+	t.Run("global env applied to all commands in flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"{global.key=global-value}",
+			":", "dbg.args", "arg1=first",
+			":", "dbg.args", "arg1=second")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[first]") {
+			t.Errorf("expected first command arg, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[second]") {
+			t.Errorf("expected second command arg, got:\n%s", output)
+		}
+	})
+
+	t.Run("command-specific env vs global env", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"dbg.args", "arg1=test1", "{local.env=local-val}",
+			":", "dbg.args", "arg1=test2")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[test1]") {
+			t.Errorf("expected test1, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[test2]") {
+			t.Errorf("expected test2, got:\n%s", output)
+		}
+	})
+}
+
+func TestNestedFlowStackDeepNesting(t *testing.T) {
+	t.Run("deep nesting with different arg types", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"dbg.args", "arg1=L1A", "arg2=L1B",
+			":", "dbg.args.env", "db=mysql", "host=localhost",
+			":", "dbg.args", "str-val=custom-string",
+			":", "dbg.args.tail", "arg1=tail-value")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[L1A]") {
+			t.Errorf("expected L1A, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg2: raw=[L1B]") {
+			t.Errorf("expected L1B, got:\n%s", output)
+		}
+		if !strings.Contains(output, "db: [mysql]") {
+			t.Errorf("expected db=mysql, got:\n%s", output)
+		}
+		if !strings.Contains(output, "str-val: raw=[custom-string]") {
+			t.Errorf("expected custom-string, got:\n%s", output)
+		}
+	})
+
+	t.Run("very deep flow with consistent args", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		args := []string{}
+		for i := 1; i <= 10; i++ {
+			args = append(args, "dbg.args", fmt.Sprintf("arg1=step%d", i))
+			if i < 10 {
+				args = append(args, ":")
+			}
+		}
+
+		ok := tc.RunCli(args...)
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		for i := 1; i <= 10; i++ {
+			expected := fmt.Sprintf("arg1: raw=[step%d]", i)
+			if !strings.Contains(output, expected) {
+				t.Errorf("expected %s in output", expected)
+			}
+		}
+	})
+}
+
+func TestNestedFlowStackWithEcho(t *testing.T) {
+	t.Run("echo commands in flow stack", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"echo", "message=first",
+			":", "echo", "message=second",
+			":", "echo", "message=third")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "first") {
+			t.Errorf("expected 'first' in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "second") {
+			t.Errorf("expected 'second' in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "third") {
+			t.Errorf("expected 'third' in output, got:\n%s", output)
+		}
+	})
+
+	t.Run("mixed echo and args in flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"echo", "message=start",
+			":", "dbg.args", "arg1=middle",
+			":", "echo", "message=end")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "start") {
+			t.Errorf("expected 'start' in output, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[middle]") {
+			t.Errorf("expected middle arg, got:\n%s", output)
+		}
+		if !strings.Contains(output, "end") {
+			t.Errorf("expected 'end' in output, got:\n%s", output)
+		}
+	})
+}
+
+func TestNestedFlowStackSpecialChars(t *testing.T) {
+	t.Run("args with dots and paths in flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"dbg.args", "arg1=1.2.3.4",
+			":", "dbg.args", "arg1=file.conf",
+			":", "dbg.args", "arg1=/path/to/file")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[1.2.3.4]") {
+			t.Errorf("expected 1.2.3.4, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[file.conf]") {
+			t.Errorf("expected file.conf, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[/path/to/file]") {
+			t.Errorf("expected /path/to/file, got:\n%s", output)
+		}
+	})
+
+	t.Run("args with equals sign in value", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"dbg.args", "arg1=db=test",
+			":", "dbg.args", "arg1=key=value")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[db=test]") {
+			t.Errorf("expected db=test, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[key=value]") {
+			t.Errorf("expected key=value, got:\n%s", output)
+		}
+	})
+
+	t.Run("args with spaces in brackets", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"dbg.args", "arg1={hello world}",
+			":", "dbg.args", "arg1={foo bar baz}")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1:") {
+			t.Errorf("expected arg1 in output, got:\n%s", output)
+		}
+	})
+}
+
+func TestNestedFlowStackEnvAssertion(t *testing.T) {
+	t.Run("env assert equal in flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=test.key", "value=expected-value",
+			":", "env.assert.equal", "key=test.key", "value=expected-value")
+		if !ok {
+			t.Error("command should succeed")
+		}
+	})
+
+	t.Run("env operations in sequence", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=seq.key1", "value=value1",
+			":", "env.set", "key=seq.key2", "value=value2",
+			":", "env.assert.equal", "key=seq.key1", "value=value1",
+			":", "env.assert.equal", "key=seq.key2", "value=value2")
+		if !ok {
+			t.Error("command should succeed")
+		}
+	})
+}
+
+func TestNestedFlowStackWithNoop(t *testing.T) {
+	t.Run("noop in flow stack", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"dbg.args", "arg1=before-noop",
+			":", "noop",
+			":", "dbg.args", "arg1=after-noop")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[before-noop]") {
+			t.Errorf("expected before-noop, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[after-noop]") {
+			t.Errorf("expected after-noop, got:\n%s", output)
+		}
+	})
+
+	t.Run("multiple noops in flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"noop",
+			":", "noop",
+			":", "noop",
+			":", "dbg.args", "arg1=final")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[final]") {
+			t.Errorf("expected final, got:\n%s", output)
+		}
+	})
+}
+
+func TestNestedFlowStackStackDepth(t *testing.T) {
+	t.Run("stack depth tracking", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		tc.Env.SetInt("sys.stack-depth", 0)
+
+		ok := tc.RunCli(
+			"dbg.args", "arg1=level0",
+			":", "dbg.args", "arg1=level1",
+			":", "dbg.args", "arg1=level2")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[level0]") {
+			t.Errorf("expected level0, got:\n%s", output)
+		}
+	})
+}
+
+func TestNestedFlowStackTimerCommands(t *testing.T) {
+	t.Run("timer operations in flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"timer.begin", "key=timer.test",
+			":", "dbg.args", "arg1=middle",
+			":", "timer.elapsed", "begin-key=timer.test", "key=timer.elapsed")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[middle]") {
+			t.Errorf("expected middle, got:\n%s", output)
+		}
+	})
+}
+
+func TestNestedFlowStackWithDummy(t *testing.T) {
+	t.Run("dummy commands in flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"dbg.args", "arg1=start",
+			":", "dummy",
+			":", "dbg.args", "arg1=end")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "arg1: raw=[start]") {
+			t.Errorf("expected start, got:\n%s", output)
+		}
+		if !strings.Contains(output, "arg1: raw=[end]") {
+			t.Errorf("expected end, got:\n%s", output)
+		}
+	})
+}
+
+func TestEnvChangeAcrossFlowDepth(t *testing.T) {
+	t.Run("env set in first cmd visible in subsequent cmds", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=depth.test", "value=initial",
+			":", "env.assert.equal", "key=depth.test", "value=initial")
+		if !ok {
+			t.Error("command should succeed - env set in first cmd should be visible in second")
+		}
+	})
+
+	t.Run("env modification in middle cmd affects later cmds", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=chain.value", "value=first",
+			":", "env.update", "key=chain.value", "value=second",
+			":", "env.assert.equal", "key=chain.value", "value=second",
+			":", "env.update", "key=chain.value", "value=third",
+			":", "env.assert.equal", "key=chain.value", "value=third")
+		if !ok {
+			t.Error("command should succeed - env changes should propagate through flow")
+		}
+	})
+
+	t.Run("multiple keys set at different depths", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=multi.a", "value=1",
+			":", "env.set", "key=multi.b", "value=2",
+			":", "env.set", "key=multi.c", "value=3",
+			":", "env.assert.equal", "key=multi.a", "value=1",
+			":", "env.assert.equal", "key=multi.b", "value=2",
+			":", "env.assert.equal", "key=multi.c", "value=3")
+		if !ok {
+			t.Error("command should succeed - all keys set at different depths should be visible")
+		}
+	})
+}
+
+func TestEnvIsolationInFlowStack(t *testing.T) {
+	t.Run("env set does not leak to parent scope concept", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		tc.Env.Set("isolation.original", "original-value")
+
+		ok := tc.RunCli(
+			"env.set", "key=isolation.modified", "value=modified-value",
+			":", "env.assert.equal", "key=isolation.modified", "value=modified-value")
+		if !ok {
+			t.Error("command should succeed")
+		}
+
+		if tc.Env.Get("isolation.original").Raw != "original-value" {
+			t.Error("original env should remain unchanged")
+		}
+	})
+
+	t.Run("deep flow stack env changes persist to end", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=persist.test", "value=step1",
+			":", "noop",
+			":", "env.update", "key=persist.test", "value=step2",
+			":", "noop",
+			":", "env.update", "key=persist.test", "value=step3",
+			":", "noop",
+			":", "env.assert.equal", "key=persist.test", "value=step3")
+		if !ok {
+			t.Error("command should succeed - env changes should persist through flow")
+		}
+	})
+
+	t.Run("env changes in five level flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=level.counter", "value=1",
+			":", "env.update", "key=level.counter", "value=2",
+			":", "env.update", "key=level.counter", "value=3",
+			":", "env.update", "key=level.counter", "value=4",
+			":", "env.update", "key=level.counter", "value=5",
+			":", "env.assert.equal", "key=level.counter", "value=5")
+		if !ok {
+			t.Error("command should succeed - counter should reach 5")
+		}
+	})
+}
+
+func TestEnvOverwriteBehavior(t *testing.T) {
+	t.Run("same key overwritten at different depths", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=overwrite.key", "value=A",
+			":", "env.assert.equal", "key=overwrite.key", "value=A",
+			":", "env.update", "key=overwrite.key", "value=B",
+			":", "env.assert.equal", "key=overwrite.key", "value=B",
+			":", "env.update", "key=overwrite.key", "value=C",
+			":", "env.assert.equal", "key=overwrite.key", "value=C")
+		if !ok {
+			t.Error("command should succeed - key should be overwritten at each step")
+		}
+	})
+
+	t.Run("multiple keys with selective overwrite", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=sel.key1", "value=v1",
+			":", "env.set", "key=sel.key2", "value=v2",
+			":", "env.set", "key=sel.key3", "value=v3",
+			":", "env.update", "key=sel.key2", "value=v2-modified",
+			":", "env.assert.equal", "key=sel.key1", "value=v1",
+			":", "env.assert.equal", "key=sel.key2", "value=v2-modified",
+			":", "env.assert.equal", "key=sel.key3", "value=v3")
+		if !ok {
+			t.Error("command should succeed - selective overwrite should not affect other keys")
+		}
+	})
+
+	t.Run("env set allows overwriting", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=set.twice", "value=first",
+			":", "env.set", "key=set.twice", "value=second",
+			":", "env.assert.equal", "key=set.twice", "value=second")
+		if !ok {
+			t.Error("command should succeed - env.set allows overwriting")
+		}
+	})
+}
+
+func TestEnvAddVsSetBehavior(t *testing.T) {
+	t.Run("env add creates new key", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.add", "key=add.new.key", "value=new-value",
+			":", "env.assert.equal", "key=add.new.key", "value=new-value")
+		if !ok {
+			t.Error("command should succeed - add should create new key")
+		}
+	})
+
+	t.Run("env set creates new key if not exists", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=set.brand.new", "value=created",
+			":", "env.assert.equal", "key=set.brand.new", "value=created")
+		if !ok {
+			t.Error("command should succeed - set creates key if not exists")
+		}
+	})
+
+	t.Run("env set can overwrite existing key", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=set.overwrite", "value=first",
+			":", "env.set", "key=set.overwrite", "value=second",
+			":", "env.assert.equal", "key=set.overwrite", "value=second")
+		if !ok {
+			t.Error("command should succeed - set should overwrite existing key")
+		}
+	})
+
+	t.Run("env add then update works correctly", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.add", "key=add.then.update", "value=initial",
+			":", "env.update", "key=add.then.update", "value=modified",
+			":", "env.assert.equal", "key=add.then.update", "value=modified")
+		if !ok {
+			t.Error("command should succeed - add then update should work")
+		}
+	})
+}
+
+func TestEnvChangeWithMixedCommands(t *testing.T) {
+	t.Run("env changes persist across dbg.args", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=mixed.test", "value=before",
+			":", "dbg.args", "arg1=some-arg",
+			":", "env.assert.equal", "key=mixed.test", "value=before",
+			":", "env.update", "key=mixed.test", "value=after",
+			":", "dbg.args", "arg2=another-arg",
+			":", "env.assert.equal", "key=mixed.test", "value=after")
+		if !ok {
+			t.Error("command should succeed - env changes should persist across dbg.args")
+		}
+	})
+
+	t.Run("env changes persist across echo", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=echo.test", "value=persisted",
+			":", "echo", "message=hello",
+			":", "env.assert.equal", "key=echo.test", "value=persisted")
+		if !ok {
+			t.Error("command should succeed - env changes should persist across echo")
+		}
+	})
+
+	t.Run("env changes persist across noop and dummy", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=noop.test", "value=initial",
+			":", "noop",
+			":", "env.assert.equal", "key=noop.test", "value=initial",
+			":", "dummy",
+			":", "env.assert.equal", "key=noop.test", "value=initial")
+		if !ok {
+			t.Error("command should succeed - env changes should persist across noop and dummy")
+		}
+	})
+}
+
+func TestEnvMapCommand(t *testing.T) {
+	t.Run("env map copies value to another key", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=map.src", "value=source-value",
+			":", "env.map", "src-key=map.src", "dest-key=map.dst",
+			":", "env.assert.equal", "key=map.dst", "value=source-value",
+			":", "env.assert.equal", "key=map.src", "value=source-value")
+		if !ok {
+			t.Error("command should succeed - map should copy value")
+		}
+	})
+
+	t.Run("env map in flow chain", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=chain.original", "value=hello",
+			":", "env.map", "src-key=chain.original", "dest-key=chain.copy1",
+			":", "env.map", "src-key=chain.copy1", "dest-key=chain.copy2",
+			":", "env.assert.equal", "key=chain.original", "value=hello",
+			":", "env.assert.equal", "key=chain.copy1", "value=hello",
+			":", "env.assert.equal", "key=chain.copy2", "value=hello")
+		if !ok {
+			t.Error("command should succeed - chained map should work")
+		}
+	})
+}
+
+func TestEnvChangeVerificationAfterFlow(t *testing.T) {
+	t.Run("verify env state after multi-step flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=final.key1", "value=val1",
+			":", "env.set", "key=final.key2", "value=val2",
+			":", "env.update", "key=final.key1", "value=val1-modified",
+			":", "noop")
+		if !ok {
+			t.Error("flow should succeed")
+		}
+
+		if tc.Env.Get("final.key1").Raw != "val1-modified" {
+			t.Errorf("final.key1 should be val1-modified, got %s", tc.Env.Get("final.key1").Raw)
+		}
+		if tc.Env.Get("final.key2").Raw != "val2" {
+			t.Errorf("final.key2 should be val2, got %s", tc.Env.Get("final.key2").Raw)
+		}
+	})
+
+	t.Run("env session layer persists after flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=session.persistent", "value=kept")
+		if !ok {
+			t.Error("flow should succeed")
+		}
+
+		sessionEnv := tc.Env.GetLayer(model.EnvLayerSession)
+		if sessionEnv.Get("session.persistent").Raw != "kept" {
+			t.Error("session layer should contain the set value")
+		}
+	})
+}
+
+func TestEnvDeepNestingIntegrity(t *testing.T) {
+	t.Run("ten level env changes maintain integrity", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		args := []string{}
+		args = append(args, "env.set", "key=integrity.counter", "value=0")
+		args = append(args, ":")
+		for i := 1; i <= 10; i++ {
+			args = append(args, "env.update", "key=integrity.counter", fmt.Sprintf("value=%d", i))
+			if i < 10 {
+				args = append(args, ":")
+			}
+		}
+
+		ok := tc.RunCli(args...)
+		if !ok {
+			t.Error("flow should succeed")
+		}
+
+		if tc.Env.Get("integrity.counter").Raw != "10" {
+			t.Errorf("counter should be 10, got %s", tc.Env.Get("integrity.counter").Raw)
+		}
+	})
+
+	t.Run("multiple keys modified at different levels remain consistent", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli(
+			"env.set", "key=consist.a", "value=1",
+			":", "env.set", "key=consist.b", "value=1",
+			":", "env.set", "key=consist.c", "value=1",
+			":", "env.update", "key=consist.a", "value=2",
+			":", "env.update", "key=consist.b", "value=2",
+			":", "env.update", "key=consist.a", "value=3",
+			":", "env.assert.equal", "key=consist.a", "value=3",
+			":", "env.assert.equal", "key=consist.b", "value=2",
+			":", "env.assert.equal", "key=consist.c", "value=1")
+		if !ok {
+			t.Error("flow should succeed - all keys should have expected values")
 		}
 	})
 }
