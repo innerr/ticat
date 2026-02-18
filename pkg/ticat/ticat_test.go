@@ -312,7 +312,7 @@ func TestIntegrationBufferFlow(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	model.SaveFlow(&buf, flow, ".", "@", env)
+	_ = model.SaveFlow(&buf, flow, ".", "@", env)
 
 	result := buf.String()
 	if !strings.Contains(result, "@") {

@@ -70,9 +70,9 @@ func (self *CacheScreen) WriteToEx(
 	for _, it := range self.data {
 		text, isError := transformer(it.Text, it.IsError, it.Len)
 		if isError {
-			screen.Error(text)
+			_ = screen.Error(text)
 		} else {
-			screen.Print(text)
+			_ = screen.Print(text)
 		}
 	}
 }

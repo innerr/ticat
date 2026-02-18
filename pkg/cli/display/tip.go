@@ -119,7 +119,7 @@ func (self *TipBoxPrinter) Print(msg string) {
 }
 
 func (self *TipBoxPrinter) Error(msg string) {
-	self.buf.Error(msg)
+	_ = self.buf.Error(msg)
 }
 
 func (self *TipBoxPrinter) OutputtedLines() int {

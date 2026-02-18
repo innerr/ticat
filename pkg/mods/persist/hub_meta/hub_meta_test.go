@@ -11,7 +11,7 @@ func TestWriteReposInfoFile_DoubleCloseFix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	hubDir := filepath.Join(tmpDir, "hub")
 	metaPath := filepath.Join(hubDir, "repos.hub")
@@ -33,7 +33,9 @@ func TestWriteReposInfoFile_DoubleCloseFix(t *testing.T) {
 		},
 	}
 
-	WriteReposInfoFile(hubDir, metaPath, infos, "|")
+	if err := WriteReposInfoFile(hubDir, metaPath, infos, "|"); err != nil {
+		t.Fatalf("WriteReposInfoFile failed: %v", err)
+	}
 
 	if _, err := os.Stat(metaPath); os.IsNotExist(err) {
 		t.Fatal("expected repos.hub file to be created")
@@ -66,12 +68,14 @@ func TestWriteReposInfoFile_EmptyList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	hubDir := filepath.Join(tmpDir, "hub")
 	metaPath := filepath.Join(hubDir, "repos.hub")
 
-	WriteReposInfoFile(hubDir, metaPath, []RepoInfo{}, "|")
+	if err := WriteReposInfoFile(hubDir, metaPath, []RepoInfo{}, "|"); err != nil {
+		t.Fatalf("WriteReposInfoFile failed: %v", err)
+	}
 
 	readInfos, _, _ := ReadReposInfoFile(hubDir, metaPath, false, "|")
 
@@ -85,7 +89,7 @@ func TestWriteReposInfoFile_Overwrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	hubDir := filepath.Join(tmpDir, "hub")
 	metaPath := filepath.Join(hubDir, "repos.hub")
@@ -100,7 +104,9 @@ func TestWriteReposInfoFile_Overwrite(t *testing.T) {
 		},
 	}
 
-	WriteReposInfoFile(hubDir, metaPath, infos1, "|")
+	if err := WriteReposInfoFile(hubDir, metaPath, infos1, "|"); err != nil {
+		t.Fatalf("WriteReposInfoFile failed: %v", err)
+	}
 
 	infos2 := []RepoInfo{
 		{
@@ -112,7 +118,9 @@ func TestWriteReposInfoFile_Overwrite(t *testing.T) {
 		},
 	}
 
-	WriteReposInfoFile(hubDir, metaPath, infos2, "|")
+	if err := WriteReposInfoFile(hubDir, metaPath, infos2, "|"); err != nil {
+		t.Fatalf("WriteReposInfoFile failed: %v", err)
+	}
 
 	readInfos, _, _ := ReadReposInfoFile(hubDir, metaPath, false, "|")
 
@@ -130,7 +138,7 @@ func TestReadReposInfoFile_NotExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	hubDir := filepath.Join(tmpDir, "hub")
 	metaPath := filepath.Join(hubDir, "repos.hub")
@@ -147,7 +155,7 @@ func TestReadReposInfoFile_NotExistError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	hubDir := filepath.Join(tmpDir, "hub")
 	metaPath := filepath.Join(hubDir, "repos.hub")

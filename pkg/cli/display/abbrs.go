@@ -24,7 +24,7 @@ func dumpEnvAbbrs(
 	}
 	prt := func(msg string) {
 		if indent >= 0 {
-			screen.Print(rpt(" ", indentSize*indent) + msg + "\n")
+			_ = screen.Print(rpt(" ", indentSize*indent) + msg + "\n")
 		}
 	}
 

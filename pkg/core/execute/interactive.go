@@ -246,13 +246,13 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 			if action == BPAQuit {
 				panic(model.NewAbortByUserErr())
 			} else if action == BPAInteract {
-				cc.Screen.Print("\n")
-				builtin.InteractiveMode(cc, env, "e")
+				_ = cc.Screen.Print("\n")
+				_ = builtin.InteractiveMode(cc, env, "e")
 				if env.GetBool("sys.interact.leaving") {
 					env.GetLayer(model.EnvLayerSession).Delete("sys.interact.leaving")
 					return BPAContinue
 				}
-				cc.Screen.Print("\n")
+				_ = cc.Screen.Print("\n")
 				if showStack != nil {
 					showStack()
 				}
@@ -262,7 +262,7 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 			}
 			return action
 		}
-		cc.Screen.Print(display.ColorExplain("(not valid input: "+choice+")\n", env))
+		_ = cc.Screen.Print(display.ColorExplain("(not valid input: "+choice+")\n", env))
 		return BPAContinue
 	}
 
@@ -284,13 +284,13 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 				// PANIC: User requested quit - this is an intentional abort
 				panic(model.NewAbortByUserErr())
 			} else if action == BPAInteract {
-				cc.Screen.Print("\n")
-				builtin.InteractiveMode(cc, env, "e")
+				_ = cc.Screen.Print("\n")
+				_ = builtin.InteractiveMode(cc, env, "e")
 				if env.GetBool("sys.interact.leaving") {
 					env.GetLayer(model.EnvLayerSession).Delete("sys.interact.leaving")
 					return BPAContinue
 				}
-				cc.Screen.Print("\n")
+				_ = cc.Screen.Print("\n")
 				if showStack != nil {
 					showStack()
 				}
@@ -301,7 +301,7 @@ func readUserBPAChoice(reason string, choices []string, actions BPAs, lowerInput
 			}
 			return action
 		}
-		cc.Screen.Print(display.ColorExplain("(not valid input: "+line+")\n", env))
+		_ = cc.Screen.Print(display.ColorExplain("(not valid input: "+line+")\n", env))
 	}
 }
 

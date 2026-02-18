@@ -48,7 +48,7 @@ func InteractiveMode(cc *model.Cli, env *model.Env, exitStr string) error {
 	lineReader := liner.NewLiner()
 	defer func() {
 		if err := lineReader.Close(); err != nil {
-			fmt.Errorf("[RunInteractive] close line reader failed: %v", err)
+			_ = fmt.Errorf("[RunInteractive] close line reader failed: %v", err)
 		}
 	}()
 
