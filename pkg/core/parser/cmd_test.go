@@ -259,3 +259,94 @@ func TestCmdParserParseWithArgs(t *testing.T) {
 		}
 	})
 }
+
+func TestCmdParserParseWithDotsInValue(t *testing.T) {
+	root := newCmdTree()
+	deploy := root.AddSub("deploy")
+	deploy.RegEmptyCmd("deploy command")
+
+	parser := &CmdParser{
+		&EnvParser{Brackets{"{", "}"}, "\t ", "=", ".", "%"},
+		".", "./", "\t ", "<root>", "^", map[byte]bool{'/': true, '\\': true},
+	}
+
+	t.Run("env with dots in value", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"deploy", "{hosts=172.16.5.34,172.16.5.37}"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set")
+		}
+		if parsed.Segments[0].Env["deploy.hosts"].Val != "172.16.5.34,172.16.5.37" {
+			t.Errorf("expected deploy.hosts='172.16.5.34,172.16.5.37', got '%s'", parsed.Segments[0].Env["deploy.hosts"].Val)
+		}
+	})
+
+	t.Run("env with key containing dots", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"deploy", "{server.hosts=172.16.5.34}"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set")
+		}
+		if parsed.Segments[0].Env["deploy.server.hosts"].Val != "172.16.5.34" {
+			t.Errorf("expected deploy.server.hosts='172.16.5.34', got '%s'", parsed.Segments[0].Env["deploy.server.hosts"].Val)
+		}
+	})
+
+	t.Run("env with equals in value", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"deploy", "{key=a=b=c}"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set")
+		}
+		if parsed.Segments[0].Env["deploy.key"].Val != "a=b=c" {
+			t.Errorf("expected deploy.key='a=b=c', got '%s'", parsed.Segments[0].Env["deploy.key"].Val)
+		}
+	})
+
+	t.Run("env with URL containing equals", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"deploy", "{url=http://example.com?a=1&b=2}"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set")
+		}
+		if parsed.Segments[0].Env["deploy.url"].Val != "http://example.com?a=1&b=2" {
+			t.Errorf("expected deploy.url='http://example.com?a=1&b=2', got '%s'", parsed.Segments[0].Env["deploy.url"].Val)
+		}
+	})
+
+	t.Run("key=value format with dots in value", func(t *testing.T) {
+		echo := root.AddSub("echo")
+		echo.RegEmptyCmd("echo command").AddArg("ip", "")
+		parsed := parser.Parse(root, nil, []string{"echo", "{ip=172.16.5.34}"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set")
+		}
+		if parsed.Segments[0].Env["echo.ip"].Val != "172.16.5.34" {
+			t.Errorf("expected echo.ip='172.16.5.34', got '%s'", parsed.Segments[0].Env["echo.ip"].Val)
+		}
+	})
+
+	t.Run("env with IP address value", func(t *testing.T) {
+		parsed := parser.Parse(root, nil, []string{"deploy", "{ip=192.168.1.1}"})
+		if len(parsed.Segments) != 1 {
+			t.Fatalf("expected 1 segment, got %d", len(parsed.Segments))
+		}
+		if parsed.Segments[0].Env == nil {
+			t.Fatal("expected env to be set")
+		}
+		if parsed.Segments[0].Env["deploy.ip"].Val != "192.168.1.1" {
+			t.Errorf("expected deploy.ip='192.168.1.1', got '%s'", parsed.Segments[0].Env["deploy.ip"].Val)
+		}
+	})
+}

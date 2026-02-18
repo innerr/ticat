@@ -217,10 +217,24 @@ func parseEnvString(s string, envParser *EnvParser) model.ParsedEnv {
 		part := strings.TrimSpace(parts[i])
 		if i+2 < len(parts) && strings.TrimSpace(parts[i+1]) == envParser.kvSep {
 			key := part
-			val := strings.TrimSpace(parts[i+2])
-			env[key] = model.NewParsedEnvVal(key, val)
+			// Collect all parts until the next key (which doesn't start with '=')
+			valParts := []string{strings.TrimSpace(parts[i+2])}
 			i += 3
+			// Continue collecting value parts if they contain '=' (meaning '=' in value)
+			for i < len(parts) {
+				nextPart := strings.TrimSpace(parts[i])
+				if nextPart == envParser.kvSep && i+1 < len(parts) {
+					// This '=' is part of the value, add it
+					valParts[len(valParts)-1] += envParser.kvSep + strings.TrimSpace(parts[i+1])
+					i += 2
+				} else {
+					break
+				}
+			}
+			val := strings.TrimSpace(strings.Join(valParts, ""))
+			env[key] = model.NewParsedEnvVal(key, val)
 		} else if i+1 < len(parts) && strings.Contains(part, envParser.kvSep) {
+			// Handle inline key=value (split on first '=' only)
 			kv := strings.SplitN(part, envParser.kvSep, 2)
 			if len(kv) == 2 {
 				env[strings.TrimSpace(kv[0])] = model.NewParsedEnvVal(strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1]))
