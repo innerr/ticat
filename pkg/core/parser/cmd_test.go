@@ -206,6 +206,23 @@ func TestCmdParserParseWithArgs(t *testing.T) {
 		assertEnvValue(t, parsed.Segments[0].Env, "echo.message", "test")
 		assertEnvValue(t, parsed.Segments[0].Env, "echo.color", "blue")
 	})
+
+	t.Run("arg value with dots", func(t *testing.T) {
+		envrm := root.AddSub("envrm")
+		envrm.RegEmptyCmd("env remove").AddArg("key", "")
+		parsed := parser.Parse(root, nil, []string{"envrm", "bench.workload"})
+		assertParseResult(t, parsed, 1, "envrm")
+		assertEnvValue(t, parsed.Segments[0].Env, "envrm.key", "bench.workload")
+	})
+
+	t.Run("arg value with multiple dots", func(t *testing.T) {
+		envset := root.AddSub("envset")
+		envset.RegEmptyCmd("env set").AddArg("key", "").AddArg("val", "")
+		parsed := parser.Parse(root, nil, []string{"envset", "db.host", "192.168.1.1"})
+		assertParseResult(t, parsed, 1, "envset")
+		assertEnvValue(t, parsed.Segments[0].Env, "envset.key", "db.host")
+		assertEnvValue(t, parsed.Segments[0].Env, "envset.val", "192.168.1.1")
+	})
 }
 
 func TestCmdParserParseWithDotsInValue(t *testing.T) {
