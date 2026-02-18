@@ -206,7 +206,24 @@ func (l *yyLex) tryParseAsArg(word string) model.ParsedEnv {
 	names := args.Names()
 	if len(names) > ctx.argIdx {
 		name := names[ctx.argIdx]
-		env[name] = model.NewParsedEnvArgv(name, word)
+		// Collect tokens that form a dotted path (e.g., "bench.workload" from "bench", ".", "workload")
+		// This handles cases where a value contains dots that were tokenized as separators
+		value := word
+		for l.pos < len(l.tokens) {
+			tok := l.tokens[l.pos]
+			// Only merge if it's a dot separator followed by a word
+			if tok.typ == SEP && tok.str == "." {
+				if l.pos+1 < len(l.tokens) && l.tokens[l.pos+1].typ == WORD {
+					value += tok.str + l.tokens[l.pos+1].str
+					l.pos += 2
+				} else {
+					break
+				}
+			} else {
+				break
+			}
+		}
+		env[name] = model.NewParsedEnvArgv(name, value)
 		ctx.argIdx++
 		return env
 	}
