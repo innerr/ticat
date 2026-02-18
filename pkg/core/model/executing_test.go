@@ -63,7 +63,7 @@ func (fs *testFS) open(path string, content string) {
 	if fs.files[path] == nil {
 		fs.files[path] = newMockStatusFile()
 	}
-	fs.files[path].Write([]byte(content))
+	_, _ = fs.files[path].Write([]byte(content))
 	fs.writeLog = append(fs.writeLog, path)
 }
 
@@ -726,7 +726,7 @@ func TestExecutingFlow_ErrorRecovery(t *testing.T) {
 
 	func() {
 		defer func() {
-			recover()
+			_ = recover()
 		}()
 		executing.OnCmdStart(flow, 2, env, "")
 		executing.OnCmdFinish(flow, 2, env, true, nil, false)
@@ -826,7 +826,7 @@ func TestStatusFile_PanicDuringWrite(t *testing.T) {
 	for i := 0; i < len(flow.Cmds); i++ {
 		func() {
 			defer func() {
-				recover()
+				_ = recover()
 			}()
 			executing.OnCmdStart(flow, i, env, "")
 			executing.OnCmdFinish(flow, i, env, true, nil, false)
@@ -858,7 +858,7 @@ func (fs *panicTestFS) open(path string, content string) {
 	if fs.files[path] == nil {
 		fs.files[path] = newMockStatusFile()
 	}
-	fs.files[path].Write([]byte(content))
+	_, _ = fs.files[path].Write([]byte(content))
 	fs.writeLog = append(fs.writeLog, path)
 }
 
@@ -1372,7 +1372,7 @@ func TestExecutingFlow_PanicInCmd_DeepestLevel(t *testing.T) {
 				case error:
 					panicErr = v
 				case string:
-					panicErr = fmt.Errorf(v)
+					panicErr = fmt.Errorf("%s", v)
 				default:
 					panicErr = fmt.Errorf("panic: %v", r)
 				}
@@ -1478,7 +1478,7 @@ func TestExecutingFlow_PanicRecovery_StatusFileIntegrity(t *testing.T) {
 
 	func() {
 		defer func() {
-			recover()
+			_ = recover()
 		}()
 		executing.OnCmdStart(flow, 2, env, "")
 		executing.OnCmdFinish(flow, 2, env, true, nil, false)
