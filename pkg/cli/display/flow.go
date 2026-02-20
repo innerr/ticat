@@ -178,6 +178,29 @@ func dumpFlowCmd(
 		return false, true, nil
 	}
 
+	// Filter by name (substring match)
+	if len(args.FilterNames) > 0 {
+		cmdName := strings.Join(cmd.Path(), cc.Cmds.Strs.PathSep)
+		matched := false
+		for _, filter := range args.FilterNames {
+			if strings.Contains(cmdName, filter) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return false, true, nil
+		}
+	}
+
+	// Filter by execution status (only failed)
+	if args.OnlyFailed && executedCmd != nil {
+		if executedCmd.Result == model.ExecutedResultSucceeded ||
+			executedCmd.Result == model.ExecutedResultSkipped {
+			return false, true, nil
+		}
+	}
+
 	// TODO: this is slow
 	originEnv := env.Clone()
 	cmdEnv, argv := parsedCmd.ApplyMappingGenEnvAndArgv(env, cc.Cmds.Strs.EnvValDelAllMark, cmd.Strs.PathSep, depth+1)
@@ -1021,10 +1044,12 @@ type DumpFlowArgs struct {
 	ShowExecutedEnvFull     bool
 	ShowExecutedModifiedEnv bool
 	MonitorMode             bool
+	FilterNames             []string
+	OnlyFailed              bool
 }
 
 func NewDumpFlowArgs() *DumpFlowArgs {
-	return &DumpFlowArgs{false, false, 4, 32, 1, false, false, false}
+	return &DumpFlowArgs{false, false, 4, 32, 1, false, false, false, nil, false}
 }
 
 func (self *DumpFlowArgs) SetSimple() *DumpFlowArgs {
@@ -1060,6 +1085,16 @@ func (self *DumpFlowArgs) SetShowExecutedModifiedEnv() *DumpFlowArgs {
 
 func (self *DumpFlowArgs) SetMonitorMode() *DumpFlowArgs {
 	self.MonitorMode = true
+	return self
+}
+
+func (self *DumpFlowArgs) SetFilterNames(names []string) *DumpFlowArgs {
+	self.FilterNames = names
+	return self
+}
+
+func (self *DumpFlowArgs) SetOnlyFailed(val bool) *DumpFlowArgs {
+	self.OnlyFailed = val
 	return self
 }
 

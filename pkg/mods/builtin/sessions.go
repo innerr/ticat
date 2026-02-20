@@ -209,6 +209,27 @@ func ErrorSessionDescFull(
 	return currCmdIdx, nil
 }
 
+func ErrorSessionDescFailed(
+	argv model.ArgVals,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
+	currCmdIdx int) (int, error) {
+
+	session, ok := getLastSession(cc, env, true, false, false)
+	if !ok {
+		return currCmdIdx, fmt.Errorf("no executed error sessions")
+	}
+	dumpArgs := display.NewDumpFlowArgs().
+		SetSkeleton().
+		SetMaxDepth(argv.GetIntEx("depth", 32)).
+		SetMaxTrivial(argv.GetIntEx("unfold-trivial", 1)).
+		SetOnlyFailed(true)
+	parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, model.FlowStrToStrs(session.Status.Flow)...)
+	display.DumpFlowEx(cc, env, parsedFlow, 0, dumpArgs, session.Status, session.Running, EnvOpCmds())
+	return currCmdIdx, nil
+}
+
 func RunningSessionDescLess(
 	argv model.ArgVals,
 	cc *model.Cli,

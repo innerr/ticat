@@ -2,10 +2,38 @@ package builtin
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/innerr/ticat/pkg/cli/display"
 	"github.com/innerr/ticat/pkg/core/model"
 )
+
+func parseFilterNames(argv model.ArgVals, env *model.Env) []string {
+	filterRaw := argv.GetRaw("filter")
+	if len(filterRaw) == 0 {
+		return nil
+	}
+	listSep := env.GetRaw("strs.list-sep")
+	filters := strings.Split(filterRaw, listSep)
+	var result []string
+	for _, f := range filters {
+		f = strings.TrimSpace(f)
+		if len(f) > 0 {
+			result = append(result, f)
+		}
+	}
+	return result
+}
+
+func applyDumpArgsFilter(dumpArgs *display.DumpFlowArgs, argv model.ArgVals, env *model.Env) {
+	filters := parseFilterNames(argv, env)
+	if len(filters) > 0 {
+		dumpArgs.SetFilterNames(filters)
+	}
+	if argv.GetBool("only-failed") {
+		dumpArgs.SetOnlyFailed(true)
+	}
+}
 
 func DumpFlowAll(
 	argv model.ArgVals,
@@ -41,6 +69,7 @@ func DumpFlow(
 
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
+	applyDumpArgsFilter(dumpArgs, argv, env)
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 	printFatalRiskMark(cc, env, flow, currCmdIdx)
 	return clearFlow(flow)
@@ -60,6 +89,7 @@ func DumpFlowSimple(
 
 	dumpArgs := display.NewDumpFlowArgs().SetSimple().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
+	applyDumpArgsFilter(dumpArgs, argv, env)
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 	printFatalRiskMark(cc, env, flow, currCmdIdx)
 	return clearFlow(flow)
@@ -79,6 +109,7 @@ func DumpFlowSkeleton(
 
 	dumpArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
+	applyDumpArgsFilter(dumpArgs, argv, env)
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 	printFatalRiskMark(cc, env, flow, currCmdIdx)
 
@@ -184,6 +215,7 @@ func dumpFlowAll(
 	dumpArgs := display.NewDumpFlowArgs().SetMaxDepth(argv.GetInt("depth")).
 		SetMaxTrivial(argv.GetInt("unfold-trivial"))
 	dumpArgs.Simple = simple
+	applyDumpArgsFilter(dumpArgs, argv, env)
 	display.DumpFlow(cc, env, flow, currCmdIdx+1, dumpArgs, EnvOpCmds())
 
 	deps := model.Depends{}

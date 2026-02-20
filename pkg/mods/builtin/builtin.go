@@ -338,7 +338,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 	cmds.AddSub("-").
 		RegPowerCmd(DumpFlowSkeleton,
 			"shortcut of [desc]").
@@ -347,7 +349,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 	cmds.AddSub("--").
 		RegPowerCmd(DumpFlowSkeleton,
 			"shortcut of [desc], unfold more(2L) trivial subflows").
@@ -356,7 +360,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "2", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 	cmds.AddSub("---").
 		RegPowerCmd(DumpFlowSkeleton,
 			"shortcut of [desc], unfold more(3L) trivial subflows").
@@ -365,7 +371,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "3", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 
 	desc.AddSub("more", "m").
 		RegPowerCmd(DumpFlowAllSimple,
@@ -375,7 +383,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 	cmds.AddSub("+").
 		RegPowerCmd(DumpFlowAllSimple,
 			"shortcut of [desc.more]").
@@ -384,7 +394,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 	cmds.AddSub("++").
 		RegPowerCmd(DumpFlowAllSimple,
 			"shortcut of [desc.more], unfold more(2L) trivial subflows").
@@ -393,7 +405,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "2", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 	cmds.AddSub("+++").
 		RegPowerCmd(DumpFlowAllSimple,
 			"shortcut of [desc.more], unfold more(3L) trivial subflows").
@@ -402,7 +416,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "3", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 
 	desc.AddSub("full", "f", "F").
 		RegPowerCmd(DumpFlowAll,
@@ -412,7 +428,9 @@ func RegisterFlowDescCmds(cmds *model.CmdTree) {
 		SetIgnoreFollowingDeps().
 		SetPriority().
 		AddArg("unfold-trivial", "1", "unfold", "unf", "uf", "u", "trivial", "triv", "tri", "t").
-		AddArg("depth", "32", "d")
+		AddArg("depth", "32", "d").
+		AddArg("filter", "", "f").
+		AddArg("only-failed", "false", "err", "e")
 
 	desc.AddSub("dependencies", "depends", "depend", "dep", "os-cmd", "os").
 		RegPowerCmd(DumpFlowDepends,
@@ -807,6 +825,14 @@ func RegisterSessionCmds(cmds *model.CmdTree) {
 	errDesc.AddSub("full", "f").
 		RegPowerCmd(ErrorSessionDescFull,
 			"desc the last failed session with full details").
+		SetAllowTailModeCall().
+		SetQuiet().
+		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").
+		AddArg("depth", "32", "d", "D")
+
+	sessionsErr.AddSub("cmds", "cmd").
+		RegPowerCmd(ErrorSessionDescFailed,
+			"desc the last failed session, only show failed commands").
 		SetAllowTailModeCall().
 		SetQuiet().
 		AddArg("unfold-trivial", "1", "ut", "unfold", "unf", "uf", "u", "U", "trivial", "triv", "tri", "t").

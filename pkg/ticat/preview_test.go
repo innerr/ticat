@@ -918,6 +918,448 @@ func TestPreviewOrderPreservation(t *testing.T) {
 	}
 }
 
+func TestFilterSingleMatch(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"echo", "message=a",
+		":", "echo", "message=b",
+		":", "echo", "message=c",
+		":", "-", "filter=echo", ":", "dbg.args.tail", "arg1=filter-test",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "filter-test")
+	assertOutputContains(t, output, "echo")
+}
+
+func TestFilterMultipleMatches(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"env.set", "key=a", "value=1",
+		":", "env.set", "key=b", "value=2",
+		":", "echo", "message=c",
+		":", "-", "filter=env", ":", "dbg.args.tail", "arg1=multi-filter",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "multi-filter")
+	assertOutputContains(t, output, "env.set")
+	assertOutputContains(t, output, "[env.set]")
+	if strings.Contains(output, "[echo]") {
+		t.Errorf("output should NOT contain [echo] after filtering")
+	}
+}
+
+func TestFilterCommaSeparated(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"env.set", "key=a", "value=1",
+		":", "echo", "message=b",
+		":", "noop",
+		":", "-", "filter=env,echo", ":", "dbg.args.tail", "arg1=comma-filter",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "comma-filter")
+	assertOutputContains(t, output, "env.set")
+	assertOutputContains(t, output, "[echo]")
+	if strings.Contains(output, "[noop]") {
+		t.Errorf("output should NOT contain [noop] after filtering")
+	}
+}
+
+func TestFilterNoMatch(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"echo", "message=a",
+		":", "echo", "message=b",
+		":", "-", "filter=nonexistent", ":", "dbg.args.tail", "arg1=no-match",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "no-match")
+}
+
+func TestFilterPlusMode(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"env.set", "key=a", "value=1",
+		":", "echo", "message=b",
+		":", "+", "filter=echo", ":", "dbg.args.tail", "arg1=plus-filter",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "plus-filter")
+	assertOutputContains(t, output, "[echo]")
+	if strings.Contains(output, "[env.set]") {
+		t.Errorf("output should NOT contain [env.set] after filtering")
+	}
+}
+
+func TestFilterDashDashMode(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"env.set", "key=a", "value=1",
+		":", "echo", "message=b",
+		":", "noop",
+		":", "--", "filter=env", ":", "dbg.args.tail", "arg1=dd-filter",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "dd-filter")
+	assertOutputContains(t, output, "[env.set]")
+	if strings.Contains(output, "[echo]") {
+		t.Errorf("output should NOT contain [echo] after filtering")
+	}
+	if strings.Contains(output, "[noop]") {
+		t.Errorf("output should NOT contain [noop] after filtering")
+	}
+}
+
+func TestFilterTwentyLevelFlow(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	args := []string{}
+	for i := 1; i <= 20; i++ {
+		if i%3 == 0 {
+			args = append(args, "echo", fmt.Sprintf("message=echo%d", i))
+		} else {
+			args = append(args, "env.set", fmt.Sprintf("key=level%d", i), fmt.Sprintf("value=%d", i))
+		}
+		if i < 20 {
+			args = append(args, ":")
+		}
+	}
+	args = append(args, ":", "-", "filter=echo", ":", "dbg.args.tail", "arg1=deep-filter")
+
+	ok := tc.RunCli(args...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "deep-filter")
+	assertOutputContains(t, output, "[echo]")
+	if strings.Contains(output, "[env.set]") {
+		t.Errorf("output should NOT contain [env.set] after filtering")
+	}
+}
+
+func TestFilterThirtyLevelFlowMixed(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	args := []string{}
+	for i := 1; i <= 30; i++ {
+		if i%5 == 0 {
+			args = append(args, "noop")
+		} else if i%3 == 0 {
+			args = append(args, "echo", fmt.Sprintf("message=msg%d", i))
+		} else {
+			args = append(args, "env.set", fmt.Sprintf("key=k%d", i), fmt.Sprintf("value=%d", i))
+		}
+		if i < 30 {
+			args = append(args, ":")
+		}
+	}
+	args = append(args, ":", "-", "filter=echo,noop", ":", "dbg.args.tail", "arg1=thirty-filter")
+
+	ok := tc.RunCli(args...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "thirty-filter")
+	assertOutputContains(t, output, "[echo]")
+	assertOutputContains(t, output, "[noop]")
+	if strings.Contains(output, "[env.set]") {
+		t.Errorf("output should NOT contain [env.set] after filtering")
+	}
+}
+
+func TestFilterFiftyLevelFlow(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	args := []string{}
+	for i := 1; i <= 50; i++ {
+		if i == 25 || i == 50 {
+			args = append(args, "echo", fmt.Sprintf("message=marker%d", i))
+		} else {
+			args = append(args, "env.set", fmt.Sprintf("key=f%d", i), fmt.Sprintf("value=%d", i))
+		}
+		if i < 50 {
+			args = append(args, ":")
+		}
+	}
+	args = append(args, ":", "-", "filter=echo", ":", "dbg.args.tail", "arg1=fifty-filter")
+
+	ok := tc.RunCli(args...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "fifty-filter")
+	assertOutputContains(t, output, "echo")
+	assertOutputContains(t, output, "marker25")
+	assertOutputContains(t, output, "marker50")
+}
+
+func TestFilterPartialMatch(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"env.set", "key=a", "value=1",
+		":", "env.update", "key=a", "value=2",
+		":", "echo", "message=b",
+		":", "-", "filter=env", ":", "dbg.args.tail", "arg1=partial",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "partial")
+	assertOutputContains(t, output, "[env.set]")
+	assertOutputContains(t, output, "[env.update]")
+	if strings.Contains(output, "[echo]") {
+		t.Errorf("output should NOT contain [echo] after filtering")
+	}
+}
+
+func TestFilterWithDepthArg(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"env.set", "key=a", "value=1",
+		":", "echo", "message=b",
+		":", "env.set", "key=c", "value=3",
+		":", "-", "filter=env", "d=0", ":", "dbg.args.tail", "arg1=filter-depth",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "filter-depth")
+	assertOutputContains(t, output, "[env.set]")
+	if strings.Contains(output, "[echo]") {
+		t.Errorf("output should NOT contain [echo] after filtering")
+	}
+}
+
+func TestFilterEmptyValue(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"echo", "message=a",
+		":", "echo", "message=b",
+		":", "-", "filter=", ":", "dbg.args.tail", "arg1=empty-filter",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "empty-filter")
+}
+
+func TestFilterWhitespaceInValue(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"echo", "message=a",
+		":", "echo", "message=b",
+		":", "-", "filter={echo , env}", ":", "dbg.args.tail", "arg1=ws-filter",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "ws-filter")
+}
+
+func TestFilterPlusPlusMode(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := []string{
+		"env.set", "key=a", "value=1",
+		":", "echo", "message=b",
+		":", "noop",
+		":", "++", "filter=echo", ":", "dbg.args.tail", "arg1=pp-filter",
+	}
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "pp-filter")
+	assertOutputContains(t, output, "[echo]")
+	if strings.Contains(output, "[env.set]") {
+		t.Errorf("output should NOT contain [env.set] after filtering")
+	}
+	if strings.Contains(output, "[noop]") {
+		t.Errorf("output should NOT contain [noop] after filtering")
+	}
+}
+
+func TestFilterComplexFlow(t *testing.T) {
+	tc := NewTiCatForTest()
+	screen := &previewCaptureScreen{}
+	tc.SetScreen(screen)
+	tc.Env.SetBool("sys.panic.recover", false)
+
+	flow := buildComplexMultiLayerFlow()
+	flow = append(flow, ":", "-", "filter=echo", ":", "dbg.args.tail", "arg1=complex-filter")
+
+	ok := tc.RunCli(flow...)
+	if !ok {
+		t.Error("command should succeed")
+	}
+
+	output := screen.GetOutput()
+	assertOutputContains(t, output, "complex-filter")
+	assertOutputContains(t, output, "[echo]")
+	if strings.Contains(output, "[env.set]") {
+		t.Errorf("output should NOT contain [env.set] after filtering")
+	}
+}
+
+func TestFilterAllModesConsistency(t *testing.T) {
+	flow := []string{
+		"env.set", "key=a", "value=1",
+		":", "echo", "message=b",
+		":", "noop",
+	}
+
+	modes := []struct {
+		name    string
+		preview string
+	}{
+		{"dash", "-"},
+		{"dashdash", "--"},
+		{"plus", "+"},
+		{"plusplus", "++"},
+	}
+
+	for _, mode := range modes {
+		t.Run(mode.name, func(t *testing.T) {
+			tc := NewTiCatForTest()
+			screen := &previewCaptureScreen{}
+			tc.SetScreen(screen)
+			tc.Env.SetBool("sys.panic.recover", false)
+
+			testFlow := make([]string, len(flow))
+			copy(testFlow, flow)
+			testFlow = append(testFlow, ":", mode.preview, "filter=echo", ":", "dbg.args.tail", "arg1=test")
+
+			ok := tc.RunCli(testFlow...)
+			if !ok {
+				t.Errorf("%s filter should succeed", mode.name)
+			}
+
+			output := screen.GetOutput()
+			assertOutputContains(t, output, "test")
+			assertOutputContains(t, output, "[echo]")
+			if strings.Contains(output, "[env.set]") {
+				t.Errorf("%s: output should NOT contain [env.set] after filtering", mode.name)
+			}
+			if strings.Contains(output, "[noop]") {
+				t.Errorf("%s: output should NOT contain [noop] after filtering", mode.name)
+			}
+		})
+	}
+}
+
 func assertPreviewOutputContains(t *testing.T, output string, expected []string) {
 	t.Helper()
 	for _, exp := range expected {
