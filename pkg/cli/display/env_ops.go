@@ -237,7 +237,9 @@ func findCmdsForFatalKeys(cmdTree *model.CmdTree, env *model.Env, fatals []envOp
 	for _, fatal := range fatals {
 		dumpArgs := NewDumpCmdArgs().SetSkeleton().SetMatchWriteKey(fatal.Key)
 		cacheScreen := NewCacheScreen()
-		DumpCmds(cmdTree, cacheScreen, env, dumpArgs)
+		searchEnv := env.Clone()
+		searchEnv.SetBool("display.color", false)
+		DumpCmds(cmdTree, cacheScreen, searchEnv, dumpArgs)
 
 		lines := cacheScreen.Lines()
 

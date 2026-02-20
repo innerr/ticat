@@ -252,6 +252,41 @@ func TestDumpEnvOpsCheckResultMultipleFatals(t *testing.T) {
 	}
 }
 
+func TestDumpEnvOpsCheckResultWithColorEnabled(t *testing.T) {
+	tree := model.NewCmdTree(model.CmdTreeStrsForTest())
+
+	writerCmd := tree.AddSub("writer")
+	cic := writerCmd.RegEmptyCmd("writes test.key")
+	cic.AddEnvOp("test.key", model.EnvOpTypeWrite)
+
+	env := model.NewEnvEx(model.EnvLayerDefault).NewLayer(model.EnvLayerSession)
+	env.SetBool("display.utf8", false)
+	env.SetBool("display.color", true)
+	env.SetBool("display.tip", true)
+	env.Set("strs.self-name", "ticat")
+	env.Set("strs.cmd-path-sep", ".")
+	env.Set("display.env.suggest.max-cmds", "3")
+
+	result := []model.EnvOpsCheckResult{
+		{
+			Key:            "test.key",
+			CmdDisplayPath: "reader",
+			ReadNotExist:   true,
+		},
+	}
+
+	screen := &memoryScreen{}
+	DumpEnvOpsCheckResult(screen, nil, env, result, ".", tree)
+
+	output := screen.GetOutput()
+	if !strings.Contains(output, "commands which can provide these keys") {
+		t.Errorf("expected output to contain 'commands which can provide these keys', got:\n%s", output)
+	}
+	if !strings.Contains(output, "writer") {
+		t.Errorf("expected output to contain 'writer' suggestion, got:\n%s", output)
+	}
+}
+
 func TestAggEnvOpsCheckResult(t *testing.T) {
 	tests := []struct {
 		name                string
