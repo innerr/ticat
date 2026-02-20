@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/innerr/ticat/pkg/core/model"
@@ -79,6 +80,13 @@ func DumpFlowEx(
 		trivialMark := env.GetRaw("strs.trivial-mark")
 		flowStr, _ := model.SaveFlowToStr(flow, cc.Cmds.Strs.PathSep, trivialMark, env)
 		_ = cc.Screen.Print(ColorFlow(flowStr, env) + "\n")
+
+		if executedFlow != nil && procRunning {
+			etaStr := calculateMonitorETA(executedFlow, flow, fromCmdIdx)
+			if len(etaStr) > 0 {
+				_ = cc.Screen.Print(ColorExplain("ETA: "+etaStr, env) + "\n")
+			}
+		}
 	}
 
 	// TODO: show executed status and duration here
@@ -1129,6 +1137,74 @@ func executedCmdDurStr(executedCmd *model.ExecutedCmd, procRunning bool, env *mo
 	}
 	extraLen, _ := ColorExtraLen(env, "explain")
 	return ColorExplain(durStr, env), extraLen
+}
+
+type monitorETAStats struct {
+	completedCmds int
+	totalCmds     int
+	completedDur  time.Duration
+	avgDurPerCmd  time.Duration
+	remainingCmds int
+	eta           time.Duration
+	hasRunningCmd bool
+}
+
+func calculateMonitorETA(executedFlow *model.ExecutedFlow, flow *model.ParsedCmds, fromCmdIdx int) string {
+	stats := calculateETAStats(executedFlow, flow, fromCmdIdx, true)
+	if stats.completedCmds == 0 || stats.remainingCmds == 0 {
+		return ""
+	}
+
+	etaStr := formatDuration(stats.eta)
+	progress := fmt.Sprintf("%d/%d", stats.completedCmds, stats.totalCmds)
+
+	if stats.avgDurPerCmd > 0 {
+		avgStr := formatDuration(stats.avgDurPerCmd)
+		return fmt.Sprintf("%s (avg: %s, progress: %s)", etaStr, avgStr, progress)
+	}
+	return fmt.Sprintf("%s (progress: %s)", etaStr, progress)
+}
+
+func calculateETAStats(executedFlow *model.ExecutedFlow, flow *model.ParsedCmds, fromCmdIdx int, running bool) monitorETAStats {
+	var stats monitorETAStats
+
+	if executedFlow == nil || flow == nil {
+		return stats
+	}
+
+	stats.totalCmds = len(flow.Cmds[fromCmdIdx:])
+	stats.remainingCmds = stats.totalCmds
+
+	for i, executedCmd := range executedFlow.Cmds {
+		if i < fromCmdIdx {
+			continue
+		}
+		if executedCmd == nil {
+			continue
+		}
+
+		if executedCmd.Result == model.ExecutedResultSucceeded ||
+			executedCmd.Result == model.ExecutedResultSkipped ||
+			executedCmd.Result == model.ExecutedResultError {
+			stats.completedCmds++
+			stats.completedDur += executedCmd.RoughDuration(running && i == len(executedFlow.Cmds)-1 && executedCmd.Result == model.ExecutedResultIncompleted)
+		} else if executedCmd.Result == model.ExecutedResultIncompleted {
+			stats.hasRunningCmd = true
+			if running {
+				stats.completedCmds++
+				stats.completedDur += executedCmd.RoughDuration(true)
+			}
+		}
+	}
+
+	stats.remainingCmds = stats.totalCmds - stats.completedCmds
+
+	if stats.completedCmds > 0 && stats.remainingCmds > 0 {
+		stats.avgDurPerCmd = stats.completedDur / time.Duration(stats.completedCmds)
+		stats.eta = stats.avgDurPerCmd * time.Duration(stats.remainingCmds)
+	}
+
+	return stats
 }
 
 func stripTermStyle(str string) string {
