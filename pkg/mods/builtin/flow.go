@@ -283,6 +283,8 @@ func SaveFlow(
 		return currCmdIdx, err
 	}
 
+	loadFlowAfterSave(cc, env, filePath, cmdPath)
+
 	display.PrintTipTitle(cc.Screen, env,
 		"flow '"+argCmdPath+"'"+realCmdStr+" is saved, can be used as a command")
 	screen.WriteTo(cc.Screen)
@@ -528,4 +530,13 @@ func getFlowRoot(env *model.Env, cmd model.ParsedCmd) string {
 		return ""
 	}
 	return root
+}
+
+func loadFlowAfterSave(cc *model.Cli, env *model.Env, filePath string, cmdPath string) {
+	flowExt := env.GetRaw("strs.flow-ext")
+	abbrsSep := env.GetRaw("strs.abbrs-sep")
+	envPathSep := env.GetRaw("strs.env-path-sep")
+	panicRecover := env.GetBool("sys.panic.recover")
+	cmdPaths := strings.Split(cmdPath, cc.Cmds.Strs.PathSep)
+	_ = mod_meta.RegMod(cc, filePath, "", false, true, cmdPaths, flowExt, abbrsSep, envPathSep, "flow.save", panicRecover)
 }
