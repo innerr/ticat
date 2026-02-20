@@ -570,6 +570,8 @@ func setToDefaultVerb(env *model.Env) {
 	env.SetBool("display.sensitive", false)
 
 	env.SetBool("display.tip", true)
+
+	env.Set("display.env.filter.prefix", "")
 }
 
 func adjustDisplayWidth(col int) int {

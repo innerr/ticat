@@ -1176,6 +1176,28 @@ func RegisterDisplayCmds(cmds *model.CmdTree) {
 		"display.env",
 		"env")
 
+	envFilter := env.AddSub("filter", "f")
+	envFilter.RegPowerCmd(ListEnvFilterPrefixes,
+		"list env key-value filter prefixes for display").
+		SetQuiet()
+
+	envFilterAdd := envFilter.AddSub("add", "a", "+")
+	envFilterAdd.RegPowerCmd(AddEnvFilterPrefix,
+		"add a prefix to filter env key-values from display").
+		SetQuiet().
+		AddArg("prefix", "", "p")
+
+	envFilterRemove := envFilter.AddSub("remove", "rm", "delete", "del", "-")
+	envFilterRemove.RegPowerCmd(RemoveEnvFilterPrefix,
+		"remove a prefix from env display filter").
+		SetQuiet().
+		AddArg("prefix", "", "p")
+
+	envFilter.AddSub("clear", "clean", "c").
+		RegPowerCmd(ClearEnvFilterPrefixes,
+			"clear all env display filter prefixes").
+		SetQuiet()
+
 	sys := registerSimpleSwitch(env,
 		"values of env path sys.*' display in executing",
 		"display.env.sys",

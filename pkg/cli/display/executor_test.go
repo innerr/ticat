@@ -441,3 +441,113 @@ func TestCmdResultLines(t *testing.T) {
 		}
 	})
 }
+
+func TestPrintCmdStackWithEnvFilter(t *testing.T) {
+	tree := model.NewCmdTree(model.CmdTreeStrsForTest())
+
+	cmd1 := tree.AddSub("cmd1")
+	cmd1.RegEmptyCmd("test command")
+	cmd2 := tree.AddSub("cmd2")
+	cmd2.RegEmptyCmd("test command")
+
+	createEnv := func() *model.Env {
+		env := model.NewEnvEx(model.EnvLayerDefault).NewLayer(model.EnvLayerSession)
+		env.SetBool("display.utf8", false)
+		env.SetBool("display.color", false)
+		env.SetBool("display.executor", true)
+		env.SetBool("display.env", true)
+		env.Set("strs.env-path-sep", ".")
+		env.Set("strs.cmd-path-sep", ".")
+		env.Set("strs.list-sep", ",")
+		return env
+	}
+
+	t.Run("env_filter_hides_matching_keys", func(t *testing.T) {
+		screen := &memoryScreen{}
+		env := createEnv()
+		env.Set("test.key1", "value1")
+		env.Set("test.key2", "value2")
+		env.Set("foo.bar", "value3")
+		env.Set("display.env.filter.prefix", "test.")
+
+		flow := []model.ParsedCmd{
+			{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd1", Cmd: cmd1}}}},
+			{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd2", Cmd: cmd2}}}},
+		}
+
+		lines := PrintCmdStack(false, screen, flow[0], nil, env, nil, flow, 0, tree.Strs, nil, false)
+		if !lines.Display {
+			t.Error("lines should be displayed")
+		}
+
+		envOutput := strings.Join(lines.Env, " ")
+		if strings.Contains(envOutput, "test.key1") {
+			t.Error("test.key1 should be filtered out")
+		}
+		if strings.Contains(envOutput, "test.key2") {
+			t.Error("test.key2 should be filtered out")
+		}
+		if !strings.Contains(envOutput, "foo.bar") {
+			t.Error("foo.bar should NOT be filtered out")
+		}
+	})
+
+	t.Run("env_filter_multiple_prefixes", func(t *testing.T) {
+		screen := &memoryScreen{}
+		env := createEnv()
+		env.Set("test.key1", "value1")
+		env.Set("foo.bar", "value2")
+		env.Set("baz.qux", "value3")
+		env.Set("keep.me", "value4")
+		env.Set("display.env.filter.prefix", "test.,foo.")
+
+		flow := []model.ParsedCmd{
+			{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd1", Cmd: cmd1}}}},
+			{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd2", Cmd: cmd2}}}},
+		}
+
+		lines := PrintCmdStack(false, screen, flow[0], nil, env, nil, flow, 0, tree.Strs, nil, false)
+		if !lines.Display {
+			t.Error("lines should be displayed")
+		}
+
+		envOutput := strings.Join(lines.Env, " ")
+		if strings.Contains(envOutput, "test.key1") {
+			t.Error("test.key1 should be filtered out")
+		}
+		if strings.Contains(envOutput, "foo.bar") {
+			t.Error("foo.bar should be filtered out")
+		}
+		if !strings.Contains(envOutput, "baz.qux") {
+			t.Error("baz.qux should NOT be filtered out")
+		}
+		if !strings.Contains(envOutput, "keep.me") {
+			t.Error("keep.me should NOT be filtered out")
+		}
+	})
+
+	t.Run("env_filter_empty_shows_all", func(t *testing.T) {
+		screen := &memoryScreen{}
+		env := createEnv()
+		env.Set("test.key1", "value1")
+		env.Set("foo.bar", "value2")
+
+		flow := []model.ParsedCmd{
+			{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd1", Cmd: cmd1}}}},
+			{Segments: []model.ParsedCmdSeg{{Matched: model.MatchedCmd{Name: "cmd2", Cmd: cmd2}}}},
+		}
+
+		lines := PrintCmdStack(false, screen, flow[0], nil, env, nil, flow, 0, tree.Strs, nil, false)
+		if !lines.Display {
+			t.Error("lines should be displayed")
+		}
+
+		envOutput := strings.Join(lines.Env, " ")
+		if !strings.Contains(envOutput, "test.key1") {
+			t.Error("test.key1 should be visible when no filter")
+		}
+		if !strings.Contains(envOutput, "foo.bar") {
+			t.Error("foo.bar should be visible when no filter")
+		}
+	})
+}

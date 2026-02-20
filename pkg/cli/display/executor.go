@@ -165,7 +165,6 @@ func PrintCmdStack(
 	printRealname := env.GetBool("display.mod.input-name.with-realname")
 
 	if printEnv {
-		// TODO: 'session' 'strs' => config
 		filterPrefixs := []string{
 			"session",
 			"strs" + strs.EnvPathSep,
@@ -178,7 +177,16 @@ func PrintCmdStack(
 		if !env.GetBool("display.env.display") {
 			filterPrefixs = append(filterPrefixs, "display.")
 		}
-		// TODO: the extra color char len is ugly, handle it better
+		configFilter := env.GetRaw("display.env.filter.prefix")
+		if len(configFilter) != 0 {
+			listSep := env.GetRaw("strs.list-sep")
+			for _, p := range strings.Split(configFilter, listSep) {
+				p = strings.TrimSpace(p)
+				if len(p) != 0 {
+					filterPrefixs = append(filterPrefixs, p)
+				}
+			}
+		}
 		envLines, envLinesExtraLens := dumpEnv(env, envKeysInfo, printEnvLayer, printDefEnv,
 			printRuntimeEnv, false, filterPrefixs, 4)
 		for i, line := range envLines {
