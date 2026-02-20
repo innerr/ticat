@@ -12,7 +12,8 @@ func DumpEnvOpsCheckResult(
 	cmds []model.ParsedCmd,
 	env *model.Env,
 	result []model.EnvOpsCheckResult,
-	sep string) {
+	sep string,
+	cmdTree *model.CmdTree) {
 
 	if len(result) == 0 {
 		return
@@ -24,17 +25,26 @@ func DumpEnvOpsCheckResult(
 		helpStr := []interface{}{
 			"this flow has 'read before write' on env keys, so it can't execute.",
 			"",
-			"search which commands write these keys and concate them in front of the flow:",
+		}
+
+		if cmdTree != nil {
+			suggestions := findCmdsForFatalKeys(cmdTree, env, fatals.Result)
+			if len(suggestions) > 0 {
+				helpStr = append(helpStr,
+					"commands which can provide these keys:",
+					"")
+				helpStr = append(helpStr, suggestions)
+				helpStr = append(helpStr, "")
+			}
+		}
+
+		helpStr = append(helpStr,
+			"search which commands write these keys:",
 			"",
 			SuggestFindProvider(env),
 			"",
-			//"some configuring-flows will provide a batch env keys by calling providing commands,",
-			//"use these two tags to find them:",
-			//"",
-			//SuggestFindConfigFlows(env),
-			//"",
 			"or provide keys by putting '{key=value}' in front of the flow.",
-		}
+		)
 		if isArg2EnvCanFixAllFatals {
 			helpStr = append(helpStr,
 				"",
@@ -212,4 +222,68 @@ func getArgInfoLine(env *model.Env, cic *model.Cmd, argName string) string {
 		argInfo += ColorArg(" ("+abbrTerm+": "+strings.Join(abbrs[1:], abbrsSep)+")", env)
 	}
 	return argInfo
+}
+
+func findCmdsForFatalKeys(cmdTree *model.CmdTree, env *model.Env, fatals []envOpsCheckResult) []string {
+	selfName := env.GetRaw("strs.self-name")
+	maxSuggestions := env.GetInt("display.env.suggest.max-cmds")
+	if maxSuggestions == 0 {
+		maxSuggestions = 3
+	}
+
+	var suggestions []string
+	seenCmds := make(map[string]bool)
+
+	for _, fatal := range fatals {
+		dumpArgs := NewDumpCmdArgs().SetSkeleton().SetMatchWriteKey(fatal.Key)
+		cacheScreen := NewCacheScreen()
+		DumpCmds(cmdTree, cacheScreen, env, dumpArgs)
+
+		lines := cacheScreen.Lines()
+
+		var cmdLines []string
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if len(line) == 0 {
+				continue
+			}
+			if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+				cmdLines = append(cmdLines, line)
+			}
+		}
+
+		if len(cmdLines) == 0 {
+			continue
+		}
+
+		suggestions = append(suggestions, "  "+ColorKey(fatal.Key, env)+":")
+		count := 0
+		for _, line := range cmdLines {
+			cmdPath := strings.Trim(line, "[]")
+			cmdPath = strings.TrimSpace(cmdPath)
+			if len(cmdPath) == 0 {
+				continue
+			}
+			if seenCmds[cmdPath] {
+				continue
+			}
+			seenCmds[cmdPath] = true
+
+			count++
+			if count > maxSuggestions {
+				break
+			}
+
+			suggestions = append(suggestions, "    "+ColorCmd("["+cmdPath+"]", env)+" -> "+
+				ColorCmd(selfName+" "+cmdPath+" : ...", env))
+		}
+
+		if len(cmdLines) > maxSuggestions {
+			suggestions = append(suggestions, "    "+ColorExplain(
+				fmt.Sprintf("  ... and %d more (use '%s env.who-write %s' to see all)",
+					len(cmdLines)-maxSuggestions, selfName, fatal.Key), env))
+		}
+	}
+
+	return suggestions
 }

@@ -1,6 +1,8 @@
 package display
 
 import (
+	"strings"
+
 	"github.com/innerr/ticat/pkg/core/model"
 )
 
@@ -61,6 +63,14 @@ func (self *CacheScreen) Error(text string) error {
 
 func (self *CacheScreen) OutputtedLines() int {
 	return self.outN
+}
+
+func (self *CacheScreen) Lines() []string {
+	var lines []string
+	for _, it := range self.data {
+		lines = append(lines, strings.TrimSuffix(it.Text, "\n"))
+	}
+	return lines
 }
 
 func (self *CacheScreen) WriteToEx(

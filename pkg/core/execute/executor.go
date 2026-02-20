@@ -412,7 +412,7 @@ func verifyEnvOps(cc *model.Cli, flow *model.ParsedCmds, env *model.Env) bool {
 	if len(result) == 0 {
 		return true
 	}
-	display.DumpEnvOpsCheckResult(cc.Screen, flow.Cmds, env, result, cc.Cmds.Strs.PathSep)
+	display.DumpEnvOpsCheckResult(cc.Screen, flow.Cmds, env, result, cc.Cmds.Strs.PathSep, cc.Cmds)
 	return false
 }
 
