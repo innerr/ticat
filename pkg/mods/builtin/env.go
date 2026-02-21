@@ -24,8 +24,8 @@ func LoadDefaultEnv(env *model.Env, info *model.EnvKeysInfo) {
 	env.SetInt("sys.execute-wait-sec", 0)
 	env.SetBool("sys.confirm.ask", true)
 
-	env.Set("sys.version", "1.5.1")
-	env.Set("sys.dev.name", "jungle")
+	env.Set("sys.version", "1.6")
+	env.Set("sys.dev.name", "stone-age")
 	env.Set("sys.mods.integrated", "builtin")
 
 	env.Set("display.help.cmds", "")

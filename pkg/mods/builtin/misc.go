@@ -8,6 +8,7 @@ import (
 	"github.com/innerr/ticat/pkg/cli/display"
 	"github.com/innerr/ticat/pkg/core/model"
 	"github.com/innerr/ticat/pkg/utils"
+	"github.com/innerr/ticat/pkg/version"
 )
 
 func Version(
@@ -17,7 +18,16 @@ func Version(
 	flow *model.ParsedCmds,
 	currCmdIdx int) (int, error) {
 
-	_ = cc.Screen.Print(env.GetRaw("sys.version") + " " + env.GetRaw("sys.dev.name") + "\n")
+	selfName := env.GetRaw("strs.self-name")
+	_ = cc.Screen.Print(selfName + " " + env.GetRaw("sys.version") + " " + env.GetRaw("sys.dev.name") + "\n")
+
+	if len(version.GitHash) != 0 {
+		gitInfo := version.GitHash
+		if len(version.GitDirtyHash) != 0 {
+			gitInfo += "-dirty-" + version.GitDirtyHash
+		}
+		_ = cc.Screen.Print("- git hash: " + gitInfo + "\n")
+	}
 
 	sep := cc.Cmds.Strs.ListSep
 
