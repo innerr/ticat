@@ -81,10 +81,38 @@ func EnsureDefaultGitRepoInHub(
 	flow *model.ParsedCmds,
 	currCmdIdx int) (int, error) {
 
-	hubDir := env.GetRaw("sys.paths.hub")
-	if dirExists(hubDir) {
+	if env.GetBool("sys.hub.skip-init") {
 		return currCmdIdx, nil
 	}
+
+	initAddr := env.GetRaw("sys.hub.init-repo")
+	if len(initAddr) == 0 {
+		return currCmdIdx, nil
+	}
+
+	sep := env.GetRaw("strs.list-sep")
+	initAddrs := strings.Split(initAddr, sep)
+
+	hubDir := env.GetRaw("sys.paths.hub")
+	metaPath := getReposInfoPath(env, flow.Cmds[currCmdIdx])
+	fieldSep := env.GetRaw("strs.proto-sep")
+	_, list, err := meta.ReadReposInfoFile(hubDir, metaPath, true, fieldSep)
+	if err != nil {
+		return currCmdIdx, err
+	}
+
+	allRegistered := true
+	for _, addr := range initAddrs {
+		normalized := meta.NormalizeGitAddr(addr)
+		if !list[normalized] {
+			allRegistered = false
+			break
+		}
+	}
+	if allRegistered {
+		return currCmdIdx, nil
+	}
+
 	display.PrintTipTitle(cc.Screen, env,
 		"do 'hub.init' for the first time running")
 	argv["show-tip"] = model.ArgVal{Raw: "false", Provided: true, Index: 0}
