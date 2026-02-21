@@ -9,14 +9,12 @@ A lightweight command-line component platform for building powerful and flexible
 
 **ticat** (Tiny Component Assembly Tool) is a modular CLI framework that enables you to:
 - Build CLI applications with built-in composability and workflow automation
-- Share and reuse command-line tools across teams and projects
 - Assemble complex workflows from simple, composable modules
 - Manage configurations through a shared environment system
-- Distribute components via git repositories
 
 Unlike traditional CLI frameworks like Cobra, ticat provides workflow automation, command composition, and environment management out of the box.
 
-## Why Choose ticat Over Cobra?
+## Why Choose ticat Over Cobra (or others alike)?
 
 | Feature | Cobra | ticat |
 |---------|-------|-------|
@@ -24,24 +22,7 @@ Unlike traditional CLI frameworks like Cobra, ticat provides workflow automation
 | Configuration management | External libraries needed | Native environment system |
 | Workflow saving/loading | Not supported | `flow.save` / `flow.load` |
 | Debugging | Manual | Built-in (`+`, `-`, `dbg.step`) |
-| Module distribution | Not included | Git-based hub system |
 | Abbreviations | Manual setup | Automatic |
-
-## Installation
-
-**Option 1: Install via curl**
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/innerr/ticat/main/install.sh | sh
-```
-
-**Option 2: Build from source**
-```bash
-git clone https://github.com/innerr/ticat
-cd ticat
-make
-```
-
-**Recommendation**: Add `ticat/bin` to your system `$PATH` for convenient access.
 
 ## Using ticat as a CLI Framework
 
@@ -79,11 +60,6 @@ import (
 )
 
 func Integrate(tc *ticat.TiCat) {
-    tc.AddIntegratedModVersion("yourmod 1.0")
-
-    // Add initial repos for shared flows (optional)
-    tc.AddInitRepo("your-org/shared-flows")
-
     // Register your commands
     yourmod.RegisterCmds(tc.Cmds)
 
@@ -154,7 +130,7 @@ myapp build : test : deploy
 myapp {env=prod} deploy
 
 # Save workflow for reuse
-myapp build : test : {env=prod} deploy : flow.save release
+myapp build : test : deploy : flow.save release
 
 # Use saved workflow
 myapp release
@@ -169,7 +145,7 @@ Persistent configuration without extra code:
 myapp {db.host=localhost} {db.port=5432} env.save
 
 # Inspect current environment
-myapp env.tree
+myapp env
 
 # Values persist across sessions
 myapp deploy  # db.host and db.port are already set
@@ -181,16 +157,16 @@ Powerful debugging without instrumentation:
 
 ```bash
 # Preview execution flow (brief)
-myapp release:-
+myapp release :-
 
 # Preview execution flow (detailed)
-myapp release:+
+myapp release :+
 
 # Step-by-step execution with confirmation
-myapp dbg.step.on : release
+myapp break : release
 
-# Inspect what a flow contains
-myapp build:+
+# Inspect running or finished executions
+myapp sessions
 ```
 
 ### 4. Automatic Abbreviations
@@ -202,18 +178,6 @@ Commands automatically support abbreviations - no manual setup needed:
 myapp deploy --env prod --version v1.2.3
 myapp d -e prod -v v1.2.3
 myapp app deploy env=prod version=v1.2.3
-```
-
-### 5. Workflow Sharing
-
-Share flows via git repositories:
-
-```bash
-# Add a shared repository
-myapp hub.add your-org/cli-flows
-
-# Use shared workflows
-myapp shared.release
 ```
 
 ## Advanced Features
@@ -245,12 +209,8 @@ $ myapp deploy
 Create parameterized workflows:
 
 ```bash
-# Save a flow template
-myapp {env=?} deploy : flow.save deploy-to
-
-# Use with different parameters
-myapp {env=staging} deploy-to
-myapp {env=prod} deploy-to
+# All parameters of `build`/`test`/`deploy` will automatically become parameters of `release`
+myapp build : test : deploy : flow.save release
 ```
 
 ### Breakpoint Debugging
@@ -259,10 +219,10 @@ Pause execution at specific points:
 
 ```bash
 # Add breakpoint before deploy
-myapp build : dbg.bp : deploy
+myapp break.at deploy : release env=prod
 
 # Resume execution
-myapp dbg.bp.continue
+(Choose `quit` `continue` `step over` `step into` in the interacting mode)
 ```
 
 ## Cheat Sheet
@@ -270,56 +230,20 @@ myapp dbg.bp.continue
 **Essential syntax:**
 - Use `:` to concatenate commands (sequential execution)
 - Use `{key=value}` to modify environment key-values
-- Use `{key=?}` for flow template parameters
 
 **Command inspection:**
-- `cmd:-` - show brief flow structure
-- `cmd:+` - show detailed flow with env operations
-- `cmd:==` - show full details including args
+- `cmd :=` - show command usage
+- `cmd :-` - show brief flow structure
+- `cmd :+` - show detailed flow with env operations
 
 **Search commands:**
-- `ticat / <str>` - global search
-- `ticat <branch> :~` - browse branch tree
-- `ticat <branch> :~~` - browse with details
+- `ticat <str> :/` - global search
+- `ticat <branch> :~` - browse command branch tree
 
 **Frequently used:**
-- `hub.add <repo>` - add repository (abbr: `h.+`)
 - `flow.save <name>` - save flow (abbr: `f.+`)
 - `env.save` - save environment (abbr: `e.+`)
-- `dbg.step.on` - enable step mode
-- `dbg.bp` - set breakpoint
-
-## Documentation
-
-### User Guide
-- [Usage examples](./doc/usage/user-manual.md)
-- [Basic: build, run commands](./doc/usage/basic.md)
-- [Hub: get modules and flows](./doc/usage/hub.md)
-- [Use commands](./doc/usage/cmds.md)
-- [Environment key-values](./doc/usage/env.md)
-- [Use flows](./doc/usage/flow.md)
-
-### Developer Guide
-- [Quick-start for module development](./doc/quick-start-mod.md)
-- [Examples: modules in different languages](https://github.com/innerr/examples.ticat)
-- [How modules work together](./doc/concept-graphics.md)
-- [Specifications](./doc/spec/spec.md)
-
-### Design Philosophy
-- [Zen: how the choices are made](./doc/zen/zen.md)
-- [Why ticat](./doc/zen/why-ticat.md)
-- [Why use CLI as component platform](./doc/zen/why-cli.md)
-- [Why not use unix pipe](./doc/zen/why-not-pipe.md)
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- `break` - set breakpoint
 
 ## License
 
