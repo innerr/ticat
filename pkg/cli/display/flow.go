@@ -61,19 +61,21 @@ func DumpFlowEx(
 
 	writtenKeys := FlowWrittenKeys{}
 
-	if executedFlow != nil {
-		if args.MonitorMode {
-			title := ColorTip("["+executedFlow.DirName+"]", env)
-			ip := env.GetRaw("sys.session.id.ip")
-			if len(ip) != 0 {
-				title += ColorExplain(" - "+ip, env)
+	if !args.SkipTipTitle {
+		if executedFlow != nil {
+			if args.MonitorMode {
+				title := ColorTip("["+executedFlow.DirName+"]", env)
+				ip := env.GetRaw("sys.session.id.ip")
+				if len(ip) != 0 {
+					title += ColorExplain(" - "+ip, env)
+				}
+				_ = cc.Screen.Print(title + "\n")
+			} else {
+				PrintTipTitle(cc.Screen, env, "session-id ["+executedFlow.DirName+"], flow executed status:")
 			}
-			_ = cc.Screen.Print(title + "\n")
 		} else {
-			PrintTipTitle(cc.Screen, env, "session-id ["+executedFlow.DirName+"], flow executed status:")
+			PrintTipTitle(cc.Screen, env, "flow executing description:")
 		}
-	} else {
-		PrintTipTitle(cc.Screen, env, "flow executing description:")
 	}
 
 	if args.MonitorMode {
@@ -1054,10 +1056,11 @@ type DumpFlowArgs struct {
 	MonitorMode             bool
 	FilterNames             []string
 	OnlyFailed              bool
+	SkipTipTitle            bool
 }
 
 func NewDumpFlowArgs() *DumpFlowArgs {
-	return &DumpFlowArgs{false, false, 4, 32, 1, false, false, false, nil, false}
+	return &DumpFlowArgs{false, false, 4, 32, 1, false, false, false, nil, false, false}
 }
 
 func (self *DumpFlowArgs) SetSimple() *DumpFlowArgs {
@@ -1103,6 +1106,11 @@ func (self *DumpFlowArgs) SetFilterNames(names []string) *DumpFlowArgs {
 
 func (self *DumpFlowArgs) SetOnlyFailed(val bool) *DumpFlowArgs {
 	self.OnlyFailed = val
+	return self
+}
+
+func (self *DumpFlowArgs) SetSkipTipTitle() *DumpFlowArgs {
+	self.SkipTipTitle = true
 	return self
 }
 

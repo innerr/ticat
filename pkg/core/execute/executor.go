@@ -91,9 +91,16 @@ func (self *Executor) execute(caller string, cc *model.Cli, env *model.Env, mask
 
 	if !innerCall && emptyInput(input...) {
 		if !env.GetBool("sys.interact.inside") {
-			display.PrintGlobalHelp(cc, env)
+			helpCmds := env.GetRaw("display.help.cmds")
+			if len(helpCmds) != 0 {
+				input = []string{"help"}
+			} else {
+				display.PrintGlobalHelp(cc, env)
+				return true
+			}
+		} else {
+			return true
 		}
-		return true
 	}
 
 	if !innerCall && !bootstrap {

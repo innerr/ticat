@@ -28,6 +28,8 @@ func LoadDefaultEnv(env *model.Env, info *model.EnvKeysInfo) {
 	env.Set("sys.dev.name", "jungle")
 	env.Set("sys.mods.integrated", "builtin")
 
+	env.Set("display.help.cmds", "")
+
 	env.SetBool("sys.env.use-cmd-abbrs", false)
 
 	// 100 days

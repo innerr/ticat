@@ -310,6 +310,15 @@ func RegisterCmdAndHelpCmds(cmds *model.CmdTree) {
 		SetPriority().
 		AddArg("cmd-path", "", "path", "p")
 
+	cmd.AddSub("full-with-flow", "fwf", "more-with-flow", "mwf", "more.flow", "more.wf").
+		RegPowerCmd(DumpCmdWithDetailsAndFlow,
+			"display command full info, show flow preview if it's a flow").
+		SetAllowTailModeCall().
+		SetQuiet().
+		SetIgnoreFollowingDeps().
+		SetPriority().
+		AddArg("cmd-path", "", "path", "p")
+
 	cmds.AddSub("=").
 		RegPowerCmd(DumpTailCmdWithUsage,
 			"shortcut of [cmd], if this is at the end of a flow:\n   * display usage of the last command\n   * flow will not execute").
