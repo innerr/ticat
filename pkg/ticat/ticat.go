@@ -237,6 +237,13 @@ func (ticat *TiCat) run(args ...string) bool {
 		}
 	}()
 
+	for _, arg := range args {
+		if arg == "hub.clear" || arg == "hub.clean" {
+			env.Set("sys.hub.skip-init", "true")
+			break
+		}
+	}
+
 	bootstrap := strings.Join(ticat.Bootstrap, ":")
 	succeeded := ticat.executor.Run(ticat.cc, env, bootstrap, args...)
 	// TODO: more exit codes

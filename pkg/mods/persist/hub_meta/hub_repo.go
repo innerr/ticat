@@ -53,6 +53,9 @@ func UpdateRepoAndSubRepos(
 }
 
 func NormalizeGitAddr(addr string) string {
+	if len(addr) == 0 {
+		return addr
+	}
 	if strings.HasPrefix(strings.ToLower(addr), "http") {
 		return addr
 	}
