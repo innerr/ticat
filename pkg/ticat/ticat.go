@@ -181,6 +181,10 @@ func (ticat *TiCat) AddIntegratedModVersion(ver string) {
 	env.Set("sys.mods.integrated", strings.Join(strs, ListSep))
 }
 
+func (ticat *TiCat) LoadEnvFile(path string) error {
+	return model.LoadEnvFromFile(ticat.Env.GetLayer(model.EnvLayerPersisted), path, EnvKeyValSep, EnvValDelAllMark)
+}
+
 func (ticat *TiCat) AddInitRepo(repo string) {
 	env := ticat.Env.GetLayer(model.EnvLayerDefault)
 	strs := strings.Split(env.GetRaw("sys.hub.init-repo"), ListSep)
