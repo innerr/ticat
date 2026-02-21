@@ -1,6 +1,8 @@
 package builtin
 
 import (
+	"strings"
+
 	"github.com/innerr/ticat/pkg/cli/display"
 	"github.com/innerr/ticat/pkg/core/model"
 )
@@ -35,6 +37,53 @@ func DumpCmdWithDetails(
 	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "")
 	return currCmdIdx, nil
+}
+
+func DumpCmdWithDetailsAndFlow(
+	argv model.ArgVals,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
+	currCmdIdx int) (int, error) {
+
+	cmdPath, err := tailModeCallArg(flow, currCmdIdx, argv, "cmd-path")
+	if err != nil {
+		return currCmdIdx, err
+	}
+
+	cmdTree := cc.Cmds.GetSubByPath(cmdPath, true)
+	printUsageExample(cc, env, cmdPath, cmdTree)
+
+	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
+	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "")
+
+	if cmdTree != nil && cmdTree.Cmd() != nil && cmdTree.Cmd().HasSubFlow(true) {
+		subFlow, _, _ := cmdTree.Cmd().Flow(argv, cc, env, true, true)
+		if len(subFlow) > 0 {
+			parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+			dumpFlowArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(32).SetSkipTipTitle()
+			display.DumpFlow(cc, env, parsedFlow, 0, dumpFlowArgs, EnvOpCmds())
+		}
+	}
+
+	return currCmdIdx, nil
+}
+
+func printUsageExample(cc *model.Cli, env *model.Env, cmdPath string, cmdTree *model.CmdTree) {
+	selfName := env.GetRaw("strs.self-name")
+	argsExample := ""
+	if cmdTree != nil && cmdTree.Cmd() != nil {
+		args := cmdTree.Cmd().Args()
+		names := args.Names()
+		if len(names) > 0 {
+			argParts := []string{}
+			for _, name := range names {
+				argParts = append(argParts, name+"=<"+name+">")
+			}
+			argsExample = " " + strings.Join(argParts, " ")
+		}
+	}
+	_ = cc.Screen.Print(display.ColorTip("usage:\n    $> "+selfName+" "+cmdPath+argsExample, env) + "\n")
 }
 
 func DumpTailCmdWithUsage(

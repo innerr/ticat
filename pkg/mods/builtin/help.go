@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/innerr/ticat/pkg/cli/display"
 	"github.com/innerr/ticat/pkg/core/model"
@@ -18,6 +19,42 @@ func GlobalHelp(
 		return currCmdIdx, err
 	}
 
+	helpCmds := env.GetRaw("display.help.cmds")
+	if len(helpCmds) != 0 {
+		listSep := env.GetRaw("strs.list-sep")
+		cmdList := strings.Split(helpCmds, listSep)
+		for i, cmdPath := range cmdList {
+			cmdPath = strings.TrimSpace(cmdPath)
+			if len(cmdPath) == 0 {
+				continue
+			}
+			if i > 0 {
+				printSeparatorLine(cc.Screen, env)
+			}
+			normalizedPath := cc.NormalizeCmd(false, cmdPath)
+			if len(normalizedPath) == 0 {
+				display.PrintErrTitle(cc.Screen, env, fmt.Sprintf("'%s' is not a valid command", cmdPath))
+				continue
+			}
+			cmds := cc.Cmds.GetSubByPath(normalizedPath, true)
+
+			dumpArgs := display.NewDumpCmdArgs().SetSkeleton().SetShowUsage().NoRecursive()
+			display.DumpCmds(cmds, cc.Screen, env, dumpArgs)
+
+			if cmds != nil && cmds.Cmd() != nil && cmds.Cmd().HasSubFlow(true) {
+				subFlow, _, _ := cmds.Cmd().Flow(argv, cc, env, true, true)
+				if len(subFlow) > 0 {
+					parsedFlow := cc.Parser.Parse(cc.Cmds, cc.EnvAbbrs, subFlow...)
+					dumpFlowArgs := display.NewDumpFlowArgs().SetSkeleton().SetMaxDepth(32).SetSkipTipTitle()
+					display.DumpFlow(cc, env, parsedFlow, 0, dumpFlowArgs, EnvOpCmds())
+				}
+			}
+
+			printUsageExample(cc, env, normalizedPath, cmds)
+		}
+		return currCmdIdx, nil
+	}
+
 	target := argv.GetRaw("target")
 	if len(target) != 0 {
 		cmdPath := cc.NormalizeCmd(false, target)
@@ -31,6 +68,11 @@ func GlobalHelp(
 		display.PrintGlobalHelp(cc, env)
 	}
 	return currCmdIdx, nil
+}
+
+func printSeparatorLine(screen model.Screen, env *model.Env) {
+	width := env.GetInt("display.width") - 2
+	_ = screen.Print(strings.Repeat("-", width) + "\n")
 }
 
 func SelfHelp(

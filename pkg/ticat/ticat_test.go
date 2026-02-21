@@ -2494,3 +2494,177 @@ func TestSubflowFailureEnvHandling(t *testing.T) {
 		}
 	})
 }
+
+func TestDisplayHelpCmds(t *testing.T) {
+	t.Run("display.help.cmds with multiple commands separated by blank line", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+		tc.SetHelpCmds("echo", "noop")
+
+		ok := tc.RunCli("--help")
+		if !ok {
+			t.Error("help command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "echo") {
+			t.Errorf("expected output to contain 'echo', got:\n%s", output)
+		}
+		if !strings.Contains(output, "noop") {
+			t.Errorf("expected output to contain 'noop', got:\n%s", output)
+		}
+
+		lines := strings.Split(output, "\n")
+		echoIdx := -1
+		noopIdx := -1
+		for i, line := range lines {
+			if strings.Contains(line, "echo") && echoIdx == -1 {
+				echoIdx = i
+			}
+			if strings.Contains(line, "noop") && noopIdx == -1 {
+				noopIdx = i
+			}
+		}
+
+		if echoIdx == -1 || noopIdx == -1 {
+			t.Fatalf("both echo and noop should be in output")
+		}
+
+		if echoIdx > noopIdx {
+			t.Errorf("echo should appear before noop in output")
+		}
+
+		hasSeparator := false
+		for i := echoIdx + 1; i < noopIdx; i++ {
+			if strings.HasPrefix(lines[i], "---") {
+				hasSeparator = true
+				break
+			}
+		}
+		if !hasSeparator {
+			t.Errorf("expected separator line (---) between echo and noop help output")
+		}
+	})
+
+	t.Run("display.help.cmds empty shows global help", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("--help")
+		if !ok {
+			t.Error("help command should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "usage:") {
+			t.Errorf("expected global help with 'usage:', got:\n%s", output)
+		}
+	})
+
+	t.Run("display.help.cmds set, empty args shows same as --help", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+		tc.SetHelpCmds("echo", "noop")
+
+		ok := tc.RunCli()
+		if !ok {
+			t.Error("empty args should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "echo") {
+			t.Errorf("expected output to contain 'echo', got:\n%s", output)
+		}
+		if !strings.Contains(output, "noop") {
+			t.Errorf("expected output to contain 'noop', got:\n%s", output)
+		}
+		if !strings.Contains(output, "usage:") {
+			t.Errorf("expected output to contain 'usage:', got:\n%s", output)
+		}
+
+		tc2 := NewTiCatForTest()
+		screen2 := &argsCaptureScreen{}
+		tc2.SetScreen(screen2)
+		tc2.Env.SetBool("sys.panic.recover", false)
+		tc2.SetHelpCmds("echo", "noop")
+
+		ok2 := tc2.RunCli("--help")
+		if !ok2 {
+			t.Error("--help should succeed")
+		}
+
+		output2 := screen2.GetOutput()
+
+		if output != output2 {
+			t.Errorf("empty args output should match --help output\nempty args:\n%s\n--help:\n%s", output, output2)
+		}
+	})
+}
+
+func TestCmdFullWithFlow(t *testing.T) {
+	t.Run("cmd.full-with-flow for regular command", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("cmd.full-with-flow", "echo")
+		if !ok {
+			t.Error("cmd.full-with-flow should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "echo") {
+			t.Errorf("expected output to contain 'echo', got:\n%s", output)
+		}
+		if !strings.Contains(output, "usage:") {
+			t.Errorf("expected output to contain 'usage:', got:\n%s", output)
+		}
+		if !strings.Contains(output, "message=<message>") {
+			t.Errorf("expected output to contain args example 'message=<message>', got:\n%s", output)
+		}
+	})
+
+	t.Run("-h flag transforms to cmd.full-with-flow", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("echo", "-h")
+		if !ok {
+			t.Error("-h flag should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "echo") {
+			t.Errorf("expected output to contain 'echo', got:\n%s", output)
+		}
+	})
+
+	t.Run("cmd.full-with-flow shows usage example", func(t *testing.T) {
+		tc := NewTiCatForTest()
+		screen := &argsCaptureScreen{}
+		tc.SetScreen(screen)
+		tc.Env.SetBool("sys.panic.recover", false)
+
+		ok := tc.RunCli("cmd.full-with-flow", "echo")
+		if !ok {
+			t.Error("cmd.full-with-flow should succeed")
+		}
+
+		output := screen.GetOutput()
+		if !strings.Contains(output, "usage:") {
+			t.Errorf("expected output to contain 'usage:', got:\n%s", output)
+		}
+		if !strings.Contains(output, "$>") {
+			t.Errorf("expected output to contain '$>', got:\n%s", output)
+		}
+	})
+}

@@ -192,6 +192,11 @@ func (ticat *TiCat) AddInitRepo(repo string) {
 	env.Set("sys.hub.init-repo", strings.Join(strs, ListSep))
 }
 
+func (ticat *TiCat) SetHelpCmds(cmds ...string) {
+	env := ticat.Env.GetLayer(model.EnvLayerDefault)
+	env.Set("display.help.cmds", strings.Join(cmds, ListSep))
+}
+
 func (ticat *TiCat) InjectBootstrap(cmds ...string) {
 	ticat.Bootstrap = append(ticat.Bootstrap, cmds...)
 }

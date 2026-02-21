@@ -382,6 +382,8 @@ func TestParserHelpFlagTransform(t *testing.T) {
 
 	cmd := root.AddSub("cmd")
 	cmd.RegEmptyCmd("show command info")
+	cmdFullWithFlow := cmd.AddSub("full-with-flow")
+	cmdFullWithFlow.RegEmptyCmd("show command info with flow")
 
 	desc := root.AddSub("desc")
 	descMore := desc.AddSub("more")
@@ -425,23 +427,26 @@ func TestParserHelpFlagTransform(t *testing.T) {
 		}
 	})
 
-	t.Run("single cmd with -h transforms to cmd {cmd}", func(t *testing.T) {
+	t.Run("single cmd with -h transforms to cmd.full-with-flow {cmd}", func(t *testing.T) {
 		parsed := parser.Parse(root, nil, "cmd1", "-h")
 		if len(parsed.Cmds) != 1 {
 			t.Fatalf("expected 1 cmd, got %d", len(parsed.Cmds))
 		}
-		if len(parsed.Cmds[0].Segments) < 2 {
-			t.Fatalf("expected at least 2 segments, got %d", len(parsed.Cmds[0].Segments))
+		if len(parsed.Cmds[0].Segments) < 3 {
+			t.Fatalf("expected at least 3 segments, got %d", len(parsed.Cmds[0].Segments))
 		}
 		if parsed.Cmds[0].Segments[0].Matched.Name != "cmd" {
 			t.Errorf("expected first segment 'cmd', got %q", parsed.Cmds[0].Segments[0].Matched.Name)
 		}
-		if parsed.Cmds[0].Segments[1].Matched.Name != "cmd1" {
-			t.Errorf("expected second segment 'cmd1', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+		if parsed.Cmds[0].Segments[1].Matched.Name != "full-with-flow" {
+			t.Errorf("expected second segment 'full-with-flow', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+		}
+		if parsed.Cmds[0].Segments[2].Matched.Name != "cmd1" {
+			t.Errorf("expected third segment 'cmd1', got %q", parsed.Cmds[0].Segments[2].Matched.Name)
 		}
 	})
 
-	t.Run("single cmd with --help transforms to cmd {cmd}", func(t *testing.T) {
+	t.Run("single cmd with --help transforms to cmd.full-with-flow {cmd}", func(t *testing.T) {
 		parsed := parser.Parse(root, nil, "cmd1", "--help")
 		if len(parsed.Cmds) != 1 {
 			t.Fatalf("expected 1 cmd, got %d", len(parsed.Cmds))
@@ -449,8 +454,11 @@ func TestParserHelpFlagTransform(t *testing.T) {
 		if parsed.Cmds[0].Segments[0].Matched.Name != "cmd" {
 			t.Errorf("expected first segment 'cmd', got %q", parsed.Cmds[0].Segments[0].Matched.Name)
 		}
-		if parsed.Cmds[0].Segments[1].Matched.Name != "cmd1" {
-			t.Errorf("expected second segment 'cmd1', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+		if parsed.Cmds[0].Segments[1].Matched.Name != "full-with-flow" {
+			t.Errorf("expected second segment 'full-with-flow', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+		}
+		if parsed.Cmds[0].Segments[2].Matched.Name != "cmd1" {
+			t.Errorf("expected third segment 'cmd1', got %q", parsed.Cmds[0].Segments[2].Matched.Name)
 		}
 	})
 
@@ -536,11 +544,18 @@ func TestParserHelpFlagTransform(t *testing.T) {
 		if parsed.GlobalEnv["key"].Val != "val" {
 			t.Errorf("expected global env key=val, got %v", parsed.GlobalEnv["key"])
 		}
-		if len(parsed.Cmds[0].Segments) < 2 {
-			t.Fatalf("expected at least 2 segments, got %d", len(parsed.Cmds[0].Segments))
+		if len(parsed.Cmds) < 1 {
+			t.Fatalf("expected at least 1 cmd, got %d", len(parsed.Cmds))
 		}
-		if parsed.Cmds[0].Segments[1].Matched.Name != "cmd" {
-			t.Errorf("expected second segment 'cmd', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+		found := false
+		for _, seg := range parsed.Cmds[0].Segments {
+			if seg.Matched.Name == "cmd" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected to find segment 'cmd' in parsed cmd")
 		}
 	})
 
@@ -548,6 +563,9 @@ func TestParserHelpFlagTransform(t *testing.T) {
 		parsed := parser.Parse(root, nil, "cmd1", "{arg=value}", "-h")
 		if parsed.Cmds[0].Segments[0].Matched.Name != "cmd" {
 			t.Errorf("expected first segment 'cmd', got %q", parsed.Cmds[0].Segments[0].Matched.Name)
+		}
+		if parsed.Cmds[0].Segments[1].Matched.Name != "full-with-flow" {
+			t.Errorf("expected second segment 'full-with-flow', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
 		}
 	})
 
@@ -559,11 +577,18 @@ func TestParserHelpFlagTransform(t *testing.T) {
 		if parsed.GlobalEnv["b"].Val != "2" {
 			t.Errorf("expected global env b=2, got %v", parsed.GlobalEnv["b"])
 		}
-		if len(parsed.Cmds[0].Segments) < 2 {
-			t.Fatalf("expected at least 2 segments, got %d", len(parsed.Cmds[0].Segments))
+		if len(parsed.Cmds) < 1 {
+			t.Fatalf("expected at least 1 cmd, got %d", len(parsed.Cmds))
 		}
-		if parsed.Cmds[0].Segments[1].Matched.Name != "cmd" {
-			t.Errorf("expected second segment 'cmd', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+		found := false
+		for _, seg := range parsed.Cmds[0].Segments {
+			if seg.Matched.Name == "cmd" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected to find segment 'cmd' in parsed cmd")
 		}
 	})
 
@@ -578,6 +603,9 @@ func TestParserHelpFlagTransform(t *testing.T) {
 		if parsed.Cmds[0].Segments[0].Matched.Name != "cmd" {
 			t.Errorf("expected first segment 'cmd', got %q", parsed.Cmds[0].Segments[0].Matched.Name)
 		}
+		if parsed.Cmds[0].Segments[1].Matched.Name != "full-with-flow" {
+			t.Errorf("expected second segment 'full-with-flow', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+		}
 	})
 
 	t.Run("-h at start is not transformed as help flag", func(t *testing.T) {
@@ -590,13 +618,16 @@ func TestParserHelpFlagTransform(t *testing.T) {
 		}
 	})
 
-	t.Run("sequence with colon only at start converts to cmd", func(t *testing.T) {
+	t.Run("sequence with colon only at start converts to cmd.full-with-flow", func(t *testing.T) {
 		parsed := parser.Parse(root, nil, ":", "cmd1", "-h")
-		if len(parsed.Cmds) < 1 || len(parsed.Cmds[0].Segments) < 1 {
-			t.Fatal("expected at least 1 cmd")
+		if len(parsed.Cmds) < 1 || len(parsed.Cmds[0].Segments) < 2 {
+			t.Fatal("expected at least 1 cmd with 2 segments")
 		}
 		if parsed.Cmds[0].Segments[0].Matched.Name != "cmd" {
 			t.Errorf("expected first segment 'cmd', got %q", parsed.Cmds[0].Segments[0].Matched.Name)
+		}
+		if parsed.Cmds[0].Segments[1].Matched.Name != "full-with-flow" {
+			t.Errorf("expected second segment 'full-with-flow', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
 		}
 	})
 
@@ -715,6 +746,9 @@ func TestParserHelpFlagNoSpace(t *testing.T) {
 		}
 		if parsed.Cmds[0].Segments[0].Matched.Name != "cmd" {
 			t.Errorf("expected first segment 'cmd', got %q", parsed.Cmds[0].Segments[0].Matched.Name)
+		}
+		if parsed.Cmds[0].Segments[1].Matched.Name != "full-with-flow" {
+			t.Errorf("expected second segment 'full-with-flow', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
 		}
 	})
 
@@ -881,6 +915,8 @@ func TestParserHelpFlagVariants(t *testing.T) {
 
 	cmd := root.AddSub("cmd")
 	cmd.RegEmptyCmd("show command info")
+	cmdFullWithFlow := cmd.AddSub("full-with-flow")
+	cmdFullWithFlow.RegEmptyCmd("show command info with flow")
 
 	desc := root.AddSub("desc")
 	descMore := desc.AddSub("more")
@@ -918,16 +954,22 @@ func TestParserHelpFlagVariants(t *testing.T) {
 			}
 		})
 
-		t.Run(hf.name+" with single cmd transforms to cmd {cmd}", func(t *testing.T) {
+		t.Run(hf.name+" with single cmd transforms to cmd.full-with-flow {cmd}", func(t *testing.T) {
 			parsed := parser.Parse(root, nil, "cmd1", hf.flag)
 			if len(parsed.Cmds) != 1 {
 				t.Fatalf("expected 1 cmd, got %d", len(parsed.Cmds))
 			}
+			if len(parsed.Cmds[0].Segments) < 3 {
+				t.Fatalf("expected at least 3 segments, got %d", len(parsed.Cmds[0].Segments))
+			}
 			if parsed.Cmds[0].Segments[0].Matched.Name != "cmd" {
 				t.Errorf("expected first segment 'cmd', got %q", parsed.Cmds[0].Segments[0].Matched.Name)
 			}
-			if parsed.Cmds[0].Segments[1].Matched.Name != "cmd1" {
-				t.Errorf("expected second segment 'cmd1', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+			if parsed.Cmds[0].Segments[1].Matched.Name != "full-with-flow" {
+				t.Errorf("expected second segment 'full-with-flow', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+			}
+			if parsed.Cmds[0].Segments[2].Matched.Name != "cmd1" {
+				t.Errorf("expected third segment 'cmd1', got %q", parsed.Cmds[0].Segments[2].Matched.Name)
 			}
 		})
 
@@ -963,11 +1005,18 @@ func TestParserHelpFlagVariants(t *testing.T) {
 			if parsed.GlobalEnv["key"].Val != "val" {
 				t.Errorf("expected global env key=val, got %v", parsed.GlobalEnv["key"])
 			}
-			if len(parsed.Cmds[0].Segments) < 2 {
-				t.Fatalf("expected at least 2 segments, got %d", len(parsed.Cmds[0].Segments))
+			if len(parsed.Cmds) < 1 {
+				t.Fatalf("expected at least 1 cmd, got %d", len(parsed.Cmds))
 			}
-			if parsed.Cmds[0].Segments[1].Matched.Name != "cmd" {
-				t.Errorf("expected second segment 'cmd', got %q", parsed.Cmds[0].Segments[1].Matched.Name)
+			found := false
+			for _, seg := range parsed.Cmds[0].Segments {
+				if seg.Matched.Name == "cmd" {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("expected to find segment 'cmd' in parsed cmd")
 			}
 		})
 

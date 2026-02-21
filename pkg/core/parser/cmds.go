@@ -94,7 +94,7 @@ func (self *Parser) transformHelpFlag(input []string) []string {
 		return result
 	}
 
-	return append(globalEnvs, append([]string{"cmd"}, remainingArgs...)...)
+	return append(globalEnvs, append([]string{"cmd.full-with-flow"}, remainingArgs...)...)
 }
 
 func (self *Parser) Parse(
