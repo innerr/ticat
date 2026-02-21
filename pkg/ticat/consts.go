@@ -1,7 +1,25 @@
 package ticat
 
+import (
+	"os"
+	"path/filepath"
+)
+
+var (
+	SelfName    string = getSelfName()
+	ModsRepoExt string = "." + SelfName
+	MetaExt     string = "." + SelfName
+)
+
+func getSelfName() string {
+	execPath, err := os.Executable()
+	if err != nil {
+		return "ticat"
+	}
+	return filepath.Base(execPath)
+}
+
 const (
-	SelfName                 string = "ticat"
 	ListSep                  string = ","
 	CmdRootDisplayName       string = "<root>"
 	CmdBuiltinName           string = "builtin"
@@ -23,8 +41,6 @@ const (
 	EnvStrsPrefix            string = "strs"
 	EnvFileName              string = "bootstrap.env"
 	ProtoSep                 string = "\t"
-	ModsRepoExt              string = "." + SelfName
-	MetaExt                  string = "." + SelfName
 	FlowExt                  string = ".tiflow"
 	HelpExt                  string = ".tihelp"
 	HubFileName              string = "repos.hub"
