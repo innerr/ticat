@@ -52,7 +52,6 @@ func DumpCmdWithDetailsAndFlow(
 	}
 
 	cmdTree := cc.Cmds.GetSubByPath(cmdPath, true)
-	printUsageExample(cc, env, cmdPath, cmdTree)
 
 	dumpArgs := display.NewDumpCmdArgs().NoRecursive()
 	dumpCmdByPath(cc, env, dumpArgs, cmdPath, "")
@@ -66,6 +65,8 @@ func DumpCmdWithDetailsAndFlow(
 		}
 	}
 
+	printUsageExample(cc, env, cmdPath, cmdTree)
+
 	return currCmdIdx, nil
 }
 
@@ -77,7 +78,12 @@ func printUsageExample(cc *model.Cli, env *model.Env, cmdPath string, cmdTree *m
 		names := args.Names()
 		if len(names) > 0 {
 			argParts := []string{}
-			for _, name := range names {
+			maxShow := 3
+			for i, name := range names {
+				if i >= maxShow {
+					argParts = append(argParts, "...")
+					break
+				}
 				argParts = append(argParts, name+"=<"+name+">")
 			}
 			argsExample = " " + strings.Join(argParts, " ")
