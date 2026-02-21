@@ -109,8 +109,7 @@ func AddDefaultGitRepoToHub(
 
 	addr := env.GetRaw("sys.hub.init-repo")
 	if len(addr) == 0 {
-		return currCmdIdx, model.NewCmdError(flow.Cmds[currCmdIdx],
-			"cant't get init-repo address from env, 'sys.hub.init-repo' is empty")
+		return currCmdIdx, nil
 	}
 	sep := env.GetRaw("strs.list-sep")
 	addrs := strings.Split(addr, sep)
