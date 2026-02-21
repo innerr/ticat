@@ -85,9 +85,8 @@ func (self *TipBoxPrinter) Print(msg string) {
 		return
 	}
 
-	msg, colorLen := self.colorize(msg)
-
-	// TODO: put ERR TIP to env strs
+	msgColorized, _ := self.colorize(msg)
+	displayLen := DisplayWidth(msgColorized)
 
 	if !self.inited {
 		var tip string
@@ -110,11 +109,11 @@ func (self *TipBoxPrinter) Print(msg string) {
 			}
 			tip = ColorTip(tip, self.env)
 		}
-		self.buf.PrintEx(tip+msg, len(msg)+tipLen-colorLen)
+		self.buf.PrintEx(tip+msgColorized, tipLen+displayLen)
 		self.inited = true
 	} else {
-		msg = "   " + msg
-		self.buf.PrintEx(msg, len(msg)-colorLen)
+		msgColorized = "   " + msgColorized
+		self.buf.PrintEx(msgColorized, displayLen+3)
 	}
 }
 

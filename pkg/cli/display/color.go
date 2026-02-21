@@ -2,10 +2,21 @@ package display
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/innerr/ticat/pkg/core/model"
 )
+
+var ansiRegex = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+func StripAnsi(s string) string {
+	return ansiRegex.ReplaceAllString(s, "")
+}
+
+func DisplayWidth(s string) int {
+	return len(StripAnsi(s))
+}
 
 // TODO: this is slow, fetch flag from env too many times, and other issues, handle it later
 

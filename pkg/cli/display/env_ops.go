@@ -231,6 +231,13 @@ func findCmdsForFatalKeys(cmdTree *model.CmdTree, env *model.Env, fatals []envOp
 		maxSuggestions = 3
 	}
 
+	failedCmds := make(map[string]bool)
+	for _, fatal := range fatals {
+		for _, cmd := range fatal.Cmds {
+			failedCmds[cmd] = true
+		}
+	}
+
 	var suggestions []string
 	seenCmds := make(map[string]bool)
 
@@ -270,6 +277,9 @@ func findCmdsForFatalKeys(cmdTree *model.CmdTree, env *model.Env, fatals []envOp
 				continue
 			}
 			seenCmds[cmdPath] = true
+			if failedCmds[cmdPath] {
+				continue
+			}
 
 			count++
 			if count > maxSuggestions {
