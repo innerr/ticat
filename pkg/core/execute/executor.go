@@ -334,6 +334,10 @@ func (self *Executor) executeCmd(
 		}
 	}
 
+	if err != nil {
+		display.PrintError(cc, cmdEnv, err)
+	}
+
 	if !sysArgv.IsDelay() {
 		bpa := tryWaitSecAndBreakAfter(cc, env, cmd, bootstrap, lastCmdInFlow, showStack)
 		if bpa == BPAStepOver {
