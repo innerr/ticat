@@ -189,7 +189,7 @@ func DecreaseVerb(
 	}
 
 	if env.SetBool("display.executor", false) {
-		volume -= 1
+		// volume -= 1
 	}
 	env.SetInt("display.max-cmd-cnt", 14)
 

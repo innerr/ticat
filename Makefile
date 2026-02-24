@@ -1,4 +1,4 @@
-.PHONY: unit-test ticat
+.PHONY: unit-test ticat lint
 .DEFAULT_GOAL := default
 
 REPO    := github.com/innerr/ticat
@@ -36,3 +36,6 @@ ticat:
 unit-test:
 	mkdir -p bin/cover
 	$(GOTEST) ./pkg/... -covermode=count -coverprofile bin/cover/cov.unit-test.out
+
+lint:
+	golangci-lint run ./pkg/...

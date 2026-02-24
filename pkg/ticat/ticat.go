@@ -22,6 +22,7 @@ type TiCat struct {
 
 func NewTiCat() *TiCat {
 	env := model.NewEnvEx(model.EnvLayerDefault).NewLayers(
+		model.EnvLayer3RdDefault,
 		model.EnvLayerPersisted,
 		model.EnvLayerSession,
 	)
