@@ -82,6 +82,18 @@ func (self *EnvParser) TryParseRaw(
 		return tryTrimStrings(input[originIdx:][originStrIdx:])
 	}
 
+	tryAddNonArgEnv := func(key string, value string) {
+		if envAbbrs != nil {
+			matchedEnvPath, matched := envAbbrs.TryMatch(key, self.envPathSep)
+			if matched {
+				key = strings.Join(matchedEnvPath, self.envPathSep)
+			}
+			env[key] = model.ParsedEnvVal{Val: value, IsArg: false, IsSysArg: false, MatchedPath: matchedEnvPath, MatchedPathStr: strings.Join(matchedEnvPath, self.envPathSep)}
+		} else {
+			env[key] = model.NewParsedEnvVal(key, value)
+		}
+	}
+
 	// It's non-args env definition
 	if cmd == nil || cmd.Cmd() == nil {
 		if !foundKvSep {
@@ -94,15 +106,7 @@ func (self *EnvParser) TryParseRaw(
 			}
 			key := rest[i]
 			value := rest[i+2]
-			if envAbbrs != nil {
-				matchedEnvPath, matched := envAbbrs.TryMatch(key, self.envPathSep)
-				if matched {
-					key = strings.Join(matchedEnvPath, self.envPathSep)
-				}
-				env[key] = model.ParsedEnvVal{Val: value, IsArg: false, IsSysArg: false, MatchedPath: matchedEnvPath, MatchedPathStr: strings.Join(matchedEnvPath, self.envPathSep)}
-			} else {
-				env[key] = model.NewParsedEnvVal(key, value)
-			}
+			tryAddNonArgEnv(key, value)
 		}
 		return tryTrimParsedEnv(env), genResult(i)
 	}
@@ -153,8 +157,12 @@ func (self *EnvParser) TryParseRaw(
 				continue
 			}
 			key = args.Realname(rest[i])
-			if len(key) == 0 || rest[i+1] != self.kvSep {
+			if rest[i+1] != self.kvSep {
 				return tryTrimParsedEnv(env), genResult(i)
+			}
+			if len(key) == 0 {
+				tryAddNonArgEnv(rest[i], value)
+				continue
 			}
 			env[key] = model.NewParsedEnvArgv(rest[i], value)
 		}
