@@ -190,6 +190,20 @@ func DbgError(
 	return currCmdIdx, fmt.Errorf("debug error")
 }
 
+func DbgErrorWithOutput(
+	argv model.ArgVals,
+	cc *model.Cli,
+	env *model.Env,
+	flow *model.ParsedCmds,
+	currCmdIdx int) (int, error) {
+
+	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
+		return currCmdIdx, err
+	}
+	_ = cc.Screen.Print("this is a debug error with output\n")
+	return currCmdIdx, fmt.Errorf("debug error")
+}
+
 func Noop(
 	argv model.ArgVals,
 	cc *model.Cli,

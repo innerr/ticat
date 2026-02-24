@@ -1099,6 +1099,12 @@ func RegisterDbgCmds(cmds *model.CmdTree) {
 		AddArg("random-arg-1", "arg-1").
 		AddArg("random-arg-2", "arg-2")
 
+	cmds.AddSub("error").AddSub("with-output").
+		RegPowerCmd(DbgErrorWithOutput,
+			"for execute error test with output").
+		AddArg("random-arg-1", "arg-1").
+		AddArg("random-arg-2", "arg-2")
+
 	cmds.AddSub("exec").SetHidden().
 		RegPowerCmd(DbgExecBash,
 			"verify bash in os/exec").
