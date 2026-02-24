@@ -359,7 +359,7 @@ func TestAddRemoveSequence(t *testing.T) {
 		Cmds: []model.ParsedCmd{newTestParsedCmdForFilter("test")},
 	}
 
-	AddEnvFilterPrefix(argv, cc, env, flow, 0)
+	_, _ = AddEnvFilterPrefix(argv, cc, env, flow, 0)
 	if env.GetRaw("display.env.filter.prefix") != "foo." {
 		t.Errorf("expected [foo.], got [%s]", env.GetRaw("display.env.filter.prefix"))
 	}
@@ -367,7 +367,7 @@ func TestAddRemoveSequence(t *testing.T) {
 	argv = model.ArgVals{
 		"prefix": model.ArgVal{Raw: "bar.", Provided: true},
 	}
-	AddEnvFilterPrefix(argv, cc, env, flow, 0)
+	_, _ = AddEnvFilterPrefix(argv, cc, env, flow, 0)
 	if env.GetRaw("display.env.filter.prefix") != "foo.,bar." {
 		t.Errorf("expected [foo.,bar.], got [%s]", env.GetRaw("display.env.filter.prefix"))
 	}
@@ -375,13 +375,13 @@ func TestAddRemoveSequence(t *testing.T) {
 	argv = model.ArgVals{
 		"prefix": model.ArgVal{Raw: "foo.", Provided: true},
 	}
-	RemoveEnvFilterPrefix(argv, cc, env, flow, 0)
+	_, _ = RemoveEnvFilterPrefix(argv, cc, env, flow, 0)
 	if env.GetRaw("display.env.filter.prefix") != "bar." {
 		t.Errorf("expected [bar.], got [%s]", env.GetRaw("display.env.filter.prefix"))
 	}
 
 	argv = model.ArgVals{}
-	ClearEnvFilterPrefixes(argv, cc, env, flow, 0)
+	_, _ = ClearEnvFilterPrefixes(argv, cc, env, flow, 0)
 	if env.GetRaw("display.env.filter.prefix") != "" {
 		t.Errorf("expected empty, got [%s]", env.GetRaw("display.env.filter.prefix"))
 	}
@@ -398,12 +398,12 @@ func TestAddDuplicatePrefix(t *testing.T) {
 	argv := model.ArgVals{
 		"prefix": model.ArgVal{Raw: "foo.", Provided: true},
 	}
-	AddEnvFilterPrefix(argv, cc, env, flow, 0)
+	_, _ = AddEnvFilterPrefix(argv, cc, env, flow, 0)
 
 	argv = model.ArgVals{
 		"prefix": model.ArgVal{Raw: "foo.", Provided: true},
 	}
-	AddEnvFilterPrefix(argv, cc, env, flow, 0)
+	_, _ = AddEnvFilterPrefix(argv, cc, env, flow, 0)
 
 	if env.GetRaw("display.env.filter.prefix") != "foo." {
 		t.Errorf("duplicate should not be added, expected [foo.], got [%s]", env.GetRaw("display.env.filter.prefix"))

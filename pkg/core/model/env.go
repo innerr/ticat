@@ -8,12 +8,13 @@ import (
 type EnvLayerType string
 
 const (
-	EnvLayerDefault   EnvLayerType = "default"
-	EnvLayerPersisted EnvLayerType = "persisted"
-	EnvLayerSession   EnvLayerType = "session"
-	EnvLayerCmd       EnvLayerType = "command"
-	EnvLayerSubFlow   EnvLayerType = "subflow"
-	EnvLayerTmp       EnvLayerType = "temporary"
+	EnvLayerDefault    EnvLayerType = "default"
+	EnvLayer3RdDefault EnvLayerType = "3rd-default"
+	EnvLayerPersisted  EnvLayerType = "persisted"
+	EnvLayerSession    EnvLayerType = "session"
+	EnvLayerCmd        EnvLayerType = "command"
+	EnvLayerSubFlow    EnvLayerType = "subflow"
+	EnvLayerTmp        EnvLayerType = "temporary"
 )
 
 func EnvLayerName(ty EnvLayerType) string {

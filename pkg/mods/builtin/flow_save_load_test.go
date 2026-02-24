@@ -13,7 +13,7 @@ func TestLoadFlowAfterSave(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	flowDir := filepath.Join(tmpDir, "flows")
 	if err := os.MkdirAll(flowDir, os.ModePerm); err != nil {
@@ -56,7 +56,7 @@ func TestLoadFlowAfterSaveWithSubPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	flowDir := filepath.Join(tmpDir, "flows")
 	if err := os.MkdirAll(flowDir, os.ModePerm); err != nil {
@@ -109,7 +109,7 @@ func TestLoadFlowAfterSaveOverwrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	flowDir := filepath.Join(tmpDir, "flows")
 	if err := os.MkdirAll(flowDir, os.ModePerm); err != nil {
@@ -164,7 +164,7 @@ func TestLoadFlowAfterSaveWithHelp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	flowDir := filepath.Join(tmpDir, "flows")
 	if err := os.MkdirAll(flowDir, os.ModePerm); err != nil {
