@@ -223,6 +223,12 @@ func (self *CmdTree) RegFlowCmd(flow []string, help string, source string) *Cmd 
 	return self.cmd
 }
 
+func (self *CmdTree) RegFlowBuiltinCmd(flow []string, help string) *Cmd {
+	self.cmdConflictCheck(help, "RegFlowBuiltinCmd", "")
+	self.cmd = NewFlowCmd(self, help, flow)
+	return self.cmd
+}
+
 func (self *CmdTree) RegPowerCmd(cmd PowerCmd, help string) *Cmd {
 	self.cmdConflictCheck(help, "RegPowerCmd", "")
 	self.cmd = NewPowerCmd(self, help, cmd)
