@@ -223,6 +223,35 @@ func TestCmdTreeRegFlowCmd(t *testing.T) {
 	if len(flowStrs) != 3 {
 		t.Errorf("Expected flow length 3, got %d", len(flowStrs))
 	}
+
+	if sub.IsBuiltin() {
+		t.Error("RegFlowCmd with source should not create builtin tree")
+	}
+}
+
+func TestCmdTreeRegFlowBuiltinCmd(t *testing.T) {
+	tree := NewCmdTree(CmdTreeStrsForTest())
+
+	sub := tree.AddSub("flowbuiltincmd")
+
+	flow := []string{"cmd1", ":", "cmd2"}
+	cmd := sub.RegFlowBuiltinCmd(flow, "builtin flow command")
+	if cmd == nil {
+		t.Fatal("RegFlowBuiltinCmd returned nil")
+	}
+
+	if cmd.Type() != CmdTypeFlow {
+		t.Errorf("Expected CmdTypeFlow, got %s", cmd.Type())
+	}
+
+	flowStrs := cmd.FlowStrs()
+	if len(flowStrs) != 3 {
+		t.Errorf("Expected flow length 3, got %d", len(flowStrs))
+	}
+
+	if !sub.IsBuiltin() {
+		t.Error("RegFlowBuiltinCmd should create builtin tree")
+	}
 }
 
 func TestCmdTreeIsQuiet(t *testing.T) {
