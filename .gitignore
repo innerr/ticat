@@ -16,3 +16,6 @@ bin
 
 # Temp directories or files
 *.swp
+
+# IDE/Tool configs
+opencode.json
