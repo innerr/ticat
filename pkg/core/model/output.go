@@ -23,7 +23,14 @@ func Output(cc *Cli, env *Env, data any) error {
 	if IsJsonOutputMode(env) {
 		b, err := json.Marshal(data)
 		if err != nil {
-			return cc.Screen.Error(fmt.Sprintf(`{"error":"marshal failed: %v"}`+"\n", err))
+			errorObj := map[string]any{
+				"error": fmt.Sprintf("marshal failed: %v", err),
+			}
+			errorJSON, marshalErr := json.Marshal(errorObj)
+			if marshalErr != nil {
+				return cc.Screen.Error("{\"error\":\"marshal failed\"}\n")
+			}
+			return cc.Screen.Error(string(errorJSON) + "\n")
 		}
 		return cc.Screen.Print(string(b) + "\n")
 	}
@@ -49,7 +56,11 @@ func OutputError(cc *Cli, env *Env, errType string, err error, detail map[string
 	}
 	b, marshalErr := json.Marshal(obj)
 	if marshalErr != nil {
-		_ = cc.Screen.Error(fmt.Sprintf(`{"error":%q}`+"\n", err.Error()))
+		fallback := map[string]any{
+			"error": err.Error(),
+		}
+		fallbackJSON, _ := json.Marshal(fallback)
+		_ = cc.Screen.Error(string(fallbackJSON) + "\n")
 		return true
 	}
 	_ = cc.Screen.Error(string(b) + "\n")

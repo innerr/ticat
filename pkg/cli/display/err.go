@@ -8,34 +8,42 @@ import (
 )
 
 func printErrorJson(cc *model.Cli, env *model.Env, err error) {
-	detail := map[string]string{}
+	var detail map[string]string
 	errType := "unknown"
 
 	switch e := err.(type) {
 	case *model.CmdMissedEnvValWhenRenderFlow:
 		errType = "missing_env_value"
-		detail["source"] = e.Source
-		detail["file"] = e.MetaFilePath
-		detail["command"] = e.CmdPath
-		detail["rendering_line"] = e.RenderingLine
-		detail["missed_key"] = e.MissedKey
+		detail = map[string]string{
+			"source":         e.Source,
+			"file":           e.MetaFilePath,
+			"command":        e.CmdPath,
+			"rendering_line": e.RenderingLine,
+			"missed_key":     e.MissedKey,
+		}
 	case *model.CmdMissedArgValWhenRenderFlow:
 		errType = "missing_arg_value"
-		detail["source"] = e.Source
-		detail["file"] = e.MetaFilePath
-		detail["command"] = e.CmdPath
-		detail["rendering_line"] = e.RenderingLine
-		detail["missed_arg"] = e.MissedArg
+		detail = map[string]string{
+			"source":         e.Source,
+			"file":           e.MetaFilePath,
+			"command":        e.CmdPath,
+			"rendering_line": e.RenderingLine,
+			"missed_arg":     e.MissedArg,
+		}
 	case *model.CmdError:
 		errType = "command_error"
 		sep := cc.Cmds.Strs.PathSep
-		detail["command"] = strings.Join(e.Cmd.MatchedPath(), sep)
+		detail = map[string]string{
+			"command": strings.Join(e.Cmd.MatchedPath(), sep),
+		}
 	case *model.RunCmdFileFailed:
 		errType = "run_cmd_file_failed"
 		sep := cc.Cmds.Strs.PathSep
-		detail["command"] = strings.Join(e.Cmd.MatchedPath(), sep)
-		detail["bin"] = e.Bin
-		detail["session_path"] = e.SessionPath
+		detail = map[string]string{
+			"command":      strings.Join(e.Cmd.MatchedPath(), sep),
+			"bin":          e.Bin,
+			"session_path": e.SessionPath,
+		}
 		if len(e.LogFilePath) != 0 {
 			detail["log_file"] = e.LogFilePath
 		}
