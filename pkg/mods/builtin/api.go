@@ -26,6 +26,12 @@ func ApiCmdType(
 	node := cmd.LastCmdNode()
 	if node != nil {
 		if node.Cmd() != nil {
+			if model.IsJsonOutputMode(env) {
+				return currCmdIdx, model.Output(cc, env, map[string]string{
+					"command": cmdStr,
+					"type":    string(node.Cmd().Type()),
+				})
+			}
 			_, _ = fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().Type())
 		}
 	}
@@ -50,6 +56,12 @@ func ApiCmdMeta(
 	node := cmd.LastCmdNode()
 	if node != nil {
 		if node.Cmd() != nil {
+			if model.IsJsonOutputMode(env) {
+				return currCmdIdx, model.Output(cc, env, map[string]string{
+					"command":   cmdStr,
+					"meta_file": node.Cmd().MetaFile(),
+				})
+			}
 			_, _ = fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().MetaFile())
 		}
 	}
@@ -77,6 +89,12 @@ func ApiCmdPath(
 		if cic != nil {
 			line := cic.CmdLine()
 			if len(line) != 0 && cic.Type() != model.CmdTypeEmptyDir {
+				if model.IsJsonOutputMode(env) {
+					return currCmdIdx, model.Output(cc, env, map[string]string{
+						"command": cmdStr,
+						"path":   line,
+					})
+				}
 				_, _ = fmt.Fprintf(os.Stdout, "%s\n", line)
 			}
 		}
@@ -103,12 +121,19 @@ func ApiCmdDir(
 	if node != nil {
 		cic := node.Cmd()
 		if cic != nil {
+			var dir string
 			if cic.Type() == model.CmdTypeEmptyDir {
-				_, _ = fmt.Fprintf(os.Stdout, "%s\n", node.Cmd().CmdLine())
+				dir = node.Cmd().CmdLine()
 			} else {
-				dir := filepath.Dir(node.Cmd().MetaFile())
-				_, _ = fmt.Fprintf(os.Stdout, "%s\n", dir)
+				dir = filepath.Dir(node.Cmd().MetaFile())
 			}
+			if model.IsJsonOutputMode(env) {
+				return currCmdIdx, model.Output(cc, env, map[string]string{
+					"command": cmdStr,
+					"dir":    dir,
+				})
+			}
+			_, _ = fmt.Fprintf(os.Stdout, "%s\n", dir)
 		}
 	}
 	return currCmdIdx, nil
@@ -124,8 +149,24 @@ func ApiCmdListAll(
 	if err := assertNotTailMode(flow, currCmdIdx); err != nil {
 		return currCmdIdx, err
 	}
+	if model.IsJsonOutputMode(env) {
+		var names []string
+		cmdCollectNames(cc.Cmds, &names)
+		return currCmdIdx, model.Output(cc, env, map[string]any{
+			"commands": names,
+		})
+	}
 	cmdDumpName(cc.Cmds, cc.Screen)
 	return currCmdIdx, nil
+}
+
+func cmdCollectNames(cmd *model.CmdTree, names *[]string) {
+	if !cmd.IsEmpty() {
+		*names = append(*names, cmd.DisplayPath())
+	}
+	for _, name := range cmd.SubNames() {
+		cmdCollectNames(cmd.GetSub(name), names)
+	}
 }
 
 func cmdDumpName(cmd *model.CmdTree, screen model.Screen) {

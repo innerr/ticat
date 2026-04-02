@@ -16,6 +16,9 @@ func PrintTipTitle(screen model.Screen, env *model.Env, msgs ...interface{}) {
 }
 
 func printTipTitle(screen model.Screen, env *model.Env, isErr bool, msgs ...interface{}) {
+	if model.IsJsonOutputMode(env) {
+		return
+	}
 	var strs []string
 	for _, it := range msgs {
 		switch it.(type) {

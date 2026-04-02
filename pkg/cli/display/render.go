@@ -8,7 +8,7 @@ import (
 )
 
 func RenderCmdStack(l CmdStackLines, env *model.Env, screen model.Screen) (renderWidth int) {
-	if !l.Display {
+	if !l.Display || model.IsJsonOutputMode(env) {
 		return
 	}
 
@@ -84,7 +84,7 @@ func RenderCmdStack(l CmdStackLines, env *model.Env, screen model.Screen) (rende
 }
 
 func RenderCmdResult(l CmdResultLines, env *model.Env, screen model.Screen, width int) {
-	if !l.Display {
+	if !l.Display || model.IsJsonOutputMode(env) {
 		return
 	}
 

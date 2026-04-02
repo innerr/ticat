@@ -28,6 +28,8 @@ func LoadDefaultEnv(env *model.Env, info *model.EnvKeysInfo) {
 	env.Set("sys.dev.name", "stone-age")
 	env.Set("sys.mods.integrated", "builtin")
 
+	env.Set("sys.output.format", "text")
+
 	env.Set("display.help.cmds", "")
 
 	env.SetBool("sys.env.use-cmd-abbrs", false)
@@ -68,6 +70,9 @@ func LoadEnvAbbrs(abbrs *model.EnvAbbrs) {
 	sys.GetOrAddSub("interact").AddAbbrs("ir", "i")
 	sys.GetOrAddSub("wait-execute").AddAbbrs("wait-exec", "wait-exe")
 	sys.GetOrAddSub("version").AddAbbrs("ver")
+
+	output := sys.GetOrAddSub("output").AddAbbrs("out", "o")
+	output.GetOrAddSub("format").AddAbbrs("fmt", "f")
 
 	hub := sys.GetOrAddSub("hub")
 	hub.GetOrAddSub("init-repo").AddAbbrs("repo")

@@ -7,6 +7,43 @@ import (
 	"github.com/innerr/ticat/pkg/core/model"
 )
 
+func printErrorJson(cc *model.Cli, env *model.Env, err error) {
+	detail := map[string]string{}
+	errType := "unknown"
+
+	switch e := err.(type) {
+	case *model.CmdMissedEnvValWhenRenderFlow:
+		errType = "missing_env_value"
+		detail["source"] = e.Source
+		detail["file"] = e.MetaFilePath
+		detail["command"] = e.CmdPath
+		detail["rendering_line"] = e.RenderingLine
+		detail["missed_key"] = e.MissedKey
+	case *model.CmdMissedArgValWhenRenderFlow:
+		errType = "missing_arg_value"
+		detail["source"] = e.Source
+		detail["file"] = e.MetaFilePath
+		detail["command"] = e.CmdPath
+		detail["rendering_line"] = e.RenderingLine
+		detail["missed_arg"] = e.MissedArg
+	case *model.CmdError:
+		errType = "command_error"
+		sep := cc.Cmds.Strs.PathSep
+		detail["command"] = strings.Join(e.Cmd.MatchedPath(), sep)
+	case *model.RunCmdFileFailed:
+		errType = "run_cmd_file_failed"
+		sep := cc.Cmds.Strs.PathSep
+		detail["command"] = strings.Join(e.Cmd.MatchedPath(), sep)
+		detail["bin"] = e.Bin
+		detail["session_path"] = e.SessionPath
+		if len(e.LogFilePath) != 0 {
+			detail["log_file"] = e.LogFilePath
+		}
+	}
+
+	model.OutputError(cc, env, errType, err, detail)
+}
+
 func PrintEmptyDirCmdHint(screen model.Screen, env *model.Env, cmd model.ParsedCmd) {
 	sep := env.GetRaw("strs.cmd-path-sep")
 	name := cmd.DisplayPath(sep, true)
@@ -23,6 +60,10 @@ func PrintEmptyDirCmdHint(screen model.Screen, env *model.Env, cmd model.ParsedC
 }
 
 func PrintError(cc *model.Cli, env *model.Env, err error) {
+	if model.IsJsonOutputMode(env) {
+		printErrorJson(cc, env, err)
+		return
+	}
 	switch err.(type) {
 	case *model.CmdMissedEnvValWhenRenderFlow:
 		e := err.(*model.CmdMissedEnvValWhenRenderFlow)
