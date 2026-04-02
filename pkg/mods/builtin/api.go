@@ -92,7 +92,7 @@ func ApiCmdPath(
 				if model.IsJsonOutputMode(env) {
 					return currCmdIdx, model.Output(cc, env, map[string]string{
 						"command": cmdStr,
-						"path":   line,
+						"path":    line,
 					})
 				}
 				_, _ = fmt.Fprintf(os.Stdout, "%s\n", line)
@@ -130,7 +130,7 @@ func ApiCmdDir(
 			if model.IsJsonOutputMode(env) {
 				return currCmdIdx, model.Output(cc, env, map[string]string{
 					"command": cmdStr,
-					"dir":    dir,
+					"dir":     dir,
 				})
 			}
 			_, _ = fmt.Fprintf(os.Stdout, "%s\n", dir)
