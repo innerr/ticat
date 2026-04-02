@@ -2,6 +2,7 @@ package display
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/innerr/ticat/pkg/core/model"
@@ -47,6 +48,8 @@ func printErrorJson(cc *model.Cli, env *model.Env, err error) {
 		if len(e.LogFilePath) != 0 {
 			detail["log_file"] = e.LogFilePath
 		}
+	default:
+		errType = reflect.TypeOf(err).String()
 	}
 
 	model.OutputError(cc, env, errType, err, detail)

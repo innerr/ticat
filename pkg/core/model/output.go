@@ -16,23 +16,29 @@ func IsJsonOutputMode(env *Env) bool {
 	return env.GetRaw("sys.output.format") == "json"
 }
 
+// OutputJson always marshals data as JSON and writes it to the screen.
+// Use this for commands that always produce JSON output (e.g. api.cmd.json.*).
+func OutputJson(cc *Cli, data any) error {
+	b, err := json.Marshal(data)
+	if err != nil {
+		errorObj := map[string]any{
+			"error": fmt.Sprintf("marshal failed: %v", err),
+		}
+		errorJSON, marshalErr := json.Marshal(errorObj)
+		if marshalErr != nil {
+			return cc.Screen.Error("{\"error\":\"marshal failed\"}\n")
+		}
+		return cc.Screen.Error(string(errorJSON) + "\n")
+	}
+	return cc.Screen.Print(string(b) + "\n")
+}
+
 // Output writes structured data to the screen.
 // When sys.output.format=json, it marshals data as JSON.
 // When sys.output.format=text, it uses TextFormatter if available, otherwise fmt.Sprintf.
 func Output(cc *Cli, env *Env, data any) error {
 	if IsJsonOutputMode(env) {
-		b, err := json.Marshal(data)
-		if err != nil {
-			errorObj := map[string]any{
-				"error": fmt.Sprintf("marshal failed: %v", err),
-			}
-			errorJSON, marshalErr := json.Marshal(errorObj)
-			if marshalErr != nil {
-				return cc.Screen.Error("{\"error\":\"marshal failed\"}\n")
-			}
-			return cc.Screen.Error(string(errorJSON) + "\n")
-		}
-		return cc.Screen.Print(string(b) + "\n")
+		return OutputJson(cc, data)
 	}
 	if tf, ok := data.(TextFormatter); ok {
 		return cc.Screen.Print(tf.FormatText())
