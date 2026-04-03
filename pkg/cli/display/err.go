@@ -10,7 +10,7 @@ import (
 
 func printErrorJson(cc *model.Cli, env *model.Env, err error) {
 	var detail map[string]string
-	errType := "unknown"
+	var errType string
 
 	switch e := err.(type) {
 	case *model.CmdMissedEnvValWhenRenderFlow:

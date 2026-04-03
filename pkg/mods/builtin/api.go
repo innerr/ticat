@@ -178,7 +178,7 @@ func ApiCmdJsonListAll(
 	}
 	var names []string
 	cmdCollectNames(cc.Cmds, &names)
-	return currCmdIdx, model.Output(cc, env, map[string]any{
+	return currCmdIdx, model.OutputJson(cc, map[string]any{
 		"commands": names,
 	})
 }
