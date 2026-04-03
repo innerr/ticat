@@ -1510,6 +1510,21 @@ func RegisterApiCmds(cmds *model.CmdTree) {
 			"list all commands").
 		SetIsApi()
 
+	cmdJson := cmd.AddSub("json")
+	cmdJson.RegEmptyCmd("json output api toolbox")
+
+	cmdJson.AddSub("info", "i").
+		RegPowerCmd(ApiCmdJson,
+			"get command info (type, meta, path, dir) as JSON").
+		SetIsApi().
+		AddArg("cmd", "")
+
+	cmdJsonList := cmdJson.AddSub("list")
+	cmdJsonList.AddSub("all").
+		RegPowerCmd(ApiCmdJsonListAll,
+			"list all commands as JSON").
+		SetIsApi()
+
 	env := cmds.AddSub("env")
 
 	env.AddSub("value", "val", "v").

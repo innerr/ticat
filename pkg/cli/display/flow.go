@@ -38,6 +38,9 @@ func DumpFlowEx(
 	if len(flow.Cmds) == 0 {
 		return
 	}
+	if model.IsJsonOutputMode(env) {
+		return
+	}
 	if args.MaxDepth <= 0 {
 		args.MaxDepth = math.MaxInt64
 	}
