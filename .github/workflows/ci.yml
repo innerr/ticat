@@ -31,6 +31,10 @@ jobs:
     - name: Run unit tests
       run: go test -v ./pkg/... -race -coverprofile=coverage.txt -covermode=atomic
 
+    - name: Run govulncheck
+      run: |
+        go run golang.org/x/vuln/cmd/govulncheck@latest ./pkg/...
+
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       with:
