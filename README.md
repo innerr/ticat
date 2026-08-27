@@ -2,7 +2,7 @@
 
 A lightweight command-line component platform for building powerful and flexible CLI applications
 
-[![Go Version](https://img.shields.io/badge/Go-1.16%2B-blue)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/Go-1.23%2B-blue)](https://golang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![CI](https://github.com/innerr/ticat/actions/workflows/ci.yml/badge.svg)](https://github.com/innerr/ticat/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/innerr/ticat)](https://goreportcard.com/report/github.com/innerr/ticat)
